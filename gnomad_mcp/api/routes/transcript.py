@@ -37,7 +37,7 @@ async def get_transcript(
         result = await service.client.get_transcript(transcript_id, reference_genome)
         return result
     except DataNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:
         logger.error(f"Error getting transcript: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e

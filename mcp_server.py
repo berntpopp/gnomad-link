@@ -18,8 +18,8 @@ from server import app
 # Configure logging - only show warnings and errors to avoid interfering with STDIO
 logging.basicConfig(
     level=logging.WARNING,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[logging.StreamHandler(sys.stderr)]
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler(sys.stderr)],
 )
 
 # Suppress verbose logging from fastmcp libraries
@@ -35,22 +35,17 @@ MCP_CUSTOM_NAMES = {
     "get_variant_frequency_data": "get_variant_frequencies",
     "search_variants": "search_variants",
     "get_variant_by_position": "get_variant_by_position",
-
     # Gene endpoints
     "get_gene_details": "get_gene_details",
     "search_genes": "search_genes",
-
     # Transcript endpoints
     "search_transcripts": "search_transcripts",
     "get_transcript_exons": "get_transcript_exons",
-
     # Structural variant endpoints
     "search_structural_variants": "get_structural_variants",
-
     # ClinVar endpoints
     "search_clinvar_variants": "search_clinvar_variants",
     "get_clinvar_variant": "get_clinvar_variant_details",
-
     # Coverage endpoints
     "get_gene_coverage": "get_gene_coverage",
     "get_transcript_coverage": "get_transcript_coverage",
@@ -61,10 +56,8 @@ MCP_ROUTE_MAPS = [
     # Exclude health and monitoring endpoints
     RouteMap(pattern=r"^/api/health$", mcp_type=MCPType.EXCLUDE),
     RouteMap(pattern=r"^/health$", mcp_type=MCPType.EXCLUDE),
-
     # Exclude cache management endpoints
     RouteMap(pattern=r"^/api/cache/.*$", mcp_type=MCPType.EXCLUDE),
-
     # Exclude root and docs endpoints
     RouteMap(pattern=r"^/$", mcp_type=MCPType.EXCLUDE),
     RouteMap(pattern=r"^/docs$", mcp_type=MCPType.EXCLUDE),

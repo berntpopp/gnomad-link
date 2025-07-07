@@ -39,7 +39,7 @@ async def search_genes(
         return [GeneSearchResult(**r) for r in results]
     except Exception as e:
         logger.error(f"Error searching genes: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get(
@@ -64,4 +64,4 @@ async def search_variants(
         return results
     except Exception as e:
         logger.error(f"Error searching variants: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e

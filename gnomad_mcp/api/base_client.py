@@ -1,7 +1,8 @@
 """Base GraphQL client with centralized query management."""
 
 import logging
-from abc import ABC
+
+# Removed ABC import as class has no abstract methods
 from typing import Any, Optional
 
 from gql import Client, gql
@@ -32,7 +33,7 @@ class DataNotFoundError(GnomadApiError):
     pass
 
 
-class BaseGnomadClient(ABC):
+class BaseGnomadClient:
     """Base client for gnomAD GraphQL API."""
 
     def __init__(self, api_url: Optional[str] = None):
@@ -114,14 +115,14 @@ class BaseGnomadClient(ABC):
                 raise
             raise GnomadApiError(f"Unexpected error: {str(e)}") from e
 
-    async def close(self):
+    async def close(self) -> None:
         """Close the client connection."""
         await self._transport.close()
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "BaseGnomadClient":
         """Async context manager entry."""
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """Async context manager exit."""
         await self.close()

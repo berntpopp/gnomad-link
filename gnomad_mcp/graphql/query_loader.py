@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 class QueryLoader:
     """Load and cache GraphQL queries from files."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the GraphQL query loader with empty cache."""
         self.base_path = Path(__file__).parent / "queries"
         self._query_cache: dict[str, str] = {}
@@ -130,7 +130,7 @@ class QueryLoader:
 
     def _list_available_queries(self, version: str) -> set[str]:
         """List available queries for a version."""
-        queries = set()
+        queries: set[str] = set()
 
         # Check version-specific
         version_path = self.base_path / version

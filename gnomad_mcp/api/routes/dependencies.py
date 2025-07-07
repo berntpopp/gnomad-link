@@ -1,6 +1,6 @@
 """Route dependencies for the unified server."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from fastapi import Request
 
@@ -20,4 +20,4 @@ def get_service(request: Request) -> "FrequencyService":
     Returns:
         The FrequencyService instance from app.state
     """
-    return request.app.state.frequency_service
+    return cast("FrequencyService", request.app.state.frequency_service)

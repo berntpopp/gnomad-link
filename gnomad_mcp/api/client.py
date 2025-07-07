@@ -82,7 +82,7 @@ class UnifiedGnomadClient(BaseGnomadClient):
         result = await self.execute_query(
             "variant_search", {"query": query, "dataset": dataset}, version
         )
-        return result.get("variant_search", [])
+        return list(result.get("variant_search", []))
 
     async def search_genes(
         self,
@@ -109,7 +109,7 @@ class UnifiedGnomadClient(BaseGnomadClient):
             variables["reference_genome"] = reference_genome
 
         result = await self.execute_query("gene_search", variables, version)
-        return result.get("gene_search", [])
+        return list(result.get("gene_search", []))
 
     async def get_clinvar_variant(
         self,
@@ -252,5 +252,5 @@ class UnifiedGnomadClient(BaseGnomadClient):
         result = await self.execute_query("gene_variants", processed_vars, version)
         # Extract variants from nested structure
         if "gene" in result and "variants" in result["gene"]:
-            return result["gene"]["variants"]
+            return list(result["gene"]["variants"])
         return []

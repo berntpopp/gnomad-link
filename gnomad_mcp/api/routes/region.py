@@ -43,4 +43,4 @@ async def get_region(
         return result
     except Exception as e:
         logger.error(f"Error getting region: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e

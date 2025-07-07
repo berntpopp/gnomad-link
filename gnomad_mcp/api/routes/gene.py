@@ -47,10 +47,10 @@ async def get_gene(
         # Convert dict to Gene model
         return Gene(**result.get("gene", result))
     except DataNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:
         logger.error(f"Error getting gene: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get(
@@ -80,7 +80,7 @@ async def get_gene_variants(
             "variants": variants,
         }
     except DataNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:
         logger.error(f"Error getting gene variants: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e

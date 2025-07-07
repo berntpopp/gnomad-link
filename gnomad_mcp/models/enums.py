@@ -11,7 +11,7 @@ class GnomadDataset(str, Enum):
     GNOMAD_R4 = "gnomad_r4"
 
     @classmethod
-    def get_default(cls):
+    def get_default(cls) -> "GnomadDataset":
         """Get the default dataset."""
         return cls.GNOMAD_R4
 
@@ -23,7 +23,7 @@ class StructuralVariantDataset(str, Enum):
     GNOMAD_SV_R4 = "gnomad_sv_r4"
 
     @classmethod
-    def get_default(cls):
+    def get_default(cls) -> "StructuralVariantDataset":
         """Get the default SV dataset."""
         return cls.GNOMAD_SV_R4
 
@@ -35,6 +35,6 @@ class ReferenceGenome(str, Enum):
     GRCH38 = "GRCh38"
 
     @classmethod
-    def get_default(cls):
+    def get_default(cls) -> "ReferenceGenome":
         """Get the default reference genome."""
         return cls.GRCH38

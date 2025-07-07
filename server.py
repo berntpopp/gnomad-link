@@ -13,8 +13,6 @@ from fastmcp import FastMCP
 
 # Import services and models
 from gnomad_mcp.api.client import UnifiedGnomadClient
-from gnomad_mcp.config import settings
-from gnomad_mcp.services.frequency_service import FrequencyService
 from gnomad_mcp.api.routes import (
     clinvar_router,
     gene_router,
@@ -26,6 +24,8 @@ from gnomad_mcp.api.routes import (
     variant_router,
 )
 from gnomad_mcp.api.routes.dependencies import get_service
+from gnomad_mcp.config import settings
+from gnomad_mcp.services.frequency_service import FrequencyService
 
 # Configure logging
 logging.basicConfig(level=getattr(logging, settings.LOG_LEVEL))

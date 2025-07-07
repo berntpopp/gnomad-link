@@ -45,18 +45,20 @@ async def get_variant(
         return await service.get_variant_frequencies(variant_id, dataset)
     except DataNotFoundError as e:
         logger.warning(f"Variant not found: {e}")
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
     except ValueError as e:
         logger.warning(f"Invalid input: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except GnomadApiError as e:
         logger.error(f"API error: {e}")
         raise HTTPException(
             status_code=502, detail="Error communicating with gnomAD API"
-        )
+        ) from e
     except Exception as e:
         logger.error(f"Unexpected error: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="An internal server error occurred")
+        raise HTTPException(
+            status_code=500, detail="An internal server error occurred"
+        ) from e
 
 
 @router.get(
@@ -81,7 +83,7 @@ async def get_variant_details(
         result = await service.client.get_variant(variant_id, dataset)
         return result
     except DataNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:
         logger.error(f"Error getting variant details: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e

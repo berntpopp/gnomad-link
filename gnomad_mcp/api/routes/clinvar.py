@@ -37,7 +37,7 @@ async def get_clinvar_variant(
         result = await service.client.get_clinvar_variant(variant_id, reference_genome)
         return ClinVarVariant(**result.get("clinvar_variant", result))
     except DataNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:
         logger.error(f"Error getting ClinVar variant: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e

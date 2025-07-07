@@ -34,6 +34,12 @@ class PopulationFrequency(BaseModel):
 class VariantDataSource(BaseModel):
     """Variant data from a specific sequencing source (exome or genome)."""
 
+    ac: int = Field(0, description="Total allele count")
+    an: int = Field(0, description="Total allele number")
+    homozygote_count: int = Field(0, description="Total homozygote count")
+    hemizygote_count: Optional[int] = Field(
+        None, description="Total hemizygote count (for X-linked variants)"
+    )
     populations: list[PopulationFrequency] = Field(
         default_factory=list, description="Population-specific frequency data."
     )
@@ -72,8 +78,18 @@ class VariantFrequencyResponse(BaseModel):
 
     @property
     def has_data(self) -> bool:
-        """Check if variant has any frequency data."""
-        return self.exome is not None or self.genome is not None
+        """Check if variant has any meaningful frequency data."""
+        has_exome_data = self.exome is not None and (
+            self.exome.total_allele_count > 0
+            or self.exome.total_allele_number > 0
+            or len(self.exome.populations) > 0
+        )
+        has_genome_data = self.genome is not None and (
+            self.genome.total_allele_count > 0
+            or self.genome.total_allele_number > 0
+            or len(self.genome.populations) > 0
+        )
+        return has_exome_data or has_genome_data
 
     model_config = {
         "json_schema_extra": {

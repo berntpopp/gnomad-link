@@ -61,6 +61,12 @@ class FrequencyService:
         Returns:
             Variant frequency response
         """
+        # Validate input
+        if not variant_id:
+            raise ValueError("variant_id cannot be empty")
+        if not dataset:
+            raise ValueError("dataset cannot be empty")
+
         try:
             data = await self._get_variant_cached(variant_id, dataset)
             self._cache_hits += 1
@@ -76,12 +82,21 @@ class FrequencyService:
     async def _get_variant_impl(self, variant_id: str, dataset: str) -> dict[str, Any]:
         """Fetch variant data from the API."""
         result = await self.client.get_variant(variant_id, dataset)
-        return result.get("variant", {})
+        variant_data = result.get("variant")
+        if variant_data is None:
+            return {}
+        return dict(variant_data)
 
     def _parse_variant_response(
         self, data: dict[str, Any], variant_id: str, dataset: str
     ) -> VariantFrequencyResponse:
         """Parse variant data into response model."""
+        # Check if variant was found
+        if not data:
+            from gnomad_mcp.api.base_client import VariantNotFoundError
+
+            raise VariantNotFoundError(f"Variant {variant_id} not found in {dataset}")
+
         # Parse exome data
         exome_data = None
         if data.get("exome"):
@@ -183,7 +198,10 @@ class FrequencyService:
         result = await self.client.get_gene(
             gene_id, gene_symbol, reference_genome, dataset
         )
-        return result.get("gene", {})
+        gene_data = result.get("gene")
+        if gene_data is None:
+            return {}
+        return dict(gene_data)
 
     async def search_genes(
         self,
@@ -260,13 +278,13 @@ class FrequencyService:
             },
         }
 
-    def clear_cache(self):
+    def clear_cache(self) -> None:
         """Clear all caches."""
         self._get_variant_cached.cache_clear()
         self._get_gene_cached.cache_clear()
         self._cache_hits = 0
         self._cache_misses = 0
 
-    async def close(self):
+    async def close(self) -> None:
         """Close the service and underlying connections."""
         await self.client.close()
