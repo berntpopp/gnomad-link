@@ -1,11 +1,13 @@
 """Transcript-related API routes."""
 
-from typing import Dict, Any
-from fastapi import APIRouter, HTTPException, Query, Path, Depends
-from gnomad_mcp.models import ReferenceGenome
-from gnomad_mcp.api import DataNotFoundError
-from gnomad_mcp.services import UnifiedFrequencyService
 import logging
+from typing import Any, Dict
+
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
+
+from gnomad_mcp.api import DataNotFoundError
+from gnomad_mcp.models import ReferenceGenome
+from gnomad_mcp.services import FrequencyService
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/transcript", tags=["Transcripts"])
@@ -27,7 +29,7 @@ async def get_transcript(
         default=ReferenceGenome.GRCH38,
         description="Reference genome to use",
     ),
-    service: UnifiedFrequencyService = Depends(get_service),
+    service: FrequencyService = Depends(get_service),
 ) -> Dict[str, Any]:
     """Get transcript information including exons and expression data."""
     try:

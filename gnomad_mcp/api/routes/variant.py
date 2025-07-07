@@ -1,11 +1,13 @@
 """Variant-related API routes."""
 
-from typing import Dict, Any
-from fastapi import APIRouter, HTTPException, Path, Query, Depends
-from gnomad_mcp.models import VariantFrequencyResponse, GnomadDataset
-from gnomad_mcp.api import DataNotFoundError, GnomadApiError
-from gnomad_mcp.services import UnifiedFrequencyService
 import logging
+from typing import Any, Dict
+
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
+
+from gnomad_mcp.api import DataNotFoundError, GnomadApiError
+from gnomad_mcp.models import GnomadDataset, VariantFrequencyResponse
+from gnomad_mcp.services import FrequencyService
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/variant", tags=["Variants"])
@@ -35,7 +37,7 @@ async def get_variant(
         default=GnomadDataset.GNOMAD_R4,
         description="gnomAD dataset to query",
     ),
-    service: UnifiedFrequencyService = Depends(get_service),
+    service: FrequencyService = Depends(get_service),
 ) -> VariantFrequencyResponse:
     """Retrieve allele frequency data for a specific variant."""
     try:
@@ -70,7 +72,7 @@ async def get_variant_details(
         default=GnomadDataset.GNOMAD_R4,
         description="gnomAD dataset to query",
     ),
-    service: UnifiedFrequencyService = Depends(get_service),
+    service: FrequencyService = Depends(get_service),
 ) -> Dict[str, Any]:
     """Get complete variant details including annotations."""
     try:

@@ -1,11 +1,13 @@
 """Mitochondrial variant API routes."""
 
-from typing import Dict, Any
-from fastapi import APIRouter, HTTPException, Path, Query, Depends
-from gnomad_mcp.models import GnomadDataset
-from gnomad_mcp.api import DataNotFoundError
-from gnomad_mcp.services import UnifiedFrequencyService
 import logging
+from typing import Any, Dict
+
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
+
+from gnomad_mcp.api import DataNotFoundError
+from gnomad_mcp.models import GnomadDataset
+from gnomad_mcp.services import FrequencyService
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/mitochondrial-variant", tags=["Mitochondrial Variants"])
@@ -27,7 +29,7 @@ async def get_mitochondrial_variant(
         default=GnomadDataset.GNOMAD_R4,
         description="gnomAD dataset to query",
     ),
-    service: UnifiedFrequencyService = Depends(get_service),
+    service: FrequencyService = Depends(get_service),
 ) -> Dict[str, Any]:
     """Get mitochondrial variant information with heteroplasmy data."""
     try:

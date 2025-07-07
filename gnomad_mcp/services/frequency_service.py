@@ -1,26 +1,26 @@
 """Unified service layer for both FastAPI and MCP."""
 
 import logging
-from typing import Dict, Any, Optional, List
 from datetime import timedelta
+from typing import Any, Dict, List, Optional
 
 from async_lru import alru_cache
 
-from gnomad_mcp.api.unified_client import UnifiedGnomadClient
-from gnomad_mcp.api.base_client import GnomadApiError, DataNotFoundError
+from gnomad_mcp.api.base_client import DataNotFoundError, GnomadApiError
+from gnomad_mcp.api.client import UnifiedGnomadClient
 from gnomad_mcp.models import (
-    VariantFrequencyResponse,
-    PopulationFrequency,
-    VariantDataSource,
+    ClinVarVariant,
     Gene,
     GeneSearchResult,
-    ClinVarVariant,
+    PopulationFrequency,
+    VariantDataSource,
+    VariantFrequencyResponse,
 )
 
 logger = logging.getLogger(__name__)
 
 
-class UnifiedFrequencyService:
+class FrequencyService:
     """Unified service for gnomAD data queries with caching."""
 
     def __init__(

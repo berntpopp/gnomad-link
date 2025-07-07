@@ -1,22 +1,24 @@
 """Data models for the gnomAD MCP server."""
 
-from .variant_models import (
-    PopulationFrequency,
-    VariantDataSource,
-    VariantFrequencyResponse,
+from .clinvar_models import (
+    ClinVarCondition,
+    ClinVarSubmission,
+    ClinVarVariant,
+    GnomadInClinVar,
 )
+from .enums import GnomadDataset, ReferenceGenome, StructuralVariantDataset
 from .gene_models import (
     Gene,
     GeneConstraint,
     GeneExon,
-    GeneTranscript,
     GeneSearchResult,
+    GeneTranscript,
 )
-from .clinvar_models import (
-    ClinVarVariant,
-    ClinVarCondition,
-    ClinVarSubmission,
-    GnomadInClinVar,
+from .mitochondrial_models import (
+    MitochondrialHaplogroup,
+    MitochondrialPopulation,
+    MitochondrialTranscriptConsequence,
+    MitochondrialVariant,
 )
 from .structural_variant_models import (
     StructuralVariant,
@@ -24,13 +26,11 @@ from .structural_variant_models import (
     SVCopyNumber,
     SVPopulation,
 )
-from .mitochondrial_models import (
-    MitochondrialVariant,
-    MitochondrialPopulation,
-    MitochondrialHaplogroup,
-    MitochondrialTranscriptConsequence,
+from .variant_models import (
+    PopulationFrequency,
+    VariantDataSource,
+    VariantFrequencyResponse,
 )
-from .enums import GnomadDataset, StructuralVariantDataset, ReferenceGenome
 
 __all__ = [
     # Variant models

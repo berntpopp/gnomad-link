@@ -1,15 +1,15 @@
 """Base GraphQL client with centralized query management."""
 
 import logging
-from typing import Dict, Any, Optional
 from abc import ABC, abstractmethod
+from typing import Any, Dict, Optional
 
 from gql import Client, gql
 from gql.transport.aiohttp import AIOHTTPTransport
 from gql.transport.exceptions import TransportError, TransportQueryError
 
 from gnomad_mcp.config import settings
-from gnomad_mcp.graphql import QueryLoader, QueryBuilder
+from gnomad_mcp.graphql import QueryBuilder, QueryLoader
 
 logger = logging.getLogger(__name__)
 

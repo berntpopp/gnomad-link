@@ -1,6 +1,7 @@
 """Data models for ClinVar variant queries."""
 
 from typing import List, Optional
+
 from pydantic import BaseModel, Field
 
 

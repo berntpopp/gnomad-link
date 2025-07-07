@@ -2,12 +2,13 @@
 """MCP server for gnomAD variant data."""
 import asyncio
 import logging
+
 from fastmcp import FastMCP
 
-from gnomad_mcp.api import GnomadApiClient
-from gnomad_mcp.services import FrequencyService
-from gnomad_mcp.models import VariantFrequencyResponse, GnomadDataset
+from gnomad_mcp.api import UnifiedGnomadClient
 from gnomad_mcp.config import settings
+from gnomad_mcp.models import GnomadDataset, VariantFrequencyResponse
+from gnomad_mcp.services import FrequencyService
 
 # Configure logging
 logging.basicConfig(level=getattr(logging, settings.LOG_LEVEL))
@@ -29,7 +30,7 @@ async def startup():
         f"Cache configuration: size={settings.CACHE_SIZE}, TTL={settings.CACHE_TTL_MINUTES}min"
     )
 
-    api_client = GnomadApiClient()
+    api_client = UnifiedGnomadClient()
     frequency_service = FrequencyService(
         client=api_client,
         cache_size=settings.CACHE_SIZE,

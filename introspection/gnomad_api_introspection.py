@@ -1,5 +1,6 @@
-import requests
 import json
+
+import requests
 
 # Step 1: Setup
 GNOMAD_API_URL = "https://gnomad.broadinstitute.org/api"

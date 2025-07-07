@@ -1,11 +1,12 @@
 """Unit tests for the frequency service."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from gnomad_mcp.services import FrequencyService
+import pytest
+
 from gnomad_mcp.api import VariantNotFoundError
 from gnomad_mcp.models import VariantFrequencyResponse
+from gnomad_mcp.services import FrequencyService
 
 
 @pytest.fixture

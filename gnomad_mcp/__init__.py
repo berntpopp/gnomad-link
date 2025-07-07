@@ -3,25 +3,18 @@
 __version__ = "4.0.0"
 __author__ = "gnomAD MCP Team"
 
+from .api import DataNotFoundError, GnomadApiError, UnifiedGnomadClient
+
 # Import order matters to avoid circular imports
 from .models import (
+    ClinVarVariant,
+    Gene,
+    GeneSearchResult,
     PopulationFrequency,
     VariantDataSource,
     VariantFrequencyResponse,
-    Gene,
-    GeneSearchResult,
-    ClinVarVariant,
 )
-from .api import (
-    UnifiedGnomadClient,
-    GnomadApiClient,  # Backward compatibility
-    GnomadApiError,
-    DataNotFoundError,
-)
-from .services import (
-    FrequencyService,
-    UnifiedFrequencyService,
-)
+from .services import FrequencyService
 
 __all__ = [
     # Models
@@ -33,10 +26,8 @@ __all__ = [
     "ClinVarVariant",
     # API clients
     "UnifiedGnomadClient",
-    "GnomadApiClient",  # Backward compatibility
     # Services
     "FrequencyService",
-    "UnifiedFrequencyService",
     # Exceptions
     "GnomadApiError",
     "DataNotFoundError",

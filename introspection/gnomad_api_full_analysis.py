@@ -1,6 +1,7 @@
-import requests
 import json
 from collections import defaultdict
+
+import requests
 
 # Setup
 GNOMAD_API_URL = "https://gnomad.broadinstitute.org/api"

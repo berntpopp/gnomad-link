@@ -2,30 +2,27 @@
 """FastAPI server for gnomAD variant data."""
 import logging
 from contextlib import asynccontextmanager
-from typing import Dict, Any
+from typing import Any
 
-from fastapi import FastAPI, HTTPException, Path
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from gnomad_mcp.api import UnifiedGnomadClient, DataNotFoundError, GnomadApiError
-from gnomad_mcp.services import UnifiedFrequencyService
+from gnomad_mcp.api import UnifiedGnomadClient
+from gnomad_mcp.api.routes.dependencies import get_service
 from gnomad_mcp.config import settings
+from gnomad_mcp.services import FrequencyService
 
 # Configure logging
 logging.basicConfig(level=getattr(logging, settings.LOG_LEVEL))
 logger = logging.getLogger(__name__)
 
 # --- Dependency Setup ---
-# Global instances to be shared across the application
-api_client: UnifiedGnomadClient = None
-frequency_service: UnifiedFrequencyService = None
+# The service will be stored in app.state during startup
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifecycle - startup and shutdown."""
-    global api_client, frequency_service
-
     # Startup
     logger.info("Starting gnomAD server...")
     logger.info(
@@ -33,22 +30,17 @@ async def lifespan(app: FastAPI):
     )
 
     api_client = UnifiedGnomadClient()
-    frequency_service = UnifiedFrequencyService(
+    app.state.frequency_service = FrequencyService(
         client=api_client,
         cache_size=settings.CACHE_SIZE,
         cache_ttl_minutes=settings.CACHE_TTL_MINUTES,
     )
 
-    # Set the service in the dependencies module
-    from gnomad_mcp.api.routes.dependencies import set_service
-
-    set_service(frequency_service)
-
     yield
 
     # Shutdown
     logger.info("Shutting down gnomAD server...")
-    await frequency_service.close()
+    await app.state.frequency_service.close()
 
 
 # --- FastAPI App ---
@@ -63,6 +55,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+
 # Add CORS middleware for web clients
 app.add_middleware(
     CORSMiddleware,
@@ -76,14 +69,14 @@ app.add_middleware(
 
 # Import and include all routers
 from gnomad_mcp.api.routes import (
-    variant_router,
-    gene_router,
     clinvar_router,
-    structural_variant_router,
+    gene_router,
     mitochondrial_router,
     region_router,
-    transcript_router,
     search_router,
+    structural_variant_router,
+    transcript_router,
+    variant_router,
 )
 
 # Include all routers
@@ -98,7 +91,7 @@ app.include_router(search_router)
 
 
 @app.get("/")
-async def root() -> Dict[str, Any]:
+async def root() -> dict[str, Any]:
     """Root endpoint providing API information."""
     return {
         "message": "gnomAD Data Server",
@@ -136,21 +129,25 @@ async def root() -> Dict[str, Any]:
 
 
 @app.get("/health")
-async def health_check() -> Dict[str, str]:
+async def health_check() -> dict[str, str]:
     """Health check endpoint."""
     return {"status": "healthy"}
 
 
 @app.get("/cache/stats", tags=["Monitoring"])
-async def cache_stats() -> Dict[str, Any]:
+async def cache_stats(
+    service: FrequencyService = Depends(get_service),
+) -> dict[str, Any]:
     """Get cache statistics for monitoring."""
-    return frequency_service.get_cache_stats()
+    return service.get_cache_stats()
 
 
 @app.post("/cache/clear", tags=["Monitoring"])
-async def clear_cache() -> Dict[str, str]:
+async def clear_cache(
+    service: FrequencyService = Depends(get_service),
+) -> dict[str, str]:
     """Clear the variant cache."""
-    frequency_service.clear_cache()
+    service.clear_cache()
     return {"status": "cache_cleared"}
 
 

@@ -1,11 +1,13 @@
 """Structural variant API routes."""
 
-from typing import Dict, Any
-from fastapi import APIRouter, HTTPException, Path, Query, Depends
-from gnomad_mcp.models import StructuralVariantDataset
-from gnomad_mcp.api import DataNotFoundError
-from gnomad_mcp.services import UnifiedFrequencyService
 import logging
+from typing import Any, Dict
+
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
+
+from gnomad_mcp.api import DataNotFoundError
+from gnomad_mcp.models import StructuralVariantDataset
+from gnomad_mcp.services import FrequencyService
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/structural-variant", tags=["Structural Variants"])
@@ -27,7 +29,7 @@ async def get_structural_variant(
         default=StructuralVariantDataset.GNOMAD_SV_R4,
         description="gnomAD structural variant dataset",
     ),
-    service: UnifiedFrequencyService = Depends(get_service),
+    service: FrequencyService = Depends(get_service),
 ) -> Dict[str, Any]:
     """Get structural variant information."""
     try:

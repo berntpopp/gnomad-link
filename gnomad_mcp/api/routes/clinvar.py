@@ -1,11 +1,13 @@
 """ClinVar-related API routes."""
 
-from typing import Dict, Any
-from fastapi import APIRouter, HTTPException, Query, Depends
-from gnomad_mcp.models import ClinVarVariant, ReferenceGenome
-from gnomad_mcp.api import DataNotFoundError
-from gnomad_mcp.services import UnifiedFrequencyService
 import logging
+from typing import Any, Dict
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+
+from gnomad_mcp.api import DataNotFoundError
+from gnomad_mcp.models import ClinVarVariant, ReferenceGenome
+from gnomad_mcp.services import FrequencyService
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/clinvar", tags=["ClinVar"])
@@ -28,7 +30,7 @@ async def get_clinvar_variant(
         default=ReferenceGenome.GRCH38,
         description="Reference genome to use",
     ),
-    service: UnifiedFrequencyService = Depends(get_service),
+    service: FrequencyService = Depends(get_service),
 ) -> ClinVarVariant:
     """Get ClinVar clinical significance data for a variant."""
     try:

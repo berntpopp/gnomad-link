@@ -1,11 +1,13 @@
 """Gene-related API routes."""
 
-from typing import Dict, Any, Optional
-from fastapi import APIRouter, HTTPException, Query, Depends
-from gnomad_mcp.models import Gene, ReferenceGenome, GnomadDataset
-from gnomad_mcp.api import DataNotFoundError
-from gnomad_mcp.services import UnifiedFrequencyService
 import logging
+from typing import Any, Dict, Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+
+from gnomad_mcp.api import DataNotFoundError
+from gnomad_mcp.models import Gene, GnomadDataset, ReferenceGenome
+from gnomad_mcp.services import FrequencyService
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/gene", tags=["Genes"])
@@ -29,7 +31,7 @@ async def get_gene(
         default=ReferenceGenome.GRCH38,
         description="Reference genome to use",
     ),
-    service: UnifiedFrequencyService = Depends(get_service),
+    service: FrequencyService = Depends(get_service),
 ) -> Gene:
     """Get gene information by ID or symbol."""
     if not gene_id and not gene_symbol:
@@ -64,7 +66,7 @@ async def get_gene_variants(
         default=GnomadDataset.GNOMAD_R4,
         description="gnomAD dataset to query",
     ),
-    service: UnifiedFrequencyService = Depends(get_service),
+    service: FrequencyService = Depends(get_service),
 ) -> Dict[str, Any]:
     """Get all variants within a gene."""
     try:
