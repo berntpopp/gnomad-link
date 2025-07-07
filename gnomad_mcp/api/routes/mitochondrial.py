@@ -18,6 +18,7 @@ router = APIRouter(prefix="/mitochondrial-variant", tags=["Mitochondrial Variant
 @router.get(
     "/{variant_id}",
     summary="Get mitochondrial variant data",
+    operation_id="get_mitochondrial_variant",
     responses={
         404: {"description": "Variant not found"},
         400: {"description": "Invalid input"},

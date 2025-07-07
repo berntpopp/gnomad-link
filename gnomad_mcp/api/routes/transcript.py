@@ -18,6 +18,7 @@ router = APIRouter(prefix="/transcript", tags=["Transcripts"])
 @router.get(
     "/{transcript_id}",
     summary="Get transcript information",
+    operation_id="get_transcript_details",
     responses={
         404: {"description": "Transcript not found"},
         400: {"description": "Invalid input"},

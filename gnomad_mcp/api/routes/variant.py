@@ -19,6 +19,7 @@ router = APIRouter(prefix="/variant", tags=["Variants"])
     "/{variant_id}",
     response_model=VariantFrequencyResponse,
     summary="Get variant frequency data",
+    operation_id="get_variant_frequency_data",
     responses={
         404: {"description": "Variant not found"},
         400: {"description": "Invalid input"},
@@ -61,6 +62,7 @@ async def get_variant(
 @router.get(
     "/details/{variant_id}",
     summary="Get detailed variant information",
+    operation_id="get_variant_details",
     responses={
         404: {"description": "Variant not found"},
         400: {"description": "Invalid input"},

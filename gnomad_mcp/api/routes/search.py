@@ -18,6 +18,7 @@ router = APIRouter(prefix="/search", tags=["Search"])
     "/gene",
     response_model=list[GeneSearchResult],
     summary="Search for genes",
+    operation_id="search_genes",
     responses={
         400: {"description": "Invalid input"},
     },
@@ -44,6 +45,7 @@ async def search_genes(
 @router.get(
     "/variant",
     summary="Search for variants",
+    operation_id="search_variants",
     responses={
         400: {"description": "Invalid input"},
     },

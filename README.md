@@ -1,21 +1,21 @@
 # gnomAD MCP Server
 
-A production-ready unified server that provides gnomAD (Genome Aggregation Database) variant allele frequency data through dual interfaces:
+A production-ready server that provides gnomAD (Genome Aggregation Database) variant allele frequency data through dual interfaces:
 - **FastAPI**: RESTful HTTP API with automatic OpenAPI documentation
 - **MCP (Model Context Protocol)**: Native tool interface for AI assistants and language models
 
-Built with modern Python async/await patterns, this server provides efficient access to population-specific variant frequencies from the gnomAD database through a single application process.
+Built with modern Python async/await patterns, this server provides efficient access to population-specific variant frequencies from the gnomAD database.
 
 ## Features
 
-- 🚀 **Unified Server**: Single process serves both REST API and MCP tools
+- 🚀 **Dual Interface Architecture**: FastAPI defines the core logic, MCP server introspects and serves it to LLMs
 - 📊 **Population-Specific Data**: Allele frequencies across global populations (AFR, EAS, NFE, etc.)
 - 🧬 **Comprehensive Coverage**: Both exome and genome sequencing datasets
 - 📝 **Interactive Documentation**: Auto-generated Swagger UI at `/docs`
 - 🔍 **Type Safety**: Pydantic v2 models with full validation
-- ⚡ **High Performance**: Async GraphQL client with connection pooling and shared LRU caching
+- ⚡ **High Performance**: Async GraphQL client with connection pooling and LRU caching
 - 🛡️ **Production Ready**: SSL verification, error handling, and logging
-- 🔄 **Shared State**: Both interfaces share the same cache and service instances
+- 🔄 **Zero Duplication**: API logic defined once, automatically available through both interfaces
 
 ## Installation
 
@@ -77,9 +77,13 @@ Available configuration:
 
 ## Usage
 
-### Starting the Unified Server
+### Architecture Overview
 
-The project now includes a single unified server that provides both REST API and MCP interfaces:
+This project uses a clean separation of concerns:
+- `server.py`: Defines the FastAPI application with all REST endpoints
+- `mcp_server.py`: Introspects the FastAPI app and serves it to language models via MCP
+
+### Starting the REST API Server
 
 ```bash
 # Production mode
@@ -87,13 +91,25 @@ uvicorn server:app --host 0.0.0.0 --port 8000
 
 # Development mode with auto-reload
 python server.py
+# or
+make run-dev
 ```
 
-This single server process:
-- Serves the REST API on the root path (`/`)
-- Mounts the MCP interface at `/mcp`
-- Shares cache and service instances between both interfaces
-- Uses a unified lifespan manager for proper startup/shutdown
+### Starting the MCP Server
+
+For AI assistants and language models, run the MCP server:
+
+```bash
+# Run MCP server in STDIO mode
+python mcp_server.py
+# or
+make run-mcp
+```
+
+The MCP server automatically introspects the FastAPI application and generates tools from the REST endpoints, providing:
+- Zero code duplication - all logic is defined once in FastAPI
+- Automatic validation and type safety from Pydantic models
+- Direct in-memory communication with FastAPI logic (no HTTP overhead)
 
 ### Accessing the APIs
 
@@ -154,63 +170,39 @@ curl -X POST http://localhost:8000/cache/clear
 
 #### MCP Interface
 
-The MCP (Model Context Protocol) interface is now available through HTTP at `/mcp` when the unified server is running.
+The MCP (Model Context Protocol) interface runs as a separate process using STDIO transport for communication with AI assistants.
 
-##### Connecting to the MCP Interface
+##### Connecting to Claude Desktop
 
-**Option 1: Claude Desktop Configuration (HTTP)**
-
-For Claude Desktop configurations that support HTTP endpoints, add to your config (`~/Library/Application Support/Claude/claude_desktop_config.json` on Mac):
+Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json` on Mac):
 
 ```json
 {
   "mcpServers": {
     "gnomad": {
-      "url": "http://localhost:8000/mcp"
+      "command": "python",
+      "args": ["/absolute/path/to/your/project/mcp_server.py"],
+      "env": { "PYTHONUNBUFFERED": "1" }
     }
   }
 }
 ```
 
-**Option 2: Direct HTTP Access**
-
-The MCP tools are available via HTTP at:
-```
-http://localhost:8000/mcp
-```
-
-You can interact with the MCP interface using any HTTP client that supports the MCP protocol.
+Make sure to replace `/absolute/path/to/your/project` with the actual path to your GnomAD-MCP directory.
 
 ##### Available MCP Tools
 
-1. **get_variant_allele_frequency**
-   - Retrieves population allele frequency data for a genetic variant
-   - Parameters:
-     - `variant_id`: Variant identifier (e.g., "1-55039447-G-T")
-     - `dataset`: gnomAD dataset (defaults to GNOMAD_R4)
+The MCP server automatically generates tools from all FastAPI endpoints. Key tools include:
 
-2. **get_gene_summary**
-   - Retrieves a concise summary for a gene
-   - Parameters:
-     - `gene_symbol`: HGNC gene symbol (e.g., "BRCA1", "TP53")
-   - Returns: gene ID, symbol, and pLI score
+- **get_variant_frequencies**: Query variant allele frequencies across populations
+- **search_genes**: Search for genes by symbol or ID
+- **search_variants**: Search for variants by ID or rsID
+- **get_gene_details**: Get detailed gene information
+- **search_transcripts**: Search for transcripts with filtering options
+- **get_structural_variants**: Query structural variants in a genomic region
+- **search_clinvar_variants**: Search for ClinVar variants with clinical significance
 
-##### Example Tool Usage
-
-Once connected via Claude Desktop or another MCP client:
-
-```python
-# Get variant frequency data
-result = await get_variant_allele_frequency(
-    variant_id="1-55039447-G-T",
-    dataset="gnomad_r4"
-)
-
-# Get gene summary
-gene_info = await get_gene_summary(
-    gene_symbol="BRCA1"
-)
-```
+All tools inherit the full validation, error handling, and type safety from the FastAPI endpoints.
 
 ## API Reference
 
@@ -235,10 +227,7 @@ gene_info = await get_gene_summary(
 
 ### MCP Tools
 
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `get_variant_allele_frequency` | Retrieve population allele frequencies | `variant_id`: str, `dataset`: GnomadDataset |
-| `get_gene_summary` | Get gene summary with pLI score | `gene_symbol`: str |
+The MCP server automatically introspects the FastAPI application and generates tools from all endpoints. Tools are named based on the operation_id of each endpoint and inherit all parameters, validation, and error handling from the REST API.
 
 ### Data Models
 

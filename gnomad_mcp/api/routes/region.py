@@ -17,6 +17,7 @@ router = APIRouter(prefix="/region", tags=["Regions"])
 @router.get(
     "/",
     summary="Get variants and genes in a genomic region",
+    operation_id="get_region",
     responses={
         400: {"description": "Invalid input"},
     },

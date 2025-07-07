@@ -19,6 +19,7 @@ router = APIRouter(prefix="/gene", tags=["Genes"])
     "/",
     response_model=Gene,
     summary="Get gene information",
+    operation_id="get_gene_details",
     responses={
         404: {"description": "Gene not found"},
         400: {"description": "Invalid input"},
@@ -55,6 +56,7 @@ async def get_gene(
 @router.get(
     "/variants/{gene_id}",
     summary="Get variants in a gene",
+    operation_id="get_gene_variants",
     responses={
         404: {"description": "Gene not found"},
         200: {"description": "List of variants in the gene"},

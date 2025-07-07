@@ -18,6 +18,7 @@ router = APIRouter(prefix="/structural-variant", tags=["Structural Variants"])
 @router.get(
     "/{variant_id}",
     summary="Get structural variant data",
+    operation_id="get_structural_variant",
     responses={
         404: {"description": "Variant not found"},
         400: {"description": "Invalid input"},

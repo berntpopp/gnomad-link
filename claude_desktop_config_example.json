@@ -2,7 +2,7 @@
   "mcpServers": {
     "gnomad": {
       "command": "python",
-      "args": ["C:\\development\\scholl-lab\\GnomAD-MCP\\mcp_server.py"],
+      "args": ["/absolute/path/to/your/project/mcp_server.py"],
       "env": {
         "PYTHONUNBUFFERED": "1"
       }

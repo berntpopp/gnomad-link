@@ -18,6 +18,7 @@ router = APIRouter(prefix="/clinvar", tags=["ClinVar"])
     "/variant/{variant_id}",
     response_model=ClinVarVariant,
     summary="Get ClinVar data for a variant",
+    operation_id="get_clinvar_variant",
     responses={
         404: {"description": "Variant not found"},
         400: {"description": "Invalid input"},

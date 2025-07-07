@@ -107,7 +107,7 @@ mcp = FastMCP.from_fastapi(app=app, name="gnomAD Tool Server")
 
 
 # --- Root and Health Endpoints ---
-@app.get("/")
+@app.get("/", operation_id="get_root")
 async def root() -> dict[str, Any]:
     """Root endpoint providing API information."""
     return {
@@ -153,13 +153,13 @@ async def root() -> dict[str, Any]:
     }
 
 
-@app.get("/health")
+@app.get("/health", operation_id="health_check")
 async def health_check() -> dict[str, str]:
     """Health check endpoint."""
     return {"status": "healthy"}
 
 
-@app.get("/cache/stats", tags=["Monitoring"])
+@app.get("/cache/stats", tags=["Monitoring"], operation_id="get_cache_stats")
 async def cache_stats(
     service: FrequencyService = Depends(get_service),
 ) -> dict[str, Any]:
@@ -167,7 +167,7 @@ async def cache_stats(
     return service.get_cache_stats()
 
 
-@app.post("/cache/clear", tags=["Monitoring"])
+@app.post("/cache/clear", tags=["Monitoring"], operation_id="clear_cache")
 async def clear_cache(
     service: FrequencyService = Depends(get_service),
 ) -> dict[str, str]:
