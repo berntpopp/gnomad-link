@@ -7,9 +7,8 @@ from typing import Dict, Any
 from fastapi import FastAPI, HTTPException, Path
 from fastapi.middleware.cors import CORSMiddleware
 
-from gnomad_mcp.api import GnomadApiClient, VariantNotFoundError, GnomadApiError
-from gnomad_mcp.services import FrequencyService
-from gnomad_mcp.models import VariantFrequencyResponse
+from gnomad_mcp.api import UnifiedGnomadClient, DataNotFoundError, GnomadApiError
+from gnomad_mcp.services import UnifiedFrequencyService
 from gnomad_mcp.config import settings
 
 # Configure logging
@@ -18,8 +17,8 @@ logger = logging.getLogger(__name__)
 
 # --- Dependency Setup ---
 # Global instances to be shared across the application
-api_client: GnomadApiClient = None
-frequency_service: FrequencyService = None
+api_client: UnifiedGnomadClient = None
+frequency_service: UnifiedFrequencyService = None
 
 
 @asynccontextmanager
@@ -33,12 +32,17 @@ async def lifespan(app: FastAPI):
         f"Cache configuration: size={settings.CACHE_SIZE}, TTL={settings.CACHE_TTL_MINUTES}min"
     )
 
-    api_client = GnomadApiClient()
-    frequency_service = FrequencyService(
+    api_client = UnifiedGnomadClient()
+    frequency_service = UnifiedFrequencyService(
         client=api_client,
         cache_size=settings.CACHE_SIZE,
         cache_ttl_minutes=settings.CACHE_TTL_MINUTES,
     )
+
+    # Set the service in the dependencies module
+    from gnomad_mcp.api.routes.dependencies import set_service
+
+    set_service(frequency_service)
 
     yield
 
@@ -51,10 +55,11 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="gnomAD Data Server",
     description=(
-        "Provides allele frequency data from gnomAD via a REST API. "
+        "Comprehensive API for accessing gnomAD genomic data including variants, "
+        "genes, ClinVar annotations, structural variants, and more. "
         "For MCP interface, see mcp_server.py"
     ),
-    version="2.0.0",
+    version="3.0.0",
     lifespan=lifespan,
 )
 
@@ -69,18 +74,63 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Import and include all routers
+from gnomad_mcp.api.routes import (
+    variant_router,
+    gene_router,
+    clinvar_router,
+    structural_variant_router,
+    mitochondrial_router,
+    region_router,
+    transcript_router,
+    search_router,
+)
+
+# Include all routers
+app.include_router(variant_router)
+app.include_router(gene_router)
+app.include_router(clinvar_router)
+app.include_router(structural_variant_router)
+app.include_router(mitochondrial_router)
+app.include_router(region_router)
+app.include_router(transcript_router)
+app.include_router(search_router)
+
 
 @app.get("/")
 async def root() -> Dict[str, Any]:
     """Root endpoint providing API information."""
     return {
         "message": "gnomAD Data Server",
-        "version": "2.0.0",
+        "version": "3.0.0",
         "endpoints": {
             "api_docs": "/docs",
-            "variant_lookup": "/variant/{dataset}/{variant_id}",
             "health": "/health",
             "cache_stats": "/cache/stats",
+            "variants": {
+                "lookup": "/variant/{variant_id}",
+                "details": "/variant/details/{variant_id}",
+                "search": "/search/variant",
+            },
+            "genes": {
+                "lookup": "/gene/",
+                "search": "/search/gene",
+            },
+            "clinvar": {
+                "variant": "/clinvar/variant/{variant_id}",
+            },
+            "structural_variants": {
+                "lookup": "/structural-variant/{variant_id}",
+            },
+            "mitochondrial_variants": {
+                "lookup": "/mitochondrial-variant/{variant_id}",
+            },
+            "regions": {
+                "query": "/region/",
+            },
+            "transcripts": {
+                "lookup": "/transcript/{transcript_id}",
+            },
         },
     }
 
@@ -102,56 +152,6 @@ async def clear_cache() -> Dict[str, str]:
     """Clear the variant cache."""
     frequency_service.clear_cache()
     return {"status": "cache_cleared"}
-
-
-@app.get(
-    "/variant/{dataset}/{variant_id}",
-    response_model=VariantFrequencyResponse,
-    tags=["Variants"],
-    summary="Get variant frequency data",
-    responses={
-        404: {"description": "Variant not found"},
-        400: {"description": "Invalid input"},
-        502: {"description": "Upstream API error"},
-        500: {"description": "Internal server error"},
-    },
-)
-async def get_variant_fastapi(
-    variant_id: str = Path(
-        ...,
-        description="Variant identifier (e.g., '1-55039447-G-T')",
-        examples=["1-55039447-G-T"],
-        pattern=r"^[^'\"]+$",  # No quotes allowed
-    ),
-    dataset: str = Path(
-        ...,
-        description="gnomAD dataset ID (e.g., 'gnomad_r4')",
-        examples=["gnomad_r4"],
-        pattern=r"^gnomad_r\d+(_\w+)?$",  # Match gnomad_r2, gnomad_r3, gnomad_r4, etc
-    ),
-) -> VariantFrequencyResponse:
-    """
-    Retrieve allele frequency data for a specific variant.
-
-    This endpoint queries the gnomAD database and returns population-specific
-    allele frequencies for both exome and genome sequencing data.
-    """
-    try:
-        return await frequency_service.get_variant_frequencies(variant_id, dataset)
-    except VariantNotFoundError as e:
-        logger.warning(f"Variant not found: {e}")
-        raise HTTPException(status_code=404, detail=str(e))
-    except ValueError as e:
-        logger.warning(f"Invalid input: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
-    except GnomadApiError as e:
-        logger.error(f"API error: {e}")
-        raise HTTPException(
-            status_code=502, detail="Error communicating with gnomAD API"
-        )
-    except Exception as e:
-        logger.error(f"Unexpected error: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="An internal server error occurred")
 
 
 # --- Main entry point ---

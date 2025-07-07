@@ -1,0 +1,38 @@
+query gene_variants($gene_id: String!, $dataset: DatasetId!, $reference_genome: ReferenceGenomeId!) {
+    gene(gene_id: $gene_id, reference_genome: $reference_genome) {
+        variants(dataset: $dataset) {
+            variant_id
+            pos
+            ref
+            alt
+            consequence
+            hgvs
+            hgvsc
+            hgvsp
+            lof
+            exome {
+                ac
+                an
+                af
+                filters
+                populations {
+                    id
+                    ac
+                    an
+                }
+            }
+            genome {
+                ac
+                an
+                af
+                filters
+                populations {
+                    id
+                    ac
+                    an
+                }
+            }
+            flags
+        }
+    }
+}

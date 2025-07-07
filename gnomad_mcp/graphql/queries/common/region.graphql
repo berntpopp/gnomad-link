@@ -1,0 +1,56 @@
+query region($dataset: DatasetId!, $chrom: String!, $start: Int!, $stop: Int!) {
+    region(dataset: $dataset, chrom: $chrom, start: $start, stop: $stop) {
+        reference_genome
+        chrom
+        start
+        stop
+        genes {
+            gene_id
+            gene_symbol
+            chrom
+            start
+            stop
+            strand
+            transcript {
+                transcript_id
+                transcript_version
+                chrom
+                start
+                stop
+                strand
+                exons {
+                    exon_id
+                    chrom
+                    start
+                    stop
+                    strand
+                }
+            }
+        }
+        clinvar_variants {
+            variant_id
+            clinical_significance
+            gold_stars
+            major_consequence
+            pos
+            review_status
+        }
+        variants(filter: { includeFiltered: false }) {
+            variant_id
+            pos
+            ref
+            alt
+            filters
+            exome {
+                ac
+                an
+                af
+            }
+            genome {
+                ac
+                an
+                af
+            }
+        }
+    }
+}

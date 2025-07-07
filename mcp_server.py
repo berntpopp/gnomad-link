@@ -6,7 +6,7 @@ from fastmcp import FastMCP
 
 from gnomad_mcp.api import GnomadApiClient
 from gnomad_mcp.services import FrequencyService
-from gnomad_mcp.models import VariantFrequencyResponse
+from gnomad_mcp.models import VariantFrequencyResponse, GnomadDataset
 from gnomad_mcp.config import settings
 
 # Configure logging
@@ -47,7 +47,7 @@ async def shutdown():
 @mcp.tool
 async def get_variant_allele_frequency(
     variant_id: str,
-    dataset: str,
+    dataset: str = "gnomad_r4",
 ) -> dict:
     """
     Retrieve population allele frequency data for a genetic variant from gnomAD.
@@ -60,7 +60,7 @@ async def get_variant_allele_frequency(
         variant_id: The variant identifier in the format "chromosome-position-reference-alternate"
                    (e.g., "1-55039447-G-T" for a G>T variant at position 55039447 on chromosome 1)
         dataset: The gnomAD dataset to query. Common values include:
-                - "gnomad_r4": Latest release (v4)
+                - "gnomad_r4": Latest release (v4) [DEFAULT]
                 - "gnomad_r3": Previous release (v3)
                 - "gnomad_r2_1": Legacy release (v2.1)
 

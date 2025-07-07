@@ -1,0 +1,250 @@
+"""Unified gnomAD client for both FastAPI and MCP."""
+
+from typing import Dict, Any, Optional, List
+
+from .base_client import BaseGnomadClient, DataNotFoundError
+from gnomad_mcp.graphql import QueryBuilder
+
+
+class UnifiedGnomadClient(BaseGnomadClient):
+    """Unified client supporting all gnomAD queries for both FastAPI and MCP."""
+
+    async def get_variant(
+        self, variant_id: str, dataset: str = "gnomad_r4"
+    ) -> Dict[str, Any]:
+        """Get variant data.
+
+        Args:
+            variant_id: Variant identifier (chr-pos-ref-alt)
+            dataset: Dataset to query
+
+        Returns:
+            Variant data
+        """
+        version = QueryBuilder.get_version_for_dataset(dataset)
+        return await self.execute_query(
+            "variant", {"variantId": variant_id, "dataset": dataset}, version
+        )
+
+    async def get_gene(
+        self,
+        gene_id: Optional[str] = None,
+        gene_symbol: Optional[str] = None,
+        reference_genome: Optional[str] = None,
+        dataset: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Get gene data.
+
+        Args:
+            gene_id: Ensembl gene ID
+            gene_symbol: Gene symbol
+            reference_genome: Reference genome (optional, auto-determined)
+            dataset: Dataset (optional, for version determination)
+
+        Returns:
+            Gene data
+        """
+        # Determine version
+        version = "v4"
+        if dataset:
+            version = QueryBuilder.get_version_for_dataset(dataset)
+
+        # Build variables
+        variables = {}
+        if gene_id:
+            variables["gene_id"] = gene_id
+        if gene_symbol:
+            variables["gene_symbol"] = gene_symbol
+        if reference_genome:
+            variables["reference_genome"] = reference_genome
+
+        return await self.execute_query("gene", variables, version)
+
+    async def search_variants(
+        self, query: str, dataset: str = "gnomad_r4"
+    ) -> List[Dict[str, Any]]:
+        """Search for variants.
+
+        Args:
+            query: Search query
+            dataset: Dataset to search
+
+        Returns:
+            List of variant search results
+        """
+        version = QueryBuilder.get_version_for_dataset(dataset)
+        result = await self.execute_query(
+            "variant_search", {"query": query, "dataset": dataset}, version
+        )
+        return result.get("variant_search", [])
+
+    async def search_genes(
+        self,
+        query: str,
+        reference_genome: Optional[str] = None,
+        dataset: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Search for genes.
+
+        Args:
+            query: Search query
+            reference_genome: Reference genome (optional)
+            dataset: Dataset (optional, for version determination)
+
+        Returns:
+            List of gene search results
+        """
+        version = "v4"
+        if dataset:
+            version = QueryBuilder.get_version_for_dataset(dataset)
+
+        variables = {"query": query}
+        if reference_genome:
+            variables["reference_genome"] = reference_genome
+
+        result = await self.execute_query("gene_search", variables, version)
+        return result.get("gene_search", [])
+
+    async def get_clinvar_variant(
+        self,
+        variant_id: str,
+        reference_genome: Optional[str] = None,
+        dataset: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Get ClinVar variant data.
+
+        Args:
+            variant_id: Variant identifier
+            reference_genome: Reference genome (optional)
+            dataset: Dataset (optional, for version determination)
+
+        Returns:
+            ClinVar variant data
+        """
+        version = "v4"
+        if dataset:
+            version = QueryBuilder.get_version_for_dataset(dataset)
+
+        variables = {"variant_id": variant_id}
+        if reference_genome:
+            variables["reference_genome"] = reference_genome
+
+        return await self.execute_query("clinvar_variant", variables, version)
+
+    async def get_meta(self) -> Dict[str, Any]:
+        """Get metadata about the gnomAD database.
+
+        Returns:
+            Metadata
+        """
+        return await self.execute_query("meta", {})
+
+    async def get_structural_variant(
+        self, variant_id: str, dataset: str = "gnomad_sv_r4"
+    ) -> Dict[str, Any]:
+        """Get structural variant data.
+
+        Args:
+            variant_id: Structural variant identifier
+            dataset: SV dataset to query
+
+        Returns:
+            Structural variant data
+        """
+        version = QueryBuilder.get_version_for_dataset(dataset)
+        return await self.execute_query(
+            "structural_variant",
+            {"variant_id": variant_id, "dataset": dataset},
+            version,
+        )
+
+    async def get_mitochondrial_variant(
+        self, variant_id: str, dataset: str = "gnomad_r4"
+    ) -> Dict[str, Any]:
+        """Get mitochondrial variant data.
+
+        Args:
+            variant_id: Mitochondrial variant identifier
+            dataset: Dataset to query
+
+        Returns:
+            Mitochondrial variant data
+        """
+        version = QueryBuilder.get_version_for_dataset(dataset)
+        return await self.execute_query(
+            "mitochondrial_variant",
+            {"variant_id": variant_id, "dataset": dataset},
+            version,
+        )
+
+    async def get_region(
+        self, chrom: str, start: int, stop: int, dataset: str = "gnomad_r4"
+    ) -> Dict[str, Any]:
+        """Get data for a genomic region.
+
+        Args:
+            chrom: Chromosome
+            start: Start position
+            stop: Stop position
+            dataset: Dataset to query
+
+        Returns:
+            Region data including variants and genes
+        """
+        version = QueryBuilder.get_version_for_dataset(dataset)
+        return await self.execute_query(
+            "region",
+            {"chrom": chrom, "start": start, "stop": stop, "dataset": dataset},
+            version,
+        )
+
+    async def get_transcript(
+        self,
+        transcript_id: str,
+        reference_genome: Optional[str] = None,
+        dataset: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Get transcript data.
+
+        Args:
+            transcript_id: Ensembl transcript ID
+            reference_genome: Reference genome (optional)
+            dataset: Dataset (optional, for version determination)
+
+        Returns:
+            Transcript data
+        """
+        version = "v4"
+        if dataset:
+            version = QueryBuilder.get_version_for_dataset(dataset)
+
+        variables = {"transcript_id": transcript_id}
+        if reference_genome:
+            variables["reference_genome"] = reference_genome
+
+        return await self.execute_query("transcript", variables, version)
+
+    async def get_gene_variants(
+        self, gene_id: str, dataset: str = "gnomad_r4"
+    ) -> List[Dict[str, Any]]:
+        """Get all variants in a gene.
+
+        Args:
+            gene_id: Ensembl gene ID
+            dataset: Dataset to query
+
+        Returns:
+            List of variants in the gene
+        """
+        version = QueryBuilder.get_version_for_dataset(dataset)
+        # Process variables to add reference genome
+        variables = {"gene_id": gene_id, "dataset": dataset}
+        processed_vars = self.query_builder.process_variables(
+            "gene_variants", variables, version
+        )
+
+        result = await self.execute_query("gene_variants", processed_vars, version)
+        # Extract variants from nested structure
+        if "gene" in result and "variants" in result["gene"]:
+            return result["gene"]["variants"]
+        return []

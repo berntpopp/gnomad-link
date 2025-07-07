@@ -1,0 +1,33 @@
+query structural_variant($dataset: StructuralVariantDatasetId!, $variant_id: String!) {
+    structural_variant(dataset: $dataset, variant_id: $variant_id) {
+        variant_id
+        reference_genome
+        chrom
+        chrom2
+        pos
+        pos2
+        end
+        end2
+        length
+        type
+        alts
+        algorithms
+        copy_number
+        cpx_intervals
+        cpx_type
+        evidence
+        filters
+        populations {
+            id
+            ac
+            an
+            ac_hom
+        }
+        quality_metrics {
+            af
+            ac
+            an
+            ac_hom
+        }
+    }
+}

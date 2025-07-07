@@ -1,0 +1,44 @@
+query gene($gene_symbol: String, $gene_id: String, $reference_genome: ReferenceGenomeId!) {
+    gene(gene_symbol: $gene_symbol, gene_id: $gene_id, reference_genome: $reference_genome) {
+        gene_id
+        symbol
+        name
+        canonical_transcript_id
+        chrom
+        start
+        stop
+        strand
+        exons {
+            feature_type
+            start
+            stop
+        }
+        transcripts {
+            transcript_id
+            transcript_version
+            chrom
+            start
+            stop
+            strand
+        }
+        gnomad_constraint {
+            exp_lof
+            exp_mis
+            exp_syn
+            obs_lof
+            obs_mis
+            obs_syn
+            oe_lof
+            oe_lof_lower
+            oe_lof_upper
+            oe_mis
+            oe_mis_lower
+            oe_mis_upper
+            lof_z
+            mis_z
+            syn_z
+            pli
+        }
+        flags
+    }
+}

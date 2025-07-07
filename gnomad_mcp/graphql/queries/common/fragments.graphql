@@ -1,0 +1,27 @@
+fragment PopulationFields on VariantPopulation {
+    id
+    ac
+    an
+    homozygote_count
+    hemizygote_count
+}
+
+fragment VariantFields on Variant {
+    variant_id
+    chrom
+    pos
+    ref
+    alt
+}
+
+fragment FrequencyFields on VariantDataSource {
+    ac
+    an
+    af
+    homozygote_count
+    hemizygote_count
+    filters
+    populations {
+        ...PopulationFields
+    }
+}
