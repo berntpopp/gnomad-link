@@ -1,7 +1,7 @@
 """GraphQL query builder with version support."""
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -49,8 +49,8 @@ class QueryBuilder:
 
     @classmethod
     def process_variables(
-        cls, query_type: str, variables: Dict[str, Any], version: str = "v4"
-    ) -> Dict[str, Any]:
+        cls, query_type: str, variables: dict[str, Any], version: str = "v4"
+    ) -> dict[str, Any]:
         """Process and validate variables for a query type."""
         processed = variables.copy()
 

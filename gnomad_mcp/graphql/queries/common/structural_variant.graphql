@@ -1,15 +1,11 @@
+#import "./fragments.graphql"
+
 query structural_variant($dataset: StructuralVariantDatasetId!, $variant_id: String!) {
     structural_variant(dataset: $dataset, variant_id: $variant_id) {
-        variant_id
-        reference_genome
-        chrom
+        ...StructuralVariantFields
         chrom2
-        pos
         pos2
-        end
         end2
-        length
-        type
         alts
         algorithms
         copy_number

@@ -1,6 +1,6 @@
 """Data models for mitochondrial variant queries."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -12,7 +12,7 @@ class MitochondrialPopulation(BaseModel):
     an: int = Field(..., description="Allele number")
     ac_het: int = Field(..., description="Heteroplasmic allele count")
     ac_hom: int = Field(..., description="Homoplasmic allele count")
-    heteroplasmy_distribution: Optional[Dict[str, Any]] = Field(
+    heteroplasmy_distribution: Optional[dict[str, Any]] = Field(
         None, description="Distribution of heteroplasmy levels"
     )
 
@@ -31,7 +31,7 @@ class MitochondrialHaplogroup(BaseModel):
 class MitochondrialTranscriptConsequence(BaseModel):
     """Transcript consequence for mitochondrial variants."""
 
-    consequence_terms: List[str] = Field(
+    consequence_terms: list[str] = Field(
         default_factory=list, description="Consequence terms"
     )
     gene_id: Optional[str] = Field(None, description="Gene ID")
@@ -63,14 +63,14 @@ class MitochondrialVariant(BaseModel):
     max_heteroplasmy: Optional[float] = Field(
         None, description="Maximum heteroplasmy level"
     )
-    filters: List[str] = Field(default_factory=list, description="Applied filters")
-    flags: List[str] = Field(default_factory=list, description="Variant flags")
+    filters: list[str] = Field(default_factory=list, description="Applied filters")
+    flags: list[str] = Field(default_factory=list, description="Variant flags")
     excluded_ac: Optional[int] = Field(None, description="Excluded allele count")
     haplogroup_defining: Optional[bool] = Field(
         None, description="Is haplogroup defining"
     )
     rsid: Optional[str] = Field(None, description="dbSNP rsID")
-    rsids: List[str] = Field(default_factory=list, description="All rsIDs")
+    rsids: list[str] = Field(default_factory=list, description="All rsIDs")
     mitotip_score: Optional[float] = Field(None, description="MitoTIP score")
     mitotip_trna_prediction: Optional[str] = Field(
         None, description="MitoTIP tRNA prediction"
@@ -81,21 +81,21 @@ class MitochondrialVariant(BaseModel):
     pon_mt_trna_prediction: Optional[str] = Field(
         None, description="PON-mt-tRNA prediction"
     )
-    populations: List[MitochondrialPopulation] = Field(
+    populations: list[MitochondrialPopulation] = Field(
         default_factory=list, description="Population data"
     )
-    haplogroups: List[MitochondrialHaplogroup] = Field(
+    haplogroups: list[MitochondrialHaplogroup] = Field(
         default_factory=list, description="Haplogroup data"
     )
-    age_distribution: Optional[Dict[str, Any]] = Field(
+    age_distribution: Optional[dict[str, Any]] = Field(
         None, description="Age distribution"
     )
-    heteroplasmy_distribution: Optional[Dict[str, Any]] = Field(
+    heteroplasmy_distribution: Optional[dict[str, Any]] = Field(
         None, description="Heteroplasmy distribution"
     )
-    site_quality_metrics: Optional[List[Dict[str, Any]]] = Field(
+    site_quality_metrics: Optional[list[dict[str, Any]]] = Field(
         None, description="Site quality metrics"
     )
-    transcript_consequences: List[MitochondrialTranscriptConsequence] = Field(
+    transcript_consequences: list[MitochondrialTranscriptConsequence] = Field(
         default_factory=list, description="Transcript consequences"
     )

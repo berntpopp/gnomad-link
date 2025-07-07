@@ -56,18 +56,6 @@ app = FastAPI(
 )
 
 
-# Add CORS middleware for web clients
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        origin.strip() for origin in settings.CORS_ORIGINS.split(",") if origin.strip()
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Import and include all routers
 from gnomad_mcp.api.routes import (
     clinvar_router,
     gene_router,
@@ -77,6 +65,17 @@ from gnomad_mcp.api.routes import (
     structural_variant_router,
     transcript_router,
     variant_router,
+)
+
+# Add CORS middleware for web clients
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        origin.strip() for origin in settings.CORS_ORIGINS.split(",") if origin.strip()
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Include all routers

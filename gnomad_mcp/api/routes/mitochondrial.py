@@ -1,7 +1,7 @@
 """Mitochondrial variant API routes."""
 
 import logging
-from typing import Any, Dict
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 
@@ -30,7 +30,7 @@ async def get_mitochondrial_variant(
         description="gnomAD dataset to query",
     ),
     service: FrequencyService = Depends(get_service),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get mitochondrial variant information with heteroplasmy data."""
     try:
         result = await service.client.get_mitochondrial_variant(variant_id, dataset)

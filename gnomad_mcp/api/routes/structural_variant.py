@@ -1,7 +1,7 @@
 """Structural variant API routes."""
 
 import logging
-from typing import Any, Dict
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 
@@ -30,7 +30,7 @@ async def get_structural_variant(
         description="gnomAD structural variant dataset",
     ),
     service: FrequencyService = Depends(get_service),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get structural variant information."""
     try:
         result = await service.client.get_structural_variant(variant_id, dataset)

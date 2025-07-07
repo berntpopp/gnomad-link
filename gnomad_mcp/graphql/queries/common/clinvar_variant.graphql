@@ -1,12 +1,8 @@
+#import "./fragments.graphql"
+
 query clinvar_variant($variant_id: String!, $reference_genome: ReferenceGenomeId!) {
     clinvar_variant(variant_id: $variant_id, reference_genome: $reference_genome) {
-        variant_id
-        reference_genome
-        chrom
-        pos
-        ref
-        alt
-        clinical_significance
+        ...ClinVarVariantFields
         clinvar_variation_id
         gnomad {
             exome {
@@ -23,13 +19,9 @@ query clinvar_variant($variant_id: String!, $reference_genome: ReferenceGenomeId
         gold_stars
         in_gnomad
         last_evaluated
-        review_status
         rsids
         submissions {
-            clinical_significance
-            last_evaluated
-            review_status
-            submitter_name
+            ...ClinVarSubmissionFields
             conditions {
                 name
                 medgen_id

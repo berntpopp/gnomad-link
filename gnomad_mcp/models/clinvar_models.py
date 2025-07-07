@@ -1,6 +1,6 @@
 """Data models for ClinVar variant queries."""
 
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -21,7 +21,7 @@ class ClinVarSubmission(BaseModel):
     last_evaluated: Optional[str] = Field(None, description="Last evaluation date")
     review_status: Optional[str] = Field(None, description="Review status")
     submitter_name: Optional[str] = Field(None, description="Name of submitter")
-    conditions: List[ClinVarCondition] = Field(
+    conditions: list[ClinVarCondition] = Field(
         default_factory=list, description="Associated conditions"
     )
 
@@ -54,6 +54,6 @@ class ClinVarVariant(BaseModel):
     last_evaluated: Optional[str] = Field(None, description="Last evaluation date")
     review_status: Optional[str] = Field(None, description="Review status")
     rsid: Optional[str] = Field(None, description="dbSNP rsID")
-    submissions: List[ClinVarSubmission] = Field(
+    submissions: list[ClinVarSubmission] = Field(
         default_factory=list, description="Individual submissions"
     )

@@ -1,3 +1,14 @@
+# Fragment for basic variant identification
+fragment VariantIdFields on VariantDetails {
+    variant_id
+    chrom
+    pos
+    ref
+    alt
+    rsid
+}
+
+# Fragment for population frequency data
 fragment PopulationFields on VariantPopulation {
     id
     ac
@@ -6,15 +17,8 @@ fragment PopulationFields on VariantPopulation {
     hemizygote_count
 }
 
-fragment VariantFields on Variant {
-    variant_id
-    chrom
-    pos
-    ref
-    alt
-}
-
-fragment FrequencyFields on VariantDataSource {
+# Fragment for complete frequency block (exome/genome)
+fragment FrequencyFields on VariantDetailsSequencingTypeData {
     ac
     an
     af
@@ -24,4 +28,94 @@ fragment FrequencyFields on VariantDataSource {
     populations {
         ...PopulationFields
     }
+}
+
+# Fragment for transcript consequences
+fragment TranscriptConsequenceFields on TranscriptConsequence {
+    is_canonical
+    gene_id
+    gene_symbol
+    hgvs
+    hgvsc
+    hgvsp
+    lof
+    lof_filter
+    lof_flags
+    major_consequence
+    consequence_terms
+}
+
+# Fragment for in silico predictors
+fragment InSilicoPredictorFields on VariantInSilicoPredictor {
+    id
+    value
+    flags
+}
+
+# Fragment for gene constraint data
+fragment GeneConstraintFields on GnomadConstraint {
+    exp_lof
+    exp_mis
+    exp_syn
+    obs_lof
+    obs_mis
+    obs_syn
+    oe_lof
+    oe_lof_lower
+    oe_lof_upper
+    oe_mis
+    oe_mis_lower
+    oe_mis_upper
+    lof_z
+    mis_z
+    syn_z
+    pli
+}
+
+# Fragment for exon data
+fragment ExonFields on Exon {
+    feature_type
+    start
+    stop
+}
+
+# Fragment for transcript data
+fragment TranscriptFields on GeneTranscript {
+    transcript_id
+    transcript_version
+    chrom
+    start
+    stop
+    strand
+}
+
+# Fragment for structural variant data
+fragment StructuralVariantFields on StructuralVariant {
+    variant_id
+    reference_genome
+    chrom
+    pos
+    end
+    length
+    type
+}
+
+# Fragment for ClinVar variant data  
+fragment ClinVarVariantFields on ClinVarVariant {
+    variant_id
+    reference_genome
+    chrom
+    pos
+    ref
+    alt
+    clinical_significance
+    review_status
+}
+
+# Fragment for ClinVar submission data
+fragment ClinVarSubmissionFields on ClinVarSubmission {
+    clinical_significance
+    last_evaluated
+    review_status
+    submitter_name
 }

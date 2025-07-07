@@ -1,7 +1,6 @@
 """ClinVar-related API routes."""
 
 import logging
-from typing import Any, Dict
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 

@@ -1,7 +1,7 @@
 """Variant-related API routes."""
 
 import logging
-from typing import Any, Dict
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 
@@ -73,7 +73,7 @@ async def get_variant_details(
         description="gnomAD dataset to query",
     ),
     service: FrequencyService = Depends(get_service),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get complete variant details including annotations."""
     try:
         result = await service.client.get_variant(variant_id, dataset)

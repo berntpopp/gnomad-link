@@ -1,7 +1,7 @@
 """Transcript-related API routes."""
 
 import logging
-from typing import Any, Dict
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 
@@ -30,7 +30,7 @@ async def get_transcript(
         description="Reference genome to use",
     ),
     service: FrequencyService = Depends(get_service),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get transcript information including exons and expression data."""
     try:
         result = await service.client.get_transcript(transcript_id, reference_genome)

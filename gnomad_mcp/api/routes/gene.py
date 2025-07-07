@@ -1,7 +1,7 @@
 """Gene-related API routes."""
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
@@ -67,7 +67,7 @@ async def get_gene_variants(
         description="gnomAD dataset to query",
     ),
     service: FrequencyService = Depends(get_service),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get all variants within a gene."""
     try:
         variants = await service.client.get_gene_variants(gene_id, dataset)

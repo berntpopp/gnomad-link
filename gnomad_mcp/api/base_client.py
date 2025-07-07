@@ -1,8 +1,8 @@
 """Base GraphQL client with centralized query management."""
 
 import logging
-from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from abc import ABC
+from typing import Any, Optional
 
 from gql import Client, gql
 from gql.transport.aiohttp import AIOHTTPTransport
@@ -55,8 +55,8 @@ class BaseGnomadClient(ABC):
         self.query_builder = QueryBuilder()
 
     async def execute_query(
-        self, query_name: str, variables: Dict[str, Any], version: str = "v4"
-    ) -> Dict[str, Any]:
+        self, query_name: str, variables: dict[str, Any], version: str = "v4"
+    ) -> dict[str, Any]:
         """Execute a GraphQL query.
 
         Args:
@@ -98,6 +98,11 @@ class BaseGnomadClient(ABC):
                 error_msg = "; ".join(
                     [err.get("message", str(err)) for err in e.errors]
                 )
+                # Check for "not found" errors
+                if any(
+                    "not found" in err.get("message", "").lower() for err in e.errors
+                ):
+                    raise DataNotFoundError(error_msg) from e
                 raise GnomadApiError(f"GraphQL error: {error_msg}") from e
             raise GnomadApiError(f"Query error: {str(e)}") from e
         except TransportError as e:

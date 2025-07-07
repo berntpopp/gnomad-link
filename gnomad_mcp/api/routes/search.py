@@ -1,11 +1,10 @@
 """Search API routes."""
 
 import logging
-from typing import Any, Dict, List
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from gnomad_mcp.api import DataNotFoundError
 from gnomad_mcp.models import GeneSearchResult, GnomadDataset, ReferenceGenome
 from gnomad_mcp.services import FrequencyService
 
@@ -17,7 +16,7 @@ from .dependencies import get_service
 
 @router.get(
     "/gene",
-    response_model=List[GeneSearchResult],
+    response_model=list[GeneSearchResult],
     summary="Search for genes",
     responses={
         400: {"description": "Invalid input"},
@@ -32,7 +31,7 @@ async def search_genes(
         description="Reference genome to use",
     ),
     service: FrequencyService = Depends(get_service),
-) -> List[GeneSearchResult]:
+) -> list[GeneSearchResult]:
     """Search for genes by symbol or Ensembl ID."""
     try:
         results = await service.client.search_genes(query, reference_genome)
@@ -56,7 +55,7 @@ async def search_variants(
         description="gnomAD dataset to query",
     ),
     service: FrequencyService = Depends(get_service),
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Search for variants by ID or rsID."""
     try:
         results = await service.client.search_variants(query, dataset)

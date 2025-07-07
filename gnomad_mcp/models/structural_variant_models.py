@@ -1,6 +1,6 @@
 """Data models for structural variant queries."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -9,7 +9,7 @@ class SVConsequence(BaseModel):
     """Consequence of a structural variant."""
 
     consequence: str = Field(..., description="Consequence type")
-    genes: List[str] = Field(default_factory=list, description="Affected genes")
+    genes: list[str] = Field(default_factory=list, description="Affected genes")
 
 
 class SVCopyNumber(BaseModel):
@@ -44,29 +44,29 @@ class StructuralVariant(BaseModel):
     end2: Optional[int] = Field(None, description="Second end position")
     length: Optional[int] = Field(None, description="Length of variant")
     type: str = Field(..., description="Type of structural variant")
-    alts: Optional[List[str]] = Field(None, description="Alternate alleles")
-    algorithms: Optional[List[str]] = Field(None, description="Detection algorithms")
+    alts: Optional[list[str]] = Field(None, description="Alternate alleles")
+    algorithms: Optional[list[str]] = Field(None, description="Detection algorithms")
     ac: int = Field(..., description="Total allele count")
     an: int = Field(..., description="Total allele number")
     af: float = Field(..., description="Allele frequency")
     homozygote_count: Optional[int] = Field(None, description="Number of homozygotes")
     hemizygote_count: Optional[int] = Field(None, description="Number of hemizygotes")
-    filters: List[str] = Field(default_factory=list, description="Applied filters")
-    populations: List[SVPopulation] = Field(
+    filters: list[str] = Field(default_factory=list, description="Applied filters")
+    populations: list[SVPopulation] = Field(
         default_factory=list, description="Population frequencies"
     )
-    consequences: List[SVConsequence] = Field(
+    consequences: list[SVConsequence] = Field(
         default_factory=list, description="Variant consequences"
     )
-    copy_numbers: Optional[List[SVCopyNumber]] = Field(
+    copy_numbers: Optional[list[SVCopyNumber]] = Field(
         None, description="Copy number data"
     )
-    cpx_intervals: Optional[List[Dict[str, Any]]] = Field(
+    cpx_intervals: Optional[list[dict[str, Any]]] = Field(
         None, description="Complex intervals"
     )
     cpx_type: Optional[str] = Field(None, description="Complex variant type")
-    evidence: Optional[List[str]] = Field(None, description="Supporting evidence")
-    genes: Optional[List[str]] = Field(None, description="Affected genes")
+    evidence: Optional[list[str]] = Field(None, description="Supporting evidence")
+    genes: Optional[list[str]] = Field(None, description="Affected genes")
     major_consequence: Optional[str] = Field(
         None, description="Most severe consequence"
     )

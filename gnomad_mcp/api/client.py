@@ -1,10 +1,10 @@
 """Unified gnomAD client for both FastAPI and MCP."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from gnomad_mcp.graphql import QueryBuilder
 
-from .base_client import BaseGnomadClient, DataNotFoundError
+from .base_client import BaseGnomadClient
 
 
 class UnifiedGnomadClient(BaseGnomadClient):
@@ -12,7 +12,7 @@ class UnifiedGnomadClient(BaseGnomadClient):
 
     async def get_variant(
         self, variant_id: str, dataset: str = "gnomad_r4"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get variant data.
 
         Args:
@@ -33,7 +33,7 @@ class UnifiedGnomadClient(BaseGnomadClient):
         gene_symbol: Optional[str] = None,
         reference_genome: Optional[str] = None,
         dataset: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get gene data.
 
         Args:
@@ -59,11 +59,16 @@ class UnifiedGnomadClient(BaseGnomadClient):
         if reference_genome:
             variables["reference_genome"] = reference_genome
 
-        return await self.execute_query("gene", variables, version)
+        # Process variables to add reference genome if needed
+        processed_vars = self.query_builder.process_variables(
+            "gene", variables, version
+        )
+
+        return await self.execute_query("gene", processed_vars, version)
 
     async def search_variants(
         self, query: str, dataset: str = "gnomad_r4"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Search for variants.
 
         Args:
@@ -84,7 +89,7 @@ class UnifiedGnomadClient(BaseGnomadClient):
         query: str,
         reference_genome: Optional[str] = None,
         dataset: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Search for genes.
 
         Args:
@@ -111,7 +116,7 @@ class UnifiedGnomadClient(BaseGnomadClient):
         variant_id: str,
         reference_genome: Optional[str] = None,
         dataset: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get ClinVar variant data.
 
         Args:
@@ -132,7 +137,7 @@ class UnifiedGnomadClient(BaseGnomadClient):
 
         return await self.execute_query("clinvar_variant", variables, version)
 
-    async def get_meta(self) -> Dict[str, Any]:
+    async def get_meta(self) -> dict[str, Any]:
         """Get metadata about the gnomAD database.
 
         Returns:
@@ -142,7 +147,7 @@ class UnifiedGnomadClient(BaseGnomadClient):
 
     async def get_structural_variant(
         self, variant_id: str, dataset: str = "gnomad_sv_r4"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get structural variant data.
 
         Args:
@@ -161,7 +166,7 @@ class UnifiedGnomadClient(BaseGnomadClient):
 
     async def get_mitochondrial_variant(
         self, variant_id: str, dataset: str = "gnomad_r4"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get mitochondrial variant data.
 
         Args:
@@ -180,7 +185,7 @@ class UnifiedGnomadClient(BaseGnomadClient):
 
     async def get_region(
         self, chrom: str, start: int, stop: int, dataset: str = "gnomad_r4"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get data for a genomic region.
 
         Args:
@@ -204,7 +209,7 @@ class UnifiedGnomadClient(BaseGnomadClient):
         transcript_id: str,
         reference_genome: Optional[str] = None,
         dataset: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get transcript data.
 
         Args:
@@ -227,7 +232,7 @@ class UnifiedGnomadClient(BaseGnomadClient):
 
     async def get_gene_variants(
         self, gene_id: str, dataset: str = "gnomad_r4"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Get all variants in a gene.
 
         Args:

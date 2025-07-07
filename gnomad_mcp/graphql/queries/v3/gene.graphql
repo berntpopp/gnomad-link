@@ -20,5 +20,15 @@ query gene($gene_symbol: String, $gene_id: String, $reference_genome: ReferenceG
             ...GeneConstraintFields
         }
         flags
+        variants(dataset: gnomad_r3) {
+            ...VariantIdFields
+            flags
+            exome {
+                ...FrequencyFields
+            }
+            genome {
+                ...FrequencyFields
+            }
+        }
     }
 }

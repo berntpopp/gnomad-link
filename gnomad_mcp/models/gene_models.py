@@ -1,8 +1,8 @@
 """Data models for gene-related queries."""
 
-from typing import Any, Dict, List, Optional
+from typing import Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 
 class GeneExon(BaseModel):
@@ -22,7 +22,7 @@ class GeneTranscript(BaseModel):
     start: int = Field(..., description="Start position")
     stop: int = Field(..., description="End position")
     strand: Optional[str] = Field(None, description="Strand (+ or -)")
-    exons: List[GeneExon] = Field(default_factory=list, description="List of exons")
+    exons: list[GeneExon] = Field(default_factory=list, description="List of exons")
 
 
 class GeneConstraint(BaseModel):
@@ -82,14 +82,14 @@ class Gene(BaseModel):
     start: int = Field(..., description="Start position")
     stop: int = Field(..., description="End position")
     strand: Optional[str] = Field(None, description="Strand (+ or -)")
-    exons: List[GeneExon] = Field(default_factory=list, description="Gene exons")
-    transcripts: List[GeneTranscript] = Field(
+    exons: list[GeneExon] = Field(default_factory=list, description="Gene exons")
+    transcripts: list[GeneTranscript] = Field(
         default_factory=list, description="Gene transcripts"
     )
     gnomad_constraint: Optional[GeneConstraint] = Field(
         None, description="gnomAD constraint metrics"
     )
-    flags: List[str] = Field(default_factory=list, description="Gene flags")
+    flags: list[str] = Field(default_factory=list, description="Gene flags")
 
     model_config = {"populate_by_name": True}
 

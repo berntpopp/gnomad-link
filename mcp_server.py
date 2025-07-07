@@ -7,7 +7,6 @@ from fastmcp import FastMCP
 
 from gnomad_mcp.api import UnifiedGnomadClient
 from gnomad_mcp.config import settings
-from gnomad_mcp.models import GnomadDataset, VariantFrequencyResponse
 from gnomad_mcp.services import FrequencyService
 
 # Configure logging
@@ -93,7 +92,7 @@ async def get_variant_allele_frequency(
         return result.model_dump()
     except Exception as e:
         # MCP expects tools to return results or raise exceptions
-        raise Exception(f"Error fetching variant data: {str(e)}")
+        raise Exception(f"Error fetching variant data: {str(e)}") from e
 
 
 @mcp.tool

@@ -1,6 +1,6 @@
 """Pydantic models for variant frequency data."""
 
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -34,7 +34,7 @@ class PopulationFrequency(BaseModel):
 class VariantDataSource(BaseModel):
     """Variant data from a specific sequencing source (exome or genome)."""
 
-    populations: List[PopulationFrequency] = Field(
+    populations: list[PopulationFrequency] = Field(
         default_factory=list, description="Population-specific frequency data."
     )
 

@@ -1,0 +1,20 @@
+#import "../common/fragments.graphql"
+
+query variant($variantId: String!, $dataset: DatasetId!) {
+    variant(variantId: $variantId, dataset: $dataset) {
+        ...VariantIdFields
+        flags
+        exome {
+            ...FrequencyFields
+        }
+        genome {
+            ...FrequencyFields
+        }
+        in_silico_predictors {
+            ...InSilicoPredictorFields
+        }
+        transcript_consequences {
+            ...TranscriptConsequenceFields
+        }
+    }
+}

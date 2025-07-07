@@ -1,3 +1,5 @@
+#import "./fragments.graphql"
+
 query mitochondrial_variant($dataset: DatasetId!, $variant_id: String!) {
     mitochondrial_variant(dataset: $dataset, variant_id: $variant_id) {
         variant_id

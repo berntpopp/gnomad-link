@@ -2,7 +2,7 @@
 
 import logging
 from datetime import timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from async_lru import alru_cache
 
@@ -73,13 +73,13 @@ class FrequencyService:
 
         return self._parse_variant_response(data, variant_id, dataset)
 
-    async def _get_variant_impl(self, variant_id: str, dataset: str) -> Dict[str, Any]:
+    async def _get_variant_impl(self, variant_id: str, dataset: str) -> dict[str, Any]:
         """Implementation of variant fetching."""
         result = await self.client.get_variant(variant_id, dataset)
         return result.get("variant", {})
 
     def _parse_variant_response(
-        self, data: Dict[str, Any], variant_id: str, dataset: str
+        self, data: dict[str, Any], variant_id: str, dataset: str
     ) -> VariantFrequencyResponse:
         """Parse variant data into response model."""
         # Parse exome data
@@ -175,7 +175,7 @@ class FrequencyService:
         gene_symbol: Optional[str],
         reference_genome: Optional[str],
         dataset: Optional[str],
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Implementation of gene fetching."""
         result = await self.client.get_gene(
             gene_id, gene_symbol, reference_genome, dataset
@@ -187,7 +187,7 @@ class FrequencyService:
         query: str,
         reference_genome: Optional[str] = None,
         dataset: Optional[str] = None,
-    ) -> List[GeneSearchResult]:
+    ) -> list[GeneSearchResult]:
         """Search for genes.
 
         Args:
@@ -203,7 +203,7 @@ class FrequencyService:
 
     async def search_variants(
         self, query: str, dataset: str = "gnomad_r4"
-    ) -> List[str]:
+    ) -> list[str]:
         """Search for variants.
 
         Args:
@@ -237,7 +237,7 @@ class FrequencyService:
         )
         return ClinVarVariant(**result.get("clinvar_variant", {}))
 
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats(self) -> dict[str, Any]:
         """Get cache statistics.
 
         Returns:

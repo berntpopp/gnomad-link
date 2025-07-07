@@ -1,11 +1,10 @@
 """Region-based API routes."""
 
 import logging
-from typing import Any, Dict
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from gnomad_mcp.api import DataNotFoundError
 from gnomad_mcp.models import GnomadDataset
 from gnomad_mcp.services import FrequencyService
 
@@ -31,7 +30,7 @@ async def get_region(
         description="gnomAD dataset to query",
     ),
     service: FrequencyService = Depends(get_service),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get all variants and genes within a genomic region."""
     if stop <= start:
         raise HTTPException(

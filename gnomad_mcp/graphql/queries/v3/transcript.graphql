@@ -1,3 +1,5 @@
+#import "../common/fragments.graphql"
+
 query transcript($transcript_id: String!, $reference_genome: ReferenceGenomeId!) {
     transcript(transcript_id: $transcript_id, reference_genome: $reference_genome) {
         transcript_id
