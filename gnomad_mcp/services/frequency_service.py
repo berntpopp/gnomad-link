@@ -1,4 +1,9 @@
-"""Unified service layer for both FastAPI and MCP."""
+"""Unified service layer for gnomAD data access.
+
+This module provides a high-level service interface for querying gnomAD data
+with integrated caching, error handling, and data transformation. It serves
+both the FastAPI REST endpoints and MCP tool interfaces.
+"""
 
 import logging
 from datetime import timedelta
@@ -21,7 +26,18 @@ logger = logging.getLogger(__name__)
 
 
 class FrequencyService:
-    """Unified service for gnomAD data queries with caching."""
+    """Unified service for gnomAD data queries with integrated caching.
+
+    This service provides:
+    - Transparent caching with LRU eviction and TTL
+    - Automatic retry on cache failures
+    - Data transformation to domain models
+    - Cache statistics and management
+    - Connection pooling via the underlying client
+
+    The service maintains separate caches for variants and genes to optimize
+    memory usage based on expected access patterns.
+    """
 
     def __init__(
         self,
@@ -54,12 +70,26 @@ class FrequencyService:
     ) -> VariantFrequencyResponse:
         """Get variant frequency data with caching.
 
+        Retrieves population allele frequencies for a specific variant from the
+        requested gnomAD dataset. Results are cached to improve performance for
+        repeated queries.
+
         Args:
-            variant_id: Variant identifier
-            dataset: Dataset to query
+            variant_id: Variant identifier in CHROM-POS-REF-ALT format
+                (e.g., '1-55051215-G-GA')
+            dataset: gnomAD dataset version to query (default: 'gnomad_r4')
+                Options: 'gnomad_r2_1', 'gnomad_r3', 'gnomad_r4'
 
         Returns:
-            Variant frequency response
+            VariantFrequencyResponse containing:
+            - Exome frequency data (if available)
+            - Genome frequency data (if available)
+            - Population-specific allele counts and frequencies
+
+        Raises:
+            ValueError: If variant_id or dataset is empty
+            VariantNotFoundError: If variant not found in the dataset
+            GnomadApiError: If API communication fails
         """
         # Validate input
         if not variant_id:
@@ -80,7 +110,18 @@ class FrequencyService:
         return self._parse_variant_response(data, variant_id, dataset)
 
     async def _get_variant_impl(self, variant_id: str, dataset: str) -> dict[str, Any]:
-        """Fetch variant data from the API."""
+        """Fetch variant data from the gnomAD API.
+
+        Internal method that performs the actual API call to retrieve variant data.
+        This is wrapped by the caching decorator in the public interface.
+
+        Args:
+            variant_id: Variant identifier
+            dataset: Dataset to query
+
+        Returns:
+            Raw variant data dictionary from the API
+        """
         result = await self.client.get_variant(variant_id, dataset)
         variant_data = result.get("variant")
         if variant_data is None:
@@ -90,7 +131,23 @@ class FrequencyService:
     def _parse_variant_response(
         self, data: dict[str, Any], variant_id: str, dataset: str
     ) -> VariantFrequencyResponse:
-        """Parse variant data into response model."""
+        """Parse raw variant data into structured response model.
+
+        Transforms the raw API response into a structured VariantFrequencyResponse
+        object with proper typing and validation. Handles missing fields gracefully
+        by providing sensible defaults.
+
+        Args:
+            data: Raw variant data from the API
+            variant_id: Original variant identifier
+            dataset: Dataset that was queried
+
+        Returns:
+            Structured VariantFrequencyResponse object
+
+        Raises:
+            VariantNotFoundError: If data is empty (variant not found)
+        """
         # Check if variant was found
         if not data:
             from gnomad_mcp.api.base_client import VariantNotFoundError
@@ -157,14 +214,27 @@ class FrequencyService:
     ) -> Gene:
         """Get gene information with caching.
 
+        Retrieves comprehensive gene information including constraint metrics,
+        pLI scores, and genomic coordinates. Either gene_id or gene_symbol
+        must be provided.
+
         Args:
-            gene_id: Ensembl gene ID
-            gene_symbol: Gene symbol
-            reference_genome: Reference genome
-            dataset: Dataset (for version determination)
+            gene_id: Ensembl gene ID (e.g., 'ENSG00000169174')
+            gene_symbol: HGNC gene symbol (e.g., 'PCSK9')
+            reference_genome: Reference genome build ('GRCh37' or 'GRCh38')
+            dataset: Dataset for version-specific queries
 
         Returns:
-            Gene information
+            Gene object containing:
+            - Basic metadata (name, location, transcripts)
+            - Constraint scores (observed/expected variants)
+            - pLI score for loss-of-function intolerance
+            - Missense and synonymous z-scores
+
+        Raises:
+            ValueError: If neither gene_id nor gene_symbol provided
+            DataNotFoundError: If gene not found
+            GnomadApiError: If API communication fails
         """
         cache_key = (
             f"{gene_id or ''}-{gene_symbol or ''}-"
@@ -209,15 +279,26 @@ class FrequencyService:
         reference_genome: Optional[str] = None,
         dataset: Optional[str] = None,
     ) -> list[GeneSearchResult]:
-        """Search for genes.
+        """Search for genes by symbol, name, or ID.
+
+        Performs fuzzy searching across gene symbols, names, and Ensembl IDs.
+        The search is case-insensitive and supports partial matches.
 
         Args:
-            query: Search query
-            reference_genome: Reference genome
-            dataset: Dataset (for version determination)
+            query: Search string (minimum 2 characters)
+                Examples: 'PCSK9', 'ENSG00000169174', 'proprotein'
+            reference_genome: Reference genome build to search
+            dataset: Dataset for version-specific search
 
         Returns:
-            List of gene search results
+            List of GeneSearchResult objects containing:
+            - Gene ID and symbol
+            - Gene name
+            - Genomic coordinates
+            - Canonical transcript
+
+        Note:
+            Results are not cached as search queries are typically unique.
         """
         results = await self.client.search_genes(query, reference_genome, dataset)
         return [GeneSearchResult(**item) for item in results]
@@ -225,14 +306,25 @@ class FrequencyService:
     async def search_variants(
         self, query: str, dataset: str = "gnomad_r4"
     ) -> list[str]:
-        """Search for variants.
+        """Search for variants by ID, rsID, or position.
+
+        Searches the gnomAD database for variants matching the query string.
+        Supports multiple search formats.
 
         Args:
-            query: Search query
-            dataset: Dataset to search
+            query: Search string (minimum 3 characters)
+                Formats:
+                - Variant ID: '1-55051215-G-GA'
+                - rsID: 'rs11591147'
+                - Position: '1:55051215'
+            dataset: gnomAD dataset to search (default: 'gnomad_r4')
 
         Returns:
-            List of variant IDs
+            List of matching variant IDs
+
+        Note:
+            Returns only variant IDs. Use get_variant_frequencies()
+            to retrieve full frequency data for a specific variant.
         """
         results = await self.client.search_variants(query, dataset)
         return [item["variant_id"] for item in results]
@@ -243,15 +335,27 @@ class FrequencyService:
         reference_genome: Optional[str] = None,
         dataset: Optional[str] = None,
     ) -> ClinVarVariant:
-        """Get ClinVar variant data.
+        """Get ClinVar clinical significance data for a variant.
+
+        Retrieves clinical annotations from ClinVar including pathogenicity
+        assessments, review status, and submitter information.
 
         Args:
-            variant_id: Variant identifier
-            reference_genome: Reference genome
-            dataset: Dataset (for version determination)
+            variant_id: Variant identifier in CHROM-POS-REF-ALT format
+            reference_genome: Reference genome build
+            dataset: Dataset for coordinate mapping
 
         Returns:
-            ClinVar variant information
+            ClinVarVariant object containing:
+            - Clinical significance (Pathogenic, Benign, VUS, etc.)
+            - Gold star rating and review status
+            - Submission details from clinical labs
+            - Associated conditions
+            - Last evaluation date
+
+        Raises:
+            DataNotFoundError: If variant not found in ClinVar
+            GnomadApiError: If API communication fails
         """
         result = await self.client.get_clinvar_variant(
             variant_id, reference_genome, dataset
@@ -259,10 +363,21 @@ class FrequencyService:
         return ClinVarVariant(**result.get("clinvar_variant", {}))
 
     def get_cache_stats(self) -> dict[str, Any]:
-        """Get cache statistics.
+        """Get comprehensive cache statistics.
+
+        Provides insights into cache performance and memory usage to help
+        with monitoring and optimization.
 
         Returns:
-            Cache statistics
+            Dictionary containing:
+            - hits: Number of cache hits
+            - misses: Number of cache misses
+            - total: Total number of requests
+            - hit_rate: Cache hit rate (0.0 to 1.0)
+            - cache_info: Detailed stats for each cache:
+                - currsize: Current number of cached items
+                - maxsize: Maximum cache capacity
+                - hits/misses: Per-cache statistics
         """
         total = self._cache_hits + self._cache_misses
         hit_rate = self._cache_hits / total if total > 0 else 0.0
@@ -279,12 +394,26 @@ class FrequencyService:
         }
 
     def clear_cache(self) -> None:
-        """Clear all caches."""
+        """Clear all caches and reset statistics.
+
+        Removes all cached entries and resets hit/miss counters. This is useful
+        when the underlying data has been updated or to free memory.
+
+        Note:
+            This operation cannot be undone. All cached data will be lost.
+        """
         self._get_variant_cached.cache_clear()
         self._get_gene_cached.cache_clear()
         self._cache_hits = 0
         self._cache_misses = 0
 
     async def close(self) -> None:
-        """Close the service and underlying connections."""
+        """Close the service and release resources.
+
+        Ensures proper cleanup of the underlying HTTP client connections.
+        Should be called when the service is no longer needed.
+
+        Note:
+            After calling close(), the service instance should not be reused.
+        """
         await self.client.close()
