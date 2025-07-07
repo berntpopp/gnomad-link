@@ -1,0 +1,17 @@
+#import "./fragments.graphql"
+
+query GetVariantFrequencies($variantId: String!, $dataset: DatasetId!) {
+  variant(variantId: $variantId, dataset: $dataset) {
+    variant_id
+    exome {
+      populations {
+        ...PopulationFields
+      }
+    }
+    genome {
+      populations {
+        ...PopulationFields
+      }
+    }
+  }
+}

@@ -179,3 +179,48 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# Claude
+.claude/
+CLAUDE.md
+
+# MCP Server specific
+mcp-debug.log
+.mcp/
+
+# Environment files
+.env.local
+.env.*.local
+*.env
+!.env.example
+
+# GraphQL
+__generated__/
+schema.graphql
+
+# OS Files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Editor files
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+*.sublime-project
+*.sublime-workspace
+
+# Temporary files
+*.bak
+*.tmp
+*.temp
+/data/
+/temp/
+/tmp/
+
+# claude files
+.claude/
+CLAUDE.md

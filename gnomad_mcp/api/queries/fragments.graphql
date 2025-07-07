@@ -1,0 +1,6 @@
+fragment PopulationFields on VariantPopulation {
+    id
+    ac
+    an
+    homozygote_count
+}
