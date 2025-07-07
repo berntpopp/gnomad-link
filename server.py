@@ -1,34 +1,39 @@
 #!/usr/bin/env python
-"""FastAPI server for gnomAD variant data."""
+"""
+Unified FastAPI and MCP server for gnomAD variant data.
+Single entry point for both REST API and Language Model tools.
+"""
+import json
 import logging
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Any, Dict
 
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastmcp import FastMCP
 
-from gnomad_mcp.api import UnifiedGnomadClient
-from gnomad_mcp.api.routes.dependencies import get_service
+# Import services and models
+from gnomad_mcp.api.client import UnifiedGnomadClient
 from gnomad_mcp.config import settings
-from gnomad_mcp.services import FrequencyService
+from gnomad_mcp.models import GnomadDataset, VariantFrequencyResponse
+from gnomad_mcp.services.frequency_service import FrequencyService
 
 # Configure logging
 logging.basicConfig(level=getattr(logging, settings.LOG_LEVEL))
 logger = logging.getLogger(__name__)
 
-# --- Dependency Setup ---
-# The service will be stored in app.state during startup
 
-
+# --- Application Lifespan (Startup & Shutdown) ---
+# Based on FastAPI documentation for managing shared resources.
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifecycle - startup and shutdown."""
-    # Startup
-    logger.info("Starting gnomAD server...")
+    logger.info("Starting gnomAD Unified Server...")
     logger.info(
         f"Cache configuration: size={settings.CACHE_SIZE}, TTL={settings.CACHE_TTL_MINUTES}min"
     )
 
+    # Instantiate services ONCE and store them in the application's shared state.
     api_client = UnifiedGnomadClient()
     app.state.frequency_service = FrequencyService(
         client=api_client,
@@ -36,35 +41,21 @@ async def lifespan(app: FastAPI):
         cache_ttl_minutes=settings.CACHE_TTL_MINUTES,
     )
 
-    yield
+    yield  # The server is now running.
 
-    # Shutdown
-    logger.info("Shutting down gnomAD server...")
+    logger.info("Shutting down gnomAD Unified Server...")
     await app.state.frequency_service.close()
 
 
-# --- FastAPI App ---
+# --- FastAPI App Definition ---
 app = FastAPI(
-    title="gnomAD Data Server",
+    title="gnomAD Unified Data Server",
     description=(
-        "Comprehensive API for accessing gnomAD genomic data including variants, "
-        "genes, ClinVar annotations, structural variants, and more. "
-        "For MCP interface, see mcp_server.py"
+        "Provides a comprehensive REST API and a focused MCP toolset for gnomAD. "
+        "Access REST API at / and MCP tools at /mcp"
     ),
-    version="3.0.0",
+    version="4.0.0",
     lifespan=lifespan,
-)
-
-
-from gnomad_mcp.api.routes import (
-    clinvar_router,
-    gene_router,
-    mitochondrial_router,
-    region_router,
-    search_router,
-    structural_variant_router,
-    transcript_router,
-    variant_router,
 )
 
 # Add CORS middleware for web clients
@@ -78,6 +69,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# --- Include all FastAPI Routers ---
+from gnomad_mcp.api.routes import (
+    clinvar_router,
+    gene_router,
+    mitochondrial_router,
+    region_router,
+    search_router,
+    structural_variant_router,
+    transcript_router,
+    variant_router,
+)
+from gnomad_mcp.api.routes.dependencies import get_service
+
 # Include all routers
 app.include_router(variant_router)
 app.include_router(gene_router)
@@ -89,16 +94,40 @@ app.include_router(transcript_router)
 app.include_router(search_router)
 
 
+# --- Initialize services for MCP ---
+# Since MCP doesn't trigger the lifespan event, we need to initialize services manually
+if not hasattr(app.state, "frequency_service"):
+    api_client = UnifiedGnomadClient()
+    app.state.frequency_service = FrequencyService(
+        client=api_client,
+        cache_size=settings.CACHE_SIZE,
+        cache_ttl_minutes=settings.CACHE_TTL_MINUTES,
+    )
+
+# --- Create MCP server from FastAPI app ---
+# Use from_fastapi without route_maps to avoid AttributeError
+mcp = FastMCP.from_fastapi(app=app, name="gnomAD Tool Server")
+
+
+# --- Root and Health Endpoints ---
 @app.get("/")
-async def root() -> dict[str, Any]:
+async def root() -> Dict[str, Any]:
     """Root endpoint providing API information."""
     return {
-        "message": "gnomAD Data Server",
-        "version": "3.0.0",
+        "message": "gnomAD Unified Data Server",
+        "version": "4.0.0",
+        "interfaces": {
+            "rest_api": {
+                "docs": "/docs",
+                "health": "/health",
+                "cache_stats": "/cache/stats",
+            },
+            "mcp_tools": {
+                "note": "MCP tools are defined but HTTP mounting is pending verification",
+                "tools": ["get_variant_allele_frequency", "get_gene_summary"],
+            },
+        },
         "endpoints": {
-            "api_docs": "/docs",
-            "health": "/health",
-            "cache_stats": "/cache/stats",
             "variants": {
                 "lookup": "/variant/{variant_id}",
                 "details": "/variant/details/{variant_id}",
@@ -128,7 +157,7 @@ async def root() -> dict[str, Any]:
 
 
 @app.get("/health")
-async def health_check() -> dict[str, str]:
+async def health_check() -> Dict[str, str]:
     """Health check endpoint."""
     return {"status": "healthy"}
 
@@ -136,7 +165,7 @@ async def health_check() -> dict[str, str]:
 @app.get("/cache/stats", tags=["Monitoring"])
 async def cache_stats(
     service: FrequencyService = Depends(get_service),
-) -> dict[str, Any]:
+) -> Dict[str, Any]:
     """Get cache statistics for monitoring."""
     return service.get_cache_stats()
 
@@ -144,13 +173,13 @@ async def cache_stats(
 @app.post("/cache/clear", tags=["Monitoring"])
 async def clear_cache(
     service: FrequencyService = Depends(get_service),
-) -> dict[str, str]:
+) -> Dict[str, str]:
     """Clear the variant cache."""
     service.clear_cache()
     return {"status": "cache_cleared"}
 
 
-# --- Main entry point ---
+# --- Main Entry Point (for `uvicorn server:app`) ---
 if __name__ == "__main__":
     import uvicorn
 

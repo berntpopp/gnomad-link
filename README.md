@@ -1,21 +1,21 @@
 # gnomAD MCP Server
 
-A production-ready server that provides gnomAD (Genome Aggregation Database) variant allele frequency data through dual interfaces:
+A production-ready unified server that provides gnomAD (Genome Aggregation Database) variant allele frequency data through dual interfaces:
 - **FastAPI**: RESTful HTTP API with automatic OpenAPI documentation
 - **MCP (Model Context Protocol)**: Native tool interface for AI assistants and language models
 
-Built with modern Python async/await patterns, this server provides efficient access to population-specific variant frequencies from the gnomAD database.
+Built with modern Python async/await patterns, this server provides efficient access to population-specific variant frequencies from the gnomAD database through a single application process.
 
 ## Features
 
-- 🚀 **Dual Interface**: RESTful API and MCP protocol support
+- 🚀 **Unified Server**: Single process serves both REST API and MCP tools
 - 📊 **Population-Specific Data**: Allele frequencies across global populations (AFR, EAS, NFE, etc.)
 - 🧬 **Comprehensive Coverage**: Both exome and genome sequencing datasets
 - 📝 **Interactive Documentation**: Auto-generated Swagger UI at `/docs`
 - 🔍 **Type Safety**: Pydantic v2 models with full validation
-- ⚡ **High Performance**: Async GraphQL client with connection pooling and LRU caching
+- ⚡ **High Performance**: Async GraphQL client with connection pooling and shared LRU caching
 - 🛡️ **Production Ready**: SSL verification, error handling, and logging
-- 🔧 **Flexible Deployment**: Run standalone or integrated servers
+- 🔄 **Shared State**: Both interfaces share the same cache and service instances
 
 ## Installation
 
@@ -77,11 +77,10 @@ Available configuration:
 
 ## Usage
 
-### Starting the Server
+### Starting the Unified Server
 
-The project includes two optimized servers that share the same caching layer:
+The project now includes a single unified server that provides both REST API and MCP interfaces:
 
-1. **FastAPI Server** (HTTP/REST API):
 ```bash
 # Production mode
 uvicorn server:app --host 0.0.0.0 --port 8000
@@ -90,18 +89,17 @@ uvicorn server:app --host 0.0.0.0 --port 8000
 python server.py
 ```
 
-2. **MCP Server** (for language model tools):
-```bash
-python mcp_server.py
-```
-
-Both servers share the same configuration and caching layer, ensuring consistent performance and behavior.
+This single server process:
+- Serves the REST API on the root path (`/`)
+- Mounts the MCP interface at `/mcp`
+- Shares cache and service instances between both interfaces
+- Uses a unified lifespan manager for proper startup/shutdown
 
 ### Accessing the APIs
 
 #### FastAPI Interface
 
-Once the FastAPI server is running:
+Once the unified server is running:
 
 - **Interactive API Docs**: http://localhost:8000/docs
 - **ReDoc Documentation**: http://localhost:8000/redoc  
@@ -113,7 +111,7 @@ Once the FastAPI server is running:
 
 ```bash
 # Get variant frequency data
-curl http://localhost:8000/variant/gnomad_r4/1-55039447-G-T
+curl http://localhost:8000/variant/1-55039447-G-T?dataset=gnomad_r4
 
 # Check server health
 curl http://localhost:8000/health
@@ -156,99 +154,91 @@ curl -X POST http://localhost:8000/cache/clear
 
 #### MCP Interface
 
-The MCP (Model Context Protocol) server provides tools for language models. Unlike the REST API, MCP doesn't use HTTP by default - it uses STDIO (standard input/output) for communication.
+The MCP (Model Context Protocol) interface is now available through HTTP at `/mcp` when the unified server is running.
 
-##### How MCP Works
+##### Connecting to the MCP Interface
 
-MCP servers communicate through different transport mechanisms:
+**Option 1: Claude Desktop Configuration (HTTP)**
 
-1. **STDIO Transport (Default)** - Used by Claude Desktop and most MCP clients
-   - The server reads from stdin and writes to stdout
-   - No URL or port - it's a direct process communication
-   - This is why there's no "http://localhost:8001" URL
-
-2. **HTTP Transport (Alternative)** - For web-based integrations
-   - Requires explicit configuration
-   - See `mcp_server_http.py` for HTTP example
-
-##### Connecting to the MCP Server
-
-**Option 1: Claude Desktop Configuration (Recommended)**
-
-Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json` on Mac):
+For Claude Desktop configurations that support HTTP endpoints, add to your config (`~/Library/Application Support/Claude/claude_desktop_config.json` on Mac):
 
 ```json
 {
   "mcpServers": {
     "gnomad": {
-      "command": "python",
-      "args": ["/absolute/path/to/gnomad-mcp-server/mcp_server.py"]
+      "url": "http://localhost:8000/mcp"
     }
   }
 }
 ```
 
-Then restart Claude Desktop. The gnomAD tools will appear in Claude's tool menu.
+**Option 2: Direct HTTP Access**
 
-**Option 2: Direct STDIO Testing**
-
-You can test the MCP server directly:
-
-```bash
-# Start the server
-python mcp_server.py
-
-# The server is now waiting for JSON-RPC messages on stdin
-# Send a request (example):
-{"jsonrpc": "2.0", "method": "tools/list", "id": 1}
+The MCP tools are available via HTTP at:
+```
+http://localhost:8000/mcp
 ```
 
-**Option 3: HTTP Transport (Web Integration)**
+You can interact with the MCP interface using any HTTP client that supports the MCP protocol.
 
-If you need HTTP access (e.g., for web applications):
+##### Available MCP Tools
 
-```bash
-# Create mcp_server_http.py with HTTP transport
-python mcp_server_http.py
+1. **get_variant_allele_frequency**
+   - Retrieves population allele frequency data for a genetic variant
+   - Parameters:
+     - `variant_id`: Variant identifier (e.g., "1-55039447-G-T")
+     - `dataset`: gnomAD dataset (defaults to GNOMAD_R4)
 
-# Now accessible at http://localhost:8001/mcp
-```
+2. **get_gene_summary**
+   - Retrieves a concise summary for a gene
+   - Parameters:
+     - `gene_symbol`: HGNC gene symbol (e.g., "BRCA1", "TP53")
+   - Returns: gene ID, symbol, and pLI score
 
 ##### Example Tool Usage
 
 Once connected via Claude Desktop or another MCP client:
 
 ```python
-# The tool will be available in your MCP client
+# Get variant frequency data
 result = await get_variant_allele_frequency(
     variant_id="1-55039447-G-T",
     dataset="gnomad_r4"
 )
+
+# Get gene summary
+gene_info = await get_gene_summary(
+    gene_symbol="BRCA1"
+)
 ```
-
-##### Why No URL for Default MCP?
-
-The default MCP server uses STDIO because:
-- It's more secure (no network exposure)
-- It's faster (no HTTP overhead)
-- It's the standard for AI assistant integrations
-- Claude Desktop expects STDIO communication
-
-If you need HTTP access, use the FastAPI server on port 8000 or create an HTTP-enabled MCP server.
 
 ## API Reference
 
-### Endpoints
+### REST API Endpoints
 
-#### `GET /variant/{dataset}/{variant_id}`
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/` | GET | API information and endpoints |
+| `/health` | GET | Health check endpoint |
+| `/docs` | GET | Interactive API documentation |
+| `/variant/{variant_id}` | GET | Get variant frequency data |
+| `/gene/` | GET | Get gene information |
+| `/search/variant` | GET | Search for variants |
+| `/search/gene` | GET | Search for genes |
+| `/clinvar/variant/{variant_id}` | GET | Get ClinVar variant data |
+| `/structural-variant/{variant_id}` | GET | Get structural variant data |
+| `/mitochondrial-variant/{variant_id}` | GET | Get mitochondrial variant data |
+| `/region/` | GET | Query genomic region |
+| `/transcript/{transcript_id}` | GET | Get transcript data |
+| `/cache/stats` | GET | Cache statistics |
+| `/cache/clear` | POST | Clear variant cache |
 
-Retrieve allele frequency data for a specific variant.
+### MCP Tools
 
-**Parameters:**
-- `dataset` (path): gnomAD dataset ID (e.g., "gnomad_r4", "gnomad_r3", "gnomad_r2_1")
-- `variant_id` (path): Variant identifier in format "chromosome-position-reference-alternate"
-
-**Response:** `VariantFrequencyResponse` object containing population frequencies
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `get_variant_allele_frequency` | Retrieve population allele frequencies | `variant_id`: str, `dataset`: GnomadDataset |
+| `get_gene_summary` | Get gene summary with pLI score | `gene_symbol`: str |
 
 ### Data Models
 
@@ -305,9 +295,19 @@ gnomad-mcp-server/
 │   ├── services/         # Business logic layer
 │   └── config.py         # Configuration management
 ├── tests/                # Test suite
-├── server.py             # Main server application
+├── server.py             # Unified server application
 └── pyproject.toml        # Project configuration
 ```
+
+## Architecture Benefits
+
+The unified server architecture provides several advantages:
+
+1. **Shared Resources**: Both REST API and MCP tools use the same service instances and cache
+2. **Single Process**: Easier deployment and monitoring with one process instead of two
+3. **Consistent State**: No synchronization issues between separate processes
+4. **Unified Configuration**: One set of environment variables for both interfaces
+5. **Simplified Lifecycle**: Single lifespan manager handles startup/shutdown for all components
 
 ## Deployment
 
@@ -323,10 +323,10 @@ docker run -p 8000:8000 gnomad-mcp-server
 ### Production Considerations
 
 1. **Environment Variables**: Set appropriate values for production
-2. **CORS**: Configure allowed origins in `server.py`
+2. **CORS**: Configure allowed origins for your deployment
 3. **Logging**: Adjust log levels as needed
 4. **Rate Limiting**: Consider adding rate limiting middleware
-5. **Monitoring**: Integrate with monitoring solutions
+5. **Monitoring**: The unified server simplifies monitoring with single process metrics
 
 ## Troubleshooting
 
@@ -351,56 +351,11 @@ docker run -p 8000:8000 gnomad-mcp-server
 
 ### Performance Tips
 
-- **Built-in LRU Cache**: The server automatically caches variant queries
+- **Shared LRU Cache**: Both interfaces benefit from the same cache
 - **Cache Monitoring**: Use `/cache/stats` to monitor hit rates
 - **Connection Pooling**: GraphQL client reuses connections
 - **Async Operations**: All I/O operations are non-blocking
 - **Cache Tuning**: Adjust `CACHE_SIZE` and `CACHE_TTL_MINUTES` based on usage patterns
-
-## Development
-
-### Code Style
-
-```bash
-# Format code
-ruff format .
-
-# Lint code
-ruff check .
-
-# Run tests
-pytest
-
-# Run tests with coverage
-pytest --cov=gnomad_mcp --cov-report=html
-```
-
-### Adding New Features
-
-1. Create feature branch from `main`
-2. Add tests for new functionality
-3. Update documentation as needed
-4. Ensure all tests pass
-5. Submit pull request
-
-## API Reference
-
-### REST API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/` | GET | API information and endpoints |
-| `/health` | GET | Health check endpoint |
-| `/docs` | GET | Interactive API documentation |
-| `/variant/{dataset}/{variant_id}` | GET | Get variant frequency data |
-| `/cache/stats` | GET | Cache statistics |
-| `/cache/clear` | POST | Clear variant cache |
-
-### MCP Tools
-
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `get_variant_allele_frequency` | Retrieve population allele frequencies | `variant_id`: str, `dataset`: str |
 
 ## License
 
@@ -418,7 +373,7 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) file for 
 If you use this tool in your research, please cite:
 
 ```
-gnomAD MCP Server: A dual-interface server for gnomAD variant data
+gnomAD MCP Server: A unified dual-interface server for gnomAD variant data
 [Your Name], 2024
 https://github.com/[your-username]/gnomad-mcp-server
 ```

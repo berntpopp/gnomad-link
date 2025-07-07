@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "gnomad": {
+      "command": "python",
+      "args": ["C:\\development\\scholl-lab\\GnomAD-MCP\\mcp_stdio_wrapper.py"],
+      "env": {
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  }
+}

@@ -30,11 +30,14 @@ clean:  ## Clean up cache and build files
 	rm -rf .pytest_cache .coverage htmlcov .mypy_cache .ruff_cache
 	rm -rf build dist *.egg-info
 
-run-dev:  ## Run the FastAPI server in development mode
+run-dev:  ## Run the unified server in development mode
 	python server.py
 
-run-prod:  ## Run the FastAPI server in production mode
+run-prod:  ## Run the unified server in production mode
 	uvicorn server:app --host 0.0.0.0 --port 8000 --workers 4
 
-run-mcp:  ## Run the MCP server
-	python mcp_server.py
+run-mcp:  ## Run MCP server in STDIO mode for Claude Desktop
+	python mcp_stdio_wrapper.py
+
+run-mcp-http:  ## Run MCP server in HTTP mode (for testing)
+	fastmcp dev server:mcp --host 0.0.0.0 --port 8001
