@@ -9,10 +9,10 @@ from gnomad_mcp.api import DataNotFoundError
 from gnomad_mcp.models import StructuralVariantDataset
 from gnomad_mcp.services import FrequencyService
 
+from .dependencies import get_service
+
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/structural-variant", tags=["Structural Variants"])
-
-from .dependencies import get_service
 
 
 @router.get(

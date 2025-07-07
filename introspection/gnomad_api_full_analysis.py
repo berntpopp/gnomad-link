@@ -1,3 +1,5 @@
+"""Full analysis of gnomAD GraphQL API structure and capabilities."""
+
 import json
 
 import requests
@@ -82,6 +84,7 @@ try:
 
     # Helper function to get the actual type name
     def get_type_name(type_obj):
+        """Extract the actual type name from a GraphQL type object."""
         if not type_obj:
             return None
         if type_obj["name"]:
@@ -92,6 +95,7 @@ try:
 
     # Helper function to get full type representation
     def get_full_type(type_obj):
+        """Get the full type representation including wrapping types."""
         if not type_obj:
             return "Unknown"
 
@@ -118,9 +122,8 @@ try:
     print("-" * 40)
     print(f"API Endpoint: {GNOMAD_API_URL}")
     print(f"Root Query Type: {query_type_name}")
-    print(
-        f"Total Schema Types: {len([t for t in types if not t['name'].startswith('__')])}"
-    )
+    non_internal_types = [t for t in types if not t["name"].startswith("__")]
+    print(f"Total Schema Types: {len(non_internal_types)}")
     print()
 
     # 2. Available Query Endpoints

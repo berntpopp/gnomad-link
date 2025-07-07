@@ -12,6 +12,7 @@ class QueryLoader:
     """Load and cache GraphQL queries from files."""
 
     def __init__(self):
+        """Initialize the GraphQL query loader with empty cache."""
         self.base_path = Path(__file__).parent / "queries"
         self._query_cache: dict[str, str] = {}
         self._fragments_cache: Optional[str] = None
@@ -113,7 +114,7 @@ class QueryLoader:
                                 and fragment_match.group(1) == current_fragment
                             ):
                                 needed_fragments.append(fragment)
-                                # Check for nested fragment usage and add to processing queue
+                                # Check for nested fragment usage
                                 for nested_match in re.finditer(
                                     fragment_usage_pattern, fragment
                                 ):

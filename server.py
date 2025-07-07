@@ -1,12 +1,11 @@
 #!/usr/bin/env python
-"""
-Unified FastAPI and MCP server for gnomAD variant data.
+"""Unified FastAPI and MCP server for gnomAD variant data.
+
 Single entry point for both REST API and Language Model tools.
 """
-import json
 import logging
 from contextlib import asynccontextmanager
-from typing import Any, Dict
+from typing import Any
 
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,8 +14,18 @@ from fastmcp import FastMCP
 # Import services and models
 from gnomad_mcp.api.client import UnifiedGnomadClient
 from gnomad_mcp.config import settings
-from gnomad_mcp.models import GnomadDataset, VariantFrequencyResponse
 from gnomad_mcp.services.frequency_service import FrequencyService
+from gnomad_mcp.api.routes import (
+    clinvar_router,
+    gene_router,
+    mitochondrial_router,
+    region_router,
+    search_router,
+    structural_variant_router,
+    transcript_router,
+    variant_router,
+)
+from gnomad_mcp.api.routes.dependencies import get_service
 
 # Configure logging
 logging.basicConfig(level=getattr(logging, settings.LOG_LEVEL))
@@ -30,7 +39,8 @@ async def lifespan(app: FastAPI):
     """Manage application lifecycle - startup and shutdown."""
     logger.info("Starting gnomAD Unified Server...")
     logger.info(
-        f"Cache configuration: size={settings.CACHE_SIZE}, TTL={settings.CACHE_TTL_MINUTES}min"
+        f"Cache configuration: size={settings.CACHE_SIZE}, "
+        f"TTL={settings.CACHE_TTL_MINUTES}min"
     )
 
     # Instantiate services ONCE and store them in the application's shared state.
@@ -70,19 +80,6 @@ app.add_middleware(
 )
 
 
-# --- Include all FastAPI Routers ---
-from gnomad_mcp.api.routes import (
-    clinvar_router,
-    gene_router,
-    mitochondrial_router,
-    region_router,
-    search_router,
-    structural_variant_router,
-    transcript_router,
-    variant_router,
-)
-from gnomad_mcp.api.routes.dependencies import get_service
-
 # Include all routers
 app.include_router(variant_router)
 app.include_router(gene_router)
@@ -111,7 +108,7 @@ mcp = FastMCP.from_fastapi(app=app, name="gnomAD Tool Server")
 
 # --- Root and Health Endpoints ---
 @app.get("/")
-async def root() -> Dict[str, Any]:
+async def root() -> dict[str, Any]:
     """Root endpoint providing API information."""
     return {
         "message": "gnomAD Unified Data Server",
@@ -123,7 +120,7 @@ async def root() -> Dict[str, Any]:
                 "cache_stats": "/cache/stats",
             },
             "mcp_tools": {
-                "note": "MCP tools are defined but HTTP mounting is pending verification",
+                "note": "MCP tools are defined via FastMCP integration",
                 "tools": ["get_variant_allele_frequency", "get_gene_summary"],
             },
         },
@@ -157,7 +154,7 @@ async def root() -> Dict[str, Any]:
 
 
 @app.get("/health")
-async def health_check() -> Dict[str, str]:
+async def health_check() -> dict[str, str]:
     """Health check endpoint."""
     return {"status": "healthy"}
 
@@ -165,7 +162,7 @@ async def health_check() -> Dict[str, str]:
 @app.get("/cache/stats", tags=["Monitoring"])
 async def cache_stats(
     service: FrequencyService = Depends(get_service),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get cache statistics for monitoring."""
     return service.get_cache_stats()
 
@@ -173,7 +170,7 @@ async def cache_stats(
 @app.post("/cache/clear", tags=["Monitoring"])
 async def clear_cache(
     service: FrequencyService = Depends(get_service),
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """Clear the variant cache."""
     service.clear_cache()
     return {"status": "cache_cleared"}

@@ -74,7 +74,7 @@ class FrequencyService:
         return self._parse_variant_response(data, variant_id, dataset)
 
     async def _get_variant_impl(self, variant_id: str, dataset: str) -> dict[str, Any]:
-        """Implementation of variant fetching."""
+        """Fetch variant data from the API."""
         result = await self.client.get_variant(variant_id, dataset)
         return result.get("variant", {})
 
@@ -151,7 +151,10 @@ class FrequencyService:
         Returns:
             Gene information
         """
-        cache_key = f"{gene_id or ''}-{gene_symbol or ''}-{reference_genome or ''}-{dataset or ''}"
+        cache_key = (
+            f"{gene_id or ''}-{gene_symbol or ''}-"
+            f"{reference_genome or ''}-{dataset or ''}"
+        )
 
         try:
             data = await self._get_gene_cached(
@@ -176,7 +179,7 @@ class FrequencyService:
         reference_genome: Optional[str],
         dataset: Optional[str],
     ) -> dict[str, Any]:
-        """Implementation of gene fetching."""
+        """Fetch gene data from the API."""
         result = await self.client.get_gene(
             gene_id, gene_symbol, reference_genome, dataset
         )

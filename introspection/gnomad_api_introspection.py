@@ -1,3 +1,5 @@
+"""Introspection module for the gnomAD GraphQL API."""
+
 import json
 
 import requests

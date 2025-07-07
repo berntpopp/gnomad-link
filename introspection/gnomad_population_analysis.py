@@ -1,3 +1,5 @@
+"""Population analysis module for gnomAD data exploration."""
+
 import json
 
 import requests
@@ -15,7 +17,7 @@ query PopulationAnalysis {
     ref
     alt
     rsid
-    
+
     exome {
       ac
       an
@@ -32,7 +34,7 @@ query PopulationAnalysis {
         hemizygote_count
       }
     }
-    
+
     genome {
       ac
       an
@@ -49,7 +51,7 @@ query PopulationAnalysis {
         hemizygote_count
       }
     }
-    
+
     joint {
       freq_comparison_stats {
         contingency_table_test {
@@ -66,7 +68,7 @@ query PopulationAnalysis {
       }
     }
   }
-  
+
   # Get metadata to understand available datasets
   meta {
     datasetIds {
@@ -114,9 +116,11 @@ try:
     print("\n\n## 2. EXAMPLE VARIANT ANALYSIS")
     print("-" * 40)
     print(f"Variant: {variant_data['variant_id']}")
-    print(
-        f"Position: {variant_data['chrom']}:{variant_data['pos']} {variant_data['ref']}>{variant_data['alt']}"
+    position_str = (
+        f"Position: {variant_data['chrom']}:{variant_data['pos']} "
+        f"{variant_data['ref']}>{variant_data['alt']}"
     )
+    print(position_str)
     if variant_data["rsid"]:
         print(f"rsID: {variant_data['rsid']}")
 
@@ -127,7 +131,8 @@ try:
         print(f"  Total AC/AN: {exome['ac']}/{exome['an']} (AF: {exome['af']:.6f})")
         if exome["faf95"]:
             print(
-                f"  FAF95 popmax: {exome['faf95']['popmax']:.6f} ({exome['faf95']['popmax_population']})"
+                f"  FAF95 popmax: {exome['faf95']['popmax']:.6f} "
+                f"({exome['faf95']['popmax_population']})"
             )
 
         print("\n  Population Breakdown:")
@@ -135,7 +140,8 @@ try:
             if pop["ac"] > 0:
                 af = pop["ac"] / pop["an"] if pop["an"] > 0 else 0
                 print(
-                    f"    {pop['id']:20} AC: {pop['ac']:6} AN: {pop['an']:8} AF: {af:.6f} Hom: {pop['homozygote_count']}"
+                    f"    {pop['id']:20} AC: {pop['ac']:6} AN: {pop['an']:8} "
+                    f"AF: {af:.6f} Hom: {pop['homozygote_count']}"
                 )
 
     # Analyze genome data
@@ -145,7 +151,8 @@ try:
         print(f"  Total AC/AN: {genome['ac']}/{genome['an']} (AF: {genome['af']:.6f})")
         if genome["faf95"]:
             print(
-                f"  FAF95 popmax: {genome['faf95']['popmax']:.6f} ({genome['faf95']['popmax_population']})"
+                f"  FAF95 popmax: {genome['faf95']['popmax']:.6f} "
+                f"({genome['faf95']['popmax_population']})"
             )
 
         print("\n  Population Breakdown:")
@@ -153,7 +160,8 @@ try:
             if pop["ac"] > 0:
                 af = pop["ac"] / pop["an"] if pop["an"] > 0 else 0
                 print(
-                    f"    {pop['id']:20} AC: {pop['ac']:6} AN: {pop['an']:8} AF: {af:.6f} Hom: {pop['homozygote_count']}"
+                    f"    {pop['id']:20} AC: {pop['ac']:6} AN: {pop['an']:8} "
+                    f"AF: {af:.6f} Hom: {pop['homozygote_count']}"
                 )
 
     # Analyze joint data
@@ -163,12 +171,14 @@ try:
         if stats["stat_union"]:
             union = stats["stat_union"]
             print(
-                f"  Combined AC/AN: {union['ac_raw']}/{union['an_raw']} (AF: {union['af_raw']:.6f})"
+                f"  Combined AC/AN: {union['ac_raw']}/{union['an_raw']} "
+                f"(AF: {union['af_raw']:.6f})"
             )
 
         if stats["contingency_table_test"]:
             print(
-                f"  Contingency test p-value: {stats['contingency_table_test']['p_value']:.2e}"
+                f"  Contingency test p-value: "
+                f"{stats['contingency_table_test']['p_value']:.2e}"
             )
 
     print("\n\n## 3. POPULATION IDENTIFIERS FOUND")

@@ -9,10 +9,10 @@ from gnomad_mcp.api import DataNotFoundError, GnomadApiError
 from gnomad_mcp.models import GnomadDataset, VariantFrequencyResponse
 from gnomad_mcp.services import FrequencyService
 
+from .dependencies import get_service
+
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/variant", tags=["Variants"])
-
-from .dependencies import get_service
 
 
 @router.get(

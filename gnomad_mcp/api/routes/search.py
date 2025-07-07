@@ -8,10 +8,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from gnomad_mcp.models import GeneSearchResult, GnomadDataset, ReferenceGenome
 from gnomad_mcp.services import FrequencyService
 
+from .dependencies import get_service
+
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/search", tags=["Search"])
-
-from .dependencies import get_service
 
 
 @router.get(

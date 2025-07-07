@@ -1,3 +1,5 @@
+"""Example queries demonstrating gnomAD API capabilities."""
+
 import json
 
 import requests
@@ -17,14 +19,14 @@ query SimpleVariant {
     ref
     alt
     rsid
-    
+
     exome {
       ac
       an
       af
       filters
     }
-    
+
     genome {
       ac
       an
@@ -38,7 +40,7 @@ query SimpleVariant {
 query VariantWithPopulations {
   variant(variantId: "1-55516888-G-A", dataset: gnomad_r4) {
     variant_id
-    
+
     exome {
       ac
       an
@@ -61,10 +63,10 @@ query GeneInfo {
     chrom
     start
     stop
-    
+
     canonical_transcript_id
     omim_id
-    
+
     mane_select_transcript {
       ensembl_id
       refseq_id
@@ -80,7 +82,7 @@ query RegionVariants {
       pos
       ref
       alt
-      
+
       exome {
         ac
         an
@@ -96,7 +98,7 @@ query ClinVarVariant {
     variant_id
     review_status
     clinical_significance
-    
+
     gnomad {
       exome {
         ac
