@@ -66,7 +66,7 @@ class TestRegionEndpoints:
         # Test with default reference genome (should be GRCh38 for v4)
         response = await client.get("/region/1-55039400-55039500")
         assert response.status_code == 200
-        
+
         # Test with dataset that uses GRCh37
         response = await client.get(
             "/region/1-55039400-55039500",
@@ -114,11 +114,11 @@ class TestRegionEndpoints:
         # Missing parts
         response = await client.get("/region/1-1000")
         assert response.status_code == 422  # Invalid path format
-        
+
         # Too many parts
         response = await client.get("/region/1-1000-2000-3000")
         assert response.status_code == 422  # Invalid path format
-        
+
         # Non-numeric positions
         response = await client.get("/region/1-abc-def")
         assert response.status_code == 422  # Invalid path format

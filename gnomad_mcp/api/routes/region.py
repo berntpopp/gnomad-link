@@ -123,14 +123,14 @@ async def get_region(
         parts = region.split("-")
         if len(parts) != 3:
             raise ValueError("Region must be in format: chr-start-stop")
-        
+
         chrom = parts[0].replace("chr", "")  # Remove chr prefix if present
         start = int(parts[1])
         stop = int(parts[2])
-        
+
         if stop <= start:
             raise ValueError("Stop position must be greater than start position")
-            
+
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
@@ -138,8 +138,8 @@ async def get_region(
         result = await service.client.get_region(chrom, start, stop, dataset)
         # Unwrap the region key if present
         if isinstance(result, dict) and "region" in result:
-            return result["region"]
-        return result
+            return result["region"]  # type: ignore[no-any-return]
+        return result  # type: ignore[no-any-return]
     except Exception as e:
         logger.error(f"Error getting region: {e}")
         raise HTTPException(status_code=500, detail="Internal server error") from e

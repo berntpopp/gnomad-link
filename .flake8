@@ -16,3 +16,6 @@ exclude =
 # Ignore specific errors:
 # E203: whitespace before ':' (conflicts with black)
 # W503: line break before binary operator (conflicts with black)
+
+per-file-ignores =
+    scripts/*:E402,D202

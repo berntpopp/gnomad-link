@@ -116,8 +116,7 @@ class TestTranscriptEndpoints:
 
         # Test GRCh38
         response = await client.get(
-            f"/transcript/{transcript_id}",
-            params={"reference_genome": "GRCh38"}
+            f"/transcript/{transcript_id}", params={"reference_genome": "GRCh38"}
         )
         if response.status_code == 200:
             data = response.json()
@@ -125,8 +124,7 @@ class TestTranscriptEndpoints:
 
         # Test GRCh37
         response = await client.get(
-            f"/transcript/{transcript_id}",
-            params={"reference_genome": "GRCh37"}
+            f"/transcript/{transcript_id}", params={"reference_genome": "GRCh37"}
         )
         if response.status_code == 200:
             data = response.json()

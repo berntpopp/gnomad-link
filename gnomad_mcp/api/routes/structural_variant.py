@@ -126,10 +126,10 @@ async def get_structural_variant(
             if sv_data is None:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"Structural variant '{variant_id}' not found in dataset '{dataset}'"
+                    detail=f"Structural variant '{variant_id}' not found in dataset '{dataset}'",
                 )
-            return sv_data
-        return result
+            return sv_data  # type: ignore[no-any-return]
+        return result  # type: ignore[no-any-return]
     except DataNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
     except HTTPException:

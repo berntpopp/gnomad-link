@@ -37,7 +37,7 @@ class TestStructuralVariantEndpoints:
 
         # This variant might not exist in the test environment
         assert response.status_code in [200, 404]
-        
+
         if response.status_code == 200:
             data = response.json()
 
@@ -68,7 +68,16 @@ class TestStructuralVariantEndpoints:
                         assert "ac" in cn
 
                 if "type" in data:
-                    assert data["type"] in ["DUP", "DEL", "CNV", "INS", "INV", "CPX", "CTX", "BND"]
+                    assert data["type"] in [
+                        "DUP",
+                        "DEL",
+                        "CNV",
+                        "INS",
+                        "INV",
+                        "CPX",
+                        "CTX",
+                        "BND",
+                    ]
 
     @pytest.mark.asyncio
     async def test_structural_variant_populations(self, client: AsyncClient):
@@ -105,7 +114,7 @@ class TestStructuralVariantEndpoints:
                 for consequence in data["consequences"]:
                     assert "consequence" in consequence
                     assert "genes" in consequence
-                    
+
                     # genes is a list of gene IDs
                     assert isinstance(consequence["genes"], list)
 

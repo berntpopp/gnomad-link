@@ -109,7 +109,6 @@ class TestVariantEndpointsAdditional:
             if "exome" in data and data["exome"]:
                 assert "hemizygote_count" in data["exome"]
 
-
     @pytest.mark.asyncio
     async def test_variant_long_indel(self, client: AsyncClient):
         """Test long insertion/deletion variant."""

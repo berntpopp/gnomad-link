@@ -57,9 +57,7 @@ class TestFrequencyServiceAdditional:
         assert result.gene_id == "ENSG00000169174"
         assert result.symbol == "PCSK9"
         assert result.name == "proprotein convertase subtilisin/kexin type 9"
-        mock_client.get_gene.assert_called_once_with(
-            None, "PCSK9", None, None
-        )
+        mock_client.get_gene.assert_called_once_with(None, "PCSK9", None, None)
 
     @pytest.mark.asyncio
     async def test_get_gene_by_id(self, frequency_service, mock_client):

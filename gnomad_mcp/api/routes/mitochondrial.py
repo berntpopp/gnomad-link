@@ -115,8 +115,8 @@ async def get_mitochondrial_variant(
         result = await service.client.get_mitochondrial_variant(variant_id, dataset)
         # Unwrap the mitochondrial_variant key from the GraphQL response
         if isinstance(result, dict) and "mitochondrial_variant" in result:
-            return result["mitochondrial_variant"]
-        return result
+            return result["mitochondrial_variant"]  # type: ignore[no-any-return]
+        return result  # type: ignore[no-any-return]
     except DataNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
     except GnomadApiError as e:
