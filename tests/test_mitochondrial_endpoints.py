@@ -24,8 +24,9 @@ class TestMitochondrialEndpoints:
             assert data["variant_id"] == variant_id
 
             # Mitochondrial-specific fields
-            assert "chrom" in data
-            assert data["chrom"] in ["M", "MT", "chrM", "chrMT"]
+            assert "pos" in data
+            assert "ac_het" in data
+            assert "ac_hom" in data
 
             # Check for haplogroup data
             if "haplogroups" in data:
@@ -33,10 +34,10 @@ class TestMitochondrialEndpoints:
 
                 for haplogroup in data["haplogroups"]:
                     assert "id" in haplogroup
-                    assert "ac" in haplogroup or "count" in haplogroup
+                    assert "ac_het" in haplogroup or "ac_hom" in haplogroup
 
-                    if "af" in haplogroup:
-                        assert 0.0 <= haplogroup["af"] <= 1.0
+                    if "faf" in haplogroup and haplogroup["faf"] is not None:
+                        assert 0.0 <= haplogroup["faf"] <= 1.0
 
     @pytest.mark.asyncio
     async def test_mitochondrial_variant_heteroplasmy(self, client: AsyncClient):
@@ -72,7 +73,7 @@ class TestMitochondrialEndpoints:
 
                 for pop in data["populations"]:
                     assert "id" in pop
-                    assert "ac" in pop
+                    assert "ac_het" in pop or "ac_hom" in pop
                     assert "an" in pop
 
                     # Mitochondrial variants should have specific population IDs

@@ -1,26 +1,46 @@
 #import "./fragments.graphql"
 
-query mitochondrial_variant($dataset: DatasetId!, $variant_id: String!) {
-    mitochondrial_variant(dataset: $dataset, variant_id: $variant_id) {
+query mitochondrial_variant($variant_id: String!, $dataset: DatasetId!) {
+    mitochondrial_variant(variant_id: $variant_id, dataset: $dataset) {
         variant_id
         reference_genome
-        chrom
         pos
         ref
         alt
         rsid
+        rsids
         filters
+        flags
         an
-        ac
         ac_het
         ac_hom
+        ac_hom_mnv
+        excluded_ac
         max_heteroplasmy
+        mitotip_score
+        mitotip_trna_prediction
+        pon_ml_probability_of_pathogenicity
+        pon_mt_trna_prediction
+        haplogroup_defining
         populations {
             id
             an
-            ac
             ac_het
             ac_hom
+            heteroplasmy_distribution {
+                bin_edges
+                bin_freq
+                n_larger
+                n_smaller
+            }
+        }
+        haplogroups {
+            id
+            an
+            ac_het
+            ac_hom
+            faf
+            faf_hom
         }
         age_distribution {
             het {
@@ -36,15 +56,50 @@ query mitochondrial_variant($dataset: DatasetId!, $variant_id: String!) {
                 n_larger
             }
         }
-        qualityMetrics {
-            MQ
-            VD
-            FMF
+        heteroplasmy_distribution {
+            bin_edges
+            bin_freq
+            n_larger
+            n_smaller
+        }
+        site_quality_metrics {
+            name
+            value
+        }
+        genotype_quality_metrics {
+            name
+            all {
+                bin_edges
+                bin_freq
+                n_larger
+                n_smaller
+            }
+            alt {
+                bin_edges
+                bin_freq
+                n_larger
+                n_smaller
+            }
+        }
+        genotype_quality_filters {
+            name
+            filtered {
+                bin_edges
+                bin_freq
+                n_larger
+                n_smaller
+            }
         }
         transcript_consequences {
             canonical
+            is_canonical
+            is_mane_select
+            is_mane_select_version
             gene_id
+            gene_version
             gene_symbol
+            transcript_id
+            transcript_version
             hgvs
             hgvsc
             hgvsp
@@ -53,6 +108,11 @@ query mitochondrial_variant($dataset: DatasetId!, $variant_id: String!) {
             lof_flags
             major_consequence
             consequence_terms
+            domains
+            refseq_id
+            refseq_version
+            polyphen_prediction
+            sift_prediction
         }
     }
 }

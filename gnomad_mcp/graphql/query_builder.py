@@ -56,9 +56,17 @@ class QueryBuilder:
         """Process and validate variables for a query type."""
         processed = variables.copy()
 
-        # Add version-specific defaults
+        # Handle variant_id conversion based on query type
         if query_type == "variant":
+            # Regular variant queries use camelCase
+            if "variant_id" in processed and "variantId" not in processed:
+                processed["variantId"] = processed.pop("variant_id")
             cls.validate_variant_id(processed.get("variantId", ""))
+        elif query_type in ["clinvar_variant", "mitochondrial_variant"]:
+            # ClinVar and mitochondrial queries use snake_case
+            if "variantId" in processed and "variant_id" not in processed:
+                processed["variant_id"] = processed.pop("variantId")
+            cls.validate_variant_id(processed.get("variant_id", ""))
 
         elif query_type in ["gene", "gene_search", "clinvar_variant", "gene_variants"]:
             # Add reference genome if not provided
