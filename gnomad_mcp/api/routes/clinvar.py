@@ -137,11 +137,7 @@ async def get_clinvar_variant(
         200: {
             "description": "ClinVar metadata retrieved successfully",
             "content": {
-                "application/json": {
-                    "example": {
-                        "clinvar_release_date": "2025-04-29"
-                    }
-                }
+                "application/json": {"example": {"clinvar_release_date": "2025-04-29"}}
             },
         },
         500: {"description": "Internal server error"},
@@ -168,9 +164,7 @@ async def get_clinvar_meta(
         result = await service.client.get_meta()
         # Extract only ClinVar-specific metadata
         meta_data = result.get("meta", {})
-        return {
-            "clinvar_release_date": meta_data.get("clinvar_release_date")
-        }
+        return {"clinvar_release_date": meta_data.get("clinvar_release_date")}
     except Exception as e:
         logger.error(f"Error getting ClinVar metadata: {e}")
         raise HTTPException(status_code=500, detail="Internal server error") from e
