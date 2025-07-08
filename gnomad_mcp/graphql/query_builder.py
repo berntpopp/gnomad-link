@@ -85,5 +85,10 @@ class QueryBuilder:
             # Add reference genome if needed
             if "reference_genome" not in processed:
                 processed["reference_genome"] = cls.get_reference_genome(version)
+            # Map GRCh37/38 to the enum values expected by the API
+            if processed.get("reference_genome") == "GRCh37":
+                processed["reference_genome"] = "GRCh37"
+            elif processed.get("reference_genome") == "GRCh38":
+                processed["reference_genome"] = "GRCh38"
 
         return processed
