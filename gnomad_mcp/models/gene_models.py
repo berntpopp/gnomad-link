@@ -73,7 +73,7 @@ class Gene(BaseModel):
     """Gene information from gnomAD."""
 
     gene_id: str = Field(..., description="Ensembl gene ID")
-    symbol: str = Field(..., description="Gene symbol", alias="name")
+    symbol: str = Field(..., description="Gene symbol")
     name: Optional[str] = Field(None, description="Full gene name")
     canonical_transcript_id: Optional[str] = Field(
         None, description="Canonical transcript", alias="canonical_transcript"

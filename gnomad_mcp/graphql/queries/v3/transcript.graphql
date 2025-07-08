@@ -1,86 +1,36 @@
-#import "../common/fragments.graphql"
-
 query transcript($transcript_id: String!, $reference_genome: ReferenceGenomeId!) {
     transcript(transcript_id: $transcript_id, reference_genome: $reference_genome) {
+        reference_genome
         transcript_id
         transcript_version
-        reference_genome
         chrom
         start
         stop
         strand
         gene_id
-        gene_symbol
-        gene_version
-        hgnc_id
-        canonical
-        mane_select
-        refseq_id
-        refseq_version
-        exons {
-            exon_id
+        gene {
+            reference_genome
+            gene_id
+            gene_version
+            symbol
+            hgnc_id
+            name
             chrom
             start
             stop
             strand
-            feature_type
+            canonical_transcript_id
+            mane_select_transcript {
+                ensembl_id
+                ensembl_version
+                refseq_id
+                refseq_version
+            }
         }
-        cds_start
-        cds_stop
-        gtex_tissue_expression {
-            adipose_subcutaneous
-            adipose_visceral_omentum
-            adrenal_gland
-            artery_aorta
-            artery_coronary
-            artery_tibial
-            bladder
-            brain_amygdala
-            brain_anterior_cingulate_cortex_ba24
-            brain_caudate_basal_ganglia
-            brain_cerebellar_hemisphere
-            brain_cerebellum
-            brain_cortex
-            brain_frontal_cortex_ba9
-            brain_hippocampus
-            brain_hypothalamus
-            brain_nucleus_accumbens_basal_ganglia
-            brain_putamen_basal_ganglia
-            brain_spinal_cord_cervical_c_1
-            brain_substantia_nigra
-            breast_mammary_tissue
-            cells_ebv_transformed_lymphocytes
-            cells_transformed_fibroblasts
-            cervix_ectocervix
-            cervix_endocervix
-            colon_sigmoid
-            colon_transverse
-            esophagus_gastroesophageal_junction
-            esophagus_mucosa
-            esophagus_muscularis
-            fallopian_tube
-            heart_atrial_appendage
-            heart_left_ventricle
-            kidney_cortex
-            liver
-            lung
-            minor_salivary_gland
-            muscle_skeletal
-            nerve_tibial
-            ovary
-            pancreas
-            pituitary
-            prostate
-            skin_not_sun_exposed_suprapubic
-            skin_sun_exposed_lower_leg
-            small_intestine_terminal_ileum
-            spleen
-            stomach
-            testis
-            thyroid
-            uterus
-            vagina
-            whole_blood
+        exons {
+            feature_type
+            start
+            stop
         }
     }
 }

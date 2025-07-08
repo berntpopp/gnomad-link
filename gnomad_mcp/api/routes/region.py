@@ -7,7 +7,7 @@ specified genomic coordinates.
 import logging
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
 
 from gnomad_mcp.models import GnomadDataset
 from gnomad_mcp.services import FrequencyService
@@ -19,7 +19,7 @@ router = APIRouter(prefix="/region", tags=["Regions"])
 
 
 @router.get(
-    "/",
+    "/{region}",
     summary="Get variants and genes in a genomic region",
     description="Query all variants and overlapping genes within specified genomic coordinates.",
     operation_id="get_region",
@@ -29,88 +29,64 @@ router = APIRouter(prefix="/region", tags=["Regions"])
             "content": {
                 "application/json": {
                     "example": {
-                        "region": {
-                            "chrom": "19",
-                            "start": 11078371,
-                            "stop": 11144910,
-                            "reference_genome": "GRCh38",
-                        },
+                        "chrom": "17",
+                        "start": 7674232,
+                        "stop": 7674252,
+                        "reference_genome": "GRCh38",
                         "genes": [
                             {
-                                "gene_id": "ENSG00000105641",
-                                "symbol": "LDLR",
-                                "start": 11089463,
-                                "stop": 11133830,
-                                "strand": "+",
+                                "gene_id": "ENSG00000141510",
+                                "symbol": "TP53",
+                                "start": 7661779,
+                                "stop": 7687538,
                             }
                         ],
-                        "variant_count": 2847,
-                        "variants": [
+                        "clinvar_variants": [
                             {
-                                "variant_id": "19-11089479-G-A",
-                                "rsid": "rs688",
-                                "consequence": "5_prime_UTR_variant",
-                                "gene_symbol": "LDLR",
-                                "af": 0.467,
-                            }
+                                "variant_id": "17-7674232-C-G",
+                                "clinical_significance": "Pathogenic/Likely pathogenic",
+                                "gold_stars": 2,
+                                "major_consequence": "missense_variant",
+                                "pos": 7674232,
+                                "review_status": "criteria provided, multiple submitters, no conflicts",
+                            },
+                            {
+                                "variant_id": "17-7674241-G-A",
+                                "clinical_significance": "Pathogenic",
+                                "gold_stars": 3,
+                                "major_consequence": "missense_variant",
+                                "pos": 7674241,
+                                "review_status": "reviewed by expert panel",
+                            },
                         ],
                     }
                 }
             },
         },
-        400: {"description": "Invalid coordinates (stop must be > start)"},
+        400: {"description": "Invalid region format or coordinates"},
         500: {"description": "Internal server error"},
     },
 )
 async def get_region(
-    chrom: str = Query(
+    region: str = Path(
         ...,
-        description="Chromosome",
-        pattern=r"^(chr)?([1-9]|1[0-9]|2[0-2]|X|Y|M|MT)$",
+        description="Genomic region in format: chr-start-stop (e.g., 17-7674232-7674252)",
+        pattern=r"^(chr)?([1-9]|1[0-9]|2[0-2]|X|Y|M|MT)-\d+-\d+$",
         openapi_examples={
-            "structural_variant": {
-                "summary": "Structural variant region",
-                "description": "Chromosome for structural variant region example",
-                "value": "19",
+            "tp53_small": {
+                "summary": "TP53 small region",
+                "description": "Small 20bp region in TP53 gene",
+                "value": "17-7674232-7674252",
             },
-            "cnv": {
-                "summary": "Copy number variant region",
-                "description": "Chromosome for CNV region example",
-                "value": "1",
+            "ldlr_region": {
+                "summary": "LDLR region",
+                "description": "Region covering LDLR gene",
+                "value": "19-11078371-11144910",
             },
-        },
-    ),
-    start: int = Query(
-        ...,
-        description="Start position (1-based)",
-        ge=1,
-        openapi_examples={
-            "structural_variant": {
-                "summary": "SV region start",
-                "description": "Start position for structural variant region",
-                "value": 11078371,
-            },
-            "cnv": {
-                "summary": "CNV region start",
-                "description": "Start position for copy number variant region",
-                "value": 55039447,
-            },
-        },
-    ),
-    stop: int = Query(
-        ...,
-        description="Stop position (1-based, inclusive)",
-        ge=1,
-        openapi_examples={
-            "structural_variant": {
-                "summary": "SV region stop",
-                "description": "Stop position for structural variant region",
-                "value": 11144910,
-            },
-            "cnv": {
-                "summary": "CNV region stop",
-                "description": "Stop position for copy number variant region",
-                "value": 55064852,
+            "pcsk9_region": {
+                "summary": "PCSK9 region",
+                "description": "Small region in PCSK9 gene",
+                "value": "1-55039400-55039500",
             },
         },
     ),
@@ -131,9 +107,7 @@ async def get_region(
     The maximum region size allowed is typically 1 Mb.
 
     Args:
-        chrom: Chromosome (1-22, X, Y, M/MT)
-        start: Start position (1-based, inclusive)
-        stop: Stop position (1-based, inclusive)
+        region: Genomic region in format chr-start-stop
         dataset: gnomAD dataset version (v2, v3, or v4)
         service: Injected frequency service
 
@@ -141,16 +115,30 @@ async def get_region(
         Dictionary containing region info, variants, and genes
 
     Raises:
-        HTTPException(400): Invalid coordinates
+        HTTPException(400): Invalid region format or coordinates
         HTTPException(500): Internal server error
     """
-    if stop <= start:
-        raise HTTPException(
-            status_code=400, detail="Stop position must be greater than start position"
-        )
+    # Parse region string
+    try:
+        parts = region.split("-")
+        if len(parts) != 3:
+            raise ValueError("Region must be in format: chr-start-stop")
+        
+        chrom = parts[0].replace("chr", "")  # Remove chr prefix if present
+        start = int(parts[1])
+        stop = int(parts[2])
+        
+        if stop <= start:
+            raise ValueError("Stop position must be greater than start position")
+            
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
     try:
         result = await service.client.get_region(chrom, start, stop, dataset)
+        # Unwrap the region key if present
+        if isinstance(result, dict) and "region" in result:
+            return result["region"]
         return result
     except Exception as e:
         logger.error(f"Error getting region: {e}")

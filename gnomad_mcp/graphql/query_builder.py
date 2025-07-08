@@ -39,6 +39,8 @@ class QueryBuilder:
     @classmethod
     def validate_variant_id(cls, variant_id: str) -> bool:
         """Validate variant ID format."""
+        if not variant_id:
+            raise ValueError("Variant ID cannot be empty")
         parts = variant_id.split("-")
         if len(parts) != 4:
             raise ValueError(
@@ -54,10 +56,29 @@ class QueryBuilder:
         """Process and validate variables for a query type."""
         processed = variables.copy()
 
-        # Add version-specific defaults
+        # Handle variant_id conversion based on query type
         if query_type == "variant":
+            # Regular variant queries use camelCase
+            if "variant_id" in processed and "variantId" not in processed:
+                processed["variantId"] = processed.pop("variant_id")
             cls.validate_variant_id(processed.get("variantId", ""))
+        elif query_type in ["clinvar_variant", "mitochondrial_variant"]:
+            # ClinVar and mitochondrial queries use snake_case
+            if "variantId" in processed and "variant_id" not in processed:
+                processed["variant_id"] = processed.pop("variantId")
+            cls.validate_variant_id(processed.get("variant_id", ""))
+        elif query_type == "structural_variant":
+            # Structural variant queries use camelCase variantId
+            if "variant_id" in processed and "variantId" not in processed:
+                processed["variantId"] = processed.pop("variant_id")
 
+        elif query_type == "transcript":
+            # Transcript queries need reference genome
+            if "reference_genome" not in processed:
+                processed["reference_genome"] = cls.get_reference_genome(version)
+            # v2 transcript queries also need dataset parameter
+            if version == "v2" and "dataset" not in processed:
+                processed["dataset"] = "gnomad_r2_1"
         elif query_type in ["gene", "gene_search", "clinvar_variant", "gene_variants"]:
             # Add reference genome if not provided
             if "reference_genome" not in processed:
@@ -75,5 +96,10 @@ class QueryBuilder:
             # Add reference genome if needed
             if "reference_genome" not in processed:
                 processed["reference_genome"] = cls.get_reference_genome(version)
+            # Map GRCh37/38 to the enum values expected by the API
+            if processed.get("reference_genome") == "GRCh37":
+                processed["reference_genome"] = "GRCh37"
+            elif processed.get("reference_genome") == "GRCh38":
+                processed["reference_genome"] = "GRCh38"
 
         return processed

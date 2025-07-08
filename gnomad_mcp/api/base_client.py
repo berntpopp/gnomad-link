@@ -21,14 +21,14 @@ class GnomadApiError(Exception):
     pass
 
 
-class VariantNotFoundError(GnomadApiError):
-    """Raised when a variant is not found in the database."""
+class DataNotFoundError(GnomadApiError):
+    """Raised when requested data is not found."""
 
     pass
 
 
-class DataNotFoundError(GnomadApiError):
-    """Raised when requested data is not found."""
+class VariantNotFoundError(DataNotFoundError):
+    """Raised when a variant is not found in the database."""
 
     pass
 

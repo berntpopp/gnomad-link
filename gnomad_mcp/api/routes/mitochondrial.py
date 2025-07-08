@@ -9,7 +9,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 
-from gnomad_mcp.api import DataNotFoundError
+from gnomad_mcp.api import DataNotFoundError, GnomadApiError
 from gnomad_mcp.models import GnomadDataset
 from gnomad_mcp.services import FrequencyService
 
@@ -113,9 +113,20 @@ async def get_mitochondrial_variant(
     """
     try:
         result = await service.client.get_mitochondrial_variant(variant_id, dataset)
+        # Unwrap the mitochondrial_variant key from the GraphQL response
+        if isinstance(result, dict) and "mitochondrial_variant" in result:
+            return result["mitochondrial_variant"]
         return result
     except DataNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
+    except GnomadApiError as e:
+        error_str = str(e)
+        # Check if it's a validation error wrapped by the API client
+        if "Invalid variant ID" in error_str:
+            raise HTTPException(status_code=400, detail=error_str) from e
+        raise HTTPException(status_code=500, detail=error_str) from e
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         logger.error(f"Error getting mitochondrial variant: {e}")
         raise HTTPException(status_code=500, detail="Internal server error") from e

@@ -198,9 +198,10 @@ class UnifiedGnomadClient(BaseGnomadClient):
             Region data including variants and genes
         """
         version = QueryBuilder.get_version_for_dataset(dataset)
+        # Don't include dataset in variables - it's not used in the simplified query
         return await self.execute_query(
             "region",
-            {"chrom": chrom, "start": start, "stop": stop, "dataset": dataset},
+            {"chrom": chrom, "start": start, "stop": stop},
             version,
         )
 

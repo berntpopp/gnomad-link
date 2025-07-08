@@ -26,6 +26,11 @@ class PopulationFrequency(BaseModel):
             return self.allele_count / self.allele_number
         return None
 
+    @property
+    def id(self) -> str:
+        """Return the population ID (alias for name)."""
+        return self.name
+
     model_config = {
         "populate_by_name": True
     }  # Allows using alias 'ac' to populate 'allele_count'

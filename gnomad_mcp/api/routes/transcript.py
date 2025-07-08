@@ -113,11 +113,42 @@ async def get_transcript(
         HTTPException(404): Transcript not found
         HTTPException(500): Internal server error
     """
+    # Basic validation of transcript ID format
+    if not transcript_id.startswith("ENST") or len(transcript_id) < 15:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Invalid transcript ID format: '{transcript_id}'. Expected format: ENST followed by 11 digits (e.g., ENST00000357654)"
+        )
+    
     try:
         result = await service.client.get_transcript(transcript_id, reference_genome)
+        # Unwrap the transcript key from the GraphQL response
+        if isinstance(result, dict) and "transcript" in result:
+            transcript_data = result["transcript"]
+            # Check if the transcript was found
+            if transcript_data is None:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Transcript '{transcript_id}' not found for reference genome '{reference_genome}'"
+                )
+            return transcript_data
         return result
     except DataNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
+    except HTTPException:
+        raise
+    except TimeoutError:
+        # Timeouts often indicate invalid transcript IDs that the API can't process
+        raise HTTPException(
+            status_code=404,
+            detail=f"Transcript '{transcript_id}' not found or request timed out"
+        ) from None
     except Exception as e:
         logger.error(f"Error getting transcript: {e}")
+        # Check if it's a timeout wrapped in another exception
+        if "timeout" in str(e).lower():
+            raise HTTPException(
+                status_code=404,
+                detail=f"Transcript '{transcript_id}' not found or request timed out"
+            ) from e
         raise HTTPException(status_code=500, detail="Internal server error") from e
