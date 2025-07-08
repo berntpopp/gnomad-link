@@ -2,6 +2,7 @@
 
 from .clinvar import router as clinvar_router
 from .gene import router as gene_router
+from .liftover import router as liftover_router
 from .mitochondrial import router as mitochondrial_router
 from .region import router as region_router
 from .search import router as search_router
@@ -13,6 +14,7 @@ __all__ = [
     "variant_router",
     "gene_router",
     "clinvar_router",
+    "liftover_router",
     "structural_variant_router",
     "mitochondrial_router",
     "region_router",

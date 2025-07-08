@@ -14,6 +14,7 @@ from .gene_models import (
     GeneSearchResult,
     GeneTranscript,
 )
+from .liftover_models import LiftoverResponse, LiftoverResult, LiftoverVariant
 from .mitochondrial_models import (
     MitochondrialHaplogroup,
     MitochondrialPopulation,
@@ -48,6 +49,10 @@ __all__ = [
     "ClinVarCondition",
     "ClinVarSubmission",
     "GnomadInClinVar",
+    # Liftover models
+    "LiftoverVariant",
+    "LiftoverResult",
+    "LiftoverResponse",
     # Structural variant models
     "StructuralVariant",
     "SVConsequence",

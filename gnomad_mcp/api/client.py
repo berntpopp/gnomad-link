@@ -255,3 +255,25 @@ class UnifiedGnomadClient(BaseGnomadClient):
         if "gene" in result and "variants" in result["gene"]:
             return list(result["gene"]["variants"])
         return []
+
+    async def get_liftover(
+        self,
+        source_variant_id: str,
+        reference_genome: str = "GRCh38",
+    ) -> list[dict[str, Any]]:
+        """Get liftover mapping between reference genomes.
+
+        Args:
+            source_variant_id: Variant ID to liftover
+            reference_genome: Source reference genome of the variant
+
+        Returns:
+            List of liftover results (may be empty if no mapping exists)
+        """
+        variables = {
+            "source_variant_id": source_variant_id,
+            "reference_genome": reference_genome,
+        }
+
+        result = await self.execute_query("liftover", variables)
+        return list(result.get("liftover", []))

@@ -16,6 +16,7 @@ from gnomad_mcp.api.client import UnifiedGnomadClient
 from gnomad_mcp.api.routes import (
     clinvar_router,
     gene_router,
+    liftover_router,
     mitochondrial_router,
     region_router,
     search_router,
@@ -84,6 +85,7 @@ app.add_middleware(
 app.include_router(variant_router)
 app.include_router(gene_router)
 app.include_router(clinvar_router)
+app.include_router(liftover_router)
 app.include_router(structural_variant_router)
 app.include_router(mitochondrial_router)
 app.include_router(region_router)
@@ -137,6 +139,9 @@ async def root() -> dict[str, Any]:
             "clinvar": {
                 "variant": "/clinvar/variant/{variant_id}",
                 "meta": "/clinvar/meta",
+            },
+            "liftover": {
+                "convert": "/liftover/",
             },
             "structural_variants": {
                 "lookup": "/structural-variant/{variant_id}",
