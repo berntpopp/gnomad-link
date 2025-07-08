@@ -101,7 +101,7 @@ fragment StructuralVariantFields on StructuralVariant {
 }
 
 # Fragment for ClinVar variant data  
-fragment ClinVarVariantFields on ClinVarVariant {
+fragment ClinVarVariantFields on ClinVarVariantDetails {
     variant_id
     reference_genome
     chrom

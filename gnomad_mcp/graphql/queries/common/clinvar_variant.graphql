@@ -19,7 +19,7 @@ query clinvar_variant($variant_id: String!, $reference_genome: ReferenceGenomeId
         gold_stars
         in_gnomad
         last_evaluated
-        rsids
+        rsid
         submissions {
             ...ClinVarSubmissionFields
             conditions {

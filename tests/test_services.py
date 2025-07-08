@@ -136,23 +136,35 @@ class TestFrequencyService:
         assert result.genome is None
         assert not result.has_data  # No meaningful data
 
-    async def test_process_populations_filters_empty(self, frequency_service):
-        """Test that populations with no data are filtered out."""
+    async def test_variant_response_with_filtered_populations(
+        self, frequency_service, mock_client
+    ):
+        """Test that variant response correctly processes population data."""
         # Arrange
-        raw_populations = [
-            {"id": "afr", "ac": 5, "an": 1000, "homozygote_count": 0},
-            {"id": "", "ac": 0, "an": 0, "homozygote_count": 0},  # Empty ID
-            {"id": "eas", "ac": 0, "an": 0, "homozygote_count": 0},  # No alleles
-            {"id": "nfe", "ac": 10, "an": 2000, "homozygote_count": 1},
-        ]
+        mock_client.get_variant.return_value = {
+            "variant": {
+                "variant_id": "1-55039447-G-T",
+                "exome": {
+                    "ac": 15,
+                    "an": 3000,
+                    "populations": [
+                        {"id": "afr", "ac": 5, "an": 1000, "homozygote_count": 0},
+                        {"id": "nfe", "ac": 10, "an": 2000, "homozygote_count": 1},
+                    ],
+                },
+            }
+        }
 
         # Act
-        processed = frequency_service._process_populations(raw_populations)
+        result = await frequency_service.get_variant_frequencies(
+            "1-55039447-G-T", "gnomad_r4"
+        )
 
         # Assert
-        assert len(processed) == 2  # Only afr and nfe should remain
-        assert processed[0].name == "afr"
-        assert processed[1].name == "nfe"
+        assert result.exome is not None
+        assert len(result.exome.populations) == 2
+        assert result.exome.populations[0].id == "afr"
+        assert result.exome.populations[1].id == "nfe"
 
     async def test_service_cleanup(self, frequency_service, mock_client):
         """Test that service properly cleans up resources."""

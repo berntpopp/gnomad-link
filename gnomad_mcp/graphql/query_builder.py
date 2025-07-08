@@ -39,6 +39,8 @@ class QueryBuilder:
     @classmethod
     def validate_variant_id(cls, variant_id: str) -> bool:
         """Validate variant ID format."""
+        if not variant_id:
+            raise ValueError("Variant ID cannot be empty")
         parts = variant_id.split("-")
         if len(parts) != 4:
             raise ValueError(
