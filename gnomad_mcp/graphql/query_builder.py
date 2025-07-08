@@ -67,6 +67,10 @@ class QueryBuilder:
             if "variantId" in processed and "variant_id" not in processed:
                 processed["variant_id"] = processed.pop("variantId")
             cls.validate_variant_id(processed.get("variant_id", ""))
+        elif query_type == "structural_variant":
+            # Structural variant queries use camelCase variantId
+            if "variant_id" in processed and "variantId" not in processed:
+                processed["variantId"] = processed.pop("variant_id")
 
         elif query_type in ["gene", "gene_search", "clinvar_variant", "gene_variants"]:
             # Add reference genome if not provided

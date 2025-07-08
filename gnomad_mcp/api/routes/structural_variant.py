@@ -114,9 +114,21 @@ async def get_structural_variant(
     """
     try:
         result = await service.client.get_structural_variant(variant_id, dataset)
+        # Unwrap the structural_variant key from the GraphQL response
+        if isinstance(result, dict) and "structural_variant" in result:
+            sv_data = result["structural_variant"]
+            # Check if the variant was found
+            if sv_data is None:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Structural variant '{variant_id}' not found in dataset '{dataset}'"
+                )
+            return sv_data
         return result
     except DataNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error getting structural variant: {e}")
         raise HTTPException(status_code=500, detail="Internal server error") from e
