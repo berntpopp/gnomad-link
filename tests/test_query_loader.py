@@ -244,8 +244,7 @@ query dup {
 
     def test_empty_query_file(self, temp_query_dir):
         """Test loading empty query file."""
-        # Create v4 directory
-        (temp_query_dir / "v4").mkdir()
+        # v4 directory already exists from fixture
         (temp_query_dir / "v4" / "empty.graphql").write_text("")
 
         loader = QueryLoader()
@@ -257,8 +256,7 @@ query dup {
 
     def test_malformed_import(self, temp_query_dir):
         """Test handling of malformed import directives."""
-        # Create v4 directory
-        (temp_query_dir / "v4").mkdir()
+        # v4 directory already exists from fixture
         (temp_query_dir / "v4" / "malformed.graphql").write_text(
             """
 #import
