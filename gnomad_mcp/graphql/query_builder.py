@@ -72,6 +72,13 @@ class QueryBuilder:
             if "variant_id" in processed and "variantId" not in processed:
                 processed["variantId"] = processed.pop("variant_id")
 
+        elif query_type == "transcript":
+            # Transcript queries need reference genome
+            if "reference_genome" not in processed:
+                processed["reference_genome"] = cls.get_reference_genome(version)
+            # v2 transcript queries also need dataset parameter
+            if version == "v2" and "dataset" not in processed:
+                processed["dataset"] = "gnomad_r2_1"
         elif query_type in ["gene", "gene_search", "clinvar_variant", "gene_variants"]:
             # Add reference genome if not provided
             if "reference_genome" not in processed:
