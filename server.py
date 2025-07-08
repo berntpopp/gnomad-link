@@ -136,6 +136,7 @@ async def root() -> dict[str, Any]:
             },
             "clinvar": {
                 "variant": "/clinvar/variant/{variant_id}",
+                "meta": "/clinvar/meta",
             },
             "structural_variants": {
                 "lookup": "/structural-variant/{variant_id}",

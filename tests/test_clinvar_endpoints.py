@@ -126,3 +126,23 @@ class TestClinVarEndpoints:
 
                     if "submitter" in submission:
                         assert isinstance(submission["submitter"], str)
+
+    @pytest.mark.asyncio
+    async def test_clinvar_meta(self, client: AsyncClient):
+        """Test ClinVar metadata endpoint."""
+        response = await client.get("/clinvar/meta")
+
+        assert response.status_code == 200
+        data = response.json()
+
+        # Check required fields
+        assert "clinvar_release_date" in data
+        assert isinstance(data["clinvar_release_date"], str)
+
+        # Check date format (should be YYYY-MM-DD)
+        if data["clinvar_release_date"]:
+            date_parts = data["clinvar_release_date"].split("-")
+            assert len(date_parts) == 3
+            assert len(date_parts[0]) == 4  # Year
+            assert len(date_parts[1]) == 2  # Month
+            assert len(date_parts[2]) == 2  # Day

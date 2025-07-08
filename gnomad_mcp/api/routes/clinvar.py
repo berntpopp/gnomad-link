@@ -5,6 +5,7 @@ annotations for genetic variants.
 """
 
 import logging
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 
@@ -124,4 +125,52 @@ async def get_clinvar_variant(
         raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:
         logger.error(f"Error getting ClinVar variant: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
+
+
+@router.get(
+    "/meta",
+    summary="Get ClinVar metadata",
+    description="Retrieve metadata about the ClinVar database including release date.",
+    operation_id="get_clinvar_meta",
+    responses={
+        200: {
+            "description": "ClinVar metadata retrieved successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "clinvar_release_date": "2025-04-29"
+                    }
+                }
+            },
+        },
+        500: {"description": "Internal server error"},
+    },
+)
+async def get_clinvar_meta(
+    service: FrequencyService = Depends(get_service),
+) -> dict[str, Any]:
+    """Get ClinVar metadata including release date.
+
+    This endpoint returns metadata about the ClinVar database such as:
+    - Release date of the ClinVar data integrated into gnomAD
+
+    Args:
+        service: Injected frequency service
+
+    Returns:
+        Dictionary containing ClinVar metadata
+
+    Raises:
+        HTTPException(500): Internal server error
+    """
+    try:
+        result = await service.client.get_meta()
+        # Extract only ClinVar-specific metadata
+        meta_data = result.get("meta", {})
+        return {
+            "clinvar_release_date": meta_data.get("clinvar_release_date")
+        }
+    except Exception as e:
+        logger.error(f"Error getting ClinVar metadata: {e}")
         raise HTTPException(status_code=500, detail="Internal server error") from e
