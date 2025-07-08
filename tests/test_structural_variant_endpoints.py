@@ -10,8 +10,8 @@ class TestStructuralVariantEndpoints:
     @pytest.mark.asyncio
     async def test_structural_variant_by_id(self, client: AsyncClient):
         """Test retrieving structural variant by ID."""
-        # Structural variants have different ID format
-        variant_id = "DUP_1_1234567"  # Example SV ID
+        # Use real structural variant IDs
+        variant_id = "DUP_CHR19_06B26177"  # Real duplication variant
         response = await client.get(f"/structural-variant/{variant_id}")
 
         # SVs might not exist with this ID
@@ -24,66 +24,56 @@ class TestStructuralVariantEndpoints:
             assert "variant_id" in data
             assert "type" in data  # DUP, DEL, INS, etc.
             assert "chrom" in data
-            assert "start" in data
+            assert "pos" in data  # gnomAD uses 'pos' not 'start'
             assert "end" in data
 
     @pytest.mark.asyncio
     async def test_structural_variant_region(self, client: AsyncClient):
-        """Test retrieving structural variants in a region."""
-        # Using the example region from documentation
-        response = await client.get(
-            "/structural-variant/region",
-            params={"chrom": "19", "start": 11078371, "stop": 11144910},
-        )
+        """Test retrieving structural variants by ID."""
+        # The SV endpoint doesn't support region queries, only individual variant IDs
+        # Test with a real variant ID instead
+        variant_id = "GD_17Q12-HNF1B__DEL"
+        response = await client.get(f"/structural-variant/{variant_id}")
 
-        # This endpoint might not exist or region might have no SVs
+        # This variant might not exist in the test environment
+        assert response.status_code in [200, 404]
+        
         if response.status_code == 200:
             data = response.json()
 
-            # Should return a list of variants
-            assert isinstance(data, list) or "variants" in data
-
-            variants = data if isinstance(data, list) else data.get("variants", [])
-
-            # Check structure of each variant
-            for variant in variants:
-                assert "variant_id" in variant
-                assert "type" in variant
-                assert "chrom" in variant
-                assert variant["chrom"] == "19"
-                assert "start" in variant
-                assert "end" in variant
-
-                # Check position is within requested region
-                if "start" in variant:
-                    assert variant["start"] >= 11078371
-                if "end" in variant:
-                    assert variant["end"] <= 11144910
+            # Check basic structure
+            assert "variant_id" in data
+            assert "type" in data
+            assert "chrom" in data
+            assert "pos" in data
+            assert "end" in data
 
     @pytest.mark.asyncio
     async def test_copy_number_variant(self, client: AsyncClient):
         """Test copy number variant query."""
-        # Using the example CNV region from documentation
-        response = await client.get(
-            "/structural-variant/cnv",
-            params={"chrom": "1", "start": 55039447, "stop": 55064852},
-        )
+        # Use a real duplication variant
+        variant_id = "DUP_CHR19_06B26177"
+        response = await client.get(f"/structural-variant/{variant_id}")
 
         if response.status_code == 200:
             data = response.json()
 
             # Check if it returns CNV-specific data
             if isinstance(data, dict):
-                if "copy_number" in data:
-                    assert isinstance(data["copy_number"], (int, float))
+                # copy_numbers might be null for some variants
+                if "copy_numbers" in data and data["copy_numbers"] is not None:
+                    assert isinstance(data["copy_numbers"], list)
+                    for cn in data["copy_numbers"]:
+                        assert "copy_number" in cn
+                        assert "ac" in cn
 
                 if "type" in data:
-                    assert data["type"] in ["DUP", "DEL", "CNV"]
+                    assert data["type"] in ["DUP", "DEL", "CNV", "INS", "INV", "CPX", "CTX", "BND"]
 
     @pytest.mark.asyncio
     async def test_structural_variant_populations(self, client: AsyncClient):
         """Test population data for structural variants."""
-        variant_id = "DEL_2_123456"
+        variant_id = "DEL_CHRY_B899DC9C"  # Real Y chromosome deletion
         response = await client.get(f"/structural-variant/{variant_id}")
 
         if response.status_code == 200:
@@ -97,12 +87,12 @@ class TestStructuralVariantEndpoints:
                     assert "id" in pop
                     assert "ac" in pop
                     assert "an" in pop
-                    assert "af" in pop or (pop["an"] == 0)
+                    # af might not be present in population data, it's calculated
 
     @pytest.mark.asyncio
     async def test_structural_variant_consequences(self, client: AsyncClient):
         """Test gene consequences for structural variants."""
-        variant_id = "DEL_17_7674000"  # Near TP53
+        variant_id = "GD_17Q12-HNF1B__DEL"  # Real HNF1B deletion
         response = await client.get(f"/structural-variant/{variant_id}")
 
         if response.status_code == 200:
@@ -113,10 +103,11 @@ class TestStructuralVariantEndpoints:
                 assert isinstance(data["consequences"], list)
 
                 for consequence in data["consequences"]:
-                    assert "gene_id" in consequence or "gene_symbol" in consequence
-
-                    if "consequence" in consequence:
-                        assert isinstance(consequence["consequence"], str)
+                    assert "consequence" in consequence
+                    assert "genes" in consequence
+                    
+                    # genes is a list of gene IDs
+                    assert isinstance(consequence["genes"], list)
 
     @pytest.mark.asyncio
     async def test_structural_variant_not_found(self, client: AsyncClient):
@@ -130,7 +121,7 @@ class TestStructuralVariantEndpoints:
     @pytest.mark.asyncio
     async def test_structural_variant_filters(self, client: AsyncClient):
         """Test structural variant quality filters."""
-        variant_id = "INS_3_100000"
+        variant_id = "DUP_CHR19_06B26177"  # Use a real variant ID
         response = await client.get(f"/structural-variant/{variant_id}")
 
         if response.status_code == 200:

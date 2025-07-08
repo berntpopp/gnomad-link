@@ -33,8 +33,8 @@ router = APIRouter(prefix="/structural-variant", tags=["Structural Variants"])
             "content": {
                 "application/json": {
                     "example": {
-                        "variant_id": "DUP_1_10584",
-                        "chrom": "1",
+                        "variant_id": "DUP_CHR19_06B26177",
+                        "chrom": "19",
                         "pos": 10456049,
                         "end": 10583588,
                         "length": 127539,
@@ -49,12 +49,17 @@ router = APIRouter(prefix="/structural-variant", tags=["Structural Variants"])
                                 "af": 0.000438,
                             },
                         ],
-                        "consequence": {
-                            "consequence": "COPY_GAIN",
-                            "genes": ["ENSG00000173213", "ENSG00000271746"],
-                        },
+                        "consequences": [
+                            {
+                                "consequence": "COPY_GAIN",
+                                "genes": ["ENSG00000173213", "ENSG00000271746"],
+                            }
+                        ],
                         "filters": ["PASS"],
-                        "quality_metrics": {"mean_coverage": 32.5, "call_rate": 0.98},
+                        "copy_numbers": [
+                            {"copy_number": 3, "ac": 10},
+                            {"copy_number": 4, "ac": 2},
+                        ],
                     }
                 }
             },
@@ -71,17 +76,17 @@ async def get_structural_variant(
             "duplication": {
                 "summary": "Duplication variant",
                 "description": "Example duplication in chromosome 19",
-                "value": "DUP_19_11078371",
+                "value": "DUP_CHR19_06B26177",
             },
-            "deletion": {
-                "summary": "Deletion variant",
-                "description": "Example deletion variant",
-                "value": "DEL_2_89161",
+            "deletion_hnf1b": {
+                "summary": "HNF1B deletion",
+                "description": "17q12 HNF1B deletion variant",
+                "value": "GD_17Q12-HNF1B__DEL",
             },
-            "cnv": {
-                "summary": "Copy number variant",
-                "description": "Copy number variant region example",
-                "value": "CNV_1_55039447",
+            "deletion_y": {
+                "summary": "Y chromosome deletion",
+                "description": "Example deletion on Y chromosome",
+                "value": "DEL_CHRY_B899DC9C",
             },
         },
     ),
