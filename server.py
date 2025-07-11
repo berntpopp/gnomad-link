@@ -12,8 +12,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastmcp import FastMCP
 
 # Import services and models
-from gnomad_mcp.api.client import UnifiedGnomadClient
-from gnomad_mcp.api.routes import (
+from gnomad_link.api.client import UnifiedGnomadClient
+from gnomad_link.api.routes import (
     clinvar_router,
     gene_router,
     liftover_router,
@@ -24,9 +24,9 @@ from gnomad_mcp.api.routes import (
     transcript_router,
     variant_router,
 )
-from gnomad_mcp.api.routes.dependencies import get_service
-from gnomad_mcp.config import settings
-from gnomad_mcp.services.frequency_service import FrequencyService
+from gnomad_link.api.routes.dependencies import get_service
+from gnomad_link.config import settings
+from gnomad_link.services.frequency_service import FrequencyService
 
 # Configure logging
 logging.basicConfig(level=getattr(logging, settings.LOG_LEVEL))

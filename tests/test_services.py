@@ -4,9 +4,9 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from gnomad_mcp.api import VariantNotFoundError
-from gnomad_mcp.models import VariantFrequencyResponse
-from gnomad_mcp.services import FrequencyService
+from gnomad_link.api import VariantNotFoundError
+from gnomad_link.models import VariantFrequencyResponse
+from gnomad_link.services import FrequencyService
 
 
 @pytest.fixture
@@ -180,7 +180,7 @@ class TestPopulationFrequencyModel:
 
     def test_allele_frequency_calculation(self):
         """Test allele frequency calculation."""
-        from gnomad_mcp.models import PopulationFrequency
+        from gnomad_link.models import PopulationFrequency
 
         # Normal case
         pop = PopulationFrequency(

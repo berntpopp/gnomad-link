@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, cast
 from fastapi import Request
 
 if TYPE_CHECKING:
-    from gnomad_mcp.services.frequency_service import FrequencyService
+    from gnomad_link.services.frequency_service import FrequencyService
 
 
 def get_service(request: Request) -> "FrequencyService":

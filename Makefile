@@ -16,13 +16,13 @@ format:  ## Format code with black and isort
 lint:  ## Run all linters
 	ruff check .
 	flake8 .
-	mypy gnomad_mcp
+	mypy gnomad_link
 
 test:  ## Run tests
 	pytest
 
 test-cov:  ## Run tests with coverage
-	pytest --cov=gnomad_mcp --cov-report=html --cov-report=term
+	pytest --cov=gnomad_link --cov-report=html --cov-report=term
 
 clean:  ## Clean up cache and build files
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true

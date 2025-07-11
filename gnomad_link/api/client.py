@@ -2,7 +2,7 @@
 
 from typing import Any, Optional
 
-from gnomad_mcp.graphql import QueryBuilder
+from gnomad_link.graphql import QueryBuilder
 
 from .base_client import BaseGnomadClient
 

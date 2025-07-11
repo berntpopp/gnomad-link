@@ -9,8 +9,8 @@ from gql import Client, gql
 from gql.transport.aiohttp import AIOHTTPTransport
 from gql.transport.exceptions import TransportError, TransportQueryError
 
-from gnomad_mcp.config import settings
-from gnomad_mcp.graphql import QueryBuilder, QueryLoader
+from gnomad_link.config import settings
+from gnomad_link.graphql import QueryBuilder, QueryLoader
 
 logger = logging.getLogger(__name__)
 

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from gnomad_mcp.graphql.query_loader import QueryLoader
+from gnomad_link.graphql.query_loader import QueryLoader
 
 
 class TestQueryLoader:

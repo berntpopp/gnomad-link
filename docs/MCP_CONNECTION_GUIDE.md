@@ -14,7 +14,7 @@ The gnomAD server now provides both REST API and MCP interfaces through a single
 
 ```bash
 # Navigate to the project directory
-cd /mnt/c/development/scholl-lab/GnomAD-MCP
+cd /mnt/c/development/scholl-lab/gnomad-link
 
 # Start the server (development mode)
 python server.py

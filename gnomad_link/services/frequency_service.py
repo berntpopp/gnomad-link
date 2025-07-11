@@ -11,9 +11,9 @@ from typing import Any, Optional
 
 from async_lru import alru_cache
 
-from gnomad_mcp.api.base_client import DataNotFoundError, GnomadApiError
-from gnomad_mcp.api.client import UnifiedGnomadClient
-from gnomad_mcp.models import (
+from gnomad_link.api.base_client import DataNotFoundError, GnomadApiError
+from gnomad_link.api.client import UnifiedGnomadClient
+from gnomad_link.models import (
     ClinVarVariant,
     Gene,
     GeneSearchResult,
@@ -150,7 +150,7 @@ class FrequencyService:
         """
         # Check if variant was found
         if not data:
-            from gnomad_mcp.api.base_client import VariantNotFoundError
+            from gnomad_link.api.base_client import VariantNotFoundError
 
             raise VariantNotFoundError(f"Variant {variant_id} not found in {dataset}")
 

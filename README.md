@@ -1,4 +1,4 @@
-# gnomAD MCP Server
+# gnomAD Link
 
 A unified server that bridges the gnomAD (Genome Aggregation Database) to modern AI applications through dual interfaces: REST API and MCP (Model Context Protocol).
 
@@ -23,7 +23,7 @@ This server provides programmatic access to human genetic variation data from gn
 ```bash
 # Install
 git clone <repository-url>
-cd GnomAD-MCP
+cd gnomad-link
 pip install -e .
 
 # Run unified server
@@ -65,7 +65,7 @@ For Claude Desktop (`~/Library/Application Support/Claude/claude_desktop_config.
   "mcpServers": {
     "gnomad": {
       "command": "python",
-      "args": ["/path/to/GnomAD-MCP/server.py"],
+      "args": ["/path/to/gnomad-link/server.py"],
       "env": {
         "PYTHONUNBUFFERED": "1",
         "MCP_MODE": "true"

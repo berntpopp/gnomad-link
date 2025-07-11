@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from gnomad_mcp.api.base_client import (
+from gnomad_link.api.base_client import (
     BaseGnomadClient,
     DataNotFoundError,
     GnomadApiError,

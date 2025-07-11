@@ -9,9 +9,9 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 
-from gnomad_mcp.api import DataNotFoundError, GnomadApiError
-from gnomad_mcp.models import GnomadDataset, VariantFrequencyResponse
-from gnomad_mcp.services import FrequencyService
+from gnomad_link.api import DataNotFoundError, GnomadApiError
+from gnomad_link.models import GnomadDataset, VariantFrequencyResponse
+from gnomad_link.services import FrequencyService
 
 from .dependencies import get_service
 

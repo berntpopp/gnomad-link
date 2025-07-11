@@ -2,7 +2,7 @@
 
 import pytest
 
-from gnomad_mcp.graphql.query_builder import QueryBuilder
+from gnomad_link.graphql.query_builder import QueryBuilder
 
 
 class TestQueryBuilder:

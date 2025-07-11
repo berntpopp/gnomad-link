@@ -9,8 +9,8 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from gnomad_mcp.models import GeneSearchResult, GnomadDataset, ReferenceGenome
-from gnomad_mcp.services import FrequencyService
+from gnomad_link.models import GeneSearchResult, GnomadDataset, ReferenceGenome
+from gnomad_link.services import FrequencyService
 
 from .dependencies import get_service
 

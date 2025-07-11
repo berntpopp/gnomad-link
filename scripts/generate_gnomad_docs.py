@@ -1534,7 +1534,7 @@ query CheckCooccurrence($variant1: String!, $variant2: String!, $dataset: Datase
             filename: Name of the file to save (e.g., "api_reference.md")
             content: Markdown content to write to the file
         """
-        docs_dir = Path("/mnt/c/development/scholl-lab/GnomAD-MCP/docs/gnomad_graphql")
+        docs_dir = Path("/mnt/c/development/scholl-lab/gnomad-link/docs/gnomad_graphql")
         docs_dir.mkdir(parents=True, exist_ok=True)
 
         filepath = docs_dir / filename
@@ -1552,7 +1552,7 @@ query CheckCooccurrence($variant1: String!, $variant2: String!, $dataset: Datase
         - Understanding the full schema structure
         - Building additional tools
         """
-        docs_dir = Path("/mnt/c/development/scholl-lab/GnomAD-MCP/docs/gnomad_graphql")
+        docs_dir = Path("/mnt/c/development/scholl-lab/gnomad-link/docs/gnomad_graphql")
         schema_path = docs_dir / "gnomad_graphql_schema.json"
 
         with open(schema_path, "w") as f:

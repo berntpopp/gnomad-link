@@ -4,9 +4,9 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from gnomad_mcp.api import DataNotFoundError, GnomadApiError
-from gnomad_mcp.models import Gene, ReferenceGenome
-from gnomad_mcp.services import FrequencyService
+from gnomad_link.api import DataNotFoundError, GnomadApiError
+from gnomad_link.models import Gene, ReferenceGenome
+from gnomad_link.services import FrequencyService
 
 
 class TestFrequencyServiceAdditional:
