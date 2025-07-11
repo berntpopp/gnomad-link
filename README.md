@@ -65,10 +65,9 @@ For Claude Desktop (`~/Library/Application Support/Claude/claude_desktop_config.
   "mcpServers": {
     "gnomad": {
       "command": "python",
-      "args": ["/path/to/gnomad-link/server.py"],
+      "args": ["/path/to/gnomad-link/mcp_server.py"],
       "env": {
-        "PYTHONUNBUFFERED": "1",
-        "MCP_MODE": "true"
+        "PYTHONUNBUFFERED": "1"
       }
     }
   }

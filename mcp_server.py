@@ -72,7 +72,7 @@ MCP_ROUTE_MAPS = [
 # Create MCP server by introspecting the FastAPI app
 mcp = FastMCP.from_fastapi(
     app=app,
-    name="gnomAD MCP Server",
+    name="gnomAD Link Server",
     mcp_names=MCP_CUSTOM_NAMES,
     route_maps=MCP_ROUTE_MAPS,
 )
