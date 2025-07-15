@@ -1,195 +1,71 @@
 #!/usr/bin/env python
-"""Unified FastAPI and MCP server for gnomAD variant data.
+"""Unified gnomAD server with multiple transport support.
 
-Single entry point for both REST API and Language Model tools.
+Single entry point supporting FastAPI REST API, MCP HTTP, and MCP STDIO transports.
 """
-import logging
-from contextlib import asynccontextmanager
-from typing import Any
 
-from fastapi import Depends, FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from fastmcp import FastMCP
+import asyncio
+import sys
 
-# Import services and models
-from gnomad_link.api.client import UnifiedGnomadClient
-from gnomad_link.api.routes import (
-    clinvar_router,
-    gene_router,
-    liftover_router,
-    mitochondrial_router,
-    region_router,
-    search_router,
-    structural_variant_router,
-    transcript_router,
-    variant_router,
-)
-from gnomad_link.api.routes.dependencies import get_service
-from gnomad_link.config import settings
-from gnomad_link.services.frequency_service import FrequencyService
-
-# Configure logging
-logging.basicConfig(level=getattr(logging, settings.LOG_LEVEL))
-logger = logging.getLogger(__name__)
+from gnomad_link.cli import create_config_from_args, create_parser
+from gnomad_link.exceptions import ConfigurationError, StartupError
+from gnomad_link.server_manager import UnifiedServerManager
 
 
-# --- Application Lifespan (Startup & Shutdown) ---
-# Based on FastAPI documentation for managing shared resources.
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Manage application lifecycle - startup and shutdown."""
-    logger.info("Starting gnomAD Unified Server...")
-    logger.info(
-        f"Cache configuration: size={settings.CACHE_SIZE}, "
-        f"TTL={settings.CACHE_TTL_MINUTES}min"
-    )
+async def async_main(args) -> None:
+    """Async main entry point."""
+    try:
+        # Create configuration
+        config = create_config_from_args(args)
 
-    # Instantiate services ONCE and store them in the application's shared state.
-    api_client = UnifiedGnomadClient()
-    app.state.frequency_service = FrequencyService(
-        client=api_client,
-        cache_size=settings.CACHE_SIZE,
-        cache_ttl_minutes=settings.CACHE_TTL_MINUTES,
-    )
+        # Create and start server
+        manager = UnifiedServerManager()
+        await manager.start_server(config)
 
-    yield  # The server is now running.
-
-    logger.info("Shutting down gnomAD Unified Server...")
-    await app.state.frequency_service.close()
-
-
-# --- FastAPI App Definition ---
-app = FastAPI(
-    title="gnomAD Unified Data Server",
-    description=(
-        "Provides a comprehensive REST API and a focused MCP toolset for gnomAD. "
-        "Access REST API at / and MCP tools at /mcp"
-    ),
-    version="4.0.0",
-    lifespan=lifespan,
-)
-
-# Add CORS middleware for web clients
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        origin.strip() for origin in settings.CORS_ORIGINS.split(",") if origin.strip()
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+    except KeyboardInterrupt:
+        print("\nShutdown requested by user")
+        sys.exit(0)
+    except ConfigurationError as e:
+        print(f"Configuration error: {e}")
+        sys.exit(1)
+    except StartupError as e:
+        print(f"Startup error: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        sys.exit(1)
 
 
-# Include all routers
-app.include_router(variant_router)
-app.include_router(gene_router)
-app.include_router(clinvar_router)
-app.include_router(liftover_router)
-app.include_router(structural_variant_router)
-app.include_router(mitochondrial_router)
-app.include_router(region_router)
-app.include_router(transcript_router)
-app.include_router(search_router)
+def main() -> None:
+    """Start the gnomAD unified server with specified transport."""
+    # Parse command line arguments
+    parser = create_parser()
+    args = parser.parse_args()
+
+    # Handle subcommands
+    if args.command in ["config", "health"]:
+        from gnomad_link.cli import main as cli_main
+
+        cli_main()
+        return
+
+    # Handle server startup
+    if args.transport == "stdio":
+        # STDIO transport runs synchronously
+        try:
+            config = create_config_from_args(args)
+            manager = UnifiedServerManager()
+
+            # Run STDIO server directly (synchronous)
+            asyncio.run(manager.start_stdio_server(config))
+
+        except Exception as e:
+            print(f"STDIO server error: {e}", file=sys.stderr)
+            sys.exit(1)
+    else:
+        # HTTP-based transports run asynchronously
+        asyncio.run(async_main(args))
 
 
-# --- Initialize services for MCP ---
-# Since MCP doesn't trigger the lifespan event, we need to initialize services manually
-if not hasattr(app.state, "frequency_service"):
-    api_client = UnifiedGnomadClient()
-    app.state.frequency_service = FrequencyService(
-        client=api_client,
-        cache_size=settings.CACHE_SIZE,
-        cache_ttl_minutes=settings.CACHE_TTL_MINUTES,
-    )
-
-# --- Create MCP server from FastAPI app ---
-# Use from_fastapi without route_maps to avoid AttributeError
-mcp = FastMCP.from_fastapi(app=app, name="gnomAD Tool Server")
-
-
-# --- Root and Health Endpoints ---
-@app.get("/", operation_id="get_root")
-async def root() -> dict[str, Any]:
-    """Root endpoint providing API information."""
-    return {
-        "message": "gnomAD Unified Data Server",
-        "version": "4.0.0",
-        "interfaces": {
-            "rest_api": {
-                "docs": "/docs",
-                "health": "/health",
-                "cache_stats": "/cache/stats",
-            },
-            "mcp_tools": {
-                "note": "MCP tools are defined via FastMCP integration",
-                "tools": ["get_variant_allele_frequency", "get_gene_summary"],
-            },
-        },
-        "endpoints": {
-            "variants": {
-                "lookup": "/variant/{variant_id}",
-                "details": "/variant/details/{variant_id}",
-                "search": "/search/variant",
-            },
-            "genes": {
-                "lookup": "/gene/",
-                "search": "/search/gene",
-            },
-            "clinvar": {
-                "variant": "/clinvar/variant/{variant_id}",
-                "meta": "/clinvar/meta",
-            },
-            "liftover": {
-                "convert": "/liftover/",
-            },
-            "structural_variants": {
-                "lookup": "/structural-variant/{variant_id}",
-            },
-            "mitochondrial_variants": {
-                "lookup": "/mitochondrial-variant/{variant_id}",
-            },
-            "regions": {
-                "query": "/region/",
-            },
-            "transcripts": {
-                "lookup": "/transcript/{transcript_id}",
-            },
-        },
-    }
-
-
-@app.get("/health", operation_id="health_check")
-async def health_check() -> dict[str, str]:
-    """Health check endpoint."""
-    return {"status": "healthy"}
-
-
-@app.get("/cache/stats", tags=["Monitoring"], operation_id="get_cache_stats")
-async def cache_stats(
-    service: FrequencyService = Depends(get_service),
-) -> dict[str, Any]:
-    """Get cache statistics for monitoring."""
-    return service.get_cache_stats()
-
-
-@app.post("/cache/clear", tags=["Monitoring"], operation_id="clear_cache")
-async def clear_cache(
-    service: FrequencyService = Depends(get_service),
-) -> dict[str, str]:
-    """Clear the variant cache."""
-    service.clear_cache()
-    return {"status": "cache_cleared"}
-
-
-# --- Main Entry Point (for `uvicorn server:app`) ---
 if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(
-        "server:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,  # Enable auto-reload during development
-        log_level="info",
-    )
+    main()

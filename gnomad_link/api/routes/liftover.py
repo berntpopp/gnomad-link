@@ -23,7 +23,8 @@ router = APIRouter(prefix="/liftover", tags=["Liftover"])
     summary="Convert variant coordinates between reference genomes",
     description=(
         "Perform liftover of variant coordinates from one reference genome build to another. "
-        "Provide source_variant_id to find the equivalent variant in the target reference genome."
+        "Provide either source_variant_id or liftover_variant_id to find the equivalent variant in the target "
+        "reference genome."
     ),
     operation_id="liftover_variant",
     responses={
@@ -50,12 +51,13 @@ router = APIRouter(prefix="/liftover", tags=["Liftover"])
                 }
             },
         },
+        400: {"description": "Bad request - invalid parameter combination"},
         500: {"description": "Internal server error"},
     },
 )
 async def liftover_variant(
     source_variant_id: str = Query(
-        ...,
+        None,
         description=(
             "Variant ID in source reference genome to liftover. "
             "Format: chromosome-position-ref-alt"
@@ -78,6 +80,13 @@ async def liftover_variant(
             },
         },
     ),
+    liftover_variant_id: str = Query(
+        None,
+        description=(
+            "Variant ID in target reference genome to reverse liftover. "
+            "Format: chromosome-position-ref-alt"
+        ),
+    ),
     reference_genome: ReferenceGenome = Query(
         ...,
         description="Source reference genome of the variant",
@@ -90,7 +99,8 @@ async def liftover_variant(
     in a different reference genome build.
 
     Args:
-        source_variant_id: Variant ID to liftover
+        source_variant_id: Variant ID to liftover (forward)
+        liftover_variant_id: Variant ID to reverse liftover
         reference_genome: Source reference genome of the variant
         service: Injected frequency service
 
@@ -98,23 +108,43 @@ async def liftover_variant(
         LiftoverResponse with results
 
     Raises:
+        HTTPException(400): Bad request - invalid parameter combination
         HTTPException(500): Internal server error
     """
+    # Validate parameter combination
+    if source_variant_id and liftover_variant_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Only one of source_variant_id or liftover_variant_id should be provided",
+        )
+
+    if not source_variant_id and not liftover_variant_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Either source_variant_id or liftover_variant_id must be provided",
+        )
+
+    # Determine query type and variant ID
+    if source_variant_id:
+        query_type = "forward"
+        variant_id = source_variant_id
+    else:
+        query_type = "reverse"
+        variant_id = liftover_variant_id
+
     # Log the liftover request
     logger.info(
-        f"Liftover request: source_variant_id={source_variant_id}, "
+        f"Liftover request: {query_type}, variant_id={variant_id}, "
         f"source_genome={reference_genome.value}"
     )
 
     try:
-        # Perform liftover
+        # Perform liftover - the GraphQL schema always uses source_variant_id
+        # For reverse liftover, the variant_id is still passed as source_variant_id
         results = await service.client.get_liftover(
-            source_variant_id=source_variant_id,
+            source_variant_id=variant_id,
             reference_genome=reference_genome.value,
         )
-
-        # Query type is always forward now
-        query_type = "forward"
 
         # Convert the raw results to LiftoverResult objects
         liftover_results = []
@@ -131,7 +161,7 @@ async def liftover_variant(
         # Log info about the results
         if not liftover_results:
             logger.info(
-                f"No liftover mapping found for source_variant_id={source_variant_id} "
+                f"No liftover mapping found for {query_type} query with variant_id={variant_id} "
                 f"from reference_genome={reference_genome.value}"
             )
 
