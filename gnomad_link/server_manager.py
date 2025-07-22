@@ -23,11 +23,7 @@ from .api.routes import (
     variant_router,
 )
 from .config import ServerConfig, settings
-from .exceptions import (
-    ConfigurationError,
-    MCPIntegrationError,
-    StartupError,
-)
+from .exceptions import ConfigurationError, MCPIntegrationError, StartupError
 from .logging_config import configure_logging, get_server_logger
 from .services.frequency_service import FrequencyService
 
@@ -222,6 +218,24 @@ class UnifiedServerManager:
         signal.signal(signal.SIGTERM, signal_handler)
         signal.signal(signal.SIGINT, signal_handler)
 
+    async def _initialize_app_state(self, app: FastAPI, config: ServerConfig) -> None:
+        """Manually initialize FastAPI app state for STDIO mode."""
+        self.logger.info("Initializing app state for STDIO mode...")
+        self.logger.info(
+            f"Cache configuration: size={settings.CACHE_SIZE}, "
+            f"TTL={settings.CACHE_TTL_MINUTES}min"
+        )
+
+        # Instantiate services and store them in the application's shared state
+        api_client = UnifiedGnomadClient()
+        app.state.frequency_service = FrequencyService(
+            client=api_client,
+            cache_size=settings.CACHE_SIZE,
+            cache_ttl_minutes=settings.CACHE_TTL_MINUTES,
+        )
+
+        self.logger.info("App state initialization complete")
+
     async def _graceful_shutdown(self) -> None:
         """Perform graceful shutdown."""
         self.logger.info("Starting graceful shutdown...")
@@ -297,13 +311,16 @@ class UnifiedServerManager:
             # Create FastAPI app (for MCP introspection)
             self.app = await self.create_fastapi_app(config)
 
+            # Manually initialize app state for STDIO mode (since lifespan won't trigger)
+            await self._initialize_app_state(self.app, config)
+
             # Create MCP server
             self.mcp = await self.create_mcp_server(self.app, config)
 
             self.logger.info("STDIO MCP server ready")
 
-            # Run MCP server in STDIO mode
-            self.mcp.run()
+            # Run MCP server in STDIO mode (async version for existing event loop)
+            await self.mcp.run_async(transport="stdio")
 
         except Exception as e:
             raise StartupError(f"Failed to start STDIO server: {e}", "stdio") from e
