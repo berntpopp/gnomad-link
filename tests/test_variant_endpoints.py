@@ -1,7 +1,11 @@
 """Tests for variant endpoints using real clinical examples."""
 
+from unittest.mock import patch
+
 import pytest
 from httpx import AsyncClient
+
+from gnomad_link.api import DataNotFoundError, GnomadApiError
 
 
 class TestVariantEndpoints:
@@ -145,3 +149,73 @@ class TestVariantEndpoints:
                     # Check if population ID is valid (some IDs might be dataset-specific)
                     # For now, just ensure it's a non-empty string
                     assert isinstance(pop["id"], str) and len(pop["id"]) > 0
+
+
+class TestVariantErrorHandling:
+    """Test error handling paths in variant endpoints."""
+
+    @pytest.mark.asyncio
+    async def test_variant_invalid_format_error(self, client: AsyncClient):
+        """Test ValueError handling for invalid variant format."""
+        with patch(
+            "gnomad_link.services.frequency_service.FrequencyService.get_variant_frequencies"
+        ) as mock_method:
+            mock_method.side_effect = ValueError("Invalid variant format")
+
+            response = await client.get("/variant/invalid-format")
+
+            assert response.status_code == 400
+            assert "Invalid variant format" in response.json()["detail"]
+
+    @pytest.mark.asyncio
+    async def test_variant_api_communication_error(self, client: AsyncClient):
+        """Test GnomadApiError handling for upstream API failures."""
+        with patch(
+            "gnomad_link.services.frequency_service.FrequencyService.get_variant_frequencies"
+        ) as mock_method:
+            mock_method.side_effect = GnomadApiError("API timeout")
+
+            response = await client.get("/variant/1-55000000-A-T")
+
+            assert response.status_code == 502
+            assert "Error communicating with gnomAD API" in response.json()["detail"]
+
+    @pytest.mark.asyncio
+    async def test_variant_unexpected_error(self, client: AsyncClient):
+        """Test generic Exception handling for unexpected server errors."""
+        with patch(
+            "gnomad_link.services.frequency_service.FrequencyService.get_variant_frequencies"
+        ) as mock_method:
+            mock_method.side_effect = RuntimeError("Unexpected error")
+
+            response = await client.get("/variant/1-55000000-A-T")
+
+            assert response.status_code == 500
+            assert "An internal server error occurred" in response.json()["detail"]
+
+    @pytest.mark.asyncio
+    async def test_variant_details_not_found(self, client: AsyncClient):
+        """Test DataNotFoundError handling in variant details endpoint."""
+        # Mock the client.get_variant method that's called for details
+        with patch(
+            "gnomad_link.api.client.UnifiedGnomadClient.get_variant"
+        ) as mock_method:
+            mock_method.side_effect = DataNotFoundError("Variant not found")
+
+            response = await client.get("/variant/details/1-55000000-A-T")
+
+            assert response.status_code == 404
+            assert "Variant not found" in response.json()["detail"]
+
+    @pytest.mark.asyncio
+    async def test_variant_details_server_error(self, client: AsyncClient):
+        """Test generic Exception handling in variant details endpoint."""
+        with patch(
+            "gnomad_link.api.client.UnifiedGnomadClient.get_variant"
+        ) as mock_method:
+            mock_method.side_effect = RuntimeError("Database connection failed")
+
+            response = await client.get("/variant/details/1-55000000-A-T")
+
+            assert response.status_code == 500
+            assert "Internal server error" in response.json()["detail"]
