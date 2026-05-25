@@ -274,6 +274,21 @@ make mcp-serve
 make clean
 ```
 
+### Docker Commands
+```bash
+# Build and start the Docker service
+make docker-build
+make docker-up
+
+# Render hardened Compose configs
+make docker-prod-config
+make docker-npm-config
+
+# Follow logs and stop the service
+make docker-logs
+make docker-down
+```
+
 ### Code Quality Standards
 - **Dependency management**: uv with `uv.lock` as the lock source of truth
 - **Testing**: pytest with route and service coverage
@@ -302,37 +317,21 @@ make clean
 ## 🚀 Production Deployment
 
 ### Docker Deployment
-```dockerfile
-FROM python:3.12-slim
 
-WORKDIR /app
-COPY . .
-RUN pip install uv && uv sync --frozen --no-dev
+The Docker setup follows the same structure as the companion MCP repositories:
+a multi-stage `uv` image, Compose overlays for development/production/Nginx
+Proxy Manager, service-level health checks, and a root `.env.docker.example`
+template.
 
-EXPOSE 8000
-CMD ["uv", "run", "python", "server.py", "--transport", "unified", "--host", "0.0.0.0"]
+```bash
+cp .env.docker.example .env.docker
+make docker-build
+make docker-up
+curl http://localhost:8000/health
 ```
 
-### Docker Compose
-```yaml
-version: '3.8'
-services:
-  gnomad-unified:
-    build: .
-    environment:
-      - MCP_TRANSPORT=unified
-      - MCP_HOST=0.0.0.0
-      - MCP_PORT=8000
-      - ENABLE_MONITORING=true
-      - LOG_LEVEL=INFO
-    ports:
-      - "8000:8000"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-```
+For production or Nginx Proxy Manager deployment details, see
+[docker/README.md](docker/README.md).
 
 ### Health Monitoring
 ```bash

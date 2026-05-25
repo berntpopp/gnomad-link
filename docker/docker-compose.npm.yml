@@ -1,0 +1,17 @@
+# Nginx Proxy Manager overlay.
+# Usage: docker compose --env-file .env.docker -f docker/docker-compose.yml -f docker/docker-compose.prod.yml -f docker/docker-compose.npm.yml up -d
+
+services:
+  gnomad-link:
+    ports: !reset []
+    expose:
+      - "8000"
+    networks:
+      - default
+      - npm-network
+
+networks:
+  default:
+  npm-network:
+    external: true
+    name: ${NPM_NETWORK_NAME:-npm_network}

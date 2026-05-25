@@ -121,3 +121,58 @@ Run `make test`.
 
 Run `make ci-local`. If this exposes pre-existing strict Ruff or mypy issues,
 capture the exact output and leave the repo with the modern CI target in place.
+
+### Task 5: Add Docker Deployment Surface
+
+**Files:**
+- Create: `.dockerignore`
+- Create: `.env.docker.example`
+- Create: `docker/Dockerfile`
+- Create: `docker/docker-compose.yml`
+- Create: `docker/docker-compose.dev.yml`
+- Create: `docker/docker-compose.prod.yml`
+- Create: `docker/docker-compose.npm.yml`
+- Create: `docker/README.md`
+- Modify: `Makefile`
+- Modify: `README.md`
+- Modify: `docs/development.md`
+- Modify: `AGENTS.md`
+- Modify: `.gitignore`
+- Create: `tests/unit/docker/test_dockerfile.py`
+- Create: `tests/unit/docker/test_docker_compose.py`
+
+- [x] **Step 1: Add the Docker image**
+
+Create a multi-stage `docker/Dockerfile` using `python:3.14-slim`, `uv sync
+--frozen --no-dev --active --no-install-project`, a copied virtual environment,
+non-root `app` user, runtime directories under `/tmp/gnomad-link` and
+`/var/cache/gnomad-link`, and default command:
+
+```bash
+gnomad-link --transport unified --host 0.0.0.0 --port 8000
+```
+
+- [x] **Step 2: Add Compose overlays**
+
+Create a base service for unified REST plus MCP HTTP, a bind-mounted development
+overlay, a production hardening overlay with read-only filesystem and dropped
+capabilities, and an NPM overlay that removes host port publishing and attaches
+to `${NPM_NETWORK_NAME:-npm_network}`.
+
+- [x] **Step 3: Add Docker command wrappers and docs**
+
+Add `docker-build`, `docker-up`, `docker-down`, `docker-logs`,
+`docker-prod-config`, and `docker-npm-config` Makefile targets. Document the
+workflow in `docker/README.md`, `README.md`, `docs/development.md`, and
+`AGENTS.md`.
+
+- [x] **Step 4: Add deterministic Docker tests**
+
+Add unit tests that inspect Dockerfile and Compose text for the expected Python
+base image, `uv.lock` install path, non-root runtime, unified HTTP MCP command,
+Compose health checks, production hardening, and NPM network configuration.
+
+- [x] **Step 5: Version the minimal Claude entrypoint**
+
+Remove the stale `.gitignore` rule that ignored `CLAUDE.md`, preserving the
+minimal `@AGENTS.md` Claude Code entrypoint as a tracked file.

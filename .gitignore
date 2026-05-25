@@ -182,7 +182,7 @@ cython_debug/
 
 # Claude
 .claude/
-CLAUDE.md
+!CLAUDE.md
 
 # MCP Server specific
 mcp-debug.log
@@ -193,6 +193,7 @@ mcp-debug.log
 .env.*.local
 *.env
 !.env.example
+!.env.docker.example
 
 # GraphQL
 __generated__/
@@ -220,7 +221,3 @@ Desktop.ini
 /data/
 /temp/
 /tmp/
-
-# claude files
-.claude/
-CLAUDE.md

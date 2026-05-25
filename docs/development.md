@@ -40,6 +40,10 @@ make test-cov
 make lint-fix
 make lint-loc
 make precommit
+make docker-build
+make docker-up
+make docker-prod-config
+make docker-npm-config
 ```
 
 `make test` and `make ci-local` run only deterministic unit tests from
@@ -57,6 +61,8 @@ requests.
   for `gnomad_link/`, `server.py`, and `mcp_server.py`.
 - Keep deterministic tests in `tests/unit/` and live upstream tests in
   `tests/integration/`.
+- Keep Docker config tests deterministic; do not require Docker Engine for
+  `make test`.
 - Preserve public REST paths, MCP tool names, and response schemas unless a task
   explicitly calls for a breaking change.
 
@@ -93,6 +99,40 @@ make mcp-serve
 
 Public MCP tools must remain research-use scoped and must not expose destructive
 cache operations.
+
+## Docker Development
+
+Docker assets live under `docker/` and mirror the companion MCP repositories:
+
+```text
+docker/
+├── Dockerfile
+├── README.md
+├── docker-compose.dev.yml
+├── docker-compose.npm.yml
+├── docker-compose.prod.yml
+└── docker-compose.yml
+```
+
+Use the Makefile wrappers for common workflows:
+
+```bash
+make docker-build
+make docker-up
+make docker-logs
+make docker-down
+```
+
+Validate production overlays without starting containers:
+
+```bash
+make docker-prod-config
+make docker-npm-config
+```
+
+The Docker image serves unified REST plus MCP HTTP on `/mcp`. Health checks are
+defined in Compose services, not in the image, so future one-off container
+commands can reuse the image without inheriting an HTTP health probe.
 
 ## Test Structure
 

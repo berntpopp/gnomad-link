@@ -1,0 +1,31 @@
+# Development overlay with bind-mounted source.
+# Usage: docker compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up --build
+
+services:
+  gnomad-link:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: builder
+
+    environment:
+      LOG_LEVEL: DEBUG
+      PYTHONPATH: /home/app/web
+
+    volumes:
+      - ../gnomad_link:/home/app/web/gnomad_link:delegated
+      - ../server.py:/home/app/web/server.py:ro
+      - ../mcp_server.py:/home/app/web/mcp_server.py:ro
+      - ../pyproject.toml:/home/app/web/pyproject.toml:ro
+      - ../README.md:/home/app/web/README.md:ro
+
+    command: >
+      sh -c "
+        cd /home/app/web &&
+        pip install -e . &&
+        gnomad-link --transport unified --host 0.0.0.0 --port 8000
+      "
+
+    user: root
+
+    working_dir: /home/app/web

@@ -1,6 +1,8 @@
-.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc typecheck typecheck-fast typecheck-stop typecheck-fresh test test-fast test-unit test-cov test-all check ci-local precommit clean dev mcp-serve mcp-serve-http run-dev run-prod run-mcp
+.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc typecheck typecheck-fast typecheck-stop typecheck-fresh test test-fast test-unit test-cov test-all check ci-local precommit clean dev mcp-serve mcp-serve-http run-dev run-prod run-mcp docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config
 
 .DEFAULT_GOAL := help
+
+DOCKER_COMPOSE := $(shell if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then echo "docker compose"; elif command -v docker-compose >/dev/null 2>&1; then echo "docker-compose"; else echo "docker compose"; fi)
 
 help: ## Display this help message
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z0-9_-]+:.*?##/ { printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
@@ -107,3 +109,21 @@ run-prod: ## Run production server with uvicorn
 	uv run python server.py --transport unified --host 0.0.0.0 --port 8000
 
 run-mcp: mcp-serve ## Backwards-compatible alias for mcp-serve
+
+docker-build: ## Build Docker image
+	$(DOCKER_COMPOSE) -f docker/docker-compose.yml build
+
+docker-up: ## Start Docker development stack
+	$(DOCKER_COMPOSE) -f docker/docker-compose.yml up -d
+
+docker-down: ## Stop Docker development stack
+	$(DOCKER_COMPOSE) -f docker/docker-compose.yml down
+
+docker-logs: ## Follow Docker logs
+	$(DOCKER_COMPOSE) -f docker/docker-compose.yml logs -f
+
+docker-prod-config: ## Render production Compose configuration
+	$(DOCKER_COMPOSE) -f docker/docker-compose.yml -f docker/docker-compose.prod.yml config
+
+docker-npm-config: ## Render NPM Compose configuration
+	$(DOCKER_COMPOSE) --env-file .env.docker.example -f docker/docker-compose.yml -f docker/docker-compose.prod.yml -f docker/docker-compose.npm.yml config

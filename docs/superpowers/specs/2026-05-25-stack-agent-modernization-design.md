@@ -40,12 +40,14 @@ In scope:
 - Replace the CLI health check's undeclared `requests` dependency with `httpx`.
 - Refresh README setup and development commands to point at `uv` and the modern
   Makefile workflow.
+- Add Docker deployment assets matching the sibling MCP repositories: a
+  multi-stage `uv` image, Compose overlays, Docker env template, Makefile
+  targets, Docker docs, and deterministic Docker config tests.
 
 Out of scope:
 
 - Rewriting route/service internals to match sibling module names.
 - Changing public REST or MCP endpoint behavior.
-- Adding Docker deployment files.
 - Adding database, embedding, or corpus workflows from the other projects.
 
 ## Architecture
@@ -67,6 +69,9 @@ The development architecture changes:
 - `CLAUDE.md` only references `AGENTS.md` and adds Claude-specific notes.
 - `scripts/check_file_size.py` enforces the same 600-line Python module budget
   used in the sibling repos.
+- `docker/` contains the deployment surface: `Dockerfile`,
+  `docker-compose.yml`, `docker-compose.dev.yml`, `docker-compose.prod.yml`,
+  `docker-compose.npm.yml`, and Docker-specific documentation.
 
 ## Testing And Verification
 
@@ -77,6 +82,10 @@ Required checks:
   `requests`.
 - `make lint-loc` verifies the new line-budget tooling.
 - `make test` verifies the existing test suite after dependency and CLI changes.
+- Docker config unit tests verify the image and Compose overlays without
+  requiring Docker Engine in the default unit-test path.
+- `make docker-prod-config` and `make docker-npm-config` render Compose configs
+  when Docker is available.
 - `make ci-local` is the final intended local CI target. If it fails because
   older code is not yet strict-mypy or Ruff-clean, report the exact blocker
   rather than claiming full CI success.
@@ -91,3 +100,6 @@ Required checks:
   a broad type cleanup unless required.
 - Dependency resolution may select newer FastMCP behavior. Runtime endpoint
   behavior should be guarded by the existing route tests.
+- Docker Compose `!reset` overlays require the modern Docker Compose plugin.
+  The Makefile keeps validation explicit through `docker-prod-config` and
+  `docker-npm-config`.

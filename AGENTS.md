@@ -15,6 +15,7 @@ Primary areas:
 - `gnomad_link/graphql/queries/` - versioned and shared GraphQL query documents
 - `tests/` - unit and route tests
 - `docs/` - architecture, API usage, MCP connection, and gnomAD reference docs
+- `docker/` - Dockerfile, Compose overlays, and Docker deployment docs
 - `docs/superpowers/specs/` - design specs for agentic workers
 - `docs/superpowers/plans/` - implementation plans for agentic workers
 
@@ -74,6 +75,11 @@ Useful focused commands:
 - `make dev`
 - `make mcp-serve`
 - `make mcp-serve-http`
+- `make docker-build`
+- `make docker-up`
+- `make docker-down`
+- `make docker-prod-config`
+- `make docker-npm-config`
 
 ## Coding Standards
 
@@ -87,6 +93,8 @@ Useful focused commands:
   route/client behavior.
 - Preserve public REST paths, MCP tool names, and response schemas unless the
   task explicitly calls for a breaking change.
+- Keep Docker production hardening in Compose overlays and keep the default
+  image command on unified REST plus MCP HTTP.
 
 ## Agentic Development
 
