@@ -94,14 +94,13 @@ precommit: ci-local ## Run checks expected before commit
 clean: ## Remove local caches and generated reports
 	rm -rf .pytest_cache .ruff_cache .mypy_cache htmlcov .coverage coverage.xml
 
-dev: ## Start REST plus MCP development server
+dev: ## Run FastAPI host (/health) + mounted MCP HTTP locally
 	uv run python server.py --transport unified --host 127.0.0.1 --port 8000
 
 mcp-serve: ## Start local stdio MCP server
 	uv run python mcp_server.py
 
-mcp-serve-http: ## Start hosted MCP endpoint with REST API
-	uv run python server.py --transport unified --host 127.0.0.1 --port 8000
+mcp-serve-http: dev ## Alias: FastAPI host (/health) + mounted MCP HTTP locally
 
 run-dev: dev ## Backwards-compatible alias for dev
 
