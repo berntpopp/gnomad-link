@@ -1,5 +1,3 @@
-import pytest
-
 from gnomad_link.server_manager import UnifiedServerManager
 
 
@@ -22,6 +20,7 @@ def test_server_manager_uses_facade(monkeypatch) -> None:
 
 def test_server_manager_no_longer_imports_fastmcp_from_fastapi() -> None:
     import inspect
+
     import gnomad_link.server_manager as sm
 
     source = inspect.getsource(sm)

@@ -32,9 +32,7 @@ async def test_get_variant_frequencies_live(mcp_with_live_service) -> None:
 
 @pytest.mark.asyncio
 async def test_get_gene_details_live(mcp_with_live_service) -> None:
-    result = await mcp_with_live_service.call_tool(
-        "get_gene_details", {"gene_symbol": "PCSK9"}
-    )
+    result = await mcp_with_live_service.call_tool("get_gene_details", {"gene_symbol": "PCSK9"})
     payload = result.structured_content or {}
     assert payload["symbol"] == "PCSK9"
     assert payload["gnomad_constraint"]["pLI"] is not None
@@ -42,9 +40,7 @@ async def test_get_gene_details_live(mcp_with_live_service) -> None:
 
 @pytest.mark.asyncio
 async def test_resolve_variant_id_returns_ids_only(mcp_with_live_service) -> None:
-    result = await mcp_with_live_service.call_tool(
-        "resolve_variant_id", {"query": "rs11591147"}
-    )
+    result = await mcp_with_live_service.call_tool("resolve_variant_id", {"query": "rs11591147"})
     payload = result.structured_content or {}
     assert payload["returned"] >= 1
     for r in payload["results"]:
@@ -53,9 +49,7 @@ async def test_resolve_variant_id_returns_ids_only(mcp_with_live_service) -> Non
 
 @pytest.mark.asyncio
 async def test_get_region_caps_span(mcp_with_live_service) -> None:
-    result = await mcp_with_live_service.call_tool(
-        "get_region", {"region": "1-55000000-56000000"}
-    )
+    result = await mcp_with_live_service.call_tool("get_region", {"region": "1-55000000-56000000"})
     payload = result.structured_content or {}
     assert payload.get("truncated", {}).get("kind") == "region_span"
 
@@ -63,7 +57,8 @@ async def test_get_region_caps_span(mcp_with_live_service) -> None:
 @pytest.mark.asyncio
 async def test_get_gene_variants_caps_at_limit(mcp_with_live_service) -> None:
     result = await mcp_with_live_service.call_tool(
-        "get_gene_variants", {"gene_id": "ENSG00000155657", "limit": 50}  # TTN
+        "get_gene_variants",
+        {"gene_id": "ENSG00000155657", "limit": 50},  # TTN
     )
     payload = result.structured_content or {}
     assert payload["returned"] == 50

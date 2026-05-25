@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 
 def test_region_model_roundtrip() -> None:
     from gnomad_link.models.region_models import Region

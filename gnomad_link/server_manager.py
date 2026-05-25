@@ -6,7 +6,7 @@ import asyncio
 import signal
 from collections.abc import Callable
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Any, cast
 
 import uvicorn
 from fastapi import FastAPI
@@ -26,7 +26,7 @@ class UnifiedServerManager:
         self.app: FastAPI | None = None
         self.mcp: FastMCP | None = None
         self.shutdown_event = asyncio.Event()
-        self.logger = None
+        self.logger: Any = None
         self._current_transport = "unknown"
 
     # ---------------- service factory helpers ----------------
@@ -119,7 +119,7 @@ class UnifiedServerManager:
             def service_factory() -> FrequencyService:
                 if self.app is None:
                     raise RuntimeError("FastAPI host not initialized")
-                return self.app.state.frequency_service
+                return cast(FrequencyService, self.app.state.frequency_service)
 
             self.mcp = self._create_mcp_server(service_factory)
             mcp_http_app = self.mcp.http_app(path="/", stateless_http=True, json_response=True)

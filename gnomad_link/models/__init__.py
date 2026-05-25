@@ -21,12 +21,14 @@ from .mitochondrial_models import (
     MitochondrialTranscriptConsequence,
     MitochondrialVariant,
 )
+from .region_models import Region, RegionClinVarVariant, RegionGene
 from .structural_variant_models import (
     StructuralVariant,
     SVConsequence,
     SVCopyNumber,
     SVPopulation,
 )
+from .transcript_models import Transcript, TranscriptExon
 from .variant_models import (
     PopulationFrequency,
     VariantDataSource,
@@ -34,8 +36,6 @@ from .variant_models import (
     VariantFrequencyResponse,
     VariantSearchResult,
 )
-from .region_models import Region, RegionClinVarVariant, RegionGene
-from .transcript_models import Transcript, TranscriptExon
 
 __all__ = [
     # Variant models
