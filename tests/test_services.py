@@ -58,9 +58,7 @@ class TestFrequencyService:
         mock_client.get_variant.return_value = sample_api_response
 
         # Act
-        result = await frequency_service.get_variant_frequencies(
-            "1-55039447-G-T", "gnomad_r4"
-        )
+        result = await frequency_service.get_variant_frequencies("1-55039447-G-T", "gnomad_r4")
 
         # Assert
         assert isinstance(result, VariantFrequencyResponse)
@@ -80,22 +78,16 @@ class TestFrequencyService:
 
         # Check calculated properties
         assert result.exome.total_allele_count == 7  # 2 + 0 + 5
-        assert result.exome.overall_frequency == pytest.approx(
-            7 / (15300 + 19950 + 113730)
-        )
+        assert result.exome.overall_frequency == pytest.approx(7 / (15300 + 19950 + 113730))
 
-    async def test_get_variant_frequencies_not_found(
-        self, frequency_service, mock_client
-    ):
+    async def test_get_variant_frequencies_not_found(self, frequency_service, mock_client):
         """Test handling of variant not found."""
         # Arrange
         mock_client.get_variant.return_value = {"variant": None}
 
         # Act & Assert
         with pytest.raises(VariantNotFoundError) as exc_info:
-            await frequency_service.get_variant_frequencies(
-                "1-99999999-A-T", "gnomad_r4"
-            )
+            await frequency_service.get_variant_frequencies("1-99999999-A-T", "gnomad_r4")
 
         assert "not found" in str(exc_info.value)
 
@@ -111,9 +103,7 @@ class TestFrequencyService:
             await frequency_service.get_variant_frequencies("1-12345-A-T", "")
         assert "dataset cannot be empty" in str(exc_info.value)
 
-    async def test_get_variant_frequencies_no_population_data(
-        self, frequency_service, mock_client
-    ):
+    async def test_get_variant_frequencies_no_population_data(self, frequency_service, mock_client):
         """Test handling of variant with no population data."""
         # Arrange
         mock_client.get_variant.return_value = {
@@ -125,9 +115,7 @@ class TestFrequencyService:
         }
 
         # Act
-        result = await frequency_service.get_variant_frequencies(
-            "1-55039447-G-T", "gnomad_r4"
-        )
+        result = await frequency_service.get_variant_frequencies("1-55039447-G-T", "gnomad_r4")
 
         # Assert
         assert result.variant_id == "1-55039447-G-T"
@@ -136,9 +124,7 @@ class TestFrequencyService:
         assert result.genome is None
         assert not result.has_data  # No meaningful data
 
-    async def test_variant_response_with_filtered_populations(
-        self, frequency_service, mock_client
-    ):
+    async def test_variant_response_with_filtered_populations(self, frequency_service, mock_client):
         """Test that variant response correctly processes population data."""
         # Arrange
         mock_client.get_variant.return_value = {
@@ -156,9 +142,7 @@ class TestFrequencyService:
         }
 
         # Act
-        result = await frequency_service.get_variant_frequencies(
-            "1-55039447-G-T", "gnomad_r4"
-        )
+        result = await frequency_service.get_variant_frequencies("1-55039447-G-T", "gnomad_r4")
 
         # Assert
         assert result.exome is not None

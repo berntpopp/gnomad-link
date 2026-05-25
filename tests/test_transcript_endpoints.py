@@ -6,6 +6,8 @@ import pytest
 from fastapi import HTTPException
 from httpx import AsyncClient
 
+pytestmark = pytest.mark.integration
+
 
 class TestTranscriptEndpoints:
     """Test transcript information endpoints."""
@@ -181,16 +183,14 @@ class TestTranscriptErrorHandling:
             assert response.status_code == 404
             data = response.json()
             detail = data["detail"]
-            assert (
-                expected_error in detail
-            ), f"Expected '{expected_error}' in error message for {invalid_id}, got: {detail}"
+            assert expected_error in detail, (
+                f"Expected '{expected_error}' in error message for {invalid_id}, got: {detail}"
+            )
 
     @pytest.mark.asyncio
     async def test_transcript_null_data_response(self, client: AsyncClient):
         """Test null transcript data in API response."""
-        with patch(
-            "gnomad_link.api.client.UnifiedGnomadClient.get_transcript"
-        ) as mock_method:
+        with patch("gnomad_link.api.client.UnifiedGnomadClient.get_transcript") as mock_method:
             # Mock API response with null transcript data
             mock_method.return_value = {"transcript": None}
 
@@ -203,9 +203,7 @@ class TestTranscriptErrorHandling:
     @pytest.mark.asyncio
     async def test_transcript_direct_response_format(self, client: AsyncClient):
         """Test response without 'transcript' wrapper."""
-        with patch(
-            "gnomad_link.api.client.UnifiedGnomadClient.get_transcript"
-        ) as mock_method:
+        with patch("gnomad_link.api.client.UnifiedGnomadClient.get_transcript") as mock_method:
             # Mock direct response format (not wrapped in "transcript" key)
             mock_response = {
                 "transcript_id": "ENST00000123456",
@@ -223,9 +221,7 @@ class TestTranscriptErrorHandling:
     @pytest.mark.asyncio
     async def test_transcript_timeout_error(self, client: AsyncClient):
         """Test direct TimeoutError from API."""
-        with patch(
-            "gnomad_link.api.client.UnifiedGnomadClient.get_transcript"
-        ) as mock_method:
+        with patch("gnomad_link.api.client.UnifiedGnomadClient.get_transcript") as mock_method:
             mock_method.side_effect = TimeoutError("Request timed out")
 
             response = await client.get("/transcript/ENST00000123456")
@@ -237,9 +233,7 @@ class TestTranscriptErrorHandling:
     @pytest.mark.asyncio
     async def test_transcript_wrapped_timeout_error(self, client: AsyncClient):
         """Test timeout wrapped in generic exception."""
-        with patch(
-            "gnomad_link.api.client.UnifiedGnomadClient.get_transcript"
-        ) as mock_method:
+        with patch("gnomad_link.api.client.UnifiedGnomadClient.get_transcript") as mock_method:
             mock_method.side_effect = RuntimeError("Connection timeout occurred")
 
             response = await client.get("/transcript/ENST00000123456")
@@ -251,13 +245,9 @@ class TestTranscriptErrorHandling:
     @pytest.mark.asyncio
     async def test_transcript_http_exception_passthrough(self, client: AsyncClient):
         """Test HTTPException pass-through."""
-        with patch(
-            "gnomad_link.api.client.UnifiedGnomadClient.get_transcript"
-        ) as mock_method:
+        with patch("gnomad_link.api.client.UnifiedGnomadClient.get_transcript") as mock_method:
             # Mock client raising HTTPException (should be re-raised)
-            mock_method.side_effect = HTTPException(
-                status_code=403, detail="Forbidden access"
-            )
+            mock_method.side_effect = HTTPException(status_code=403, detail="Forbidden access")
 
             response = await client.get("/transcript/ENST00000123456")
 
@@ -268,9 +258,7 @@ class TestTranscriptErrorHandling:
     @pytest.mark.asyncio
     async def test_transcript_generic_server_error(self, client: AsyncClient):
         """Test generic server errors."""
-        with patch(
-            "gnomad_link.api.client.UnifiedGnomadClient.get_transcript"
-        ) as mock_method:
+        with patch("gnomad_link.api.client.UnifiedGnomadClient.get_transcript") as mock_method:
             mock_method.side_effect = RuntimeError("Database connection failed")
 
             response = await client.get("/transcript/ENST00000123456")

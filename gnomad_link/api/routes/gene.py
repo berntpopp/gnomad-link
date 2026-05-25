@@ -5,7 +5,7 @@ constraint metrics, pLI scores, and variants within genes.
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
@@ -65,7 +65,7 @@ router = APIRouter(prefix="/gene", tags=["Genes"])
     },
 )
 async def get_gene(
-    gene_id: Optional[str] = Query(
+    gene_id: str | None = Query(
         None,
         description="Ensembl gene ID",
         openapi_examples={
@@ -76,7 +76,7 @@ async def get_gene(
             },
         },
     ),
-    gene_symbol: Optional[str] = Query(
+    gene_symbol: str | None = Query(
         None,
         description="Gene symbol",
         openapi_examples={

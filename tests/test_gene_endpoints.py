@@ -3,6 +3,8 @@
 import pytest
 from httpx import AsyncClient
 
+pytestmark = pytest.mark.integration
+
 
 class TestGeneEndpoints:
     """Test gene endpoints with cancer gene examples."""
@@ -24,9 +26,7 @@ class TestGeneEndpoints:
         # Check constraint scores - they're under gnomad_constraint
         if "gnomad_constraint" in data:
             # pLI might be lowercase 'pli' in the API response
-            assert (
-                "pli" in data["gnomad_constraint"] or "pLI" in data["gnomad_constraint"]
-            )
+            assert "pli" in data["gnomad_constraint"] or "pLI" in data["gnomad_constraint"]
             assert "oe_lof" in data["gnomad_constraint"]
 
     @pytest.mark.asyncio
@@ -81,9 +81,7 @@ class TestGeneEndpoints:
 
         assert data["gene_id"] == "ENSG00000169174"
         assert "name" in data
-        assert (
-            "PCSK9" in data["name"] or "proprotein convertase" in data["name"].lower()
-        )
+        assert "PCSK9" in data["name"] or "proprotein convertase" in data["name"].lower()
         assert data["chrom"] == "1"
 
     @pytest.mark.asyncio

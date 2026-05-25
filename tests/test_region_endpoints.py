@@ -3,6 +3,8 @@
 import pytest
 from httpx import AsyncClient
 
+pytestmark = pytest.mark.integration
+
 
 class TestRegionEndpoints:
     """Test region-based variant query endpoints."""

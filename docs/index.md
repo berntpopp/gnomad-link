@@ -7,7 +7,7 @@ Welcome to the comprehensive documentation for gnomAD-link, a unified server tha
 ### 🚀 **Getting Started**
 - [**Usage Guide**](usage.md) - Complete usage instructions for all deployment modes
 - [**API Reference**](api-reference.md) - Comprehensive REST API and MCP documentation
-- [**Claude Desktop Configuration**](claude_desktop_configurations.md) - AI assistant integration guide
+- [**Claude And MCP Configuration**](claude_desktop_configurations.md) - AI assistant integration guide
 
 ### 🏗️ **Architecture & Development**
 - [**Architecture Overview**](architecture.md) - System design and component documentation
@@ -33,7 +33,7 @@ Welcome to the comprehensive documentation for gnomAD-link, a unified server tha
 ### For Users
 - **New to gnomAD-link?** → Start with [Usage Guide](usage.md)
 - **Need API reference?** → Check [API Reference](api-reference.md)
-- **Setting up Claude Desktop?** → Follow [Claude Desktop Configuration](claude_desktop_configurations.md)
+- **Setting up Claude or MCP?** → Follow [Claude And MCP Configuration](claude_desktop_configurations.md)
 
 ### For Developers
 - **Contributing to the project?** → Read [Development Guide](development.md)
@@ -47,8 +47,6 @@ Welcome to the comprehensive documentation for gnomAD-link, a unified server tha
 ## 🏆 **Project Status**
 
 **Current Version**: 2.0.0  
-**Phase 1 Status**: ✅ **COMPLETED**  
-**Test Coverage**: 117/117 Tests Passing  
 **Architecture**: Unified server with transport selection  
 
 ### Key Features ✨
@@ -64,13 +62,13 @@ Welcome to the comprehensive documentation for gnomAD-link, a unified server tha
 ```bash
 git clone <repository-url>
 cd gnomad-link
-pip install -e .
+uv sync --group dev
 ```
 
 ### Basic Usage
 ```bash
 # Start unified server (REST + MCP)
-python server.py --transport unified
+uv run python server.py --transport unified
 
 # Access REST API
 open http://localhost:8000/docs
@@ -79,13 +77,28 @@ open http://localhost:8000/docs
 # http://localhost:8000/mcp
 ```
 
-### Claude Desktop Integration
+### Claude HTTP Integration
+
+Start the server:
+
+```bash
+make mcp-serve-http
+```
+
+Register the HTTP MCP endpoint:
+
+```bash
+claude mcp add --transport http gnomad-link http://127.0.0.1:8000/mcp
+```
+
+Claude Desktop HTTP config:
+
 ```json
 {
   "mcpServers": {
-    "gnomad": {
-      "command": "python",
-      "args": ["/path/to/gnomad-link/server.py", "--transport", "stdio"]
+    "gnomad-link": {
+      "type": "http",
+      "url": "http://127.0.0.1:8000/mcp"
     }
   }
 }
@@ -101,9 +114,9 @@ open http://localhost:8000/docs
 - **Search Functions**: Find variants, genes, and transcripts
 
 ### MCP Interface
-- **AI Assistant Tools**: Native integration with Claude Desktop
+- **AI Assistant Tools**: Native integration with Claude and MCP clients
 - **Streamable HTTP**: Modern MCP transport for web deployments
-- **STDIO Transport**: High-performance local AI assistant integration
+- **STDIO Transport**: Local fallback for clients without HTTP MCP support
 - **Tool-Based Interface**: Structured data access for AI applications
 
 ### Data Sources

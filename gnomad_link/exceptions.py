@@ -1,12 +1,10 @@
 """Custom exceptions for gnomAD unified server."""
 
-from typing import Optional
-
 
 class GnomadServerError(Exception):
     """Base exception for gnomAD server errors."""
 
-    def __init__(self, message: str, transport: Optional[str] = None):
+    def __init__(self, message: str, transport: str | None = None):
         """Initialize gnomAD server error with message and optional transport context."""
         super().__init__(message)
         self.transport = transport

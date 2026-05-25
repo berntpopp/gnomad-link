@@ -27,13 +27,13 @@ This server provides programmatic access to human genetic variation data from gn
 ```bash
 git clone <repository-url>
 cd gnomad-link
-pip install -e .
+uv sync --group dev
 ```
 
 ### Basic Usage
 ```bash
 # Start unified server (REST + MCP HTTP)
-python server.py --transport unified
+uv run python server.py --transport unified
 
 # Access REST API at http://localhost:8000/docs
 # MCP interface available at http://localhost:8000/mcp
@@ -42,13 +42,13 @@ python server.py --transport unified
 ### Transport Modes
 ```bash
 # Unified: REST API + MCP HTTP (recommended)
-python server.py --transport unified --port 8000
+uv run python server.py --transport unified --port 8000
 
 # STDIO: High-performance AI assistant integration
-python server.py --transport stdio
+uv run python server.py --transport stdio
 
 # HTTP-only: Traditional REST API only
-python server.py --transport http --port 8000
+uv run python server.py --transport http --port 8000
 ```
 
 ## 🔧 Configuration
@@ -100,28 +100,47 @@ curl "http://localhost:8000/api/liftover/?source_variant_id=17-7577121-G-A&refer
 
 ### MCP Integration
 
-#### Claude Desktop (STDIO)
+#### Claude / MCP HTTP (Recommended)
+
+Start the unified server:
+
+```bash
+make mcp-serve-http
+```
+
+Claude Code:
+
+```bash
+claude mcp add --transport http gnomad-link http://127.0.0.1:8000/mcp
+```
+
+Claude Desktop HTTP config:
+
 ```json
 {
   "mcpServers": {
-    "gnomad": {
-      "command": "python",
-      "args": ["/path/to/gnomad-link/server.py", "--transport", "stdio"],
-      "env": {
-        "PYTHONUNBUFFERED": "1"
-      }
+    "gnomad-link": {
+      "type": "http",
+      "url": "http://127.0.0.1:8000/mcp"
     }
   }
 }
 ```
 
-#### Web-based AI (HTTP)
+#### stdio Fallback
+
+Use stdio only for local desktop workflows that cannot connect to HTTP MCP
+endpoints:
+
 ```json
 {
   "mcpServers": {
-    "gnomad": {
-      "url": "http://localhost:8000/mcp",
-      "transport": "http"
+    "gnomad-link-stdio": {
+      "command": "gnomad-link-mcp",
+      "env": {
+        "PYTHONUNBUFFERED": "1",
+        "LOG_LEVEL": "WARNING"
+      }
     }
   }
 }
@@ -219,43 +238,47 @@ gnomAD aggregates genetic data from hundreds of thousands of individuals to prov
 ### Development Setup
 ```bash
 # Install development dependencies
-pip install -e ".[dev]"
+make install
 
-# Run tests (117 tests)
+# Resolve dependency lock
+make lock
+
+# Run tests
 make test
 
 # Run tests with coverage
 make test-cov
 
-# Lint code
+# Lint code with Ruff
 make lint
 
-# Format code
+# Format code with Ruff
 make format
 
-# Development server with auto-reload
-python server.py --transport unified --dev
+# Run local CI checks
+make ci-local
 ```
 
 ### Development Commands
 ```bash
 # Start development server
-make run-dev
+make dev
 
 # Run production server
 make run-prod
 
 # Run STDIO MCP server
-make run-mcp
+make mcp-serve
 
 # Clean build artifacts
 make clean
 ```
 
 ### Code Quality Standards
-- **Testing**: 117/117 tests passing, >90% coverage required
-- **Linting**: ruff, flake8, mypy type checking
-- **Formatting**: black, isort for consistent code style
+- **Dependency management**: uv with `uv.lock` as the lock source of truth
+- **Testing**: pytest with route and service coverage
+- **Linting**: Ruff and mypy type checking
+- **Formatting**: Ruff formatter
 - **Type Safety**: Full Pydantic v2 validation throughout
 
 ## 📖 Documentation
@@ -280,14 +303,14 @@ make clean
 
 ### Docker Deployment
 ```dockerfile
-FROM python:3.10-slim
+FROM python:3.12-slim
 
 WORKDIR /app
 COPY . .
-RUN pip install -e .
+RUN pip install uv && uv sync --frozen --no-dev
 
 EXPOSE 8000
-CMD ["python", "server.py", "--transport", "unified", "--host", "0.0.0.0"]
+CMD ["uv", "run", "python", "server.py", "--transport", "unified", "--host", "0.0.0.0"]
 ```
 
 ### Docker Compose
@@ -328,12 +351,12 @@ curl -X POST http://localhost:8000/api/cache/clear
 1. Fork the repository
 2. Create a feature branch
 3. Follow development guidelines in [docs/development.md](docs/development.md)
-4. Run tests and linting: `make test && make lint`
+4. Run local CI: `make ci-local`
 5. Submit a pull request
 
 ### Contribution Guidelines
-- All tests must pass (117/117)
-- Code must pass linting (ruff, flake8, mypy)
+- All tests must pass
+- Code must pass `make ci-local`
 - Maintain backwards compatibility
 - Update documentation for new features
 - Follow existing code patterns and style
@@ -370,4 +393,4 @@ Nature 625, 92–100 (2024).
 
 ---
 
-**Current Version**: 2.0.0 | **Status**: Production Ready | **Test Coverage**: 117/117 Tests Passing
+**Current Version**: 2.0.0 | **Status**: Production Ready

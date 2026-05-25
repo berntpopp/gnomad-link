@@ -3,7 +3,7 @@
 import logging
 
 # Removed ABC import as class has no abstract methods
-from typing import Any, Optional
+from typing import Any
 
 from gql import Client, gql
 from gql.transport.aiohttp import AIOHTTPTransport
@@ -36,7 +36,7 @@ class VariantNotFoundError(DataNotFoundError):
 class BaseGnomadClient:
     """Base client for gnomAD GraphQL API."""
 
-    def __init__(self, api_url: Optional[str] = None):
+    def __init__(self, api_url: str | None = None):
         """Initialize the API client.
 
         Args:
@@ -76,15 +76,11 @@ class BaseGnomadClient:
             query_string = self.query_loader.load_query(query_name, version)
 
             # Process variables
-            processed_vars = self.query_builder.process_variables(
-                query_name, variables, version
-            )
+            processed_vars = self.query_builder.process_variables(query_name, variables, version)
 
             # Execute
             query_doc = gql(query_string)
-            result = await self._client.execute_async(
-                query_doc, variable_values=processed_vars
-            )
+            result = await self._client.execute_async(query_doc, variable_values=processed_vars)
 
             # Check if data was found
             if query_name in result and result[query_name] is None:
@@ -96,24 +92,20 @@ class BaseGnomadClient:
 
         except TransportQueryError as e:
             if e.errors:
-                error_msg = "; ".join(
-                    [err.get("message", str(err)) for err in e.errors]
-                )
+                error_msg = "; ".join([err.get("message", str(err)) for err in e.errors])
                 # Check for "not found" errors
-                if any(
-                    "not found" in err.get("message", "").lower() for err in e.errors
-                ):
+                if any("not found" in err.get("message", "").lower() for err in e.errors):
                     raise DataNotFoundError(error_msg) from e
                 raise GnomadApiError(f"GraphQL error: {error_msg}") from e
-            raise GnomadApiError(f"Query error: {str(e)}") from e
+            raise GnomadApiError(f"Query error: {e!s}") from e
         except TransportError as e:
-            raise GnomadApiError(f"API request failed: {str(e)}") from e
+            raise GnomadApiError(f"API request failed: {e!s}") from e
         except FileNotFoundError as e:
-            raise GnomadApiError(f"Query not found: {str(e)}") from e
+            raise GnomadApiError(f"Query not found: {e!s}") from e
         except Exception as e:
             if isinstance(e, GnomadApiError):
                 raise
-            raise GnomadApiError(f"Unexpected error: {str(e)}") from e
+            raise GnomadApiError(f"Unexpected error: {e!s}") from e
 
     async def close(self) -> None:
         """Close the client connection."""

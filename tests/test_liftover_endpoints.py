@@ -3,6 +3,8 @@
 import pytest
 from httpx import AsyncClient
 
+pytestmark = pytest.mark.integration
+
 
 class TestLiftoverEndpoints:
     """Test liftover conversion endpoints."""
@@ -84,10 +86,7 @@ class TestLiftoverEndpoints:
         assert response.status_code == 400
         data = response.json()
         assert "detail" in data
-        assert (
-            "Either source_variant_id or liftover_variant_id must be provided"
-            in data["detail"]
-        )
+        assert "Either source_variant_id or liftover_variant_id must be provided" in data["detail"]
 
     @pytest.mark.asyncio
     async def test_liftover_missing_reference_genome(self, client: AsyncClient):

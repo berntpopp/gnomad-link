@@ -1,26 +1,18 @@
 """Pydantic models for variant frequency data."""
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
 class PopulationFrequency(BaseModel):
     """Frequency data for a specific population."""
 
-    name: str = Field(
-        ..., description="Name of the population group (e.g., 'afr').", alias="id"
-    )
-    allele_count: int = Field(
-        ..., description="Number of alternate alleles observed.", alias="ac"
-    )
-    allele_number: int = Field(
-        ..., description="Total number of alleles assessed.", alias="an"
-    )
+    name: str = Field(..., description="Name of the population group (e.g., 'afr').", alias="id")
+    allele_count: int = Field(..., description="Number of alternate alleles observed.", alias="ac")
+    allele_number: int = Field(..., description="Total number of alleles assessed.", alias="an")
     homozygote_count: int = Field(..., description="Number of homozygous individuals.")
 
     @property
-    def allele_frequency(self) -> Optional[float]:
+    def allele_frequency(self) -> float | None:
         """Calculate allele frequency (AF) from AC/AN."""
         if self.allele_number > 0:
             return self.allele_count / self.allele_number
@@ -31,9 +23,7 @@ class PopulationFrequency(BaseModel):
         """Return the population ID (alias for name)."""
         return self.name
 
-    model_config = {
-        "populate_by_name": True
-    }  # Allows using alias 'ac' to populate 'allele_count'
+    model_config = {"populate_by_name": True}  # Allows using alias 'ac' to populate 'allele_count'
 
 
 class VariantDataSource(BaseModel):
@@ -42,7 +32,7 @@ class VariantDataSource(BaseModel):
     ac: int = Field(0, description="Total allele count")
     an: int = Field(0, description="Total allele number")
     homozygote_count: int = Field(0, description="Total homozygote count")
-    hemizygote_count: Optional[int] = Field(
+    hemizygote_count: int | None = Field(
         None, description="Total hemizygote count (for X-linked variants)"
     )
     populations: list[PopulationFrequency] = Field(
@@ -60,7 +50,7 @@ class VariantDataSource(BaseModel):
         return sum(pop.allele_number for pop in self.populations)
 
     @property
-    def overall_frequency(self) -> Optional[float]:
+    def overall_frequency(self) -> float | None:
         """Calculate overall allele frequency across all populations."""
         if self.total_allele_number > 0:
             return self.total_allele_count / self.total_allele_number
@@ -70,14 +60,12 @@ class VariantDataSource(BaseModel):
 class VariantFrequencyResponse(BaseModel):
     """Complete variant frequency response."""
 
-    variant_id: str = Field(
-        ..., description="Variant identifier (e.g., '1-55039447-G-T')."
-    )
+    variant_id: str = Field(..., description="Variant identifier (e.g., '1-55039447-G-T').")
     dataset: str = Field(..., description="gnomAD dataset ID (e.g., 'gnomad_r4').")
-    exome: Optional[VariantDataSource] = Field(
+    exome: VariantDataSource | None = Field(
         None, description="Frequency data from exome sequencing."
     )
-    genome: Optional[VariantDataSource] = Field(
+    genome: VariantDataSource | None = Field(
         None, description="Frequency data from genome sequencing."
     )
 

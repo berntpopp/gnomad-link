@@ -3,7 +3,7 @@
 import asyncio
 import signal
 from contextlib import asynccontextmanager
-from typing import Any, Optional
+from typing import Any
 
 import uvicorn
 from fastapi import FastAPI
@@ -33,8 +33,8 @@ class UnifiedServerManager:
 
     def __init__(self):
         """Initialize the unified server manager with default state."""
-        self.app: Optional[FastAPI] = None
-        self.mcp: Optional[FastMCP] = None
+        self.app: FastAPI | None = None
+        self.mcp: FastMCP | None = None
         self.shutdown_event = asyncio.Event()
         self.logger = None
         self._cleanup_tasks = []
@@ -131,9 +131,7 @@ class UnifiedServerManager:
                 },
                 "configuration": {
                     "transport": getattr(self, "_current_transport", "unknown"),
-                    "mcp_endpoint": (
-                        settings.mcp_url if hasattr(settings, "mcp_url") else None
-                    ),
+                    "mcp_endpoint": (settings.mcp_url if hasattr(settings, "mcp_url") else None),
                 },
             }
 
@@ -164,7 +162,7 @@ class UnifiedServerManager:
         """Create FastMCP server from FastAPI app."""
         try:
             # Import MCP configuration
-            from fastmcp.server.openapi import MCPType, RouteMap
+            from fastmcp.server.providers.openapi import MCPType, RouteMap
 
             # Define custom names for tools to make them more LLM-friendly
             mcp_custom_names = {
@@ -210,9 +208,7 @@ class UnifiedServerManager:
         """Set up signal handlers for graceful shutdown."""
 
         def signal_handler(signum, frame):
-            self.logger.info(
-                f"Received signal {signum}, initiating graceful shutdown..."
-            )
+            self.logger.info(f"Received signal {signum}, initiating graceful shutdown...")
             asyncio.create_task(self._graceful_shutdown())
 
         signal.signal(signal.SIGTERM, signal_handler)
@@ -222,8 +218,7 @@ class UnifiedServerManager:
         """Manually initialize FastAPI app state for STDIO mode."""
         self.logger.info("Initializing app state for STDIO mode...")
         self.logger.info(
-            f"Cache configuration: size={settings.CACHE_SIZE}, "
-            f"TTL={settings.CACHE_TTL_MINUTES}min"
+            f"Cache configuration: size={settings.CACHE_SIZE}, TTL={settings.CACHE_TTL_MINUTES}min"
         )
 
         # Instantiate services and store them in the application's shared state
@@ -250,7 +245,7 @@ class UnifiedServerManager:
                     asyncio.gather(*self._cleanup_tasks, return_exceptions=True),
                     timeout=settings.GRACEFUL_SHUTDOWN_TIMEOUT,
                 )
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 self.logger.warning("Graceful shutdown timeout exceeded")
 
         self.logger.info("Graceful shutdown complete")
@@ -272,15 +267,11 @@ class UnifiedServerManager:
             self.app.mount(config.mcp_path, self.mcp.http_app())
 
             self.logger.info(f"MCP HTTP interface mounted at {config.mcp_path}")
-            self.logger.info(
-                f"REST API available at http://{config.host}:{config.port}"
-            )
+            self.logger.info(f"REST API available at http://{config.host}:{config.port}")
             self.logger.info(
                 f"MCP HTTP available at http://{config.host}:{config.port}{config.mcp_path}"
             )
-            self.logger.info(
-                f"API documentation at http://{config.host}:{config.port}/docs"
-            )
+            self.logger.info(f"API documentation at http://{config.host}:{config.port}/docs")
 
             # Setup signal handlers
             self._setup_signal_handlers()
@@ -332,19 +323,13 @@ class UnifiedServerManager:
             configure_logging("http", config.log_level)
             self.logger = get_server_logger("http")
 
-            self.logger.info(
-                f"Starting HTTP-only server on {config.host}:{config.port}"
-            )
+            self.logger.info(f"Starting HTTP-only server on {config.host}:{config.port}")
 
             # Create FastAPI app
             self.app = await self.create_fastapi_app(config)
 
-            self.logger.info(
-                f"REST API available at http://{config.host}:{config.port}"
-            )
-            self.logger.info(
-                f"API documentation at http://{config.host}:{config.port}/docs"
-            )
+            self.logger.info(f"REST API available at http://{config.host}:{config.port}")
+            self.logger.info(f"API documentation at http://{config.host}:{config.port}/docs")
 
             # Setup signal handlers
             self._setup_signal_handlers()

@@ -7,6 +7,8 @@ from httpx import AsyncClient
 
 from gnomad_link.api import DataNotFoundError, GnomadApiError
 
+pytestmark = pytest.mark.integration
+
 
 class TestVariantEndpoints:
     """Test variant endpoints with clinical examples."""
@@ -25,7 +27,7 @@ class TestVariantEndpoints:
         assert "genome" in data or "exome" in data
 
         # Check if frequency data is present
-        if "genome" in data and data["genome"]:
+        if data.get("genome"):
             assert "ac" in data["genome"]
             assert "an" in data["genome"]
             assert "af" in data["genome"]
@@ -74,9 +76,7 @@ class TestVariantEndpoints:
         variant_id = "1-55051215-G-GA"
 
         # Test with gnomAD v3
-        response = await client.get(
-            f"/variant/{variant_id}", params={"dataset": "gnomad_r3"}
-        )
+        response = await client.get(f"/variant/{variant_id}", params={"dataset": "gnomad_r3"})
 
         assert response.status_code == 200
         data = response.json()
@@ -197,9 +197,7 @@ class TestVariantErrorHandling:
     async def test_variant_details_not_found(self, client: AsyncClient):
         """Test DataNotFoundError handling in variant details endpoint."""
         # Mock the client.get_variant method that's called for details
-        with patch(
-            "gnomad_link.api.client.UnifiedGnomadClient.get_variant"
-        ) as mock_method:
+        with patch("gnomad_link.api.client.UnifiedGnomadClient.get_variant") as mock_method:
             mock_method.side_effect = DataNotFoundError("Variant not found")
 
             response = await client.get("/variant/details/1-55000000-A-T")
@@ -210,9 +208,7 @@ class TestVariantErrorHandling:
     @pytest.mark.asyncio
     async def test_variant_details_server_error(self, client: AsyncClient):
         """Test generic Exception handling in variant details endpoint."""
-        with patch(
-            "gnomad_link.api.client.UnifiedGnomadClient.get_variant"
-        ) as mock_method:
+        with patch("gnomad_link.api.client.UnifiedGnomadClient.get_variant") as mock_method:
             mock_method.side_effect = RuntimeError("Database connection failed")
 
             response = await client.get("/variant/details/1-55000000-A-T")

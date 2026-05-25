@@ -3,6 +3,8 @@
 import argparse
 import sys
 
+import httpx
+
 from .config import ServerConfig, settings
 
 
@@ -19,19 +21,19 @@ Transport Options:
 
 Examples:
   # Start unified server (REST + MCP HTTP)
-  python server.py --transport unified --port 8000
+  uv run python server.py --transport unified --port 8000
 
-  # Start for AI assistant integration
-  python server.py --transport stdio
+  # Start hosted MCP endpoint for AI assistant integration
+  uv run python server.py --transport unified --port 8000
 
   # Start REST API only
-  python server.py --transport http --port 8000
+  uv run python server.py --transport http --port 8000
 
   # Development mode with auto-reload
-  python server.py --transport unified --dev
+  uv run python server.py --transport unified --dev
 
   # Custom MCP path
-  python server.py --transport unified --mcp-path /api/mcp
+  uv run python server.py --transport unified --mcp-path /api/mcp
         """,
     )
 
@@ -148,20 +150,18 @@ def handle_config_command(args: argparse.Namespace) -> None:
 
 def handle_health_command(args: argparse.Namespace) -> None:
     """Handle health command."""
-    import requests
-
     try:
-        response = requests.get(f"{args.url}/health", timeout=5)
+        response = httpx.get(f"{args.url}/health", timeout=5)
         if response.status_code == 200:
             data = response.json()
-            print("✅ Server is healthy")
+            print("Server is healthy")
             print(f"Transport: {data.get('transport', 'unknown')}")
             print(f"Status: {data.get('status', 'unknown')}")
         else:
-            print(f"❌ Server returned status {response.status_code}")
+            print(f"Server returned status {response.status_code}")
             sys.exit(1)
-    except requests.RequestException as e:
-        print(f"❌ Failed to connect to server: {e}")
+    except httpx.HTTPError as e:
+        print(f"Failed to connect to server: {e}")
         sys.exit(1)
 
 

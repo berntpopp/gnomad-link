@@ -1,7 +1,7 @@
 """Base transport interface for gnomAD unified server."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import FastAPI
 from fastmcp import FastMCP
@@ -16,8 +16,8 @@ class BaseTransport(ABC):
     def __init__(self, config: ServerConfig):
         """Initialize base transport with configuration."""
         self.config = config
-        self.app: Optional[FastAPI] = None
-        self.mcp: Optional[FastMCP] = None
+        self.app: FastAPI | None = None
+        self.mcp: FastMCP | None = None
         self.logger = None
 
     @abstractmethod

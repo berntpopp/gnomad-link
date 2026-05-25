@@ -1,209 +1,100 @@
 # MCP Server Connection Guide
 
-## Understanding the Unified Server
+gnomAD Link exposes a research-use MCP surface for gnomAD variant, gene,
+transcript, region, ClinVar, structural variant, mitochondrial variant, and
+liftover data.
 
-The gnomAD server now provides both REST API and MCP interfaces through a single unified application:
+| Mode | Endpoint | Status | Use Case |
+|------|----------|--------|----------|
+| Streamable HTTP | `/mcp` | Recommended | Claude HTTP, ChatGPT developer mode, hosted remote MCP clients |
+| stdio | `gnomad-link-mcp` | Local fallback | Local desktop-only workflows |
 
-- **Single Process**: One server provides both interfaces
-- **Shared Resources**: Both interfaces use the same cache and services
-- **HTTP-Based**: The MCP interface is available via HTTP at `/mcp`
+The tools expose public gnomAD research data and must not be used for diagnosis,
+treatment, triage, patient management, or clinical decision support.
 
-## How to Connect
-
-### 1. Start the Unified Server
+## Start The Server
 
 ```bash
-# Navigate to the project directory
-cd /mnt/c/development/gnomad-link
-
-# Start the server (development mode)
-python server.py
-
-# Or production mode
-uvicorn server:app --host 0.0.0.0 --port 8000
+make mcp-serve-http
 ```
 
-The server now provides:
-- REST API at http://localhost:8000/
-- MCP interface at http://localhost:8000/mcp
+The unified server provides:
 
-### 2. Claude Desktop Configuration (HTTP)
+- REST API at `http://127.0.0.1:8000/`
+- Interactive docs at `http://127.0.0.1:8000/docs`
+- MCP Streamable HTTP at `http://127.0.0.1:8000/mcp`
 
-For Claude Desktop configurations that support HTTP endpoints:
+## Claude HTTP
 
-**Step 1: Find your config file**
-- Mac: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-- Linux: `~/.config/Claude/claude_desktop_config.json`
+```bash
+claude mcp add --transport http gnomad-link http://127.0.0.1:8000/mcp
+```
 
-**Step 2: Add the gnomAD server (HTTP endpoint)**
+For hosted deployments:
+
+```bash
+claude mcp add --transport http gnomad-link https://your-domain.example/mcp
+```
+
+## Claude Desktop HTTP Config
+
 ```json
 {
   "mcpServers": {
-    "gnomad": {
-      "url": "http://localhost:8000/mcp"
+    "gnomad-link": {
+      "type": "http",
+      "url": "http://127.0.0.1:8000/mcp"
     }
   }
 }
 ```
 
-**Step 3: Restart Claude Desktop**
+## ChatGPT Developer Mode
 
-**Step 4: Use the tools**
-- Open Claude Desktop
-- The gnomAD tools should be available:
-  - `get_variant_allele_frequency`
-  - `get_gene_summary`
+Add a remote MCP connector with this URL:
 
-### 3. Alternative: STDIO Configuration
-
-If your Claude Desktop doesn't support HTTP endpoints yet, you can create a wrapper script:
-
-```python
-# mcp_stdio_wrapper.py
-import sys
-import asyncio
-import httpx
-import json
-
-async def bridge_stdio_to_http():
-    """Bridge STDIO to HTTP MCP endpoint"""
-    async with httpx.AsyncClient() as client:
-        while True:
-            line = sys.stdin.readline()
-            if not line:
-                break
-            
-            # Forward to HTTP endpoint
-            response = await client.post(
-                "http://localhost:8000/mcp",
-                content=line,
-                headers={"Content-Type": "application/json"}
-            )
-            
-            # Return response
-            sys.stdout.write(response.text)
-            sys.stdout.flush()
-
-if __name__ == "__main__":
-    asyncio.run(bridge_stdio_to_http())
+```text
+https://your-domain.example/mcp
 ```
 
-Then use this configuration:
+Use no authentication only for local or private deployments. Public deployments
+should be protected by OAuth or an authenticated reverse proxy.
+
+## stdio Fallback
+
+Use stdio only for local desktop workflows that cannot connect to HTTP MCP
+endpoints:
+
 ```json
 {
   "mcpServers": {
-    "gnomad": {
-      "command": "python",
-      "args": ["/path/to/mcp_stdio_wrapper.py"]
+    "gnomad-link-stdio": {
+      "command": "gnomad-link-mcp",
+      "env": {
+        "PYTHONUNBUFFERED": "1",
+        "LOG_LEVEL": "WARNING"
+      }
     }
   }
 }
 ```
 
-### 4. Using the REST API
+## Available Tools
 
-The REST API remains available at the root path:
-
-```bash
-# Get variant frequency data
-curl http://localhost:8000/variant/1-55039447-G-T?dataset=gnomad_r4
-
-# Access interactive docs
-open http://localhost:8000/docs
-
-# Check health
-curl http://localhost:8000/health
-
-# Get cache stats
-curl http://localhost:8000/cache/stats
-```
-
-## Available Interfaces
-
-| Interface | URL | Purpose | Access Method |
-|-----------|-----|---------|---------------|
-| REST API | http://localhost:8000/ | Web applications, direct API calls | HTTP/REST |
-| MCP Tools | http://localhost:8000/mcp | AI assistants, language models | MCP over HTTP |
-| API Docs | http://localhost:8000/docs | Interactive documentation | Web browser |
-
-## Available MCP Tools
-
-1. **get_variant_allele_frequency**
-   - Get population frequency data for a genetic variant
-   - Parameters:
-     - `variant_id`: e.g., "1-55039447-G-T"
-     - `dataset`: e.g., "gnomad_r4" (optional, defaults to r4)
-
-2. **get_gene_summary**
-   - Get gene information including pLI score
-   - Parameters:
-     - `gene_symbol`: e.g., "BRCA1", "TP53"
-
-## Example Usage
-
-### Via Claude Desktop
-Once configured, you can ask Claude:
-"Use the gnomAD tool to look up variant 1-55039447-G-T in dataset gnomad_r4"
-
-### Via REST API
-```bash
-curl http://localhost:8000/variant/1-55039447-G-T?dataset=gnomad_r4
-```
-
-### Via Python Client
-```python
-import httpx
-
-# REST API
-async with httpx.AsyncClient() as client:
-    response = await client.get(
-        "http://localhost:8000/variant/1-55039447-G-T",
-        params={"dataset": "gnomad_r4"}
-    )
-    data = response.json()
-
-# MCP endpoint (if using MCP client library)
-async with httpx.AsyncClient() as client:
-    response = await client.post(
-        "http://localhost:8000/mcp",
-        json={
-            "jsonrpc": "2.0",
-            "method": "tools/call",
-            "params": {
-                "name": "get_variant_allele_frequency",
-                "arguments": {
-                    "variant_id": "1-55039447-G-T",
-                    "dataset": "gnomad_r4"
-                }
-            },
-            "id": 1
-        }
-    )
-```
+| Tool | Use When |
+|------|----------|
+| `get_variant_frequencies` | Query allele counts and frequencies for a variant |
+| `search_genes` | Search genes by symbol or Ensembl ID |
+| `search_transcripts` | Search transcript records |
+| `get_structural_variants` | Query structural variant records |
+| `search_clinvar_variants` | Search ClinVar-associated variants |
+| `get_clinvar_variant_details` | Fetch ClinVar detail for a variant |
 
 ## Troubleshooting
 
-**"How do I know if the server is running?"**
-- Check http://localhost:8000/health
-- Look for "Starting gnomAD Unified Server..." in the logs
-
-**"Can I run both interfaces separately?"**
-- No, the unified server design means both interfaces run together
-- This ensures they share the same cache and state
-
-**"What if I need different ports?"**
-- Change the port when starting: `uvicorn server:app --port 8080`
-- Update your Claude Desktop config accordingly
-
-**"How do I monitor performance?"**
-- Check cache stats: http://localhost:8000/cache/stats
-- Both interfaces share the same cache for optimal performance
-
-## Benefits of the Unified Architecture
-
-1. **Single Process**: Easier to deploy and monitor
-2. **Shared Cache**: Both REST and MCP benefit from the same LRU cache
-3. **Consistent State**: No synchronization issues between interfaces
-4. **Unified Configuration**: One set of environment variables
-5. **Simplified Operations**: One log stream, one process to manage
+- Confirm the server is running in unified mode with `make mcp-serve-http`.
+- Confirm `http://127.0.0.1:8000/docs` loads in a browser.
+- Confirm the MCP endpoint is `http://127.0.0.1:8000/mcp`.
+- If a client cannot use HTTP MCP, use the stdio fallback command.
+- If tools are missing after an update, refresh the client's MCP/tool cache and
+  reconnect.

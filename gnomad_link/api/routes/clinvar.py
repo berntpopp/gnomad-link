@@ -136,9 +136,7 @@ async def get_clinvar_variant(
     responses={
         200: {
             "description": "ClinVar metadata retrieved successfully",
-            "content": {
-                "application/json": {"example": {"clinvar_release_date": "2025-04-29"}}
-            },
+            "content": {"application/json": {"example": {"clinvar_release_date": "2025-04-29"}}},
         },
         500: {"description": "Internal server error"},
     },

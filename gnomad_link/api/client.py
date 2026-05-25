@@ -1,6 +1,6 @@
 """Unified gnomAD client for both FastAPI and MCP."""
 
-from typing import Any, Optional
+from typing import Any
 
 from gnomad_link.graphql import QueryBuilder
 
@@ -10,9 +10,7 @@ from .base_client import BaseGnomadClient
 class UnifiedGnomadClient(BaseGnomadClient):
     """Unified client supporting all gnomAD queries for both FastAPI and MCP."""
 
-    async def get_variant(
-        self, variant_id: str, dataset: str = "gnomad_r4"
-    ) -> dict[str, Any]:
+    async def get_variant(self, variant_id: str, dataset: str = "gnomad_r4") -> dict[str, Any]:
         """Get variant data.
 
         Args:
@@ -29,10 +27,10 @@ class UnifiedGnomadClient(BaseGnomadClient):
 
     async def get_gene(
         self,
-        gene_id: Optional[str] = None,
-        gene_symbol: Optional[str] = None,
-        reference_genome: Optional[str] = None,
-        dataset: Optional[str] = None,
+        gene_id: str | None = None,
+        gene_symbol: str | None = None,
+        reference_genome: str | None = None,
+        dataset: str | None = None,
     ) -> dict[str, Any]:
         """Get gene data.
 
@@ -60,15 +58,11 @@ class UnifiedGnomadClient(BaseGnomadClient):
             variables["reference_genome"] = reference_genome
 
         # Process variables to add reference genome if needed
-        processed_vars = self.query_builder.process_variables(
-            "gene", variables, version
-        )
+        processed_vars = self.query_builder.process_variables("gene", variables, version)
 
         return await self.execute_query("gene", processed_vars, version)
 
-    async def search_variants(
-        self, query: str, dataset: str = "gnomad_r4"
-    ) -> list[dict[str, Any]]:
+    async def search_variants(self, query: str, dataset: str = "gnomad_r4") -> list[dict[str, Any]]:
         """Search for variants.
 
         Args:
@@ -87,8 +81,8 @@ class UnifiedGnomadClient(BaseGnomadClient):
     async def search_genes(
         self,
         query: str,
-        reference_genome: Optional[str] = None,
-        dataset: Optional[str] = None,
+        reference_genome: str | None = None,
+        dataset: str | None = None,
     ) -> list[dict[str, Any]]:
         """Search for genes.
 
@@ -114,8 +108,8 @@ class UnifiedGnomadClient(BaseGnomadClient):
     async def get_clinvar_variant(
         self,
         variant_id: str,
-        reference_genome: Optional[str] = None,
-        dataset: Optional[str] = None,
+        reference_genome: str | None = None,
+        dataset: str | None = None,
     ) -> dict[str, Any]:
         """Get ClinVar variant data.
 
@@ -208,8 +202,8 @@ class UnifiedGnomadClient(BaseGnomadClient):
     async def get_transcript(
         self,
         transcript_id: str,
-        reference_genome: Optional[str] = None,
-        dataset: Optional[str] = None,
+        reference_genome: str | None = None,
+        dataset: str | None = None,
     ) -> dict[str, Any]:
         """Get transcript data.
 
@@ -246,9 +240,7 @@ class UnifiedGnomadClient(BaseGnomadClient):
         version = QueryBuilder.get_version_for_dataset(dataset)
         # Process variables to add reference genome
         variables = {"gene_id": gene_id, "dataset": dataset}
-        processed_vars = self.query_builder.process_variables(
-            "gene_variants", variables, version
-        )
+        processed_vars = self.query_builder.process_variables("gene_variants", variables, version)
 
         result = await self.execute_query("gene_variants", processed_vars, version)
         # Extract variants from nested structure

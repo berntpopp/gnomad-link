@@ -59,8 +59,7 @@ async def liftover_variant(
     source_variant_id: str = Query(
         None,
         description=(
-            "Variant ID in source reference genome to liftover. "
-            "Format: chromosome-position-ref-alt"
+            "Variant ID in source reference genome to liftover. Format: chromosome-position-ref-alt"
         ),
         openapi_examples={
             "tp53_grch37": {
@@ -152,9 +151,7 @@ async def liftover_variant(
             try:
                 liftover_results.append(LiftoverResult(**item))
             except Exception as e:
-                logger.warning(
-                    f"Failed to parse liftover result: {e}, raw item: {item}"
-                )
+                logger.warning(f"Failed to parse liftover result: {e}, raw item: {item}")
                 # Don't include invalid results
                 continue
 

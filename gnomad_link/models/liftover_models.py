@@ -8,18 +8,14 @@ from .enums import ReferenceGenome
 class LiftoverVariant(BaseModel):
     """Variant information in a specific reference genome."""
 
-    variant_id: str = Field(
-        ..., description="Variant identifier in chr-pos-ref-alt format"
-    )
+    variant_id: str = Field(..., description="Variant identifier in chr-pos-ref-alt format")
     reference_genome: ReferenceGenome = Field(..., description="Reference genome build")
 
 
 class LiftoverResult(BaseModel):
     """Result of a liftover operation between reference genomes."""
 
-    source: LiftoverVariant = Field(
-        ..., description="Original variant in source reference genome"
-    )
+    source: LiftoverVariant = Field(..., description="Original variant in source reference genome")
     liftover: LiftoverVariant = Field(
         ..., description="Lifted over variant in target reference genome"
     )

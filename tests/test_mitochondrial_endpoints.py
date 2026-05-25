@@ -3,6 +3,8 @@
 import pytest
 from httpx import AsyncClient
 
+pytestmark = pytest.mark.integration
+
 
 class TestMitochondrialEndpoints:
     """Test mitochondrial variant endpoints."""
@@ -94,10 +96,7 @@ class TestMitochondrialEndpoints:
 
                 for consequence in data["transcript_consequences"]:
                     assert "gene_symbol" in consequence
-                    assert (
-                        "consequence" in consequence
-                        or "consequence_terms" in consequence
-                    )
+                    assert "consequence" in consequence or "consequence_terms" in consequence
 
                     # Mitochondrial genes have specific naming
                     if "gene_symbol" in consequence:
@@ -106,9 +105,7 @@ class TestMitochondrialEndpoints:
                         assert gene.startswith("MT-") or gene in ["MTRNR1", "MTRNR2"]
 
     @pytest.mark.asyncio
-    async def test_mitochondrial_variant_clinical_significance(
-        self, client: AsyncClient
-    ):
+    async def test_mitochondrial_variant_clinical_significance(self, client: AsyncClient):
         """Test clinical significance for mitochondrial variants."""
         # Known pathogenic variant
         variant_id = "M-3243-A-G"

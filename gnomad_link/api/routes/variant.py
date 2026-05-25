@@ -41,9 +41,7 @@ router = APIRouter(prefix="/variant", tags=["Variants"])
                             "ac": 2,
                             "an": 152302,
                             "af": 0.0000131,
-                            "populations": [
-                                {"id": "afr", "ac": 1, "an": 41562, "af": 0.0000241}
-                            ],
+                            "populations": [{"id": "afr", "ac": 1, "an": 41562, "af": 0.0000241}],
                         },
                     }
                 }
@@ -119,14 +117,10 @@ async def get_variant(
         raise HTTPException(status_code=400, detail=str(e)) from e
     except GnomadApiError as e:
         logger.error(f"API error: {e}")
-        raise HTTPException(
-            status_code=502, detail="Error communicating with gnomAD API"
-        ) from e
+        raise HTTPException(status_code=502, detail="Error communicating with gnomAD API") from e
     except Exception as e:
         logger.error(f"Unexpected error: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500, detail="An internal server error occurred"
-        ) from e
+        raise HTTPException(status_code=500, detail="An internal server error occurred") from e
 
 
 @router.get(

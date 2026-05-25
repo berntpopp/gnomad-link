@@ -133,7 +133,7 @@ The system supports three deployment modes:
 
 ### 1. Unified Transport (Recommended)
 ```bash
-python server.py --transport unified --port 8000
+uv run python server.py --transport unified --port 8000
 ```
 
 **Features**:
@@ -147,32 +147,32 @@ python server.py --transport unified --port 8000
 - MCP HTTP: `http://localhost:8000/mcp`
 - Health Check: `http://localhost:8000/health`
 
-### 2. STDIO Transport (AI Assistants)
+### 2. Streamable HTTP MCP (Recommended For AI Assistants)
 ```bash
-python server.py --transport stdio
+make mcp-serve-http
 ```
 
 **Features**:
-- High-performance binary protocol
-- Minimal logging overhead (stderr only)
-- Optimized for AI assistant integration
-- Claude Desktop compatible
+- Modern MCP over HTTP at `/mcp`
+- Works for Claude HTTP, ChatGPT developer mode, and hosted MCP clients
+- Shares lifecycle and cache with the REST API
+- Preferred over stdio for sustained agentic development
 
 **Usage**:
-```json
-{
-  "mcpServers": {
-    "gnomad": {
-      "command": "python",
-      "args": ["/path/to/server.py", "--transport", "stdio"]
-    }
-  }
-}
+```bash
+claude mcp add --transport http gnomad-link http://127.0.0.1:8000/mcp
 ```
 
-### 3. HTTP-Only Transport (Pure REST)
+### 3. stdio Fallback
 ```bash
-python server.py --transport http --port 8000
+uv run python mcp_server.py
+```
+
+Use stdio only for local clients that cannot connect to HTTP MCP endpoints.
+
+### 4. HTTP-Only Transport (Pure REST)
+```bash
+uv run python server.py --transport http --port 8000
 ```
 
 **Features**:
@@ -296,14 +296,14 @@ class TransportAwareFormatter(logging.Formatter):
 
 ### Docker Deployment
 ```dockerfile
-FROM python:3.10-slim
+FROM python:3.12-slim
 
 WORKDIR /app
 COPY . .
-RUN pip install -e .
+RUN pip install uv && uv sync --frozen --no-dev
 
 EXPOSE 8000
-CMD ["python", "server.py", "--transport", "unified", "--port", "8000"]
+CMD ["uv", "run", "python", "server.py", "--transport", "unified", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
 ### Production Configuration

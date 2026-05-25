@@ -13,9 +13,7 @@ class TransportFactory:
     _transports: dict[str, type[BaseTransport]] = {}
 
     @classmethod
-    def register_transport(
-        cls, name: str, transport_class: type[BaseTransport]
-    ) -> None:
+    def register_transport(cls, name: str, transport_class: type[BaseTransport]) -> None:
         """Register a transport implementation."""
         cls._transports[name] = transport_class
 

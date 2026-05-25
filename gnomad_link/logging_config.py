@@ -2,7 +2,6 @@
 
 import logging
 import sys
-from typing import Optional
 
 from .config import settings
 
@@ -18,7 +17,7 @@ class TransportAwareFormatter(logging.Formatter):
         return super().format(record)
 
 
-def configure_logging(transport: str, level: Optional[str] = None) -> None:
+def configure_logging(transport: str, level: str | None = None) -> None:
     """Configure logging for specific transport."""
     # Determine log level based on transport
     if level is None:

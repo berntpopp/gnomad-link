@@ -45,9 +45,7 @@ router = APIRouter(prefix="/mitochondrial-variant", tags=["Mitochondrial Variant
                             {"id": "H", "an": 23456, "ac_hom": 8, "ac_het": 12},
                             {"id": "U", "an": 12345, "ac_hom": 3, "ac_het": 10},
                         ],
-                        "populations": [
-                            {"id": "eur", "an": 25432, "ac_hom": 10, "ac_het": 25}
-                        ],
+                        "populations": [{"id": "eur", "an": 25432, "ac_hom": 10, "ac_het": 25}],
                         "age_distribution": {
                             "het": {
                                 "bin_edges": [20, 30, 40, 50, 60, 70, 80],

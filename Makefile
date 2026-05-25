@@ -1,40 +1,109 @@
-.PHONY: help install install-dev format lint test test-cov clean run-dev run-prod
+.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc typecheck typecheck-fast typecheck-stop typecheck-fresh test test-fast test-unit test-cov test-all check ci-local precommit clean dev mcp-serve mcp-serve-http run-dev run-prod run-mcp
 
-help:  ## Show this help
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+.DEFAULT_GOAL := help
 
-install:  ## Install production dependencies
-	pip install -e .
+help: ## Display this help message
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z0-9_-]+:.*?##/ { printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 
-install-dev:  ## Install development dependencies
-	pip install -e ".[dev]"
+install: ## Install project and development dependencies with uv
+	uv sync --group dev
 
-format:  ## Format code with black and isort
-	black .
-	isort .
+sync: install ## Alias for install
 
-lint:  ## Run all linters
-	ruff check .
-	flake8 .
-	mypy gnomad_link
+lock: ## Resolve and update uv.lock
+	uv lock
 
-test:  ## Run tests
-	pytest
+upgrade: ## Upgrade locked dependencies
+	uv lock --upgrade
 
-test-cov:  ## Run tests with coverage
-	pytest --cov=gnomad_link --cov-report=html --cov-report=term
+format: ## Format Python code
+	uv run ruff format gnomad_link tests server.py mcp_server.py
 
-clean:  ## Clean up cache and build files
-	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-	find . -type f -name "*.pyc" -delete
-	rm -rf .pytest_cache .coverage htmlcov .mypy_cache .ruff_cache
-	rm -rf build dist *.egg-info
+format-check: ## Check formatting without writing
+	uv run ruff format --check gnomad_link tests server.py mcp_server.py
 
-run-dev:  ## Run the unified server in development mode
-	python server.py
+lint: ## Lint Python code
+	uv run ruff check gnomad_link tests server.py mcp_server.py
 
-run-prod:  ## Run the unified server in production mode
-	uvicorn server:app --host 0.0.0.0 --port 8000 --workers 4
+lint-ci: ## Lint Python code without modifying files
+	uv run ruff check gnomad_link tests server.py mcp_server.py --output-format=github
 
-run-mcp:  ## Run MCP server in STDIO mode for AI assistants
-	python mcp_server.py
+lint-fix: ## Lint and apply safe fixes
+	uv run ruff check gnomad_link tests server.py mcp_server.py --fix
+
+lint-loc: ## Enforce per-file line budget (see AGENTS.md "File Size Discipline")
+	uv run python scripts/check_file_size.py
+
+typecheck: ## Type check package
+	uv run mypy gnomad_link server.py mcp_server.py
+
+typecheck-fast: ## Type check with mypy daemon and fallback
+	@tmp_log=$$(mktemp); \
+	if uv run dmypy run -- gnomad_link server.py mcp_server.py >$$tmp_log 2>&1; then \
+		cat $$tmp_log; \
+	elif grep -Eq "Daemon crashed!|INTERNAL ERROR" $$tmp_log; then \
+		echo "dmypy crashed; retrying with a fresh daemon..."; \
+		uv run dmypy stop >/dev/null 2>&1 || true; \
+		if uv run dmypy run -- gnomad_link server.py mcp_server.py >$$tmp_log 2>&1; then \
+			cat $$tmp_log; \
+		else \
+			cat $$tmp_log; \
+			echo "Falling back to plain mypy..."; \
+			uv run dmypy stop >/dev/null 2>&1 || true; \
+			uv run mypy gnomad_link server.py mcp_server.py; \
+		fi; \
+	else \
+		cat $$tmp_log; \
+		rm -f $$tmp_log; \
+		exit 1; \
+	fi; \
+	rm -f $$tmp_log
+
+typecheck-stop: ## Stop mypy daemon
+	uv run dmypy stop
+
+typecheck-fresh: ## Clear mypy cache and run typecheck
+	rm -rf .mypy_cache
+	uv run mypy gnomad_link server.py mcp_server.py
+
+test: ## Run tests quickly without live integration tests
+	uv run pytest tests -q -m "not integration and not slow"
+
+test-fast: ## Run tests in parallel with pytest-xdist
+	uv run pytest tests -q -n auto -m "not integration and not slow"
+
+test-unit: ## Run unit tests in parallel
+	uv run pytest tests -q -n auto -m "not integration and not slow"
+
+test-integration: ## Run live integration tests against the gnomAD API
+	uv run pytest tests -q -m "integration"
+
+test-cov: ## Run tests with coverage, excluding live integration tests
+	uv run pytest tests -m "not integration and not slow" --cov=gnomad_link --cov-report=term-missing --cov-report=html --cov-report=xml
+
+test-all: test-cov ## Alias for full test run with coverage
+
+check: format lint ## Format and lint
+
+ci-local: format-check lint-ci lint-loc typecheck-fast test-fast ## Run fast local CI-equivalent checks
+
+precommit: ci-local ## Run checks expected before commit
+
+clean: ## Remove local caches and generated reports
+	rm -rf .pytest_cache .ruff_cache .mypy_cache htmlcov .coverage coverage.xml
+
+dev: ## Start REST plus MCP development server
+	uv run python server.py --transport unified --host 127.0.0.1 --port 8000
+
+mcp-serve: ## Start local stdio MCP server
+	uv run python mcp_server.py
+
+mcp-serve-http: ## Start hosted MCP endpoint with REST API
+	uv run python server.py --transport unified --host 127.0.0.1 --port 8000
+
+run-dev: dev ## Backwards-compatible alias for dev
+
+run-prod: ## Run production server with uvicorn
+	uv run python server.py --transport unified --host 0.0.0.0 --port 8000
+
+run-mcp: mcp-serve ## Backwards-compatible alias for mcp-serve

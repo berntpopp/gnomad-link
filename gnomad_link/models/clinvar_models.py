@@ -1,7 +1,5 @@
 """Data models for ClinVar variant queries."""
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -9,18 +7,16 @@ class ClinVarCondition(BaseModel):
     """Condition associated with a ClinVar submission."""
 
     name: str = Field(..., description="Condition name")
-    medgen_id: Optional[str] = Field(None, description="MedGen identifier")
+    medgen_id: str | None = Field(None, description="MedGen identifier")
 
 
 class ClinVarSubmission(BaseModel):
     """Individual submission to ClinVar."""
 
-    clinical_significance: Optional[str] = Field(
-        None, description="Clinical significance"
-    )
-    last_evaluated: Optional[str] = Field(None, description="Last evaluation date")
-    review_status: Optional[str] = Field(None, description="Review status")
-    submitter_name: Optional[str] = Field(None, description="Name of submitter")
+    clinical_significance: str | None = Field(None, description="Clinical significance")
+    last_evaluated: str | None = Field(None, description="Last evaluation date")
+    review_status: str | None = Field(None, description="Review status")
+    submitter_name: str | None = Field(None, description="Name of submitter")
     conditions: list[ClinVarCondition] = Field(
         default_factory=list, description="Associated conditions"
     )
@@ -29,8 +25,8 @@ class ClinVarSubmission(BaseModel):
 class GnomadInClinVar(BaseModel):
     """gnomAD data for a ClinVar variant."""
 
-    exome: Optional[dict] = Field(None, description="Exome data")
-    genome: Optional[dict] = Field(None, description="Genome data")
+    exome: dict | None = Field(None, description="Exome data")
+    genome: dict | None = Field(None, description="Genome data")
 
 
 class ClinVarVariant(BaseModel):
@@ -42,18 +38,14 @@ class ClinVarVariant(BaseModel):
     pos: int = Field(..., description="Position")
     ref: str = Field(..., description="Reference allele")
     alt: str = Field(..., description="Alternate allele")
-    clinical_significance: Optional[str] = Field(
-        None, description="Overall clinical significance"
-    )
-    clinvar_variation_id: Optional[str] = Field(
-        None, description="ClinVar variation ID"
-    )
-    gnomad: Optional[GnomadInClinVar] = Field(None, description="gnomAD data")
-    gold_stars: Optional[int] = Field(None, description="ClinVar review status stars")
-    in_gnomad: Optional[bool] = Field(None, description="Whether variant is in gnomAD")
-    last_evaluated: Optional[str] = Field(None, description="Last evaluation date")
-    review_status: Optional[str] = Field(None, description="Review status")
-    rsid: Optional[str] = Field(None, description="dbSNP rsID")
+    clinical_significance: str | None = Field(None, description="Overall clinical significance")
+    clinvar_variation_id: str | None = Field(None, description="ClinVar variation ID")
+    gnomad: GnomadInClinVar | None = Field(None, description="gnomAD data")
+    gold_stars: int | None = Field(None, description="ClinVar review status stars")
+    in_gnomad: bool | None = Field(None, description="Whether variant is in gnomAD")
+    last_evaluated: str | None = Field(None, description="Last evaluation date")
+    review_status: str | None = Field(None, description="Review status")
+    rsid: str | None = Field(None, description="dbSNP rsID")
     submissions: list[ClinVarSubmission] = Field(
         default_factory=list, description="Individual submissions"
     )

@@ -27,22 +27,22 @@ class TestBaseGnomadClient:
         variables = {"gene_id": "ENSG00000123"}
         expected_result = {"gene": {"symbol": "TEST"}}
 
-        with patch.object(client, "_client") as mock_client:
-            with patch.object(
+        with (
+            patch.object(client, "_client") as mock_client,
+            patch.object(
                 client.query_loader,
                 "load_query",
                 return_value="query { gene { symbol } }",
-            ):
-                with patch.object(
-                    client.query_builder, "process_variables", return_value=variables
-                ):
-                    mock_execute = AsyncMock(return_value=expected_result)
-                    mock_client.execute_async = mock_execute
+            ),
+            patch.object(client.query_builder, "process_variables", return_value=variables),
+        ):
+            mock_execute = AsyncMock(return_value=expected_result)
+            mock_client.execute_async = mock_execute
 
-                    result = await client.execute_query(query_name, variables)
+            result = await client.execute_query(query_name, variables)
 
-                    assert result == expected_result
-                    mock_execute.assert_called_once()
+            assert result == expected_result
+            mock_execute.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_execute_query_with_errors(self, client):
@@ -52,24 +52,22 @@ class TestBaseGnomadClient:
         query_name = "variant"
         variables = {"variant_id": "1-12345-A-G"}
 
-        with patch.object(
-            client.query_loader, "load_query", return_value="query { variant { id } }"
+        with (
+            patch.object(
+                client.query_loader, "load_query", return_value="query { variant { id } }"
+            ),
+            patch.object(client.query_builder, "process_variables", return_value=variables),
         ):
-            with patch.object(
-                client.query_builder, "process_variables", return_value=variables
-            ):
-                with patch.object(client, "_client") as mock_client:
-                    # Simulate GraphQL errors
-                    error = TransportQueryError(
-                        "Query error", errors=[{"message": "Field not found"}]
-                    )
-                    mock_execute = AsyncMock(side_effect=error)
-                    mock_client.execute_async = mock_execute
+            with patch.object(client, "_client") as mock_client:
+                # Simulate GraphQL errors
+                error = TransportQueryError("Query error", errors=[{"message": "Field not found"}])
+                mock_execute = AsyncMock(side_effect=error)
+                mock_client.execute_async = mock_execute
 
-                    with pytest.raises(GnomadApiError) as exc_info:
-                        await client.execute_query(query_name, variables)
+                with pytest.raises(GnomadApiError) as exc_info:
+                    await client.execute_query(query_name, variables)
 
-                    assert "Field not found" in str(exc_info.value)
+                assert "Field not found" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_execute_query_network_error(self, client):
@@ -78,17 +76,11 @@ class TestBaseGnomadClient:
 
         query_name = "gene"
 
-        with patch.object(
-            client.query_loader, "load_query", return_value="query { gene { id } }"
-        ):
-            with patch.object(
-                client.query_builder, "process_variables", return_value={}
-            ):
+        with patch.object(client.query_loader, "load_query", return_value="query { gene { id } }"):
+            with patch.object(client.query_builder, "process_variables", return_value={}):
                 with patch.object(client, "_client") as mock_client:
                     # Simulate network error
-                    mock_execute = AsyncMock(
-                        side_effect=TransportError("Connection failed")
-                    )
+                    mock_execute = AsyncMock(side_effect=TransportError("Connection failed"))
                     mock_client.execute_async = mock_execute
 
                     with pytest.raises(GnomadApiError) as exc_info:
@@ -140,19 +132,19 @@ class TestBaseGnomadClient:
         query_name = "variant"
         variables = {"variant_id": "nonexistent"}
 
-        with patch.object(
-            client.query_loader, "load_query", return_value="query { variant { id } }"
+        with (
+            patch.object(
+                client.query_loader, "load_query", return_value="query { variant { id } }"
+            ),
+            patch.object(client.query_builder, "process_variables", return_value=variables),
         ):
-            with patch.object(
-                client.query_builder, "process_variables", return_value=variables
-            ):
-                with patch.object(client, "_client") as mock_client:
-                    # Return None/empty result - should raise DataNotFoundError
-                    mock_execute = AsyncMock(return_value={"variant": None})
-                    mock_client.execute_async = mock_execute
+            with patch.object(client, "_client") as mock_client:
+                # Return None/empty result - should raise DataNotFoundError
+                mock_execute = AsyncMock(return_value={"variant": None})
+                mock_client.execute_async = mock_execute
 
-                    with pytest.raises(DataNotFoundError):
-                        await client.execute_query(query_name, variables)
+                with pytest.raises(DataNotFoundError):
+                    await client.execute_query(query_name, variables)
 
     @pytest.mark.asyncio
     async def test_context_manager(self, client):
@@ -174,12 +166,8 @@ class TestBaseGnomadClient:
         query_name = "gene"
         variables = {"gene_symbol": "FAKEGENE"}
 
-        with patch.object(
-            client.query_loader, "load_query", return_value="query { gene { id } }"
-        ):
-            with patch.object(
-                client.query_builder, "process_variables", return_value=variables
-            ):
+        with patch.object(client.query_loader, "load_query", return_value="query { gene { id } }"):
+            with patch.object(client.query_builder, "process_variables", return_value=variables):
                 with patch.object(client, "_client") as mock_client:
                     # Simulate "not found" error
                     error = TransportQueryError(

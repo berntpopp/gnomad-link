@@ -3,7 +3,6 @@
 import logging
 import re
 from pathlib import Path
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +14,7 @@ class QueryLoader:
         """Initialize the GraphQL query loader with empty cache."""
         self.base_path = Path(__file__).parent / "queries"
         self._query_cache: dict[str, str] = {}
-        self._fragments_cache: Optional[str] = None
+        self._fragments_cache: str | None = None
 
     def load_query(self, query_name: str, version: str = "v4") -> str:
         """Load a GraphQL query from file.
@@ -109,15 +108,10 @@ class QueryLoader:
                     for line in fragment_lines:
                         if line.startswith("fragment "):
                             fragment_match = re.match(r"fragment (\w+)", line)
-                            if (
-                                fragment_match
-                                and fragment_match.group(1) == current_fragment
-                            ):
+                            if fragment_match and fragment_match.group(1) == current_fragment:
                                 needed_fragments.append(fragment)
                                 # Check for nested fragment usage
-                                for nested_match in re.finditer(
-                                    fragment_usage_pattern, fragment
-                                ):
+                                for nested_match in re.finditer(fragment_usage_pattern, fragment):
                                     nested_name = nested_match.group(1)
                                     if nested_name not in processed:
                                         to_process.append(nested_name)
@@ -140,8 +134,6 @@ class QueryLoader:
         # Check common
         common_path = self.base_path / "common"
         if common_path.exists():
-            queries.update(
-                f.stem for f in common_path.glob("*.graphql") if f.stem != "fragments"
-            )
+            queries.update(f.stem for f in common_path.glob("*.graphql") if f.stem != "fragments")
 
         return queries

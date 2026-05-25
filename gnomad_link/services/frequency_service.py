@@ -7,7 +7,7 @@ both the FastAPI REST endpoints and MCP tool interfaces.
 
 import logging
 from datetime import timedelta
-from typing import Any, Optional
+from typing import Any
 
 from async_lru import alru_cache
 
@@ -41,7 +41,7 @@ class FrequencyService:
 
     def __init__(
         self,
-        client: Optional[UnifiedGnomadClient] = None,
+        client: UnifiedGnomadClient | None = None,
         cache_size: int = 1024,
         cache_ttl_minutes: int = 60,
     ):
@@ -56,9 +56,7 @@ class FrequencyService:
         self.cache_ttl = timedelta(minutes=cache_ttl_minutes)
 
         # Configure caching
-        self._get_variant_cached = alru_cache(maxsize=cache_size)(
-            self._get_variant_impl
-        )
+        self._get_variant_cached = alru_cache(maxsize=cache_size)(self._get_variant_impl)
         self._get_gene_cached = alru_cache(maxsize=cache_size // 4)(self._get_gene_impl)
 
         # Track cache statistics
@@ -207,10 +205,10 @@ class FrequencyService:
 
     async def get_gene(
         self,
-        gene_id: Optional[str] = None,
-        gene_symbol: Optional[str] = None,
-        reference_genome: Optional[str] = None,
-        dataset: Optional[str] = None,
+        gene_id: str | None = None,
+        gene_symbol: str | None = None,
+        reference_genome: str | None = None,
+        dataset: str | None = None,
     ) -> Gene:
         """Get gene information with caching.
 
@@ -236,10 +234,7 @@ class FrequencyService:
             DataNotFoundError: If gene not found
             GnomadApiError: If API communication fails
         """
-        cache_key = (
-            f"{gene_id or ''}-{gene_symbol or ''}-"
-            f"{reference_genome or ''}-{dataset or ''}"
-        )
+        cache_key = f"{gene_id or ''}-{gene_symbol or ''}-{reference_genome or ''}-{dataset or ''}"
 
         try:
             data = await self._get_gene_cached(
@@ -259,15 +254,13 @@ class FrequencyService:
     async def _get_gene_impl(
         self,
         cache_key: str,
-        gene_id: Optional[str],
-        gene_symbol: Optional[str],
-        reference_genome: Optional[str],
-        dataset: Optional[str],
+        gene_id: str | None,
+        gene_symbol: str | None,
+        reference_genome: str | None,
+        dataset: str | None,
     ) -> dict[str, Any]:
         """Fetch gene data from the API."""
-        result = await self.client.get_gene(
-            gene_id, gene_symbol, reference_genome, dataset
-        )
+        result = await self.client.get_gene(gene_id, gene_symbol, reference_genome, dataset)
         gene_data = result.get("gene")
         if gene_data is None:
             return {}
@@ -276,8 +269,8 @@ class FrequencyService:
     async def search_genes(
         self,
         query: str,
-        reference_genome: Optional[str] = None,
-        dataset: Optional[str] = None,
+        reference_genome: str | None = None,
+        dataset: str | None = None,
     ) -> list[GeneSearchResult]:
         """Search for genes by symbol, name, or ID.
 
@@ -303,9 +296,7 @@ class FrequencyService:
         results = await self.client.search_genes(query, reference_genome, dataset)
         return [GeneSearchResult(**item) for item in results]
 
-    async def search_variants(
-        self, query: str, dataset: str = "gnomad_r4"
-    ) -> list[str]:
+    async def search_variants(self, query: str, dataset: str = "gnomad_r4") -> list[str]:
         """Search for variants by ID, rsID, or position.
 
         Searches the gnomAD database for variants matching the query string.
@@ -332,8 +323,8 @@ class FrequencyService:
     async def get_clinvar_variant(
         self,
         variant_id: str,
-        reference_genome: Optional[str] = None,
-        dataset: Optional[str] = None,
+        reference_genome: str | None = None,
+        dataset: str | None = None,
     ) -> ClinVarVariant:
         """Get ClinVar clinical significance data for a variant.
 
@@ -357,9 +348,7 @@ class FrequencyService:
             DataNotFoundError: If variant not found in ClinVar
             GnomadApiError: If API communication fails
         """
-        result = await self.client.get_clinvar_variant(
-            variant_id, reference_genome, dataset
-        )
+        result = await self.client.get_clinvar_variant(variant_id, reference_genome, dataset)
         return ClinVarVariant(**result.get("clinvar_variant", {}))
 
     def get_cache_stats(self) -> dict[str, Any]:
