@@ -30,14 +30,20 @@ from .structural_variant_models import (
 from .variant_models import (
     PopulationFrequency,
     VariantDataSource,
+    VariantDetails,
     VariantFrequencyResponse,
+    VariantSearchResult,
 )
+from .region_models import Region, RegionClinVarVariant, RegionGene
+from .transcript_models import Transcript, TranscriptExon
 
 __all__ = [
     # Variant models
     "PopulationFrequency",
     "VariantDataSource",
     "VariantFrequencyResponse",
+    "VariantDetails",
+    "VariantSearchResult",
     # Gene models
     "Gene",
     "GeneConstraint",
@@ -67,4 +73,11 @@ __all__ = [
     "GnomadDataset",
     "StructuralVariantDataset",
     "ReferenceGenome",
+    # Region models
+    "Region",
+    "RegionClinVarVariant",
+    "RegionGene",
+    # Transcript models
+    "Transcript",
+    "TranscriptExon",
 ]

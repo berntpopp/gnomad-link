@@ -1,6 +1,6 @@
 """Pydantic models for variant frequency data."""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class PopulationFrequency(BaseModel):
@@ -109,3 +109,30 @@ class VariantFrequencyResponse(BaseModel):
             }
         }
     }
+
+
+class VariantSearchResult(BaseModel):
+    """Minimal result from resolve_variant_id / search_variants -- IDs only."""
+
+    variant_id: str = Field(..., description="gnomAD variant ID (CHROM-POS-REF-ALT)")
+    rsid: str | None = None
+    dataset: str | None = None
+
+
+class VariantDetails(BaseModel):
+    """Compact variant detail payload returned by get_variant_details in compact mode."""
+
+    variant_id: str
+    reference_genome: str | None = None
+    pos: int | None = None
+    ref: str | None = None
+    alt: str | None = None
+    rsids: list[str] = Field(default_factory=list)
+    major_consequence: str | None = None
+    transcript_consequences: list[dict] | None = None
+    in_silico_predictors: dict | None = None
+    clinvar: dict | None = None
+    exome: dict | None = None
+    genome: dict | None = None
+
+    model_config = ConfigDict(extra="allow")
