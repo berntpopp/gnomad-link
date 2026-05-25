@@ -48,3 +48,32 @@ def test_cap_region_span_clamps() -> None:
     start, stop, capped = cap_region_span("1", 100, 1_000_000)
     assert capped is True
     assert stop - start == 100_000
+
+
+def test_truncated_block_includes_to_restore_for_consequence() -> None:
+    # All 10 variants have consequence=missense_variant, so no by_consequence drops.
+    # Change to a different consequence to force drops.
+    payload2 = shape_gene_variants(
+        _gen_variants(10),
+        limit=100,
+        consequence="stop_gained",
+        max_af=None,
+        min_ac=None,
+    )
+    # All 10 dropped by_consequence since none match stop_gained.
+    trunc = payload2.get("truncated")
+    assert trunc is not None
+    assert trunc["dropped"]["by_consequence"] == 10
+    assert "to_restore" in trunc
+    assert "consequence" in trunc["to_restore"]
+
+
+def test_truncated_block_includes_to_restore_for_max_af() -> None:
+    # With max_af=0 all variants get dropped by max_af filter.
+    payload = shape_gene_variants(
+        _gen_variants(10), limit=100, consequence=None, max_af=0.0, min_ac=None
+    )
+    trunc = payload.get("truncated")
+    assert trunc is not None
+    assert "to_restore" in trunc
+    assert "max_af" in trunc["to_restore"]

@@ -148,6 +148,28 @@ def test_summary_picks_highest_af_population() -> None:
     assert top["source"] == "exome"
 
 
+def test_summary_includes_overall_af_and_max_pop() -> None:
+    from gnomad_link.mcp.shaping import shape_variant_frequencies
+
+    payload = shape_variant_frequencies(
+        _make_response(),
+        populations=None,
+        include_subcohorts=False,
+        include_sex_split=False,
+        exclude_zero_populations=True,
+    )
+
+    summary = payload["summary"]
+    assert "overall_af" in summary
+    assert summary["overall_af"] is not None
+    assert "max_pop" in summary
+    assert "max_pop_af" in summary
+    assert summary["max_pop"] == "afr"
+    # has_clinvar placeholder is None (unknown without get_clinvar_variant_details)
+    assert "has_clinvar" in summary
+    assert summary["has_clinvar"] is None
+
+
 def test_gene_symbol_and_consequence_pass_through() -> None:
     from gnomad_link.mcp.shaping import shape_variant_frequencies
 

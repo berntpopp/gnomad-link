@@ -88,6 +88,25 @@ def _filter_populations(
     return kept, dropped
 
 
+def _to_restore_hint(dropped: dict[str, int]) -> str | None:
+    """Return the most targeted parameter override to restore the largest dropped category."""
+    best_key: str | None = None
+    best_count = 0
+    for key, count in dropped.items():
+        if count > best_count:
+            best_count = count
+            best_key = key
+    if best_key is None or best_count == 0:
+        return None
+    mapping = {
+        "subcohorts": "include_subcohorts=True",
+        "sex_split": "include_sex_split=True",
+        "zero_ac": "exclude_zero_populations=False",
+        "not_selected": "populations=None (remove population filter)",
+    }
+    return mapping.get(best_key)
+
+
 def _shape_source(
     source: Any,
     *,
@@ -117,7 +136,8 @@ def _shape_source(
     }
     total_dropped = sum(dropped.values())
     if total_dropped:
-        out["truncated"] = {
+        to_restore = _to_restore_hint(dropped)
+        truncated: dict[str, Any] = {
             "kind": "populations",
             "dropped": dropped,
             "filter": {
@@ -131,6 +151,9 @@ def _shape_source(
                 "exclude_zero_populations=False for the full upstream payload"
             ),
         }
+        if to_restore:
+            truncated["to_restore"] = to_restore
+        out["truncated"] = truncated
     return out
 
 
@@ -156,6 +179,21 @@ def _top_enriched_population(
             if best is None or af > best["af"]:
                 best = {"id": pop["id"], "af": af, "source": source_name}
     return best
+
+
+def _overall_af(exome: dict[str, Any] | None, genome: dict[str, Any] | None) -> float | None:
+    """Compute a combined overall AF from the largest source by AN."""
+    best_an = 0
+    best_af: float | None = None
+    for source in (exome, genome):
+        if not source:
+            continue
+        an = source.get("an") or 0
+        af = source.get("af")
+        if an > best_an and af is not None:
+            best_an = an
+            best_af = af
+    return best_af
 
 
 def shape_variant_frequencies(
@@ -191,8 +229,18 @@ def shape_variant_frequencies(
         "genome": genome,
     }
     top = _top_enriched_population(exome, genome)
-    if top is not None:
-        payload["summary"] = {"top_enriched_population": top}
+    overall = _overall_af(exome, genome)
+    if top is not None or overall is not None:
+        summary: dict[str, Any] = {}
+        if top is not None:
+            summary["top_enriched_population"] = top
+            summary["max_pop"] = top["id"]
+            summary["max_pop_af"] = top["af"]
+        if overall is not None:
+            summary["overall_af"] = overall
+        # Placeholder: set to None to indicate unknown without get_clinvar_variant_details call.
+        summary["has_clinvar"] = None
+        payload["summary"] = summary
     return payload
 
 
@@ -233,7 +281,20 @@ def shape_gene_variants(
     limit_hit = len(filtered) >= limit and total_seen < len(raw)
     any_dropped = sum(dropped.values()) > 0
     if limit_hit or any_dropped or total_seen > len(filtered):
-        payload["truncated"] = {
+        # Find the most-dropped filter category to surface as to_restore.
+        best_drop_key: str | None = None
+        best_drop_count = 0
+        for key, count in dropped.items():
+            if count > best_drop_count:
+                best_drop_count = count
+                best_drop_key = key
+        restore_mapping = {
+            "by_consequence": "consequence=None (remove consequence filter)",
+            "by_max_af": "max_af=None (remove AF ceiling)",
+            "by_min_ac": "min_ac=None (remove AC floor)",
+        }
+        to_restore = restore_mapping.get(best_drop_key or "")
+        gene_truncated: dict[str, Any] = {
             "kind": "gene_variants",
             "dropped": dropped,
             "filter": {
@@ -244,6 +305,9 @@ def shape_gene_variants(
             },
             "to_disable": "raise limit (max 500) or relax max_af/min_ac/consequence filters",
         }
+        if to_restore:
+            gene_truncated["to_restore"] = to_restore
+        payload["truncated"] = gene_truncated
     return payload
 
 
