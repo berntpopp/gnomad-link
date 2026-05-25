@@ -406,3 +406,53 @@ class FrequencyService:
             After calling close(), the service instance should not be reused.
         """
         await self.client.close()
+
+    # ------------------------------------------------------------------
+    # Thin pass-through wrappers (added for MCP facade, Task 4)
+    # These provide a single seam for caching/instrumentation in future
+    # tasks without any behavior change.
+    # ------------------------------------------------------------------
+
+    async def get_variant(self, variant_id: str, dataset: str = "gnomad_r4") -> dict[str, Any]:
+        """Raw variant data pass-through."""
+        return await self.client.get_variant(variant_id, dataset)
+
+    async def get_gene_variants(
+        self, gene_id: str, dataset: str = "gnomad_r4"
+    ) -> list[dict[str, Any]]:
+        """Raw gene variants pass-through."""
+        return await self.client.get_gene_variants(gene_id, dataset)
+
+    async def get_clinvar_meta(self) -> dict[str, Any]:
+        """Raw ClinVar metadata pass-through."""
+        return await self.client.get_meta()
+
+    async def get_structural_variant(
+        self, variant_id: str, dataset: str = "gnomad_sv_r4"
+    ) -> dict[str, Any]:
+        """Raw structural variant data pass-through."""
+        return await self.client.get_structural_variant(variant_id, dataset)
+
+    async def get_mitochondrial_variant(
+        self, variant_id: str, dataset: str = "gnomad_r4"
+    ) -> dict[str, Any]:
+        """Raw mitochondrial variant data pass-through."""
+        return await self.client.get_mitochondrial_variant(variant_id, dataset)
+
+    async def get_region(
+        self, chrom: str, start: int, stop: int, dataset: str = "gnomad_r4"
+    ) -> dict[str, Any]:
+        """Raw genomic region data pass-through."""
+        return await self.client.get_region(chrom, start, stop, dataset)
+
+    async def get_transcript(
+        self, transcript_id: str, reference_genome: str = "GRCh38"
+    ) -> dict[str, Any]:
+        """Raw transcript data pass-through."""
+        return await self.client.get_transcript(transcript_id, reference_genome)
+
+    async def liftover_variant(
+        self, source_variant_id: str, reference_genome: str = "GRCh38"
+    ) -> list[dict[str, Any]]:
+        """Raw liftover data pass-through."""
+        return await self.client.get_liftover(source_variant_id, reference_genome)
