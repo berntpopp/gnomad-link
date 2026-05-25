@@ -15,9 +15,7 @@ from gnomad_link.models import Gene
 from gnomad_link.services import FrequencyService
 
 
-def register_gene_tools(
-    mcp: FastMCP, *, service_factory: Callable[[], FrequencyService]
-) -> None:
+def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], FrequencyService]) -> None:
     @mcp.tool(
         name="get_gene_details",
         title="Get Gene Details",
@@ -25,8 +23,12 @@ def register_gene_tools(
         output_schema=Gene.model_json_schema(),
     )
     async def get_gene_details(
-        gene_id: Annotated[str | None, Field(description="Ensembl gene ID (preferred over symbol).")] = None,
-        gene_symbol: Annotated[str | None, Field(description="HGNC gene symbol, used if gene_id is absent.")] = None,
+        gene_id: Annotated[
+            str | None, Field(description="Ensembl gene ID (preferred over symbol).")
+        ] = None,
+        gene_symbol: Annotated[
+            str | None, Field(description="HGNC gene symbol, used if gene_id is absent.")
+        ] = None,
         reference_genome: Annotated[Literal["GRCh37", "GRCh38"], Field()] = "GRCh38",
     ) -> dict[str, Any]:
         """Use this when a caller has a gene id or symbol and needs constraint scores (pLI/oe_lof), canonical transcript, and basic coordinates. Follow with get_gene_variants if they then need per-variant rows."""
@@ -69,10 +71,10 @@ def register_gene_tools(
     )
     async def get_gene_variants(
         gene_id: Annotated[str, Field(description="Ensembl gene ID.")],
-        dataset: Annotated[
-            Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"], Field()
-        ] = "gnomad_r4",
-        limit: Annotated[int, Field(ge=1, le=500, description="Max variants returned (hard cap 500).")] = 100,
+        dataset: Annotated[Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"], Field()] = "gnomad_r4",
+        limit: Annotated[
+            int, Field(ge=1, le=500, description="Max variants returned (hard cap 500).")
+        ] = 100,
         consequence: Annotated[
             str | None,
             Field(description="VEP major_consequence to keep (e.g. 'missense_variant')."),
@@ -81,7 +83,9 @@ def register_gene_tools(
             float | None,
             Field(ge=0.0, le=1.0, description="Drop variants whose AF exceeds this threshold."),
         ] = None,
-        min_ac: Annotated[int | None, Field(ge=0, description="Drop variants whose AC is below this threshold.")] = None,
+        min_ac: Annotated[
+            int | None, Field(ge=0, description="Drop variants whose AC is below this threshold.")
+        ] = None,
     ) -> dict[str, Any]:
         """Use this when a caller wants per-variant rows inside a gene. Large genes (e.g. TTN) return tens of thousands of variants upstream; this tool caps at 500 and exposes consequence/AF/AC filters. Returns a `truncated` block whenever the cap fires."""
 

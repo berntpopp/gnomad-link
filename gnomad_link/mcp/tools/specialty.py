@@ -32,9 +32,7 @@ def register_specialty_tools(
                 max_length=200,
             ),
         ],
-        dataset: Annotated[
-            Literal["gnomad_sv_r2_1", "gnomad_sv_r4"], Field()
-        ] = "gnomad_sv_r4",
+        dataset: Annotated[Literal["gnomad_sv_r2_1", "gnomad_sv_r4"], Field()] = "gnomad_sv_r4",
     ) -> dict[str, Any]:
         """Use this when a caller has a gnomAD structural variant id (deletions, duplications, inversions, BNDs). For SNVs/indels use get_variant_frequencies instead."""
 
@@ -68,18 +66,14 @@ def register_specialty_tools(
                 max_length=100,
             ),
         ],
-        dataset: Annotated[
-            Literal["gnomad_r3", "gnomad_r4"], Field()
-        ] = "gnomad_r4",
+        dataset: Annotated[Literal["gnomad_r3", "gnomad_r4"], Field()] = "gnomad_r4",
     ) -> dict[str, Any]:
         """Use this when a caller has a mitochondrial variant id (M-POS-REF-ALT). Mitochondrial ploidy and heteroplasmy fields are returned; for autosomal variants use get_variant_frequencies."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()
             raw = await service.get_mitochondrial_variant(variant_id, dataset)
-            return (
-                raw.get("mitochondrial_variant", raw) if isinstance(raw, dict) else raw
-            )
+            return raw.get("mitochondrial_variant", raw) if isinstance(raw, dict) else raw
 
         return await run_mcp_tool(
             "get_mitochondrial_variant",
@@ -106,9 +100,7 @@ def register_specialty_tools(
                 max_length=80,
             ),
         ],
-        reference_genome: Annotated[
-            Literal["GRCh37", "GRCh38"], Field()
-        ] = "GRCh38",
+        reference_genome: Annotated[Literal["GRCh37", "GRCh38"], Field()] = "GRCh38",
     ) -> dict[str, Any]:
         """Use this when a caller has an Ensembl transcript id and needs exon structure or GTEx tissue expression. For gene-level info use get_gene_details."""
 

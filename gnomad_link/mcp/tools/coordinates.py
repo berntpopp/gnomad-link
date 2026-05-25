@@ -40,9 +40,7 @@ def register_coordinate_tools(
 
         async def call() -> dict[str, Any]:
             service = service_factory()
-            results = await service.liftover_variant(
-                source_variant_id, reference_genome
-            )
+            results = await service.liftover_variant(source_variant_id, reference_genome)
             return {
                 "results": results,
                 "source_variant_id": source_variant_id,
@@ -52,9 +50,7 @@ def register_coordinate_tools(
         return await run_mcp_tool(
             "liftover_variant",
             call,
-            context=McpErrorContext(
-                tool_name="liftover_variant", variant_id=source_variant_id
-            ),
+            context=McpErrorContext(tool_name="liftover_variant", variant_id=source_variant_id),
         )
 
     @mcp.tool(
@@ -71,9 +67,7 @@ def register_coordinate_tools(
                 pattern=_REGION_PATTERN,
             ),
         ],
-        dataset: Annotated[
-            Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"], Field()
-        ] = "gnomad_r4",
+        dataset: Annotated[Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"], Field()] = "gnomad_r4",
         include_clinvar: Annotated[
             bool,
             Field(description="Include ClinVar variants in the region."),
@@ -111,7 +105,5 @@ def register_coordinate_tools(
         return await run_mcp_tool(
             "get_region",
             call,
-            context=McpErrorContext(
-                tool_name="get_region", region=region, dataset=dataset
-            ),
+            context=McpErrorContext(tool_name="get_region", region=region, dataset=dataset),
         )

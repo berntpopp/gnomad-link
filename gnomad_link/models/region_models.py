@@ -29,6 +29,8 @@ class Region(BaseModel):
     genes: list[RegionGene] = Field(default_factory=list)
     clinvar_variants: list[RegionClinVarVariant] = Field(default_factory=list)
     variants: list[dict] | None = None  # SNV/indel array; opaque until shaping covers it
-    truncated: dict | None = Field(default=None, description="Set when filters or limits dropped rows")
+    truncated: dict | None = Field(
+        default=None, description="Set when filters or limits dropped rows"
+    )
 
     model_config = ConfigDict(extra="allow")

@@ -12,14 +12,26 @@ def _make_response() -> VariantFrequencyResponse:
         an=300_000,
         homozygote_count=2,
         populations=[
-            PopulationFrequency.model_validate({"id": "afr", "ac": 143, "an": 8_000, "homozygote_count": 2}),
-            PopulationFrequency.model_validate({"id": "nfe", "ac": 7, "an": 150_000, "homozygote_count": 0}),
-            PopulationFrequency.model_validate({"id": "non_topmed_afr", "ac": 80, "an": 5_000, "homozygote_count": 1}),
-            PopulationFrequency.model_validate({"id": "afr_XX", "ac": 70, "an": 4_000, "homozygote_count": 1}),
-            PopulationFrequency.model_validate({"id": "asj", "ac": 0, "an": 1_000, "homozygote_count": 0}),
+            PopulationFrequency.model_validate(
+                {"id": "afr", "ac": 143, "an": 8_000, "homozygote_count": 2}
+            ),
+            PopulationFrequency.model_validate(
+                {"id": "nfe", "ac": 7, "an": 150_000, "homozygote_count": 0}
+            ),
+            PopulationFrequency.model_validate(
+                {"id": "non_topmed_afr", "ac": 80, "an": 5_000, "homozygote_count": 1}
+            ),
+            PopulationFrequency.model_validate(
+                {"id": "afr_XX", "ac": 70, "an": 4_000, "homozygote_count": 1}
+            ),
+            PopulationFrequency.model_validate(
+                {"id": "asj", "ac": 0, "an": 1_000, "homozygote_count": 0}
+            ),
         ],
     )
-    return VariantFrequencyResponse(variant_id="1-1-A-T", dataset="gnomad_r4", exome=exome, genome=None)
+    return VariantFrequencyResponse(
+        variant_id="1-1-A-T", dataset="gnomad_r4", exome=exome, genome=None
+    )
 
 
 def test_default_shape_drops_zero_subcohort_and_sex_split() -> None:

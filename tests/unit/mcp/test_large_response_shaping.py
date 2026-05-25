@@ -7,13 +7,20 @@ from gnomad_link.mcp.shaping import cap_region_span, shape_gene_variants
 
 def _gen_variants(n: int) -> list[dict]:
     return [
-        {"variant_id": f"1-{i}-A-T", "af": (i % 10) / 10000, "ac": i, "major_consequence": "missense_variant"}
+        {
+            "variant_id": f"1-{i}-A-T",
+            "af": (i % 10) / 10000,
+            "ac": i,
+            "major_consequence": "missense_variant",
+        }
         for i in range(1, n + 1)
     ]
 
 
 def test_gene_variants_limit_truncates() -> None:
-    payload = shape_gene_variants(_gen_variants(250), limit=50, consequence=None, max_af=None, min_ac=None)
+    payload = shape_gene_variants(
+        _gen_variants(250), limit=50, consequence=None, max_af=None, min_ac=None
+    )
     assert payload["returned"] == 50
     assert payload["truncated"]["kind"] == "gene_variants"
 

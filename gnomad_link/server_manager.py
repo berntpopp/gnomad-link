@@ -75,9 +75,7 @@ class UnifiedServerManager:
 
     # ---------------- MCP creation ----------------
 
-    def _create_mcp_server(
-        self, service_factory: Callable[[], FrequencyService]
-    ) -> FastMCP:
+    def _create_mcp_server(self, service_factory: Callable[[], FrequencyService]) -> FastMCP:
         try:
             mcp = create_gnomad_mcp(service_factory=service_factory)
             self.logger.info("MCP facade created")
@@ -134,8 +132,11 @@ class UnifiedServerManager:
             self._setup_signal_handlers()
 
             uvicorn_config = uvicorn.Config(
-                app=self.app, host=config.host, port=config.port,
-                log_level=config.log_level.lower(), access_log=True,
+                app=self.app,
+                host=config.host,
+                port=config.port,
+                log_level=config.log_level.lower(),
+                access_log=True,
             )
             await uvicorn.Server(uvicorn_config).serve()
         except Exception as e:

@@ -87,7 +87,7 @@ def get_usage_resource() -> str:
         "# gnomAD Link MCP Usage\n\n"
         "Use CHROM-POS-REF-ALT variant IDs (GRCh38 by default) for SNV/indel frequencies. "
         "Use M-POS-REF-ALT for mitochondrial variants. Compact responses are the default; "
-        "request `response_mode=\"full\"` for debugging and `include_subcohorts=True` to "
+        'request `response_mode="full"` for debugging and `include_subcohorts=True` to '
         "expand population subgroup rows.\n\n"
         f"{RESEARCH_USE_NOTICE}"
     )

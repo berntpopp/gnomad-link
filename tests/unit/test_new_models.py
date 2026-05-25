@@ -11,7 +11,9 @@ def test_region_model_roundtrip() -> None:
         "start": 7674232,
         "stop": 7674252,
         "reference_genome": "GRCh38",
-        "genes": [{"gene_id": "ENSG00000141510", "symbol": "TP53", "start": 7661779, "stop": 7687538}],
+        "genes": [
+            {"gene_id": "ENSG00000141510", "symbol": "TP53", "start": 7661779, "stop": 7687538}
+        ],
         "clinvar_variants": [
             {
                 "variant_id": "17-7674232-C-G",

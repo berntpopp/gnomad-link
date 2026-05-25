@@ -55,7 +55,9 @@ def register_variant_tools(
         ] = "gnomad_r4",
         populations: Annotated[
             list[str] | None,
-            Field(description="Restrict to these population codes (e.g. ['afr','nfe']). None returns all kept rows."),
+            Field(
+                description="Restrict to these population codes (e.g. ['afr','nfe']). None returns all kept rows."
+            ),
         ] = None,
         include_subcohorts: Annotated[
             bool,
@@ -104,9 +106,7 @@ def register_variant_tools(
             str,
             Field(min_length=5, max_length=200, pattern=r"^[^'\"]+$"),
         ],
-        dataset: Annotated[
-            Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"], Field()
-        ] = "gnomad_r4",
+        dataset: Annotated[Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"], Field()] = "gnomad_r4",
         response_mode: Annotated[
             Literal["compact", "full"],
             Field(description="compact strips raw GraphQL extras; full passes through everything."),
@@ -124,5 +124,7 @@ def register_variant_tools(
         return await run_mcp_tool(
             "get_variant_details",
             call,
-            context=McpErrorContext(tool_name="get_variant_details", variant_id=variant_id, dataset=dataset),
+            context=McpErrorContext(
+                tool_name="get_variant_details", variant_id=variant_id, dataset=dataset
+            ),
         )

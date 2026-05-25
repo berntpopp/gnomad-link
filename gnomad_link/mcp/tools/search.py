@@ -14,9 +14,7 @@ from gnomad_link.models import GeneSearchResult, VariantSearchResult
 from gnomad_link.services import FrequencyService
 
 
-def register_search_tools(
-    mcp: FastMCP, *, service_factory: Callable[[], FrequencyService]
-) -> None:
+def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], FrequencyService]) -> None:
     @mcp.tool(
         name="search_genes",
         title="Search Genes",
@@ -43,9 +41,7 @@ def register_search_tools(
                 description="Gene symbol, name fragment, or Ensembl ID.",
             ),
         ],
-        reference_genome: Annotated[
-            Literal["GRCh37", "GRCh38"], Field()
-        ] = "GRCh38",
+        reference_genome: Annotated[Literal["GRCh37", "GRCh38"], Field()] = "GRCh38",
         limit: Annotated[
             int,
             Field(ge=1, le=50, description="Max matches returned."),
@@ -58,10 +54,7 @@ def register_search_tools(
             raw = await service.search_genes(query, reference_genome)
             total = len(raw)
             items = raw[:limit]
-            results = [
-                r.model_dump() if isinstance(r, GeneSearchResult) else r
-                for r in items
-            ]
+            results = [r.model_dump() if isinstance(r, GeneSearchResult) else r for r in items]
             payload: dict[str, Any] = {"results": results, "returned": len(results)}
             if total > len(results):
                 payload["truncated"] = {
@@ -103,9 +96,7 @@ def register_search_tools(
                 description="rsID, CHROM-POS-REF-ALT, or 'CHROM:POS'.",
             ),
         ],
-        dataset: Annotated[
-            Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"], Field()
-        ] = "gnomad_r4",
+        dataset: Annotated[Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"], Field()] = "gnomad_r4",
         limit: Annotated[int, Field(ge=1, le=25)] = 10,
     ) -> dict[str, Any]:
         """Use this when the caller only has an rsID, partial coordinates, or text fragment and needs to obtain a canonical gnomAD variant id. Returns IDs only -- call get_variant_frequencies or get_variant_details next."""
@@ -150,9 +141,7 @@ def register_search_tools(
     )
     async def search_variants(
         query: Annotated[str, Field(min_length=3, max_length=100)],
-        dataset: Annotated[
-            Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"], Field()
-        ] = "gnomad_r4",
+        dataset: Annotated[Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"], Field()] = "gnomad_r4",
         limit: Annotated[int, Field(ge=1, le=25)] = 10,
     ) -> dict[str, Any]:
         """Use this when a caller uses the legacy tool name -- deprecated alias for resolve_variant_id. Same behaviour; will be removed in the next release."""

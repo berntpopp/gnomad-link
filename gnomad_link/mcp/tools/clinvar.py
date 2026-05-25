@@ -28,9 +28,7 @@ def register_clinvar_tools(
             str,
             Field(min_length=5, max_length=200, pattern=r"^[^'\"]+$"),
         ],
-        reference_genome: Annotated[
-            Literal["GRCh37", "GRCh38"], Field()
-        ] = "GRCh38",
+        reference_genome: Annotated[Literal["GRCh37", "GRCh38"], Field()] = "GRCh38",
     ) -> dict[str, Any]:
         """Use this when a caller needs ClinVar clinical significance, review status, gold stars, or submissions for a single variant id. Complementary to get_variant_frequencies for clinical workflows."""
 
@@ -44,9 +42,7 @@ def register_clinvar_tools(
         return await run_mcp_tool(
             "get_clinvar_variant_details",
             call,
-            context=McpErrorContext(
-                tool_name="get_clinvar_variant_details", variant_id=variant_id
-            ),
+            context=McpErrorContext(tool_name="get_clinvar_variant_details", variant_id=variant_id),
         )
 
     @mcp.tool(

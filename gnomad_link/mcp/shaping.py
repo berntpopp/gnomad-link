@@ -57,7 +57,11 @@ def _filter_populations(
         an_raw = getattr(pop, "allele_number", None)
         an = an_raw if an_raw is not None else (pop.get("an", 0) if isinstance(pop, dict) else 0)
         hom_raw = getattr(pop, "homozygote_count", None)
-        hom = hom_raw if hom_raw is not None else (pop.get("homozygote_count", 0) if isinstance(pop, dict) else 0)
+        hom = (
+            hom_raw
+            if hom_raw is not None
+            else (pop.get("homozygote_count", 0) if isinstance(pop, dict) else 0)
+        )
         if select is not None and pop_id not in select:
             dropped["not_selected"] += 1
             continue
@@ -168,7 +172,11 @@ def shape_gene_variants(
     dropped = {"by_consequence": 0, "by_max_af": 0, "by_min_ac": 0}
     for v in raw:
         total_seen += 1
-        if consequence and v.get("consequence") != consequence and v.get("major_consequence") != consequence:
+        if (
+            consequence
+            and v.get("consequence") != consequence
+            and v.get("major_consequence") != consequence
+        ):
             dropped["by_consequence"] += 1
             continue
         if max_af is not None and (v.get("af") or 0.0) > max_af:
@@ -220,7 +228,9 @@ def shape_variant_details_compact(raw: dict[str, Any]) -> dict[str, Any]:
     return {k: v for k, v in raw.items() if k in keep}
 
 
-def cap_region_span(chrom: str, start: int, stop: int, *, max_bp: int = 100_000) -> tuple[int, int, bool]:
+def cap_region_span(
+    chrom: str, start: int, stop: int, *, max_bp: int = 100_000
+) -> tuple[int, int, bool]:
     """Clamp a region request to `max_bp` and report whether truncation occurred."""
 
     span = stop - start
