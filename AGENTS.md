@@ -128,7 +128,8 @@ How:
 
 ## Testing Notes
 
-- `make test` is the fast default and excludes live integration tests.
+- `make test` is the fast default and runs deterministic tests from
+  `tests/unit/`.
 - `make test-integration` runs live gnomAD API tests and may fail when the
   upstream API rate-limits requests.
 - `make test-cov` runs coverage with the configured floor.

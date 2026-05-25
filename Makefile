@@ -66,20 +66,20 @@ typecheck-fresh: ## Clear mypy cache and run typecheck
 	rm -rf .mypy_cache
 	uv run mypy gnomad_link server.py mcp_server.py
 
-test: ## Run tests quickly without live integration tests
-	uv run pytest tests -q -m "not integration and not slow"
+test: ## Run deterministic unit tests quickly
+	uv run pytest tests/unit -q
 
-test-fast: ## Run tests in parallel with pytest-xdist
-	uv run pytest tests -q -n auto -m "not integration and not slow"
+test-fast: ## Run deterministic unit tests in parallel with pytest-xdist
+	uv run pytest tests/unit -q -n auto
 
 test-unit: ## Run unit tests in parallel
-	uv run pytest tests -q -n auto -m "not integration and not slow"
+	uv run pytest tests/unit -q -n auto
 
 test-integration: ## Run live integration tests against the gnomAD API
-	uv run pytest tests -q -m "integration"
+	uv run pytest tests/integration -q
 
-test-cov: ## Run tests with coverage, excluding live integration tests
-	uv run pytest tests -m "not integration and not slow" --cov=gnomad_link --cov-report=term-missing --cov-report=html --cov-report=xml
+test-cov: ## Run unit tests with coverage
+	uv run pytest tests/unit --cov=gnomad_link --cov-report=term-missing --cov-report=html --cov-report=xml
 
 test-all: test-cov ## Alias for full test run with coverage
 

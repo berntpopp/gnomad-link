@@ -26,7 +26,7 @@ make lock
 make format          # Ruff formatter
 make lint            # Ruff lint
 make typecheck       # mypy
-make test            # non-live tests
+make test            # deterministic unit tests
 make ci-local        # local CI-equivalent gate
 ```
 
@@ -42,9 +42,10 @@ make lint-loc
 make precommit
 ```
 
-`make test` and `make ci-local` exclude live gnomAD API tests. Use
-`make test-integration` only when intentionally validating upstream gnomAD
-behavior. Live tests may fail when the upstream API rate-limits requests.
+`make test` and `make ci-local` run only deterministic unit tests from
+`tests/unit/`. Use `make test-integration` only when intentionally validating
+upstream gnomAD behavior. Live tests may fail when the upstream API rate-limits
+requests.
 
 ## Code Quality
 
@@ -54,7 +55,8 @@ behavior. Live tests may fail when the upstream API rate-limits requests.
   `str | None`.
 - Keep production Python files under 600 lines. `make lint-loc` enforces this
   for `gnomad_link/`, `server.py`, and `mcp_server.py`.
-- Keep tests in `tests/`.
+- Keep deterministic tests in `tests/unit/` and live upstream tests in
+  `tests/integration/`.
 - Preserve public REST paths, MCP tool names, and response schemas unless a task
   explicitly calls for a breaking change.
 
@@ -97,16 +99,19 @@ cache operations.
 ```text
 tests/
 ├── conftest.py
-├── test_base_client.py
-├── test_cli.py
-├── test_query_builder.py
-├── test_query_loader.py
-├── test_services.py
-└── test_*_endpoints.py
+├── integration/
+│   └── test_*_endpoints.py
+└── unit/
+    ├── test_base_client.py
+    ├── test_cli.py
+    ├── test_query_builder.py
+    ├── test_query_loader.py
+    └── test_services.py
 ```
 
-Endpoint tests that call the live gnomAD API are marked `integration`.
-Non-integration tests should be deterministic and suitable for local CI.
+Endpoint tests under `tests/integration/` call the live gnomAD API and are
+marked `integration`. Unit tests should be deterministic and suitable for local
+CI.
 
 ## Project Structure
 
