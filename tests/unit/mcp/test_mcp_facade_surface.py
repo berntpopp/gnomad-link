@@ -22,9 +22,10 @@ EXPECTED_TOOLS = {
     "search_genes",
     "resolve_variant_id",
     "search_variants",  # deprecated alias retained for one release
+    "get_gnomad_diagnostics",
 }
 
-EXPECTED_DATA_TOOLS = EXPECTED_TOOLS - {"get_server_capabilities"}
+EXPECTED_DATA_TOOLS = EXPECTED_TOOLS - {"get_server_capabilities", "get_gnomad_diagnostics"}
 
 EXPECTED_RESOURCE_URIS = {
     "gnomad://capabilities",
@@ -132,3 +133,30 @@ async def test_capabilities_resources_are_registered(fake_service_factory) -> No
     mcp = create_gnomad_mcp(service_factory=fake_service_factory)
     resource_uris = {str(res.uri) for res in await mcp.list_resources()}
     assert resource_uris >= EXPECTED_RESOURCE_URIS
+
+
+@pytest.mark.asyncio
+async def test_get_gnomad_diagnostics_returns_health_and_recent_errors(
+    fake_service_factory,
+) -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    mcp = create_gnomad_mcp(service_factory=fake_service_factory)
+    tools_by_name = {tool.name: tool for tool in await mcp.list_tools()}
+    assert "get_gnomad_diagnostics" in tools_by_name
+    tool = tools_by_name["get_gnomad_diagnostics"]
+    # Must be closed-world (local health data, no upstream call)
+    assert tool.annotations is not None
+    assert tool.annotations.openWorldHint is False
+
+
+@pytest.mark.asyncio
+async def test_diagnostics_tool_is_closed_world(fake_service_factory) -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    mcp = create_gnomad_mcp(service_factory=fake_service_factory)
+    tools_by_name = {tool.name: tool for tool in await mcp.list_tools()}
+    ann = tools_by_name["get_gnomad_diagnostics"].annotations
+    assert ann is not None
+    assert ann.openWorldHint is False
+    assert ann.readOnlyHint is True

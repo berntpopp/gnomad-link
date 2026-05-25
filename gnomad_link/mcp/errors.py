@@ -26,8 +26,8 @@ _RECENT_ERRORS: deque[dict[str, Any]] = deque(maxlen=RECENT_MCP_ERROR_LIMIT)
 _RESEARCH_USE_META = {"unsafe_for_clinical_use": True}
 
 # Fallback tool used in validation and output-validation error envelopes.
-# Updated to get_gnomad_diagnostics once that tool is registered (Commit 4).
-_FALLBACK_TOOL = "get_server_capabilities"
+# Points to get_gnomad_diagnostics for rich health context on error recovery.
+_FALLBACK_TOOL = "get_gnomad_diagnostics"
 
 
 @dataclass
@@ -65,10 +65,10 @@ def _classify(exc: BaseException) -> tuple[str, bool, str | None, dict[str, Any]
     if isinstance(exc, ValueError):
         return "validation_failed", False, "get_server_capabilities", None
     if isinstance(exc, GnomadApiError):
-        return "upstream_unavailable", True, None, None
+        return "upstream_unavailable", True, "get_gnomad_diagnostics", {}
     if isinstance(exc, TimeoutError):
-        return "upstream_unavailable", True, None, None
-    return "internal_error", False, None, None
+        return "upstream_unavailable", True, "get_gnomad_diagnostics", {}
+    return "internal_error", False, "get_gnomad_diagnostics", {}
 
 
 def _recovery_text(error_code: str, fallback_tool: str | None) -> str:

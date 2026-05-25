@@ -69,6 +69,7 @@ def get_capabilities_resource() -> dict[str, Any]:
             "search_genes",
             "resolve_variant_id",
             "search_variants",
+            "get_gnomad_diagnostics",
         ],
         "deprecated_tools": {
             "search_variants": "Use resolve_variant_id; this alias is retained for one release.",
