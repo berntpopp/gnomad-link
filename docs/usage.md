@@ -56,6 +56,12 @@ make mcp-serve-http
 claude mcp add --transport http gnomad-link http://127.0.0.1:8000/mcp
 ```
 
+When using the default Docker Compose stack:
+
+```bash
+claude mcp add --transport http gnomad-link http://127.0.0.1:8020/mcp
+```
+
 ### Claude Desktop HTTP Config
 
 ```json

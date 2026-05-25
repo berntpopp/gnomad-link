@@ -204,6 +204,19 @@ class UnifiedServerManager:
         except Exception as e:
             raise MCPIntegrationError(f"Failed to create MCP server: {e}", "mcp") from e
 
+    def _compose_mcp_lifespan(self, app: FastAPI, mcp_app) -> None:
+        """Run FastAPI and mounted FastMCP lifespans together."""
+        fastapi_lifespan = app.router.lifespan_context
+        mcp_lifespan = mcp_app.lifespan
+
+        @asynccontextmanager
+        async def combined_lifespan(parent_app: FastAPI):
+            async with fastapi_lifespan(parent_app):
+                async with mcp_lifespan(mcp_app):
+                    yield
+
+        app.router.lifespan_context = combined_lifespan
+
     def _setup_signal_handlers(self) -> None:
         """Set up signal handlers for graceful shutdown."""
 
@@ -264,7 +277,9 @@ class UnifiedServerManager:
 
             # Create and mount MCP server
             self.mcp = await self.create_mcp_server(self.app, config)
-            self.app.mount(config.mcp_path, self.mcp.http_app())
+            mcp_http_app = self.mcp.http_app(path="/")
+            self._compose_mcp_lifespan(self.app, mcp_http_app)
+            self.app.mount(config.mcp_path, mcp_http_app)
 
             self.logger.info(f"MCP HTTP interface mounted at {config.mcp_path}")
             self.logger.info(f"REST API available at http://{config.host}:{config.port}")

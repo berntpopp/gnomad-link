@@ -30,6 +30,13 @@ The unified server provides:
 claude mcp add --transport http gnomad-link http://127.0.0.1:8000/mcp
 ```
 
+For the default Docker Compose stack, use the host port mapped by
+`GNOMAD_LINK_HOST_PORT`:
+
+```bash
+claude mcp add --transport http gnomad-link http://127.0.0.1:8020/mcp
+```
+
 For hosted deployments:
 
 ```bash
