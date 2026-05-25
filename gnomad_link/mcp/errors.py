@@ -14,6 +14,8 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import Any
 
+from pydantic import ValidationError as PydanticValidationError
+
 from gnomad_link.api import DataNotFoundError, GnomadApiError
 
 logger = logging.getLogger(__name__)
@@ -22,6 +24,10 @@ RECENT_MCP_ERROR_LIMIT = 50
 _RECENT_ERRORS: deque[dict[str, Any]] = deque(maxlen=RECENT_MCP_ERROR_LIMIT)
 
 _RESEARCH_USE_META = {"unsafe_for_clinical_use": True}
+
+# Fallback tool used in validation and output-validation error envelopes.
+# Updated to get_gnomad_diagnostics once that tool is registered (Commit 4).
+_FALLBACK_TOOL = "get_server_capabilities"
 
 
 @dataclass
@@ -100,6 +106,71 @@ def _envelope_message(exc: BaseException, error_code: str) -> str:
     return _safe_message(exc)
 
 
+def _extract_field_errors(errors: list[Any]) -> list[dict[str, str]]:
+    """Flatten Pydantic validation errors into {field, reason} dicts."""
+    result: list[dict[str, str]] = []
+    for err in errors:
+        loc = err.get("loc", ())
+        field_name = ".".join(str(x) for x in loc) if loc else "unknown"
+        reason = err.get("msg", str(err.get("type", "invalid")))
+        result.append({"field": field_name, "reason": reason})
+    return result
+
+
+def mcp_validation_tool_error(
+    *,
+    tool_name: str,
+    exc: PydanticValidationError,
+) -> McpToolError:
+    """Build a sanitized validation failure raised before tool execution starts."""
+    field_errors = _extract_field_errors(list(exc.errors()))
+    payload: dict[str, Any] = {
+        "success": False,
+        "error_code": "validation_failed",
+        "message": "Invalid MCP arguments.",
+        "retryable": False,
+        "fallback_tool": _FALLBACK_TOOL,
+        "fallback_args": {},
+        "field_errors": field_errors,
+        "recovery": (
+            "Inputs failed validation. Check field_errors for details and call "
+            f"{_FALLBACK_TOOL} for accepted dataset and population codes."
+        ),
+        "_meta": {
+            "next_commands": [{"tool": _FALLBACK_TOOL, "arguments": {}}],
+            **_RESEARCH_USE_META,
+        },
+    }
+    return McpToolError(payload)
+
+
+def install_validation_error_handler(mcp_server: Any) -> None:
+    """Wrap registered tools so FastMCP argument validation returns our envelope."""
+    tool_manager = getattr(mcp_server, "_tool_manager", None)
+    tools = getattr(tool_manager, "_tools", {})
+    for tool in tools.values():
+        if getattr(tool, "_gnomad_validation_wrapped", False):
+            continue
+        original_run = tool.run
+
+        async def wrapped_run(
+            arguments: dict[str, Any],
+            *,
+            _original_run: Callable[[dict[str, Any]], Awaitable[Any]] = original_run,
+            _tool: Any = tool,
+        ) -> Any:
+            try:
+                return await _original_run(arguments)
+            except PydanticValidationError as exc:
+                raise mcp_validation_tool_error(
+                    tool_name=str(_tool.name),
+                    exc=exc,
+                ) from None
+
+        object.__setattr__(tool, "run", wrapped_run)
+        object.__setattr__(tool, "_gnomad_validation_wrapped", True)
+
+
 def mcp_tool_error(exc: BaseException, context: McpErrorContext) -> McpToolError:
     error_code, retryable, fallback_tool, fallback_args = _classify(exc)
     payload = {
@@ -113,8 +184,7 @@ def mcp_tool_error(exc: BaseException, context: McpErrorContext) -> McpToolError
         "_meta": {
             "tool": context.tool_name,
             "next_commands": [
-                "get_server_capabilities",
-                "gnomad://capabilities",
+                {"tool": _FALLBACK_TOOL, "arguments": {}},
             ],
             **_RESEARCH_USE_META,
         },

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 
 import pytest
+from pydantic import BaseModel, ValidationError
 
 
 def test_mcp_tool_error_envelope_contains_required_fields() -> None:
@@ -91,3 +92,75 @@ def test_recent_error_ring_is_bounded() -> None:
 
     history = get_recent_errors()
     assert len(history) == RECENT_MCP_ERROR_LIMIT
+
+
+def test_mcp_tool_error_has_structured_next_commands() -> None:
+    from gnomad_link.mcp.errors import McpErrorContext, mcp_tool_error
+
+    err = mcp_tool_error(
+        ValueError("bad param"),
+        McpErrorContext(tool_name="get_variant_frequencies"),
+    )
+    payload = json.loads(str(err))
+    next_commands = payload["_meta"]["next_commands"]
+    assert isinstance(next_commands, list)
+    assert len(next_commands) >= 1
+    # Each command must be a dict with "tool" and "arguments" keys
+    for cmd in next_commands:
+        assert isinstance(cmd, dict), f"next_commands entry is not a dict: {cmd}"
+        assert "tool" in cmd
+        assert "arguments" in cmd
+
+
+def _make_pydantic_validation_error() -> ValidationError:
+    """Return a real PydanticValidationError for testing."""
+
+    class _Model(BaseModel):
+        dataset: str
+        count: int
+
+    try:
+        _Model.model_validate({"dataset": 123, "count": "not_a_number"})
+    except ValidationError as exc:
+        return exc
+    raise AssertionError("Expected ValidationError was not raised")  # pragma: no cover
+
+
+def test_validation_handler_emits_field_errors() -> None:
+    from gnomad_link.mcp.errors import mcp_validation_tool_error
+
+    exc = _make_pydantic_validation_error()
+    err = mcp_validation_tool_error(tool_name="get_variant_frequencies", exc=exc)
+    payload = json.loads(str(err))
+
+    assert payload["success"] is False
+    assert payload["error_code"] == "validation_failed"
+    assert "field_errors" in payload
+    field_errors = payload["field_errors"]
+    assert isinstance(field_errors, list)
+    assert len(field_errors) >= 1
+    for fe in field_errors:
+        assert "field" in fe
+        assert "reason" in fe
+    next_commands = payload["_meta"]["next_commands"]
+    assert isinstance(next_commands, list)
+    assert any(isinstance(c, dict) and "tool" in c for c in next_commands)
+    assert payload["_meta"]["unsafe_for_clinical_use"] is True
+
+
+def test_output_validation_handler_returns_envelope() -> None:
+    from gnomad_link.mcp.output_validation import actionable_output_validation_error
+
+    payload = actionable_output_validation_error(
+        tool_name="get_variant_frequencies",
+        arguments={"variant_id": "1-55051215-G-GA"},
+        message="Output validation error: 'variant_id' is a required property",
+    )
+
+    assert payload["success"] is False
+    assert payload["error_code"] == "output_validation_failed"
+    assert payload["error_field"] == "variant_id"
+    assert payload["_meta"]["unsafe_for_clinical_use"] is True
+    next_commands = payload["_meta"]["next_commands"]
+    assert isinstance(next_commands, list)
+    assert any(isinstance(c, dict) and c.get("tool") for c in next_commands)
