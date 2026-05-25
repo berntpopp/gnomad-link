@@ -39,7 +39,7 @@ async def test_create_gnomad_mcp_exposes_expected_tool_names(fake_service_factor
     mcp = create_gnomad_mcp(service_factory=fake_service_factory)
     tool_names = {tool.name for tool in await mcp.list_tools()}
 
-    assert EXPECTED_TOOLS <= tool_names
+    assert tool_names >= EXPECTED_TOOLS
     assert "clear_cache" not in tool_names
     assert "get_structural_variants" not in tool_names
     assert "get_variant_frequency_data" not in tool_names
@@ -116,9 +116,7 @@ async def test_every_tool_description_leads_with_use_this_when(fake_service_fact
 def test_server_instructions_include_workflows_and_safety(fake_service_factory) -> None:
     from gnomad_link.mcp.facade import create_gnomad_mcp
 
-    instructions = (
-        create_gnomad_mcp(service_factory=fake_service_factory).instructions or ""
-    )
+    instructions = create_gnomad_mcp(service_factory=fake_service_factory).instructions or ""
 
     assert "Variant frequency" in instructions
     assert "get_server_capabilities" in instructions
@@ -133,4 +131,4 @@ async def test_capabilities_resources_are_registered(fake_service_factory) -> No
 
     mcp = create_gnomad_mcp(service_factory=fake_service_factory)
     resource_uris = {str(res.uri) for res in await mcp.list_resources()}
-    assert EXPECTED_RESOURCE_URIS <= resource_uris
+    assert resource_uris >= EXPECTED_RESOURCE_URIS
