@@ -68,6 +68,14 @@ class VariantFrequencyResponse(BaseModel):
     genome: VariantDataSource | None = Field(
         None, description="Frequency data from genome sequencing."
     )
+    gene_symbol: str | None = Field(
+        None,
+        description="HGNC gene symbol from the canonical transcript consequence, when present.",
+    )
+    major_consequence: str | None = Field(
+        None,
+        description="VEP major_consequence from the canonical transcript consequence, when present.",
+    )
 
     @property
     def has_data(self) -> bool:

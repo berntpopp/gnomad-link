@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, cast
 
 from fastmcp import FastMCP
 from pydantic import Field
@@ -39,7 +39,7 @@ def register_specialty_tools(
         async def call() -> dict[str, Any]:
             service = service_factory()
             raw = await service.get_structural_variant(variant_id, dataset)
-            return raw.get("structural_variant", raw) if isinstance(raw, dict) else raw
+            return cast(dict[str, Any], raw.get("structural_variant", raw))
 
         return await run_mcp_tool(
             "get_structural_variant",
@@ -73,7 +73,7 @@ def register_specialty_tools(
         async def call() -> dict[str, Any]:
             service = service_factory()
             raw = await service.get_mitochondrial_variant(variant_id, dataset)
-            return raw.get("mitochondrial_variant", raw) if isinstance(raw, dict) else raw
+            return cast(dict[str, Any], raw.get("mitochondrial_variant", raw))
 
         return await run_mcp_tool(
             "get_mitochondrial_variant",

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, cast
 
 from fastmcp import FastMCP
 from pydantic import Field
@@ -87,19 +87,18 @@ def register_coordinate_tools(
             adj_start, adj_stop, capped = cap_region_span(chrom, start, stop)
             service = service_factory()
             raw = await service.get_region(chrom, adj_start, adj_stop, dataset)
-            payload = raw.get("region", raw) if isinstance(raw, dict) else raw
-            if isinstance(payload, dict):
-                if not include_clinvar:
-                    payload.pop("clinvar_variants", None)
-                if not include_genes:
-                    payload.pop("genes", None)
-                if capped:
-                    payload["truncated"] = {
-                        "kind": "region_span",
-                        "requested_bp": stop - start,
-                        "served_bp": adj_stop - adj_start,
-                        "to_disable": "request smaller windows; max 100kb per call",
-                    }
+            payload = cast(dict[str, Any], raw.get("region", raw))
+            if not include_clinvar:
+                payload.pop("clinvar_variants", None)
+            if not include_genes:
+                payload.pop("genes", None)
+            if capped:
+                payload["truncated"] = {
+                    "kind": "region_span",
+                    "requested_bp": stop - start,
+                    "served_bp": adj_stop - adj_start,
+                    "to_disable": "request smaller windows; max 100kb per call",
+                }
             return payload
 
         return await run_mcp_tool(

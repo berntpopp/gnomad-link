@@ -35,9 +35,7 @@ def register_clinvar_tools(
         async def call() -> dict[str, Any]:
             service = service_factory()
             result = await service.get_clinvar_variant(variant_id, reference_genome)
-            if isinstance(result, ClinVarVariant):
-                return result.model_dump()
-            return result  # type: ignore[return-value]
+            return result.model_dump()
 
         return await run_mcp_tool(
             "get_clinvar_variant_details",

@@ -19,7 +19,16 @@ BASE_POPULATION_CODES = {
     "remaining",
 }
 
-SUBCOHORT_PREFIXES = ("non_topmed_", "non_ukb_", "non_v2_", "1kg_", "hgdp_", "controls_")
+SUBCOHORT_PREFIXES = (
+    "non_topmed_",
+    "non_ukb_",
+    "non_v2_",
+    "1kg_",
+    "hgdp_",
+    "controls_",
+    "1kg:",
+    "hgdp:",
+)
 
 
 def _is_subcohort(pop_id: str) -> bool:
@@ -27,7 +36,7 @@ def _is_subcohort(pop_id: str) -> bool:
 
 
 def _is_sex_split(pop_id: str) -> bool:
-    return pop_id.endswith(("_XX", "_XY"))
+    return pop_id in {"XX", "XY"} or pop_id.endswith(("_XX", "_XY"))
 
 
 def _get_pop_attr(pop: Any, attr_name: str, dict_key: str, default: Any = None) -> Any:
@@ -125,6 +134,30 @@ def _shape_source(
     return out
 
 
+def _top_enriched_population(
+    exome: dict[str, Any] | None, genome: dict[str, Any] | None
+) -> dict[str, Any] | None:
+    """Pick the highest-AF base-population row across exome+genome for LLM summary.
+
+    Restricted to BASE_POPULATION_CODES so subcohorts, sex-split, and other rows
+    cannot win the summary slot — keeps the field interpretable for the LLM.
+    """
+
+    best: dict[str, Any] | None = None
+    for source_name, source in (("exome", exome), ("genome", genome)):
+        if not source:
+            continue
+        for pop in source.get("populations", []):
+            if pop["id"] not in BASE_POPULATION_CODES:
+                continue
+            af = pop.get("af")
+            if af is None:
+                continue
+            if best is None or af > best["af"]:
+                best = {"id": pop["id"], "af": af, "source": source_name}
+    return best
+
+
 def shape_variant_frequencies(
     response: VariantFrequencyResponse | dict[str, Any],
     *,
@@ -135,24 +168,32 @@ def shape_variant_frequencies(
 ) -> dict[str, Any]:
     if isinstance(response, dict):
         response = VariantFrequencyResponse.model_validate(response)
-    return {
+    exome = _shape_source(
+        response.exome,
+        select=populations,
+        include_subcohorts=include_subcohorts,
+        include_sex_split=include_sex_split,
+        exclude_zero=exclude_zero_populations,
+    )
+    genome = _shape_source(
+        response.genome,
+        select=populations,
+        include_subcohorts=include_subcohorts,
+        include_sex_split=include_sex_split,
+        exclude_zero=exclude_zero_populations,
+    )
+    payload: dict[str, Any] = {
         "variant_id": response.variant_id,
         "dataset": response.dataset,
-        "exome": _shape_source(
-            response.exome,
-            select=populations,
-            include_subcohorts=include_subcohorts,
-            include_sex_split=include_sex_split,
-            exclude_zero=exclude_zero_populations,
-        ),
-        "genome": _shape_source(
-            response.genome,
-            select=populations,
-            include_subcohorts=include_subcohorts,
-            include_sex_split=include_sex_split,
-            exclude_zero=exclude_zero_populations,
-        ),
+        "gene_symbol": response.gene_symbol,
+        "major_consequence": response.major_consequence,
+        "exome": exome,
+        "genome": genome,
     }
+    top = _top_enriched_population(exome, genome)
+    if top is not None:
+        payload["summary"] = {"top_enriched_population": top}
+    return payload
 
 
 def shape_gene_variants(
@@ -209,8 +250,6 @@ def shape_gene_variants(
 def shape_variant_details_compact(raw: dict[str, Any]) -> dict[str, Any]:
     """Project the gnomAD variant payload to the compact subset advertised in VariantDetails."""
 
-    if not isinstance(raw, dict):
-        return raw
     keep = {
         "variant_id",
         "reference_genome",

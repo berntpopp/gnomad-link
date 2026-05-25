@@ -22,8 +22,11 @@ _FREQ_OUTPUT_SCHEMA = {
     "properties": {
         "variant_id": {"type": "string"},
         "dataset": {"type": "string"},
+        "gene_symbol": {"type": ["string", "null"]},
+        "major_consequence": {"type": ["string", "null"]},
         "exome": {"type": ["object", "null"]},
         "genome": {"type": ["object", "null"]},
+        "summary": {"type": ["object", "null"]},
     },
     "required": ["variant_id", "dataset"],
     "additionalProperties": True,

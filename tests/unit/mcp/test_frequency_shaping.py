@@ -96,3 +96,78 @@ def test_include_subcohorts_keeps_prefixed_rows() -> None:
 
     pops = {p["id"] for p in payload["exome"]["populations"]}
     assert "non_topmed_afr" in pops
+
+
+def test_summary_ignores_subcohorts_even_if_included() -> None:
+    """Subcohort rows like '1kg:msl' must never win the summary slot."""
+
+    from gnomad_link.mcp.shaping import shape_variant_frequencies
+
+    exome = VariantDataSource(
+        ac=10,
+        an=300_000,
+        homozygote_count=0,
+        populations=[
+            PopulationFrequency.model_validate(
+                {"id": "afr", "ac": 5, "an": 1_000, "homozygote_count": 0}
+            ),
+            # Subcohort with much higher AF than any base population
+            PopulationFrequency.model_validate(
+                {"id": "1kg:msl", "ac": 200, "an": 1_000, "homozygote_count": 5}
+            ),
+        ],
+    )
+    response = VariantFrequencyResponse(
+        variant_id="1-1-A-T", dataset="gnomad_r4", exome=exome, genome=None
+    )
+    payload = shape_variant_frequencies(
+        response,
+        populations=None,
+        include_subcohorts=True,  # subcohort row is visible in populations list
+        include_sex_split=False,
+        exclude_zero_populations=True,
+    )
+
+    assert payload["summary"]["top_enriched_population"]["id"] == "afr"
+
+
+def test_summary_picks_highest_af_population() -> None:
+    from gnomad_link.mcp.shaping import shape_variant_frequencies
+
+    payload = shape_variant_frequencies(
+        _make_response(),
+        populations=None,
+        include_subcohorts=False,
+        include_sex_split=False,
+        exclude_zero_populations=True,
+    )
+
+    top = payload["summary"]["top_enriched_population"]
+    assert top["id"] == "afr"
+    assert top["af"] == pytest.approx(143 / 8_000)
+    assert top["source"] == "exome"
+
+
+def test_gene_symbol_and_consequence_pass_through() -> None:
+    from gnomad_link.mcp.shaping import shape_variant_frequencies
+
+    response = VariantFrequencyResponse(
+        variant_id="1-55051215-G-GA",
+        dataset="gnomad_r4",
+        exome=None,
+        genome=None,
+        gene_symbol="PCSK9",
+        major_consequence="frameshift_variant",
+    )
+
+    payload = shape_variant_frequencies(
+        response,
+        populations=None,
+        include_subcohorts=False,
+        include_sex_split=False,
+        exclude_zero_populations=True,
+    )
+
+    assert payload["gene_symbol"] == "PCSK9"
+    assert payload["major_consequence"] == "frameshift_variant"
+    assert "summary" not in payload  # no populations means no summary

@@ -25,6 +25,26 @@ from gnomad_link.models import (
 logger = logging.getLogger(__name__)
 
 
+def _pick_canonical_annotation(
+    transcripts: list[dict[str, Any]] | None,
+) -> tuple[str | None, str | None]:
+    """Return (gene_symbol, major_consequence) from the canonical transcript when present.
+
+    Falls back to the first transcript_consequence with both fields populated; returns
+    (None, None) if the GraphQL response did not include transcript_consequences.
+    """
+
+    if not transcripts:
+        return None, None
+    for tc in transcripts:
+        if tc.get("canonical") and tc.get("gene_symbol"):
+            return tc.get("gene_symbol"), tc.get("major_consequence")
+    for tc in transcripts:
+        if tc.get("gene_symbol"):
+            return tc.get("gene_symbol"), tc.get("major_consequence")
+    return None, None
+
+
 class FrequencyService:
     """Unified service for gnomAD data queries with integrated caching.
 
@@ -196,11 +216,17 @@ class FrequencyService:
                 populations=genome_pops,
             )
 
+        gene_symbol, major_consequence = _pick_canonical_annotation(
+            data.get("transcript_consequences")
+        )
+
         return VariantFrequencyResponse(
             variant_id=variant_id,
             dataset=dataset,
             exome=exome_data,
             genome=genome_data,
+            gene_symbol=gene_symbol,
+            major_consequence=major_consequence,
         )
 
     async def get_gene(

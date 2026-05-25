@@ -143,10 +143,10 @@ def clear_recent_errors() -> None:
 
 async def run_mcp_tool(
     tool_name: str,
-    call: Callable[[], Awaitable[Any]],
+    call: Callable[[], Awaitable[dict[str, Any]]],
     *,
     context: McpErrorContext | None = None,
-) -> Any:
+) -> dict[str, Any]:
     """Execute an MCP tool body, converting any exception to an envelope dict.
 
     Returning the envelope (rather than raising) is what pubtator-link does so
