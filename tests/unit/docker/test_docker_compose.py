@@ -12,9 +12,11 @@ DOCKER_ENV = Path(".env.docker.example").read_text(encoding="utf-8")
 
 
 def test_base_compose_runs_unified_http_mcp_service() -> None:
+    assert "name: gnomad-link" in BASE
     assert "gnomad-link:" in BASE
     assert "MCP_TRANSPORT: unified" in BASE
     assert "MCP_PATH: /mcp" in BASE
+    assert "${GNOMAD_LINK_HOST_PORT:-8020}:8000" in BASE
     assert '["gnomad-link", "--transport", "unified"' in BASE
     assert "http://localhost:8000/health" in BASE
 
@@ -48,6 +50,7 @@ def test_npm_overlay_uses_external_proxy_network_without_host_ports() -> None:
 
 
 def test_docker_env_template_matches_compose_contract() -> None:
+    assert "GNOMAD_LINK_HOST_PORT=8020" in DOCKER_ENV
     assert "MCP_TRANSPORT=unified" in DOCKER_ENV
     assert "MCP_HOST=0.0.0.0" in DOCKER_ENV
     assert "MCP_PATH=/mcp" in DOCKER_ENV

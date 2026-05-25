@@ -5,15 +5,15 @@
 ```bash
 make docker-build
 make docker-up
-curl http://localhost:8000/health
+curl http://localhost:8020/health
 make docker-down
 ```
 
 The base Compose stack serves REST and MCP over HTTP:
 
-- REST docs: `http://localhost:8000/docs`
-- Health check: `http://localhost:8000/health`
-- MCP endpoint: `http://localhost:8000/mcp`
+- REST docs: `http://localhost:8020/docs`
+- Health check: `http://localhost:8020/health`
+- MCP endpoint: `http://localhost:8020/mcp`
 
 ## Compose Overlays
 
@@ -37,7 +37,7 @@ Use `.env.docker` for Docker-specific production settings:
 
 ```bash
 cp .env.docker.example .env.docker
-# Edit MCP_PORT, CORS_ORIGINS, and NPM_NETWORK_NAME for your host.
+# Edit GNOMAD_LINK_HOST_PORT, CORS_ORIGINS, and NPM_NETWORK_NAME for your host.
 docker compose \
   --env-file .env.docker \
   -f docker/docker-compose.yml \
@@ -60,7 +60,8 @@ The public MCP endpoint is then available at `https://your-domain.example/mcp`.
 Notable variables:
 
 - `GNOMAD_API_URL` - upstream gnomAD GraphQL API.
-- `MCP_PORT` - host port for the base Compose stack, default `8000`.
+- `GNOMAD_LINK_HOST_PORT` - host port for the base Compose stack, default `8020`.
+- `MCP_PORT` - internal application port, default `8000`.
 - `MCP_PATH` - hosted MCP path, default `/mcp`.
 - `CORS_ORIGINS` - comma-separated allowed origins or `*`.
 - `CACHE_SIZE` and `CACHE_TTL_MINUTES` - in-memory cache controls.

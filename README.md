@@ -327,7 +327,7 @@ template.
 cp .env.docker.example .env.docker
 make docker-build
 make docker-up
-curl http://localhost:8000/health
+curl http://localhost:8020/health
 ```
 
 For production or Nginx Proxy Manager deployment details, see

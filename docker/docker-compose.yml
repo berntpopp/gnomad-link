@@ -1,3 +1,5 @@
+name: gnomad-link
+
 services:
   gnomad-link:
     build:
@@ -21,7 +23,7 @@ services:
       MCP_PATH: /mcp
 
     ports:
-      - "${MCP_PORT:-8000}:8000"
+      - "${GNOMAD_LINK_HOST_PORT:-8020}:8000"
 
     command: ["gnomad-link", "--transport", "unified", "--host", "0.0.0.0", "--port", "8000"]
 
