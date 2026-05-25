@@ -37,11 +37,28 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
             if not gene_id and not gene_symbol:
                 raise ValueError("Provide gene_id or gene_symbol.")
             service = service_factory()
-            return await service.get_gene(
+            gene_obj = await service.get_gene(
                 gene_id=gene_id,
                 gene_symbol=gene_symbol,
                 reference_genome=reference_genome,
             )
+            result: dict[str, Any] = (
+                gene_obj.model_dump() if hasattr(gene_obj, "model_dump") else dict(gene_obj)
+            )
+            # Suggest the natural follow-up call using the resolved gene_id.
+            resolved_id = result.get("gene_id") or gene_id
+            if resolved_id:
+                existing_meta: dict[str, Any] = result.get("_meta") or {}
+                existing_next: list[Any] = existing_meta.get("next_commands", [])
+                variants_cmd: dict[str, Any] = {
+                    "tool": "get_gene_variants",
+                    "arguments": {"gene_id": resolved_id},
+                }
+                result["_meta"] = {
+                    **existing_meta,
+                    "next_commands": [*existing_next, variants_cmd],
+                }
+            return result
 
         return await run_mcp_tool(
             "get_gene_details",

@@ -76,7 +76,10 @@ async def test_run_mcp_tool_passes_through_success_payload() -> None:
 
     result = await run_mcp_tool("test_tool", ok)
 
-    assert result == {"ok": "yes"}
+    assert result["ok"] == "yes"
+    # run_mcp_tool injects _meta on every successful dict response
+    assert "_meta" in result
+    assert result["_meta"]["unsafe_for_clinical_use"] is True
 
 
 def test_recent_error_ring_is_bounded() -> None:
@@ -146,6 +149,38 @@ def test_validation_handler_emits_field_errors() -> None:
     assert isinstance(next_commands, list)
     assert any(isinstance(c, dict) and "tool" in c for c in next_commands)
     assert payload["_meta"]["unsafe_for_clinical_use"] is True
+
+
+@pytest.mark.asyncio
+async def test_success_response_carries_unsafe_for_clinical_use_meta() -> None:
+    from gnomad_link.mcp.errors import run_mcp_tool
+
+    async def good() -> dict[str, str]:
+        return {"variant_id": "1-55051215-G-GA", "dataset": "gnomad_r4"}
+
+    result = await run_mcp_tool("get_variant_frequencies", good)
+
+    assert "_meta" in result
+    assert result["_meta"]["unsafe_for_clinical_use"] is True
+    # The original payload fields must not be clobbered.
+    assert result["variant_id"] == "1-55051215-G-GA"
+
+
+@pytest.mark.asyncio
+async def test_success_response_preserves_existing_meta() -> None:
+    from gnomad_link.mcp.errors import run_mcp_tool
+
+    async def good_with_meta() -> dict[str, object]:
+        return {
+            "variant_id": "1-1-A-T",
+            "_meta": {"next_commands": [{"tool": "get_gene_variants", "arguments": {}}]},
+        }
+
+    result = await run_mcp_tool("get_variant_frequencies", good_with_meta)
+
+    assert result["_meta"]["unsafe_for_clinical_use"] is True
+    # Existing next_commands must be preserved.
+    assert any(c.get("tool") == "get_gene_variants" for c in result["_meta"]["next_commands"])
 
 
 def test_output_validation_handler_returns_envelope() -> None:

@@ -35,7 +35,19 @@ def register_clinvar_tools(
         async def call() -> dict[str, Any]:
             service = service_factory()
             result = await service.get_clinvar_variant(variant_id, reference_genome)
-            return result.model_dump()
+            payload = result.model_dump()
+            # Suggest pairing with frequency data using the same variant_id.
+            existing_meta: dict[str, Any] = payload.get("_meta") or {}
+            existing_next: list[Any] = existing_meta.get("next_commands", [])
+            freq_cmd: dict[str, Any] = {
+                "tool": "get_variant_frequencies",
+                "arguments": {"variant_id": variant_id},
+            }
+            payload["_meta"] = {
+                **existing_meta,
+                "next_commands": [*existing_next, freq_cmd],
+            }
+            return payload
 
         return await run_mcp_tool(
             "get_clinvar_variant_details",

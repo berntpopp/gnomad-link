@@ -226,7 +226,13 @@ async def run_mcp_tool(
 
     ctx = context or McpErrorContext(tool_name=tool_name)
     try:
-        return await call()
+        result = await call()
+        # Inject research-use meta into every successful dict response unless
+        # the tool already provides _meta (e.g. search_variants deprecation note).
+        if isinstance(result, dict):
+            existing_meta: dict[str, Any] = result.get("_meta") or {}
+            result["_meta"] = {**existing_meta, **_RESEARCH_USE_META}
+        return result
     except McpToolError as exc:
         record_mcp_error(
             tool_name=tool_name,
