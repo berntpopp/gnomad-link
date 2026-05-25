@@ -2,10 +2,12 @@
 
 import argparse
 import sys
+from typing import Any
 
 import httpx
 
 from .config import ServerConfig, settings
+from .server_manager import UnifiedServerManager
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -95,6 +97,12 @@ Examples:
         help="Server URL to check (default: http://127.0.0.1:8000)",
     )
 
+    # Cache command group
+    cache_parser = subparsers.add_parser("cache", help="In-process cache management")
+    cache_subparsers = cache_parser.add_subparsers(dest="cache_command", help="Cache subcommands")
+    cache_subparsers.add_parser("stats", help="Show cache statistics")
+    cache_subparsers.add_parser("clear", help="Clear all caches and reset counters")
+
     return parser
 
 
@@ -165,6 +173,31 @@ def handle_health_command(args: argparse.Namespace) -> None:
         sys.exit(1)
 
 
+def handle_cache_stats_command(args: argparse.Namespace) -> None:
+    """Handle cache stats command."""
+    service = UnifiedServerManager()._create_frequency_service()
+    stats: dict[str, Any] = service.get_cache_stats()
+
+    print("=== Cache Statistics ===")
+    print(f"hits:       {stats['hits']}")
+    print(f"misses:     {stats['misses']}")
+    print(f"total:      {stats['total']}")
+    print(f"hit_rate:   {stats['hit_rate']}")
+    print()
+    print("Cache sizes (currsize / maxsize):")
+    for name, info in stats.get("cache_info", {}).items():
+        currsize = info.get("currsize", 0)
+        maxsize = info.get("maxsize", 0)
+        print(f"  {name}: cache_size={currsize} / {maxsize}")
+
+
+def handle_cache_clear_command(args: argparse.Namespace) -> None:
+    """Handle cache clear command."""
+    service = UnifiedServerManager()._create_frequency_service()
+    service.clear_cache()
+    print("Cache cleared and statistics reset.")
+
+
 def main() -> None:
     """Execute CLI commands and handle arguments."""
     parser = create_parser()
@@ -176,6 +209,15 @@ def main() -> None:
         return
     elif args.command == "health":
         handle_health_command(args)
+        return
+    elif args.command == "cache":
+        if args.cache_command == "stats":
+            handle_cache_stats_command(args)
+        elif args.cache_command == "clear":
+            handle_cache_clear_command(args)
+        else:
+            # Show cache subcommand help if no subcommand given
+            parser.parse_args(["cache", "--help"])
         return
 
     # Default behavior: show help if no command specified
