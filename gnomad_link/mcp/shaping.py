@@ -1,0 +1,229 @@
+"""Pure helpers that project gnomAD service responses into MCP-compact shapes."""
+
+from __future__ import annotations
+
+from typing import Any, Iterable
+
+from gnomad_link.models import VariantFrequencyResponse
+
+BASE_POPULATION_CODES = {
+    "afr",
+    "amr",
+    "asj",
+    "eas",
+    "fin",
+    "nfe",
+    "sas",
+    "mid",
+    "ami",
+    "remaining",
+}
+
+SUBCOHORT_PREFIXES = ("non_topmed_", "non_ukb_", "non_v2_", "1kg_", "hgdp_", "controls_")
+
+
+def _is_subcohort(pop_id: str) -> bool:
+    return pop_id.startswith(SUBCOHORT_PREFIXES)
+
+
+def _is_sex_split(pop_id: str) -> bool:
+    return pop_id.endswith(("_XX", "_XY"))
+
+
+def _get_pop_attr(pop: Any, attr_name: str, dict_key: str, default: Any = None) -> Any:
+    """Read a field from a Pydantic model or a dict, checking for None explicitly."""
+    val = getattr(pop, attr_name, None)
+    if val is not None:
+        return val
+    if isinstance(pop, dict):
+        return pop.get(dict_key, default)
+    return default
+
+
+def _filter_populations(
+    populations: list[Any],
+    *,
+    select: list[str] | None,
+    include_subcohorts: bool,
+    include_sex_split: bool,
+    exclude_zero: bool,
+) -> tuple[list[dict[str, Any]], dict[str, int]]:
+    dropped = {"zero_ac": 0, "subcohorts": 0, "sex_split": 0, "not_selected": 0}
+    kept: list[dict[str, Any]] = []
+    for pop in populations:
+        pop_id = _get_pop_attr(pop, "name", "id") or _get_pop_attr(pop, "id", "name")
+        ac_raw = getattr(pop, "allele_count", None)
+        ac = ac_raw if ac_raw is not None else (pop.get("ac", 0) if isinstance(pop, dict) else 0)
+        an_raw = getattr(pop, "allele_number", None)
+        an = an_raw if an_raw is not None else (pop.get("an", 0) if isinstance(pop, dict) else 0)
+        hom_raw = getattr(pop, "homozygote_count", None)
+        hom = hom_raw if hom_raw is not None else (pop.get("homozygote_count", 0) if isinstance(pop, dict) else 0)
+        if select is not None and pop_id not in select:
+            dropped["not_selected"] += 1
+            continue
+        if not include_subcohorts and _is_subcohort(pop_id):
+            dropped["subcohorts"] += 1
+            continue
+        if not include_sex_split and _is_sex_split(pop_id):
+            dropped["sex_split"] += 1
+            continue
+        if exclude_zero and ac == 0:
+            dropped["zero_ac"] += 1
+            continue
+        af = (ac / an) if an else None
+        kept.append({"id": pop_id, "ac": ac, "an": an, "af": af, "homozygote_count": hom})
+    return kept, dropped
+
+
+def _shape_source(
+    source: Any,
+    *,
+    select: list[str] | None,
+    include_subcohorts: bool,
+    include_sex_split: bool,
+    exclude_zero: bool,
+) -> dict[str, Any] | None:
+    if source is None:
+        return None
+    ac = getattr(source, "ac", 0)
+    an = getattr(source, "an", 0)
+    populations, dropped = _filter_populations(
+        getattr(source, "populations", []),
+        select=select,
+        include_subcohorts=include_subcohorts,
+        include_sex_split=include_sex_split,
+        exclude_zero=exclude_zero,
+    )
+    out: dict[str, Any] = {
+        "ac": ac,
+        "an": an,
+        "af": (ac / an) if an else None,
+        "homozygote_count": getattr(source, "homozygote_count", 0),
+        "hemizygote_count": getattr(source, "hemizygote_count", None),
+        "populations": populations,
+    }
+    total_dropped = sum(dropped.values())
+    if total_dropped:
+        out["truncated"] = {
+            "kind": "populations",
+            "dropped": dropped,
+            "filter": {
+                "include_subcohorts": include_subcohorts,
+                "include_sex_split": include_sex_split,
+                "exclude_zero_populations": exclude_zero,
+                "populations": select,
+            },
+            "to_disable": (
+                "set include_subcohorts=True and include_sex_split=True and "
+                "exclude_zero_populations=False for the full upstream payload"
+            ),
+        }
+    return out
+
+
+def shape_variant_frequencies(
+    response: VariantFrequencyResponse | dict[str, Any],
+    *,
+    populations: list[str] | None,
+    include_subcohorts: bool,
+    include_sex_split: bool,
+    exclude_zero_populations: bool,
+) -> dict[str, Any]:
+    if isinstance(response, dict):
+        response = VariantFrequencyResponse.model_validate(response)
+    return {
+        "variant_id": response.variant_id,
+        "dataset": response.dataset,
+        "exome": _shape_source(
+            response.exome,
+            select=populations,
+            include_subcohorts=include_subcohorts,
+            include_sex_split=include_sex_split,
+            exclude_zero=exclude_zero_populations,
+        ),
+        "genome": _shape_source(
+            response.genome,
+            select=populations,
+            include_subcohorts=include_subcohorts,
+            include_sex_split=include_sex_split,
+            exclude_zero=exclude_zero_populations,
+        ),
+    }
+
+
+def shape_gene_variants(
+    raw: list[dict[str, Any]],
+    *,
+    limit: int,
+    consequence: str | None,
+    max_af: float | None,
+    min_ac: int | None,
+) -> dict[str, Any]:
+    """Filter and cap a gene-variants list. Always returns a `truncated` block when the cap fires."""
+
+    if limit <= 0 or limit > 500:
+        raise ValueError("limit must be in [1, 500]")
+    filtered: list[dict[str, Any]] = []
+    total_seen = 0
+    dropped = {"by_consequence": 0, "by_max_af": 0, "by_min_ac": 0}
+    for v in raw:
+        total_seen += 1
+        if consequence and v.get("consequence") != consequence and v.get("major_consequence") != consequence:
+            dropped["by_consequence"] += 1
+            continue
+        if max_af is not None and (v.get("af") or 0.0) > max_af:
+            dropped["by_max_af"] += 1
+            continue
+        if min_ac is not None and (v.get("ac") or 0) < min_ac:
+            dropped["by_min_ac"] += 1
+            continue
+        filtered.append(v)
+        if len(filtered) >= limit:
+            break
+    payload = {"variants": filtered, "returned": len(filtered), "total_seen": total_seen}
+    limit_hit = len(filtered) >= limit and total_seen < len(raw)
+    any_dropped = sum(dropped.values()) > 0
+    if limit_hit or any_dropped or total_seen > len(filtered):
+        payload["truncated"] = {
+            "kind": "gene_variants",
+            "dropped": dropped,
+            "filter": {
+                "limit": limit,
+                "consequence": consequence,
+                "max_af": max_af,
+                "min_ac": min_ac,
+            },
+            "to_disable": "raise limit (max 500) or relax max_af/min_ac/consequence filters",
+        }
+    return payload
+
+
+def shape_variant_details_compact(raw: dict[str, Any]) -> dict[str, Any]:
+    """Project the gnomAD variant payload to the compact subset advertised in VariantDetails."""
+
+    if not isinstance(raw, dict):
+        return raw
+    keep = {
+        "variant_id",
+        "reference_genome",
+        "pos",
+        "ref",
+        "alt",
+        "rsids",
+        "major_consequence",
+        "transcript_consequences",
+        "in_silico_predictors",
+        "clinvar",
+        "exome",
+        "genome",
+    }
+    return {k: v for k, v in raw.items() if k in keep}
+
+
+def cap_region_span(chrom: str, start: int, stop: int, *, max_bp: int = 100_000) -> tuple[int, int, bool]:
+    """Clamp a region request to `max_bp` and report whether truncation occurred."""
+
+    span = stop - start
+    if span <= max_bp:
+        return start, stop, False
+    return start, start + max_bp, True
