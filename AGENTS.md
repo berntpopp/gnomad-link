@@ -4,14 +4,16 @@ Shared repository instructions for agentic coding tools working in gnomAD Link.
 
 ## Project
 
-gnomAD Link is a Python FastAPI and MCP server for gnomAD GraphQL allele
-frequency, gene, transcript, ClinVar, structural variant, mitochondrial variant,
-region, and liftover data.
+gnomAD Link is an MCP server for gnomAD; FastAPI is a thin host providing
+`/health` only. The MCP facade covers gnomAD GraphQL allele frequency, gene,
+transcript, ClinVar, structural variant, mitochondrial variant, region, and
+liftover data.
 
 Primary areas:
 
-- `gnomad_link/` - Python package, FastAPI routes, GraphQL client, services,
+- `gnomad_link/` - Python package, MCP facade, GraphQL client, services,
   models, transports, and server management
+- `gnomad_link/mcp/` - hand-authored MCP facade (tools, resources, errors)
 - `gnomad_link/graphql/queries/` - versioned and shared GraphQL query documents
 - `tests/` - unit and route tests
 - `docs/` - architecture, API usage, MCP connection, and gnomAD reference docs
@@ -45,6 +47,8 @@ Primary areas:
   support.
 - Keep live upstream calls out of the default local CI path. Tests that require
   gnomAD API availability or quota must be marked `integration`.
+- MCP tool names, schemas, resources, and response modes are owned by
+  `gnomad_link/mcp/`. REST is intentionally minimal (`/health` only).
 - Keep agent-visible docs concise and operational. Prefer commands, boundaries,
   and invariants over prose that will drift.
 
@@ -87,14 +91,14 @@ Useful focused commands:
 - Use modern Python typing: `list[str]`, `dict[str, int]`, `str | None`.
 - Format and lint Python with Ruff.
 - Type check with mypy targeting Python 3.12.
-- Keep FastAPI route behavior covered by route tests and service behavior
-  covered by unit tests.
+- Keep MCP tool behavior covered by unit tests; keep service behavior covered
+  by unit tests.
 - Keep GraphQL query changes paired with tests for query loading or affected
-  route/client behavior.
-- Preserve public REST paths, MCP tool names, and response schemas unless the
-  task explicitly calls for a breaking change.
+  tool/client behavior.
+- Preserve MCP tool names and response schemas unless the task explicitly calls
+  for a breaking change.
 - Keep Docker production hardening in Compose overlays and keep the default
-  image command on unified REST plus MCP HTTP.
+  image command on the unified FastAPI host plus MCP HTTP.
 
 ## Agentic Development
 

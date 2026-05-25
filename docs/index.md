@@ -1,12 +1,12 @@
 # gnomAD-Link Documentation
 
-Welcome to the comprehensive documentation for gnomAD-link, a unified server that bridges the gnomAD (Genome Aggregation Database) to modern AI applications through dual interfaces: REST API and MCP (Model Context Protocol).
+Welcome to the documentation for gnomAD-link, an MCP server that bridges the gnomAD (Genome Aggregation Database) to AI applications. FastAPI is a thin host providing `/health` only; all domain functionality is exposed via MCP.
 
 ## 📖 Documentation Overview
 
 ### 🚀 **Getting Started**
 - [**Usage Guide**](usage.md) - Complete usage instructions for all deployment modes
-- [**API Reference**](api-reference.md) - Comprehensive REST API and MCP documentation
+- [**MCP Connection Guide**](MCP_CONNECTION_GUIDE.md) - MCP integration instructions
 - [**Claude And MCP Configuration**](claude_desktop_configurations.md) - AI assistant integration guide
 
 ### 🏗️ **Architecture & Development**
@@ -32,8 +32,8 @@ Welcome to the comprehensive documentation for gnomAD-link, a unified server tha
 
 ### For Users
 - **New to gnomAD-link?** → Start with [Usage Guide](usage.md)
-- **Need API reference?** → Check [API Reference](api-reference.md)
-- **Setting up Claude or MCP?** → Follow [Claude And MCP Configuration](claude_desktop_configurations.md)
+- **Setting up Claude or MCP?** → Follow [MCP Connection Guide](MCP_CONNECTION_GUIDE.md)
+- **Configuring AI assistants?** → Follow [Claude And MCP Configuration](claude_desktop_configurations.md)
 
 ### For Developers
 - **Contributing to the project?** → Read [Development Guide](development.md)
@@ -50,11 +50,11 @@ Welcome to the comprehensive documentation for gnomAD-link, a unified server tha
 **Architecture**: Unified server with transport selection  
 
 ### Key Features ✨
-- **Unified Server Architecture**: Single process serving REST API and MCP interfaces
-- **Transport Selection**: Support for HTTP, STDIO, and unified transport modes
-- **AI Assistant Integration**: Native MCP support for Claude Desktop and other AI tools
-- **Production Ready**: Comprehensive error handling, logging, and monitoring
-- **Zero Breaking Changes**: Full backwards compatibility maintained
+- **MCP-First Architecture**: Hand-authored FastMCP facade; FastAPI is `/health` only
+- **15 MCP Tools**: Variants, genes, ClinVar, structural, mitochondrial, liftover, search
+- **Transport Modes**: Streamable HTTP (recommended) and stdio fallback
+- **AI Assistant Integration**: Native MCP support for Claude Code, Claude Desktop, ChatGPT
+- **Production Ready**: Docker Compose, health checks, structured error envelopes
 
 ## 🚀 **Quick Start**
 
@@ -67,14 +67,13 @@ uv sync --group dev
 
 ### Basic Usage
 ```bash
-# Start unified server (REST + MCP)
-uv run python server.py --transport unified
-
-# Access REST API
-open http://localhost:8000/docs
+# Start MCP HTTP server
+make mcp-serve-http
 
 # MCP interface available at
-# http://localhost:8000/mcp
+# http://127.0.0.1:8000/mcp
+# Health check at
+# http://127.0.0.1:8000/health
 ```
 
 ### Claude HTTP Integration
@@ -105,13 +104,6 @@ Claude Desktop HTTP config:
 ```
 
 ## 🌟 **Key Capabilities**
-
-### REST API
-- **Variant Queries**: Allele frequencies across global populations
-- **Gene Information**: Constraint metrics and transcript data
-- **Clinical Annotations**: ClinVar pathogenicity and clinical significance
-- **Coordinate Liftover**: Convert between GRCh37 and GRCh38
-- **Search Functions**: Find variants, genes, and transcripts
 
 ### MCP Interface
 - **AI Assistant Tools**: Native integration with Claude and MCP clients

@@ -6,20 +6,19 @@
 git clone <repository-url>
 cd gnomad-link
 uv sync --group dev
-uv run python server.py --transport unified
+make mcp-serve-http
 ```
 
-Access:
+The server exposes:
 
-- REST docs: `http://127.0.0.1:8000/docs`
 - MCP Streamable HTTP: `http://127.0.0.1:8000/mcp`
 - Health: `http://127.0.0.1:8000/health`
 
 ## Transport Modes
 
-### Unified Mode
+### Unified Mode (Recommended)
 
-Recommended for normal use. Runs REST and MCP Streamable HTTP in one process.
+Single process; FastAPI `/health` host with FastMCP at `/mcp`.
 
 ```bash
 make mcp-serve-http
@@ -29,14 +28,6 @@ Manual equivalent:
 
 ```bash
 uv run python server.py --transport unified --host 127.0.0.1 --port 8000
-```
-
-### HTTP-Only Mode
-
-Runs the REST API without MCP.
-
-```bash
-uv run python server.py --transport http --host 127.0.0.1 --port 8000
 ```
 
 ### stdio Fallback
@@ -91,25 +82,54 @@ claude mcp add --transport http gnomad-link http://127.0.0.1:8020/mcp
 }
 ```
 
-## REST Examples
+## MCP Tool Examples
+
+### List Available Tools
 
 ```bash
-curl "http://127.0.0.1:8000/variant/1-55039447-G-T?dataset=gnomad_r4"
-curl "http://127.0.0.1:8000/search/gene?query=BRCA2&reference_genome=GRCh38"
-curl "http://127.0.0.1:8000/clinvar/variant/7-117559590-ATCT-A?reference_genome=GRCh38"
-curl "http://127.0.0.1:8000/liftover/?source_variant_id=17-7577121-G-A&reference_genome=GRCh37"
+curl -sS http://127.0.0.1:8000/mcp \
+  -H 'Accept: application/json, text/event-stream' \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
 ```
 
-## MCP Endpoint
+### Query Variant Frequencies
 
-The MCP endpoint is available at:
-
-```text
-http://127.0.0.1:8000/mcp
+```bash
+curl -sS http://127.0.0.1:8000/mcp \
+  -H 'Accept: application/json, text/event-stream' \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"get_variant_frequencies","arguments":{"variant_id":"1-55039447-G-T","dataset":"gnomad_r4"}}}'
 ```
 
-Use MCP clients rather than hand-written curl for normal tool calls. If you need
-to debug connectivity, first confirm REST docs and health are reachable:
+### Search Genes
+
+```bash
+curl -sS http://127.0.0.1:8000/mcp \
+  -H 'Accept: application/json, text/event-stream' \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"search_genes","arguments":{"query":"BRCA2","reference_genome":"GRCh38"}}}'
+```
+
+### Get ClinVar Annotation
+
+```bash
+curl -sS http://127.0.0.1:8000/mcp \
+  -H 'Accept: application/json, text/event-stream' \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"get_clinvar_variant_details","arguments":{"variant_id":"7-117559590-ATCT-A","reference_genome":"GRCh38"}}}'
+```
+
+### Liftover
+
+```bash
+curl -sS http://127.0.0.1:8000/mcp \
+  -H 'Accept: application/json, text/event-stream' \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"liftover_variant","arguments":{"source_variant_id":"17-7577121-G-A","reference_genome":"GRCh37"}}}'
+```
+
+## Health Check
 
 ```bash
 curl http://127.0.0.1:8000/health
@@ -132,6 +152,15 @@ LOG_LEVEL=INFO
 
 Copy `.env.example` to `.env` for local overrides.
 
+## Cache Management
+
+Cache stats and clear are available via the CLI (not via MCP):
+
+```bash
+gnomad-link cache stats
+gnomad-link cache clear
+```
+
 ## Production Notes
 
 - Prefer Streamable HTTP MCP behind HTTPS.
@@ -140,15 +169,4 @@ Copy `.env.example` to `.env` for local overrides.
 - Do not expose destructive cache operations through public MCP tools.
 - Treat live gnomAD rate limits as upstream state, not local test failures.
 
-Minimal container sketch:
-
-```dockerfile
-FROM python:3.12-slim
-
-WORKDIR /app
-COPY . .
-RUN pip install uv && uv sync --frozen --no-dev
-
-EXPOSE 8000
-CMD ["uv", "run", "python", "server.py", "--transport", "unified", "--host", "0.0.0.0", "--port", "8000"]
-```
+See [docker/README.md](../docker/README.md) for Docker production deployment.

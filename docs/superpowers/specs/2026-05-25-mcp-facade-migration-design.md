@@ -27,22 +27,28 @@ preserving the existing REST API and Docker/HTTP deployment shape.
 
 ## Non-Goals
 
-- Do not remove FastAPI, REST routes, `/docs`, or `/openapi.json`.
-- Do not change public REST paths as part of the MCP migration.
+- The REST surface is intentionally reduced to `/health` only.
+- `/docs`, `/redoc`, `/openapi.json`, and all `/variant` `/gene` `/clinvar`
+  etc. routes are removed.
+- `/cache/stats` and `/cache/clear` move to the CLI.
+- `search_variants` becomes a deprecated alias for `resolve_variant_id`;
+  one-release removal window.
 - Do not import PubTator's review/RAG profile complexity.
 - Do not expose destructive cache operations through MCP.
 - Do not broaden default local CI to live gnomAD API calls.
 
 ## Architecture
 
-The source of truth becomes the service/client layer, not OpenAPI:
+The source of truth is the service/client layer:
 
 ```text
-gnomad_link.api.routes.*  -> REST/OpenAPI facade
-                         \
-gnomad_link.services.*    -> shared service and GraphQL client layer
-                         /
+FastAPI /health host
+        |
+        +-- /mcp -> FastMCP HTTP app
+                         |
 gnomad_link.mcp.*         -> hand-authored MCP facade
+                         /
+gnomad_link.services.*    -> shared service and GraphQL client layer
 ```
 
 `UnifiedServerManager.create_mcp_server()` should call

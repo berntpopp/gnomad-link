@@ -10,11 +10,10 @@ support, ChatGPT developer mode, and hosted MCP clients.
 make mcp-serve-http
 ```
 
-The unified server provides:
+The server provides:
 
-- REST API at `http://127.0.0.1:8000/`
-- Interactive docs at `http://127.0.0.1:8000/docs`
 - MCP Streamable HTTP at `http://127.0.0.1:8000/mcp`
+- Health check at `http://127.0.0.1:8000/health`
 
 ## Claude Code HTTP
 
@@ -79,12 +78,15 @@ endpoints:
 
 ## Available Tools
 
-- `get_variant_frequencies`
-- `search_genes`
-- `search_transcripts`
-- `get_structural_variants`
-- `search_clinvar_variants`
-- `get_clinvar_variant_details`
+- `get_variant_frequencies`, `get_variant_details`
+- `get_gene_details`, `get_gene_variants`
+- `get_transcript_details`
+- `search_genes`, `resolve_variant_id`
+- `search_variants` (deprecated alias for `resolve_variant_id`)
+- `get_clinvar_variant_details`, `get_clinvar_meta`
+- `get_structural_variant`, `get_mitochondrial_variant`
+- `get_region`, `liftover_variant`
+- `get_server_capabilities`
 
 Treat gnomAD results as research data. Do not use this server for diagnosis,
 treatment, triage, patient management, or clinical decision support.

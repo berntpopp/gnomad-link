@@ -63,13 +63,13 @@ requests.
   `tests/integration/`.
 - Keep Docker config tests deterministic; do not require Docker Engine for
   `make test`.
-- Preserve public REST paths, MCP tool names, and response schemas unless a task
-  explicitly calls for a breaking change.
+- Preserve MCP tool names and response schemas unless a task explicitly calls
+  for a breaking change. REST is intentionally minimal (`/health` only).
 
 ## Running Servers
 
 ```bash
-make dev             # REST + MCP Streamable HTTP on 127.0.0.1:8000
+make dev             # MCP HTTP server on 127.0.0.1:8000
 make mcp-serve-http  # same hosted MCP endpoint
 make mcp-serve       # stdio fallback for local clients
 ```
@@ -78,7 +78,6 @@ Manual equivalents:
 
 ```bash
 uv run python server.py --transport unified --host 127.0.0.1 --port 8000
-uv run python server.py --transport http --host 127.0.0.1 --port 8000
 uv run python mcp_server.py
 ```
 
@@ -130,9 +129,10 @@ make docker-prod-config
 make docker-npm-config
 ```
 
-The Docker image serves unified REST plus MCP HTTP on `/mcp`. Health checks are
-defined in Compose services, not in the image, so future one-off container
-commands can reuse the image without inheriting an HTTP health probe.
+The Docker image serves the FastAPI `/health` host with FastMCP at `/mcp`.
+Health checks are defined in Compose services, not in the image, so future
+one-off container commands can reuse the image without inheriting an HTTP health
+probe.
 
 ## Test Structure
 
@@ -157,15 +157,16 @@ CI.
 
 ```text
 gnomad_link/
-├── api/                    # GraphQL client and FastAPI routes
+├── api/                    # GraphQL client (routes removed; /health only in server.py)
 ├── graphql/                # Query loader, builder, and query documents
+├── mcp/                    # Hand-authored MCP facade (tools, resources, errors)
 ├── models/                 # Pydantic response models and enums
 ├── services/               # Service layer and cache-aware data access
 ├── transports/             # Transport abstractions
-├── cli.py                  # Command-line parser and helper commands
+├── cli.py                  # Command-line parser and cache helper commands
 ├── config.py               # Settings and server config
 ├── logging_config.py       # Logging setup
-└── server_manager.py       # Unified REST/MCP lifecycle management
+└── server_manager.py       # Unified FastAPI+MCP lifecycle management
 ```
 
 ## Agentic Work

@@ -2,215 +2,159 @@
 
 ## System Architecture
 
-gnomAD-link implements a **unified server architecture** that serves as a bridge between the gnomAD (Genome Aggregation Database) and modern AI applications. The system provides dual interfaces - REST API for web clients and MCP (Model Context Protocol) for AI assistants - while maintaining shared business logic and caching.
+gnomAD Link is an MCP-first server that bridges the gnomAD (Genome Aggregation
+Database) to AI applications. FastAPI is a thin host providing `/health` only
+and mounting the FastMCP HTTP app at `/mcp`. All domain functionality is exposed
+via MCP.
 
 ### Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Transport Layer                          │
-├─────────────────┬─────────────────┬─────────────────────────┤
-│   FastAPI/HTTP  │  MCP/HTTP       │    MCP/STDIO            │
-│   (REST + Docs) │  (Streamable)   │    (AI Assistants)      │
-└─────────────────┴─────────────────┴─────────────────────────┘
-                            │
-┌─────────────────────────────────────────────────────────────┐
-│                 FastMCP Integration Layer                   │
-│  ┌─────────────────────────────────────────────────────────┐│
-│  │            Unified Server Manager                       ││
-│  │  • Transport Selection Logic                           ││
-│  │  • Lifecycle Coordination                              ││
-│  │  • Configuration Management                            ││
-│  └─────────────────────────────────────────────────────────┘│
-└─────────────────────────────────────────────────────────────┘
-                            │
-┌─────────────────────────────────────────────────────────────┐
-│                  Business Logic Layer                      │
-│  ┌───────────────┐  ┌──────────────┐  ┌─────────────────┐  │
-│  │ FrequencyService │ │ GraphQLClient │ │ CacheManager   │  │
-│  │ (async-lru)     │ │ (versioned)   │ │ (shared)       │  │
-│  └───────────────┘  └──────────────┘  └─────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
-                            │
-┌─────────────────────────────────────────────────────────────┐
-│                     Data Layer                             │
-│            gnomAD GraphQL API (v2, v3, v4)                 │
-└─────────────────────────────────────────────────────────────┘
+     Clients (Claude Code, Claude Desktop, ChatGPT, curl)
+                          |
+           FastAPI /health host  (port 8020 Docker / 8000 dev)
+                          |
+               FastMCP HTTP app at /mcp
+                          |
+     +-----------+------------------+-------------------+
+     |           |                  |                   |
+  Variants    Genes/Transcripts   ClinVar    Specialty/Search
+  tools        tools               tools      tools
+     |           |                  |                   |
+     +-----------+------------------+-------------------+
+                          |
+               gnomad_link/services/
+               (FrequencyService, GraphQLClient, CacheManager)
+                          |
+               gnomAD GraphQL API (v2, v3, v4)
 ```
 
 ## Core Components
 
-### 1. Transport Layer
+### 1. FastAPI /health Host
 
-The transport layer provides three distinct interfaces:
+- **Purpose**: Minimal HTTP host for the MCP app; provides `/health` only.
+- **Mount**: FastMCP HTTP app at `/mcp` via `app.mount("/mcp", mcp.http_app())`.
+- **No REST routes**: `/docs`, `/redoc`, `/openapi.json`, and all `/variant`,
+  `/gene`, `/clinvar`, etc. routes are removed.
 
-#### FastAPI/HTTP (REST + Documentation)
-- **Purpose**: Traditional REST API for web clients
-- **Features**: OpenAPI/Swagger documentation, CORS support, health checks
-- **Endpoints**: `/api/variants/`, `/api/genes/`, `/api/search/`, etc.
-- **Access**: `http://localhost:8000/docs`
+### 2. MCP Facade (`gnomad_link/mcp/`)
 
-#### MCP/HTTP (Streamable)
-- **Purpose**: HTTP-based MCP interface for web-deployed AI assistants
-- **Features**: Streamable HTTP transport, SSE fallback, JSON-RPC protocol
-- **Tools**: `get_variant_frequency`, `search_genes`, `search_transcripts`, etc.
-- **Access**: `http://localhost:8000/mcp`
+The hand-authored MCP facade is the primary interface:
 
-#### MCP/STDIO (AI Assistants)
-- **Purpose**: STDIO transport for local AI assistant integration
-- **Features**: High-performance binary protocol, minimal logging overhead
-- **Integration**: Claude Desktop, AI development tools
-- **Performance**: ~10,000+ operations/second
+```
+gnomad_link/mcp/
+  facade.py       - create_gnomad_mcp() entry point, server instructions
+  tools/
+    variants.py   - get_variant_frequencies, get_variant_details
+    genes.py      - get_gene_details, get_gene_variants
+    clinvar.py    - get_clinvar_variant_details, get_clinvar_meta
+    coordinates.py - liftover_variant, get_region
+    specialty.py  - get_structural_variant, get_mitochondrial_variant,
+                    get_transcript_details
+    search.py     - search_genes, resolve_variant_id, search_variants
+    metadata.py   - get_server_capabilities
+  resources.py    - gnomad://capabilities, gnomad://usage
+  errors.py       - structured error envelopes
+```
 
-### 2. Unified Server Manager
+Every tool is explicitly registered with:
 
-The `UnifiedServerManager` class orchestrates the entire system:
+- LLM-oriented description starting with "Use this when..."
+- Concrete input constraints via `Annotated` and `pydantic.Field`
+- `ToolAnnotations(readOnlyHint=True, destructiveHint=False, idempotentHint=True,
+  openWorldHint=True)` for gnomAD API-backed tools
+
+### 3. Unified Server Manager
+
+`UnifiedServerManager` orchestrates the system:
 
 ```python
 class UnifiedServerManager:
-    """Manages multiple transport protocols for gnomAD server."""
-    
     async def create_fastapi_app(self) -> FastAPI:
-        """Create FastAPI application with proper lifecycle."""
-        
-    async def create_mcp_server(self, app: FastAPI) -> FastMCP:
-        """Create FastMCP server from FastAPI app."""
-        
-    async def start_unified_server(self, config: ServerConfig):
-        """Start server with FastAPI + MCP HTTP."""
-        
-    async def start_stdio_server(self, config: ServerConfig):
-        """Start STDIO-only MCP server."""
-        
-    async def start_http_only_server(self, config: ServerConfig):
-        """Start FastAPI-only server (no MCP)."""
+        """Create FastAPI app with /health and mounted MCP."""
+
+    async def start_unified_server(self, config: ServerConfig): ...
+    async def start_stdio_server(self, config: ServerConfig): ...
 ```
 
-**Key Responsibilities**:
-- Transport selection and orchestration
-- Async lifecycle management
-- Shared service instance coordination
-- Configuration validation and application
-- Graceful shutdown handling
+In unified HTTP mode, REST and MCP share one `FrequencyService` instance,
+cache, and GraphQL client. In stdio mode, the manager constructs one
+`FrequencyService` directly.
 
-### 3. Business Logic Layer
+### 4. Business Logic Layer
 
 #### FrequencyService
-- **Purpose**: Core business logic for variant frequency queries
-- **Features**: Async-LRU caching, version-aware routing, error handling
-- **Cache**: Configurable size and TTL for optimal performance
-- **Integration**: Shared across all transport interfaces
+
+- Core business logic for all variant and gene queries
+- Async-LRU caching with configurable size and TTL
+- Shared across all transport interfaces
 
 #### GraphQLClient (UnifiedGnomadClient)
-- **Purpose**: Version-aware GraphQL communication with gnomAD API
-- **Features**: Automatic version routing, timeout handling, connection pooling
-- **Versions**: Supports gnomAD v2, v3, and v4 APIs
-- **Queries**: Organized by version and functionality
+
+- Version-aware GraphQL communication with gnomAD API
+- Automatic version routing (v2/v3/v4), timeout handling, connection pooling
 
 #### CacheManager
-- **Purpose**: Centralized caching for all data operations
-- **Implementation**: Async-LRU with configurable parameters
-- **Sharing**: Single cache instance across all transports
-- **Monitoring**: Cache hit/miss metrics and statistics
 
-### 4. Data Layer
+- Centralized caching; single instance across all transports
+- Cache stats and clear via `gnomad-link cache` CLI subcommands
 
-#### GraphQL Query System
-- **Structure**: Version-specific query organization (`v2/`, `v3/`, `v4/`, `common/`)
-- **Loading**: Dynamic query loading with caching
-- **Building**: Parameter processing and version-aware field selection
-- **Fragments**: Reusable query components
+### 5. Data Layer
 
-#### gnomAD API Integration
-- **Endpoints**: Direct integration with gnomAD's GraphQL API
-- **Versions**: Automatic dataset-to-version mapping
-- **Error Handling**: Comprehensive error parsing and classification
-- **Timeouts**: Configurable timeouts with retry logic
+- **Queries**: Version-specific GraphQL documents under
+  `gnomad_link/graphql/queries/` (`v2/`, `v3/`, `v4/`, `common/`)
+- **Datasets**: `gnomad_r2_1` on GRCh37; `gnomad_r3` and `gnomad_r4` on
+  GRCh38; `gnomad_r4` is the default
 
 ## Transport Selection
 
-The system supports three deployment modes:
+### Unified (Recommended)
 
-### 1. Unified Transport (Recommended)
-```bash
-uv run python server.py --transport unified --port 8000
-```
-
-**Features**:
-- Single server process
-- Both REST API and MCP HTTP available
-- Shared cache and services
-- Optimal resource utilization
-
-**Access Points**:
-- REST API: `http://localhost:8000/docs`
-- MCP HTTP: `http://localhost:8000/mcp`
-- Health Check: `http://localhost:8000/health`
-
-### 2. Streamable HTTP MCP (Recommended For AI Assistants)
 ```bash
 make mcp-serve-http
+# or
+uv run python server.py --transport unified --host 127.0.0.1 --port 8000
 ```
 
-**Features**:
-- Modern MCP over HTTP at `/mcp`
-- Works for Claude HTTP, ChatGPT developer mode, and hosted MCP clients
-- Shares lifecycle and cache with the REST API
-- Preferred over stdio for sustained agentic development
+Single process. FastAPI host at root with MCP at `/mcp`. Health check at
+`/health`.
 
-**Usage**:
-```bash
-claude mcp add --transport http gnomad-link http://127.0.0.1:8000/mcp
-```
+### stdio Fallback
 
-### 3. stdio Fallback
 ```bash
+make mcp-serve
+# or
 uv run python mcp_server.py
 ```
 
-Use stdio only for local clients that cannot connect to HTTP MCP endpoints.
+Use only for local clients that cannot connect to HTTP MCP endpoints.
 
-### 4. HTTP-Only Transport (Pure REST)
-```bash
-uv run python server.py --transport http --port 8000
-```
-
-**Features**:
-- FastAPI-only deployment
-- No MCP overhead
-- Traditional REST API server
-- Swagger documentation
-
-## Configuration System
+## Configuration
 
 ### ServerConfig
+
 ```python
 @dataclass
 class ServerConfig:
-    """Server configuration with transport selection."""
-    
     transport: Literal["unified", "http", "stdio"] = "unified"
     host: str = "127.0.0.1"
     port: int = 8000
     mcp_path: str = "/mcp"
-    enable_docs: bool = True
     log_level: str = "INFO"
 ```
 
 ### Environment Variables
+
 ```bash
-# Transport Configuration
 MCP_TRANSPORT=unified
 MCP_HOST=127.0.0.1
 MCP_PORT=8000
 MCP_PATH=/mcp
 
-# Logging Configuration
 LOG_LEVEL=INFO
-MCP_LOG_LEVEL=INFO
 STDIO_LOG_LEVEL=WARNING
 
-# gnomAD Configuration
 GNOMAD_API_URL=https://gnomad.broadinstitute.org/api
 CACHE_SIZE=1024
 CACHE_TTL_MINUTES=60
@@ -218,118 +162,50 @@ CACHE_TTL_MINUTES=60
 
 ## Error Handling
 
-### Exception Hierarchy
-```python
-class TransportError(Exception):
-    """Base exception for transport-related errors."""
+MCP tools return structured error envelopes:
 
-class ConfigurationError(TransportError):
-    """Configuration validation errors."""
-
-class StartupError(TransportError):
-    """Server startup errors."""
-
-class MCPIntegrationError(TransportError):
-    """MCP integration errors."""
+```json
+{
+  "error": {
+    "code": "upstream_error",
+    "message": "gnomAD API returned an error",
+    "details": {...}
+  }
+}
 ```
 
-### Error Responses
-- **REST API**: Standard HTTP status codes with JSON error responses
-- **MCP HTTP**: JSON-RPC error format with proper error codes
-- **STDIO**: Structured error objects with context information
-
-## Logging System
-
-### Transport-Aware Logging
-```python
-class TransportAwareFormatter(logging.Formatter):
-    """Formatter that includes transport context in log messages."""
-    
-    def format(self, record):
-        # Add transport context to log messages
-        if hasattr(record, 'transport'):
-            record.transport_prefix = f"[{record.transport.upper()}]"
-        return super().format(record)
-```
-
-### Log Levels by Transport
-- **Unified/HTTP**: Full logging with configurable levels
-- **STDIO**: WARNING level only to stderr (protocol compatibility)
-- **Development**: DEBUG level with enhanced output
-
-## Performance Considerations
-
-### Caching Strategy
-- **Async-LRU**: Non-blocking cache operations
-- **Shared Cache**: Single cache instance across all transports
-- **Configurable TTL**: Balance between freshness and performance
-- **Cache Statistics**: Monitoring and optimization metrics
-
-### Connection Pooling
-- **HTTP Connections**: Reused across requests
-- **GraphQL Client**: Persistent connection to gnomAD API
-- **Resource Cleanup**: Proper async context management
-
-### Monitoring
-- **Health Checks**: Per-transport health endpoints
-- **Metrics**: Request/response times, cache hit rates
-- **Logging**: Structured logging with performance context
+STDIO transport writes errors to stderr only (protocol compatibility).
 
 ## Security
 
-### Input Validation
-- **Pydantic Models**: Comprehensive input validation
-- **Type Safety**: Full type annotations throughout
-- **Error Sanitization**: Safe error messages without sensitive data
+- Input validation via Pydantic models throughout
+- No sensitive data in error responses
+- Destructive cache operations are CLI-only; not exposed via MCP
+- Production deployments should use HTTPS and an authenticated reverse proxy
 
-### CORS Configuration
-- **Configurable Origins**: Environment-based CORS setup
-- **Development Mode**: Permissive CORS for local development
-- **Production Mode**: Strict CORS configuration
+## Deployment
 
-### Transport Security
-- **HTTP**: Standard web security headers
-- **STDIO**: Isolated process communication
-- **Error Handling**: No sensitive data in error responses
+### Docker
 
-## Deployment Patterns
-
-### Docker Deployment
-```dockerfile
-FROM python:3.12-slim
-
-WORKDIR /app
-COPY . .
-RUN pip install uv && uv sync --frozen --no-dev
-
-EXPOSE 8000
-CMD ["uv", "run", "python", "server.py", "--transport", "unified", "--host", "0.0.0.0", "--port", "8000"]
-```
-
-### Production Configuration
-```yaml
-services:
-  gnomad-unified:
-    environment:
-      - MCP_TRANSPORT=unified
-      - MCP_HOST=0.0.0.0
-      - MCP_PORT=8000
-      - ENABLE_MONITORING=true
-      - LOG_LEVEL=INFO
-    ports:
-      - "8000:8000"
-```
-
-### Health Checks
 ```bash
-# REST API health
-curl http://localhost:8000/health
-
-# MCP HTTP health
-curl http://localhost:8000/mcp/health
-
-# Cache statistics
-curl http://localhost:8000/api/cache/stats
+cp .env.docker.example .env.docker
+make docker-build
+make docker-up
+curl http://localhost:8020/health
 ```
 
-This unified architecture provides a robust, scalable, and maintainable foundation for bridging gnomAD data to both traditional web clients and modern AI applications through a single, efficient server implementation.
+See [docker/README.md](../docker/README.md) for production and Nginx Proxy
+Manager overlays.
+
+### Health Check
+
+```bash
+curl http://localhost:8020/health
+```
+
+### Cache Management (CLI)
+
+```bash
+gnomad-link cache stats
+gnomad-link cache clear
+```
