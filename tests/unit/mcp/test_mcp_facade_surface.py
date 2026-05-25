@@ -95,8 +95,8 @@ async def test_every_data_tool_advertises_output_schema(fake_service_factory) ->
     tools_by_name = {tool.name: tool for tool in await mcp.list_tools()}
 
     for name in EXPECTED_DATA_TOOLS:
-        schema = tools_by_name[name].outputSchema
-        assert schema is not None, f"{name} missing outputSchema"
+        schema = tools_by_name[name].output_schema
+        assert schema is not None, f"{name} missing output_schema"
         assert isinstance(schema, dict)
 
 
