@@ -8,6 +8,7 @@ from fastmcp import FastMCP
 
 from gnomad_link.mcp.errors import install_validation_error_handler
 from gnomad_link.mcp.output_validation import install_output_validation_error_handler
+from gnomad_link.mcp.prompts import register_workflow_prompts
 from gnomad_link.mcp.resources import RESEARCH_USE_NOTICE
 from gnomad_link.mcp.tools import register_gnomad_tools
 from gnomad_link.services import FrequencyService
@@ -50,6 +51,7 @@ def create_gnomad_mcp(
         mask_error_details=True,
     )
     register_gnomad_tools(mcp, service_factory=service_factory)
+    register_workflow_prompts(mcp)
     install_validation_error_handler(mcp)
     install_output_validation_error_handler(mcp)
     return mcp

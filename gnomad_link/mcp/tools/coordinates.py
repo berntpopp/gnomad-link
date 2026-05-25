@@ -25,11 +25,15 @@ def register_coordinate_tools(
         title="Liftover Variant Between GRCh37 and GRCh38",
         annotations=READ_ONLY_OPEN_WORLD,
         output_schema=LiftoverResponse.model_json_schema(),
+        tags={"coordinates"},
     )
     async def liftover_variant(
         source_variant_id: Annotated[
             str,
-            Field(description="Variant ID to convert (CHROM-POS-REF-ALT)."),
+            Field(
+                description="Variant ID to convert (CHROM-POS-REF-ALT).",
+                examples=["1-55051215-G-GA"],
+            ),
         ],
         reference_genome: Annotated[
             Literal["GRCh37", "GRCh38"],
@@ -58,6 +62,7 @@ def register_coordinate_tools(
         title="Get Variants and Genes in a Region",
         annotations=READ_ONLY_OPEN_WORLD,
         output_schema=Region.model_json_schema(),
+        tags={"coordinates"},
     )
     async def get_region(
         region: Annotated[
@@ -67,7 +72,13 @@ def register_coordinate_tools(
                 pattern=_REGION_PATTERN,
             ),
         ],
-        dataset: Annotated[Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"], Field()] = "gnomad_r4",
+        dataset: Annotated[
+            Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"],
+            Field(
+                description="gnomad_r4 (GRCh38, default, largest cohort), gnomad_r3 (GRCh38, whole-genome), gnomad_r2_1 (GRCh37 legacy)",
+                examples=["gnomad_r4"],
+            ),
+        ] = "gnomad_r4",
         include_clinvar: Annotated[
             bool,
             Field(description="Include ClinVar variants in the region."),

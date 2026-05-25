@@ -19,6 +19,7 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
         name="search_genes",
         title="Search Genes",
         annotations=READ_ONLY_OPEN_WORLD,
+        tags={"gene", "search"},
         output_schema={
             "type": "object",
             "properties": {
@@ -74,6 +75,7 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
         name="resolve_variant_id",
         title="Resolve Variant Identifier",
         annotations=READ_ONLY_OPEN_WORLD,
+        tags={"search"},
         output_schema={
             "type": "object",
             "properties": {
@@ -96,7 +98,13 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
                 description="rsID, CHROM-POS-REF-ALT, or 'CHROM:POS'.",
             ),
         ],
-        dataset: Annotated[Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"], Field()] = "gnomad_r4",
+        dataset: Annotated[
+            Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"],
+            Field(
+                description="gnomad_r4 (GRCh38, default, largest cohort), gnomad_r3 (GRCh38, whole-genome), gnomad_r2_1 (GRCh37 legacy)",
+                examples=["gnomad_r4"],
+            ),
+        ] = "gnomad_r4",
         limit: Annotated[int, Field(ge=1, le=25)] = 10,
     ) -> dict[str, Any]:
         """Use this when the caller only has an rsID, partial coordinates, or text fragment and needs to obtain a canonical gnomAD variant id. Returns IDs only -- call get_variant_frequencies or get_variant_details next."""
@@ -125,6 +133,7 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
         name="search_variants",
         title="Search Variants (deprecated alias)",
         annotations=READ_ONLY_OPEN_WORLD,
+        tags={"search"},
         output_schema={
             "type": "object",
             "properties": {
@@ -141,7 +150,13 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
     )
     async def search_variants(
         query: Annotated[str, Field(min_length=3, max_length=100)],
-        dataset: Annotated[Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"], Field()] = "gnomad_r4",
+        dataset: Annotated[
+            Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"],
+            Field(
+                description="gnomad_r4 (GRCh38, default, largest cohort), gnomad_r3 (GRCh38, whole-genome), gnomad_r2_1 (GRCh37 legacy)",
+                examples=["gnomad_r4"],
+            ),
+        ] = "gnomad_r4",
         limit: Annotated[int, Field(ge=1, le=25)] = 10,
     ) -> dict[str, Any]:
         """Use this when a caller uses the legacy tool name -- deprecated alias for resolve_variant_id. Same behaviour; will be removed in the next release."""

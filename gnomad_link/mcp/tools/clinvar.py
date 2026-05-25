@@ -22,11 +22,17 @@ def register_clinvar_tools(
         title="Get ClinVar Variant",
         annotations=READ_ONLY_OPEN_WORLD,
         output_schema=ClinVarVariant.model_json_schema(),
+        tags={"clinical"},
     )
     async def get_clinvar_variant_details(
         variant_id: Annotated[
             str,
-            Field(min_length=5, max_length=200, pattern=r"^[^'\"]+$"),
+            Field(
+                min_length=5,
+                max_length=200,
+                pattern=r"^[^'\"]+$",
+                examples=["1-55051215-G-GA"],
+            ),
         ],
         reference_genome: Annotated[Literal["GRCh37", "GRCh38"], Field()] = "GRCh38",
     ) -> dict[str, Any]:
@@ -60,6 +66,7 @@ def register_clinvar_tools(
         title="Get ClinVar Metadata",
         annotations=READ_ONLY_OPEN_WORLD,
         output_schema={"type": "object", "additionalProperties": True},
+        tags={"clinical"},
     )
     async def get_clinvar_meta() -> dict[str, Any]:
         """Use this when a caller only needs the ClinVar release date or revision currently served by gnomAD -- cheaper than full capabilities."""

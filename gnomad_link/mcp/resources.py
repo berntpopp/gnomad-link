@@ -80,6 +80,37 @@ def get_capabilities_resource() -> dict[str, Any]:
             "Population truncation: subcohort and sex-split rows are omitted by default.",
             RESEARCH_USE_NOTICE,
         ],
+        "llm_driver_contract": {
+            "recommended_entrypoint": "get_server_capabilities",
+            "core_workflow_tools": [
+                "resolve_variant_id",
+                "get_variant_frequencies",
+                "search_genes",
+                "get_gene_details",
+                "get_clinvar_variant_details",
+                "liftover_variant",
+            ],
+        },
+        "output_cheatsheet": {
+            "variant_id_field": "variant_id",
+            "exome_populations": "exome.populations[]",
+            "genome_populations": "genome.populations[]",
+            "summary_block": "summary",
+            "truncation_block": "exome.truncated",
+        },
+        "tool_categories": {
+            "variant": [
+                "get_variant_frequencies",
+                "get_variant_details",
+                "get_mitochondrial_variant",
+                "get_structural_variant",
+            ],
+            "gene": ["get_gene_details", "get_gene_variants", "search_genes"],
+            "clinical": ["get_clinvar_variant_details", "get_clinvar_meta"],
+            "coordinates": ["liftover_variant", "get_region", "get_transcript_details"],
+            "search": ["search_genes", "resolve_variant_id", "search_variants"],
+            "metadata": ["get_server_capabilities", "get_gnomad_diagnostics"],
+        },
     }
 
 

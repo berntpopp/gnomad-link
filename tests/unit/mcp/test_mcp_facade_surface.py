@@ -30,6 +30,7 @@ EXPECTED_DATA_TOOLS = EXPECTED_TOOLS - {"get_server_capabilities", "get_gnomad_d
 EXPECTED_RESOURCE_URIS = {
     "gnomad://capabilities",
     "gnomad://usage",
+    "gnomad://research-use",
 }
 
 
@@ -160,3 +161,53 @@ async def test_diagnostics_tool_is_closed_world(fake_service_factory) -> None:
     assert ann is not None
     assert ann.openWorldHint is False
     assert ann.readOnlyHint is True
+
+
+@pytest.mark.asyncio
+async def test_workflow_prompts_registered(fake_service_factory) -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    mcp = create_gnomad_mcp(service_factory=fake_service_factory)
+    prompts = await mcp.list_prompts()
+    prompt_names = {p.name for p in prompts}
+    assert "variant_frequency_workflow" in prompt_names
+    assert "gene_constraint_workflow" in prompt_names
+    assert "clinical_variant_workflow" in prompt_names
+    assert "region_scan_workflow" in prompt_names
+
+
+@pytest.mark.asyncio
+async def test_capabilities_includes_llm_driver_contract(fake_service_factory) -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+    from gnomad_link.mcp.resources import get_capabilities_resource
+
+    mcp = create_gnomad_mcp(service_factory=fake_service_factory)
+    _ = mcp  # trigger registration
+    caps = get_capabilities_resource()
+    assert "llm_driver_contract" in caps
+    assert "core_workflow_tools" in caps["llm_driver_contract"]
+    assert "output_cheatsheet" in caps
+    assert "tool_categories" in caps
+
+
+@pytest.mark.asyncio
+async def test_research_use_resource_registered(fake_service_factory) -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    mcp = create_gnomad_mcp(service_factory=fake_service_factory)
+    resource_uris = {str(res.uri) for res in await mcp.list_resources()}
+    assert "gnomad://research-use" in resource_uris
+
+
+@pytest.mark.asyncio
+async def test_data_tools_have_category_tags(fake_service_factory) -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    mcp = create_gnomad_mcp(service_factory=fake_service_factory)
+    tools_by_name = {tool.name: tool for tool in await mcp.list_tools()}
+    # Spot-check a sample of tools for tags
+    assert tools_by_name["get_variant_frequencies"].tags == {"variant"}
+    assert tools_by_name["get_gene_details"].tags == {"gene"}
+    assert tools_by_name["get_clinvar_variant_details"].tags == {"clinical"}
+    assert tools_by_name["liftover_variant"].tags == {"coordinates"}
+    assert tools_by_name["get_gnomad_diagnostics"].tags == {"metadata", "diagnostics"}

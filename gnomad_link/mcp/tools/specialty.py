@@ -22,17 +22,22 @@ def register_specialty_tools(
         title="Get Structural Variant",
         annotations=READ_ONLY_OPEN_WORLD,
         output_schema=StructuralVariant.model_json_schema(),
+        tags={"variant"},
     )
     async def get_structural_variant(
         variant_id: Annotated[
             str,
             Field(
-                description="gnomAD SV identifier.",
+                description="gnomAD SV identifier (e.g. DEL_chr1_1 or DUP_chr17_5).",
                 min_length=3,
                 max_length=200,
+                examples=["DEL_chr1_1"],
             ),
         ],
-        dataset: Annotated[Literal["gnomad_sv_r2_1", "gnomad_sv_r4"], Field()] = "gnomad_sv_r4",
+        dataset: Annotated[
+            Literal["gnomad_sv_r2_1", "gnomad_sv_r4"],
+            Field(examples=["gnomad_sv_r4"]),
+        ] = "gnomad_sv_r4",
     ) -> dict[str, Any]:
         """Use this when a caller has a gnomAD structural variant id (deletions, duplications, inversions, BNDs). For SNVs/indels use get_variant_frequencies instead."""
 
@@ -56,6 +61,7 @@ def register_specialty_tools(
         title="Get Mitochondrial Variant",
         annotations=READ_ONLY_OPEN_WORLD,
         output_schema=MitochondrialVariant.model_json_schema(),
+        tags={"variant"},
     )
     async def get_mitochondrial_variant(
         variant_id: Annotated[
@@ -64,9 +70,16 @@ def register_specialty_tools(
                 description="Mitochondrial variant in M-POS-REF-ALT format.",
                 min_length=5,
                 max_length=100,
+                examples=["M-7497-G-A"],
             ),
         ],
-        dataset: Annotated[Literal["gnomad_r3", "gnomad_r4"], Field()] = "gnomad_r4",
+        dataset: Annotated[
+            Literal["gnomad_r3", "gnomad_r4"],
+            Field(
+                description="gnomad_r4 (GRCh38, default) or gnomad_r3 (GRCh38); gnomad_r2_1 does not include mitochondrial variants",
+                examples=["gnomad_r4"],
+            ),
+        ] = "gnomad_r4",
     ) -> dict[str, Any]:
         """Use this when a caller has a mitochondrial variant id (M-POS-REF-ALT). Mitochondrial ploidy and heteroplasmy fields are returned; for autosomal variants use get_variant_frequencies."""
 
@@ -90,6 +103,7 @@ def register_specialty_tools(
         title="Get Transcript Details",
         annotations=READ_ONLY_OPEN_WORLD,
         output_schema=Transcript.model_json_schema(),
+        tags={"coordinates"},
     )
     async def get_transcript_details(
         transcript_id: Annotated[
@@ -98,6 +112,7 @@ def register_specialty_tools(
                 description="Ensembl transcript ID (ENST...)",
                 min_length=4,
                 max_length=80,
+                examples=["ENST00000302118"],
             ),
         ],
         reference_genome: Annotated[Literal["GRCh37", "GRCh38"], Field()] = "GRCh38",

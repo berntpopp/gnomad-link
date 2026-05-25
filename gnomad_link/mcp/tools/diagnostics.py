@@ -22,6 +22,7 @@ def register_diagnostics_tools(
         name="get_gnomad_diagnostics",
         title="Get gnomAD Link Diagnostics",
         annotations=READ_ONLY_CLOSED_WORLD,
+        tags={"metadata", "diagnostics"},
         output_schema={
             "type": "object",
             "properties": {

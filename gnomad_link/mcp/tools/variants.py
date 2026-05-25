@@ -41,6 +41,7 @@ def register_variant_tools(
         title="Get Variant Frequencies",
         annotations=READ_ONLY_OPEN_WORLD,
         output_schema=_FREQ_OUTPUT_SCHEMA,
+        tags={"variant"},
     )
     async def get_variant_frequencies(
         variant_id: Annotated[
@@ -50,16 +51,21 @@ def register_variant_tools(
                 min_length=5,
                 max_length=200,
                 pattern=r"^[^'\"]+$",
+                examples=["1-55051215-G-GA", "17-7674232-G-A"],
             ),
         ],
         dataset: Annotated[
             Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"],
-            Field(description="Dataset. gnomad_r4 default (GRCh38)."),
+            Field(
+                description="gnomad_r4 (GRCh38, default, largest cohort), gnomad_r3 (GRCh38, whole-genome), gnomad_r2_1 (GRCh37 legacy)",
+                examples=["gnomad_r4"],
+            ),
         ] = "gnomad_r4",
         populations: Annotated[
             list[str] | None,
             Field(
-                description="Restrict to these population codes (e.g. ['afr','nfe']). None returns all kept rows."
+                description="Restrict to these population codes (e.g. ['afr','nfe']). None returns all kept rows.",
+                examples=[["afr", "nfe"]],
             ),
         ] = None,
         include_subcohorts: Annotated[
@@ -103,13 +109,25 @@ def register_variant_tools(
         title="Get Variant Details",
         annotations=READ_ONLY_OPEN_WORLD,
         output_schema=VariantDetails.model_json_schema(),
+        tags={"variant"},
     )
     async def get_variant_details(
         variant_id: Annotated[
             str,
-            Field(min_length=5, max_length=200, pattern=r"^[^'\"]+$"),
+            Field(
+                min_length=5,
+                max_length=200,
+                pattern=r"^[^'\"]+$",
+                examples=["1-55051215-G-GA"],
+            ),
         ],
-        dataset: Annotated[Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"], Field()] = "gnomad_r4",
+        dataset: Annotated[
+            Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"],
+            Field(
+                description="gnomad_r4 (GRCh38, default, largest cohort), gnomad_r3 (GRCh38, whole-genome), gnomad_r2_1 (GRCh37 legacy)",
+                examples=["gnomad_r4"],
+            ),
+        ] = "gnomad_r4",
         response_mode: Annotated[
             Literal["compact", "full"],
             Field(description="compact strips raw GraphQL extras; full passes through everything."),

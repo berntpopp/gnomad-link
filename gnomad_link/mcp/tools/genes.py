@@ -21,13 +21,22 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
         title="Get Gene Details",
         annotations=READ_ONLY_OPEN_WORLD,
         output_schema=Gene.model_json_schema(),
+        tags={"gene"},
     )
     async def get_gene_details(
         gene_id: Annotated[
-            str | None, Field(description="Ensembl gene ID (preferred over symbol).")
+            str | None,
+            Field(
+                description="Ensembl gene ID (preferred over symbol).",
+                examples=["ENSG00000169174"],
+            ),
         ] = None,
         gene_symbol: Annotated[
-            str | None, Field(description="HGNC gene symbol, used if gene_id is absent.")
+            str | None,
+            Field(
+                description="HGNC gene symbol, used if gene_id is absent.",
+                examples=["PCSK9"],
+            ),
         ] = None,
         reference_genome: Annotated[Literal["GRCh37", "GRCh38"], Field()] = "GRCh38",
     ) -> dict[str, Any]:
@@ -74,6 +83,7 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
         name="get_gene_variants",
         title="Get Gene Variants",
         annotations=READ_ONLY_OPEN_WORLD,
+        tags={"gene"},
         output_schema={
             "type": "object",
             "properties": {
@@ -87,8 +97,17 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
         },
     )
     async def get_gene_variants(
-        gene_id: Annotated[str, Field(description="Ensembl gene ID.")],
-        dataset: Annotated[Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"], Field()] = "gnomad_r4",
+        gene_id: Annotated[
+            str,
+            Field(description="Ensembl gene ID.", examples=["ENSG00000169174"]),
+        ],
+        dataset: Annotated[
+            Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"],
+            Field(
+                description="gnomad_r4 (GRCh38, default, largest cohort), gnomad_r3 (GRCh38, whole-genome), gnomad_r2_1 (GRCh37 legacy)",
+                examples=["gnomad_r4"],
+            ),
+        ] = "gnomad_r4",
         limit: Annotated[
             int, Field(ge=1, le=500, description="Max variants returned (hard cap 500).")
         ] = 100,
