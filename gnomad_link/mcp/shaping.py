@@ -396,6 +396,57 @@ def shape_gene_details_compact(raw: dict[str, Any]) -> dict[str, Any]:
     return compact
 
 
+def _classify_clinical_significance(sig: str | None) -> str:
+    """Map a free-text ClinVar clinical_significance to a canonical bucket.
+
+    Ordering matters: "uncertain" is checked first so "Uncertain significance"
+    cannot fall through to the pathogenic/benign branches. Then "likely
+    pathogenic" / "likely benign" win over their bare counterparts so the
+    "likely" substring is not swallowed by a broader match.
+    """
+    if not sig:
+        return "other"
+    s = sig.lower()
+    if "uncertain" in s or "vus" in s:
+        return "uncertain"
+    if "pathogenic" in s and "likely" in s:
+        return "likely_pathogenic"
+    if "pathogenic" in s:
+        return "pathogenic"
+    if "benign" in s and "likely" in s:
+        return "likely_benign"
+    if "benign" in s:
+        return "benign"
+    return "other"
+
+
+def summarize_clinvar_submissions(submissions: list[dict[str, Any]]) -> dict[str, Any]:
+    """Aggregate ClinVar submissions into pathogenic/benign/uncertain counts.
+
+    Returns a dict with counts per classification bucket, a `conflict` flag
+    (True when both pathogenic-side and benign-side reviewers are present),
+    and total. Counts are computed from the FULL input, so a truncated
+    response still reports accurate aggregates.
+    """
+    counts = {
+        "pathogenic": 0,
+        "likely_pathogenic": 0,
+        "uncertain": 0,
+        "likely_benign": 0,
+        "benign": 0,
+        "other": 0,
+    }
+    for s in submissions:
+        counts[_classify_clinical_significance(s.get("clinical_significance"))] += 1
+    pathogenic_side = counts["pathogenic"] + counts["likely_pathogenic"]
+    benign_side = counts["benign"] + counts["likely_benign"]
+    return {
+        **counts,
+        "conflict": pathogenic_side > 0 and benign_side > 0,
+        "total": len(submissions),
+    }
+
+
 def shape_clinvar_submissions(payload: dict[str, Any], *, submissions_limit: int) -> dict[str, Any]:
     """Cap submissions[] and emit truncated metadata. Returns a copy of payload."""
     submissions = payload.get("submissions") or []

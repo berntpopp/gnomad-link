@@ -10,7 +10,7 @@ from pydantic import Field
 
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
-from gnomad_link.mcp.shaping import shape_clinvar_submissions
+from gnomad_link.mcp.shaping import shape_clinvar_submissions, summarize_clinvar_submissions
 from gnomad_link.models import ClinVarVariant
 from gnomad_link.services import FrequencyService
 
@@ -47,6 +47,10 @@ def register_clinvar_tools(
             service = service_factory()
             result = await service.get_clinvar_variant(variant_id, reference_genome)
             payload = result.model_dump()
+            # Summary is computed from the FULL submissions list BEFORE truncation
+            # so the aggregate is accurate even when the response is capped.
+            all_submissions = payload.get("submissions") or []
+            payload["summary"] = summarize_clinvar_submissions(all_submissions)
             payload = shape_clinvar_submissions(payload, submissions_limit=submissions_limit)
             # Suggest pairing with frequency data using the same variant_id.
             existing_meta: dict[str, Any] = payload.get("_meta") or {}
