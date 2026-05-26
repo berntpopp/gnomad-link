@@ -10,6 +10,7 @@ from pydantic import Field
 
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
+from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.shaping import shape_gene_details_compact, shape_gene_variants
 from gnomad_link.models import Gene
 from gnomad_link.services import FrequencyService
@@ -20,7 +21,7 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
         name="get_gene_details",
         title="Get Gene Details",
         annotations=READ_ONLY_OPEN_WORLD,
-        output_schema=Gene.model_json_schema(),
+        output_schema=relax_output_schema(Gene.model_json_schema()),
         tags={"gene"},
     )
     async def get_gene_details(
@@ -95,17 +96,19 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
         title="Get Gene Variants",
         annotations=READ_ONLY_OPEN_WORLD,
         tags={"gene"},
-        output_schema={
-            "type": "object",
-            "properties": {
-                "variants": {"type": "array", "items": {"type": "object"}},
-                "returned": {"type": "integer"},
-                "total_seen": {"type": "integer"},
-                "truncated": {"type": ["object", "null"]},
-            },
-            "required": ["variants", "returned", "total_seen"],
-            "additionalProperties": True,
-        },
+        output_schema=relax_output_schema(
+            {
+                "type": "object",
+                "properties": {
+                    "variants": {"type": "array", "items": {"type": "object"}},
+                    "returned": {"type": "integer"},
+                    "total_seen": {"type": "integer"},
+                    "truncated": {"type": ["object", "null"]},
+                },
+                "required": ["variants", "returned", "total_seen"],
+                "additionalProperties": True,
+            }
+        ),
     )
     async def get_gene_variants(
         gene_id: Annotated[

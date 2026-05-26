@@ -10,6 +10,7 @@ from pydantic import Field
 
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
+from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.shaping import shape_clinvar_submissions, summarize_clinvar_submissions
 from gnomad_link.models import ClinVarVariant
 from gnomad_link.services import FrequencyService
@@ -22,7 +23,7 @@ def register_clinvar_tools(
         name="get_clinvar_variant_details",
         title="Get ClinVar Variant",
         annotations=READ_ONLY_OPEN_WORLD,
-        output_schema=ClinVarVariant.model_json_schema(),
+        output_schema=relax_output_schema(ClinVarVariant.model_json_schema()),
         tags={"clinical"},
     )
     async def get_clinvar_variant_details(
@@ -75,7 +76,7 @@ def register_clinvar_tools(
         name="get_clinvar_meta",
         title="Get ClinVar Metadata",
         annotations=READ_ONLY_OPEN_WORLD,
-        output_schema={"type": "object", "additionalProperties": True},
+        output_schema=relax_output_schema({"type": "object", "additionalProperties": True}),
         tags={"clinical"},
     )
     async def get_clinvar_meta() -> dict[str, Any]:

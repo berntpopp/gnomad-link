@@ -11,6 +11,7 @@ from pydantic import Field
 
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
+from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.models import MitochondrialVariant, StructuralVariant, Transcript
 from gnomad_link.services import FrequencyService
 
@@ -38,7 +39,7 @@ def register_specialty_tools(
         name="get_structural_variant",
         title="Get Structural Variant",
         annotations=READ_ONLY_OPEN_WORLD,
-        output_schema=StructuralVariant.model_json_schema(),
+        output_schema=relax_output_schema(StructuralVariant.model_json_schema()),
         tags={"variant"},
     )
     async def get_structural_variant(
@@ -78,7 +79,7 @@ def register_specialty_tools(
         name="get_mitochondrial_variant",
         title="Get Mitochondrial Variant",
         annotations=READ_ONLY_OPEN_WORLD,
-        output_schema=MitochondrialVariant.model_json_schema(),
+        output_schema=relax_output_schema(MitochondrialVariant.model_json_schema()),
         tags={"variant"},
     )
     async def get_mitochondrial_variant(
@@ -126,7 +127,7 @@ def register_specialty_tools(
         name="get_transcript_details",
         title="Get Transcript Details",
         annotations=READ_ONLY_OPEN_WORLD,
-        output_schema=Transcript.model_json_schema(),
+        output_schema=relax_output_schema(Transcript.model_json_schema()),
         tags={"coordinates"},
     )
     async def get_transcript_details(

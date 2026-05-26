@@ -29,7 +29,8 @@ def actionable_output_validation_error(
     """Return and record an actionable MCP output-schema validation failure."""
     error_field = _output_validation_field(message)
     suggested_action = (
-        f"Call {_FALLBACK_TOOL} to check server health, then retry with corrected arguments."
+        f"Tool response failed output schema validation on field '{error_field}'. "
+        f"This usually indicates upstream schema drift; call {_FALLBACK_TOOL} for context."
     )
     payload: dict[str, Any] = {
         "success": False,

@@ -11,6 +11,7 @@ from pydantic import Field
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.build_check import detect_region_mismatch
 from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, run_mcp_tool
+from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.shaping import cap_region_span
 from gnomad_link.models import LiftoverResponse, Region
 from gnomad_link.services import FrequencyService
@@ -28,7 +29,7 @@ def register_coordinate_tools(
         name="liftover_variant",
         title="Liftover Variant Between GRCh37 and GRCh38",
         annotations=READ_ONLY_OPEN_WORLD,
-        output_schema=LiftoverResponse.model_json_schema(),
+        output_schema=relax_output_schema(LiftoverResponse.model_json_schema()),
         tags={"coordinates"},
     )
     async def liftover_variant(
@@ -92,7 +93,7 @@ def register_coordinate_tools(
         name="get_region",
         title="Get Variants and Genes in a Region",
         annotations=READ_ONLY_OPEN_WORLD,
-        output_schema=Region.model_json_schema(),
+        output_schema=relax_output_schema(Region.model_json_schema()),
         tags={"coordinates"},
     )
     async def get_region(

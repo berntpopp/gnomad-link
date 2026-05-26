@@ -10,6 +10,7 @@ from pydantic import Field
 
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
+from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.models import GeneSearchResult, VariantSearchResult
 from gnomad_link.services import FrequencyService
 
@@ -100,18 +101,20 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
         title="Search Genes",
         annotations=READ_ONLY_OPEN_WORLD,
         tags={"gene", "search"},
-        output_schema={
-            "type": "object",
-            "properties": {
-                "results": {
-                    "type": "array",
-                    "items": GeneSearchResult.model_json_schema(),
+        output_schema=relax_output_schema(
+            {
+                "type": "object",
+                "properties": {
+                    "results": {
+                        "type": "array",
+                        "items": GeneSearchResult.model_json_schema(),
+                    },
+                    "returned": {"type": "integer"},
+                    "truncated": {"type": ["object", "null"]},
                 },
-                "returned": {"type": "integer"},
-                "truncated": {"type": ["object", "null"]},
-            },
-            "required": ["results", "returned"],
-        },
+                "required": ["results", "returned"],
+            }
+        ),
     )
     async def search_genes(
         query: Annotated[
@@ -169,18 +172,20 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
         title="Resolve Variant Identifier",
         annotations=READ_ONLY_OPEN_WORLD,
         tags={"search"},
-        output_schema={
-            "type": "object",
-            "properties": {
-                "results": {
-                    "type": "array",
-                    "items": VariantSearchResult.model_json_schema(),
+        output_schema=relax_output_schema(
+            {
+                "type": "object",
+                "properties": {
+                    "results": {
+                        "type": "array",
+                        "items": VariantSearchResult.model_json_schema(),
+                    },
+                    "returned": {"type": "integer"},
+                    "next_steps": {"type": "array", "items": {"type": "string"}},
                 },
-                "returned": {"type": "integer"},
-                "next_steps": {"type": "array", "items": {"type": "string"}},
-            },
-            "required": ["results", "returned", "next_steps"],
-        },
+                "required": ["results", "returned", "next_steps"],
+            }
+        ),
     )
     async def resolve_variant_id(
         query: Annotated[
@@ -246,19 +251,21 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
         title="Search Variants (deprecated alias)",
         annotations=READ_ONLY_OPEN_WORLD,
         tags={"search"},
-        output_schema={
-            "type": "object",
-            "properties": {
-                "results": {
-                    "type": "array",
-                    "items": VariantSearchResult.model_json_schema(),
+        output_schema=relax_output_schema(
+            {
+                "type": "object",
+                "properties": {
+                    "results": {
+                        "type": "array",
+                        "items": VariantSearchResult.model_json_schema(),
+                    },
+                    "returned": {"type": "integer"},
+                    "next_steps": {"type": "array", "items": {"type": "string"}},
+                    "_meta": {"type": "object"},
                 },
-                "returned": {"type": "integer"},
-                "next_steps": {"type": "array", "items": {"type": "string"}},
-                "_meta": {"type": "object"},
-            },
-            "required": ["results", "returned", "next_steps"],
-        },
+                "required": ["results", "returned", "next_steps"],
+            }
+        ),
     )
     async def search_variants(
         query: Annotated[str, Field(min_length=3, max_length=100)],

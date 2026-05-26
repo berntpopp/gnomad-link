@@ -11,6 +11,7 @@ from pydantic import Field
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.build_check import detect_variant_id_mismatch
 from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, run_mcp_tool
+from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.shaping import (
     shape_variant_details_compact,
     shape_variant_frequencies,
@@ -46,7 +47,7 @@ def register_variant_tools(
         name="get_variant_frequencies",
         title="Get Variant Frequencies",
         annotations=READ_ONLY_OPEN_WORLD,
-        output_schema=_FREQ_OUTPUT_SCHEMA,
+        output_schema=relax_output_schema(_FREQ_OUTPUT_SCHEMA),
         tags={"variant"},
     )
     async def get_variant_frequencies(
@@ -134,7 +135,7 @@ def register_variant_tools(
         name="get_variant_details",
         title="Get Variant Details",
         annotations=READ_ONLY_OPEN_WORLD,
-        output_schema=VariantDetails.model_json_schema(),
+        output_schema=relax_output_schema(VariantDetails.model_json_schema()),
         tags={"variant"},
     )
     async def get_variant_details(
