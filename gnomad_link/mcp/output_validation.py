@@ -14,7 +14,12 @@ from typing import Any, cast
 
 import mcp.types
 
-from gnomad_link.mcp.errors import _BASE_META, _FALLBACK_TOOL, record_mcp_error
+from gnomad_link.mcp.errors import (
+    _BASE_META,
+    _FALLBACK_TOOL,
+    record_mcp_error,
+    record_schema_drift,
+)
 
 OUTPUT_VALIDATION_PREFIX = "Output validation error:"
 _REQUIRED_PROPERTY_RE = re.compile(r"'(?P<field>[^']+)' is a required property")
@@ -50,6 +55,14 @@ def actionable_output_validation_error(
         error_code="output_validation_failed",
         message=payload["message"],
         raw_message=message,
+    )
+    # Also surface the event on the dedicated schema-drift ring so an LLM
+    # hitting the output_validation_failed envelope can call
+    # get_gnomad_diagnostics and inspect which fields/tools are drifting.
+    record_schema_drift(
+        tool_name=tool_name,
+        error_field=error_field,
+        message=message,
     )
     return payload
 

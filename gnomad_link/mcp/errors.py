@@ -24,6 +24,12 @@ logger = logging.getLogger(__name__)
 RECENT_MCP_ERROR_LIMIT = 50
 _RECENT_ERRORS: deque[dict[str, Any]] = deque(maxlen=RECENT_MCP_ERROR_LIMIT)
 
+# Schema-drift events live in a separate, smaller ring so LLM callers can
+# distinguish business errors (the general ring) from infrastructure events
+# such as upstream payloads no longer matching our declared output_schema.
+RECENT_SCHEMA_DRIFT_LIMIT = 25
+_RECENT_SCHEMA_DRIFT: deque[dict[str, Any]] = deque(maxlen=RECENT_SCHEMA_DRIFT_LIMIT)
+
 # Base `_meta` block merged into every success and error envelope. The
 # `gnomad_release` value lets LLM callers cite the upstream data version
 # alongside the research-use disclaimer.
@@ -271,6 +277,32 @@ def get_recent_errors() -> list[dict[str, Any]]:
 
 def clear_recent_errors() -> None:
     _RECENT_ERRORS.clear()
+
+
+def record_schema_drift(*, tool_name: str, error_field: str | None, message: str) -> None:
+    """Append an output-schema-drift event to the bounded ring.
+
+    Separate from record_mcp_error so an LLM (via get_gnomad_diagnostics) can
+    distinguish business errors (not_found, upstream_unavailable,
+    validation_failed) from infrastructure events (the upstream payload no
+    longer matches our declared output_schema, which usually means we need to
+    widen a model).
+    """
+    _RECENT_SCHEMA_DRIFT.append(
+        {
+            "tool_name": tool_name,
+            "error_field": error_field,
+            "message": message[:300],
+        }
+    )
+
+
+def get_recent_schema_drift() -> list[dict[str, Any]]:
+    return list(_RECENT_SCHEMA_DRIFT)
+
+
+def clear_recent_schema_drift() -> None:
+    _RECENT_SCHEMA_DRIFT.clear()
 
 
 async def run_mcp_tool(
