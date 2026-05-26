@@ -240,3 +240,38 @@ async def test_capabilities_tools_match_facade_tools(fake_service_factory) -> No
         f"Only in caps: {advertised - registered}. "
         f"Only registered: {registered - advertised}."
     )
+
+
+def test_capabilities_includes_clinvar_release_date() -> None:
+    from gnomad_link.mcp.resources import get_capabilities_resource
+
+    caps = get_capabilities_resource()
+    # Key must be present, value may be None until a startup probe lands.
+    assert "clinvar_release_date" in caps
+    # gnomad_release already added in B2; keep this assertion for completeness.
+    assert "gnomad_release" in caps
+
+
+def test_capabilities_deprecated_tools_includes_get_clinvar_meta() -> None:
+    from gnomad_link.mcp.resources import get_capabilities_resource
+
+    caps = get_capabilities_resource()
+    assert "get_clinvar_meta" in caps["deprecated_tools"]
+
+
+@pytest.mark.asyncio
+async def test_get_clinvar_meta_marks_deprecated() -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    class _StubMetaService:
+        async def get_clinvar_meta(self) -> dict[str, object]:
+            return {"clinvar_release_date": "2024-10-15"}
+
+    mcp = create_gnomad_mcp(service_factory=lambda: _StubMetaService())
+    result = await mcp.call_tool("get_clinvar_meta", {})
+    payload = result.structured_content or {}
+
+    assert payload["_meta"]["deprecated"] is True
+    assert payload["_meta"]["use_instead"] == "get_server_capabilities"
+    # The data is still returned for backward compatibility.
+    assert payload["clinvar_release_date"] == "2024-10-15"

@@ -79,11 +79,21 @@ def register_clinvar_tools(
         tags={"clinical"},
     )
     async def get_clinvar_meta() -> dict[str, Any]:
-        """Use this when a caller only needs the ClinVar release date or revision currently served by gnomAD -- cheaper than full capabilities. Returns <1kB."""
+        """Use this when a caller only needs the ClinVar release date or revision currently served by gnomAD -- cheaper than full capabilities. Returns <1kB. DEPRECATED: prefer get_server_capabilities."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()
-            return await service.get_clinvar_meta()
+            result = await service.get_clinvar_meta()
+            # FrequencyService.get_clinvar_meta is typed dict[str, Any]; merge
+            # deprecation hints into any pre-existing _meta keys.
+            existing_meta: dict[str, Any] = result.get("_meta") or {}
+            result["_meta"] = {
+                **existing_meta,
+                "deprecated": True,
+                "use_instead": "get_server_capabilities",
+                "removal_release": "next minor",
+            }
+            return result
 
         return await run_mcp_tool(
             "get_clinvar_meta",

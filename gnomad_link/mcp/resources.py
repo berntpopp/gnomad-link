@@ -28,6 +28,9 @@ def get_capabilities_resource() -> dict[str, Any]:
         "server_version": _server_version(),
         "mcp_protocol_version": MCP_PROTOCOL_VERSION,
         "gnomad_release": GNOMAD_DATA_RELEASE,
+        # Populated by a startup probe in a future task; remains None when the
+        # probe is unavailable so callers can still discover the field shape.
+        "clinvar_release_date": None,
         "research_use_only": True,
         "datasets": {
             "gnomad_r2_1": {"reference_genome": "GRCh37"},
@@ -79,6 +82,7 @@ def get_capabilities_resource() -> dict[str, Any]:
         ],
         "deprecated_tools": {
             "search_variants": "Use resolve_variant_id; this alias is retained for one release.",
+            "get_clinvar_meta": "Use get_server_capabilities; this tool will be removed in a future release.",
         },
         "token_cost_hints": {
             "get_server_capabilities": "<2kB",
