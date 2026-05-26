@@ -132,6 +132,10 @@ def register_variant_tools(
             Literal["compact", "full"],
             Field(description="compact strips raw GraphQL extras; full passes through everything."),
         ] = "compact",
+        max_transcripts: Annotated[
+            int,
+            Field(ge=1, le=200, description="Cap on transcript_consequences in compact mode."),
+        ] = 10,
     ) -> dict[str, Any]:
         """Use this when a caller needs transcript consequences, in-silico predictors, or ClinVar annotation for a single variant id. Prefer get_variant_frequencies if only allele counts are needed; this tool returns the larger annotation payload."""
 
@@ -139,7 +143,7 @@ def register_variant_tools(
             service = service_factory()
             raw = await service.get_variant(variant_id, dataset)
             if response_mode == "compact":
-                return shape_variant_details_compact(raw)
+                return shape_variant_details_compact(raw, max_transcripts=max_transcripts)
             return raw
 
         return await run_mcp_tool(

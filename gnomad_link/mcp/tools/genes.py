@@ -10,7 +10,7 @@ from pydantic import Field
 
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
-from gnomad_link.mcp.shaping import shape_gene_variants
+from gnomad_link.mcp.shaping import shape_gene_details_compact, shape_gene_variants
 from gnomad_link.models import Gene
 from gnomad_link.services import FrequencyService
 
@@ -39,6 +39,15 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
             ),
         ] = None,
         reference_genome: Annotated[Literal["GRCh37", "GRCh38"], Field()] = "GRCh38",
+        response_mode: Annotated[
+            Literal["compact", "full"],
+            Field(
+                description=(
+                    "compact drops heavy arrays (transcripts, exons, alt_transcripts) and "
+                    "emits a truncated block; full passes through everything."
+                )
+            ),
+        ] = "compact",
     ) -> dict[str, Any]:
         """Use this when a caller has a gene id or symbol and needs constraint scores (pLI/oe_lof), canonical transcript, and basic coordinates. Follow with get_gene_variants if they then need per-variant rows."""
 
@@ -54,6 +63,8 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
             result: dict[str, Any] = (
                 gene_obj.model_dump() if hasattr(gene_obj, "model_dump") else dict(gene_obj)
             )
+            if response_mode == "compact":
+                result = shape_gene_details_compact(result)
             # Suggest the natural follow-up call using the resolved gene_id.
             resolved_id = result.get("gene_id") or gene_id
             if resolved_id:

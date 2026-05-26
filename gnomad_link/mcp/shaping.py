@@ -311,8 +311,15 @@ def shape_gene_variants(
     return payload
 
 
-def shape_variant_details_compact(raw: dict[str, Any]) -> dict[str, Any]:
-    """Project the gnomAD variant payload to the compact subset advertised in VariantDetails."""
+def shape_variant_details_compact(
+    raw: dict[str, Any], *, max_transcripts: int = 10
+) -> dict[str, Any]:
+    """Project the gnomAD variant payload to the compact subset advertised in VariantDetails.
+
+    Caps ``transcript_consequences`` at ``max_transcripts`` entries and emits a
+    self-describing ``truncated`` block so the LLM can request the full payload
+    with ``response_mode='full'``.
+    """
 
     keep = {
         "variant_id",
@@ -328,7 +335,60 @@ def shape_variant_details_compact(raw: dict[str, Any]) -> dict[str, Any]:
         "exome",
         "genome",
     }
-    return {k: v for k, v in raw.items() if k in keep}
+    compact = {k: v for k, v in raw.items() if k in keep}
+    transcripts = compact.get("transcript_consequences")
+    if isinstance(transcripts, list) and len(transcripts) > max_transcripts:
+        dropped = len(transcripts) - max_transcripts
+        compact["transcript_consequences"] = transcripts[:max_transcripts]
+        compact["truncated"] = {
+            "kind": "transcript_consequences",
+            "dropped": dropped,
+            "filter": {"max_transcripts": max_transcripts},
+            "to_disable": "response_mode='full' returns every transcript",
+            "to_restore": "response_mode='full'",
+        }
+    return compact
+
+
+def shape_gene_details_compact(raw: dict[str, Any]) -> dict[str, Any]:
+    """Project a Gene payload to constraint + canonical transcript + coordinates.
+
+    Drops heavy arrays (transcripts, exons, alt_transcripts) and emits a
+    truncated block so the LLM can request the full payload with
+    response_mode='full'.
+    """
+    heavy_keys = {"transcripts", "exons", "alt_transcripts"}
+    dropped: dict[str, int] = {}
+    for k in heavy_keys:
+        v = raw.get(k)
+        if v:
+            dropped[k] = len(v)
+    compact = {k: v for k, v in raw.items() if k not in heavy_keys}
+    if dropped:
+        compact["truncated"] = {
+            "kind": "gene_payload",
+            "dropped": dropped,
+            "to_disable": "response_mode='full' returns the full payload",
+            "to_restore": "response_mode='full'",
+        }
+    return compact
+
+
+def shape_clinvar_submissions(payload: dict[str, Any], *, submissions_limit: int) -> dict[str, Any]:
+    """Cap submissions[] and emit truncated metadata. Returns a copy of payload."""
+    submissions = payload.get("submissions") or []
+    if len(submissions) <= submissions_limit:
+        return payload
+    capped = dict(payload)
+    capped["submissions"] = submissions[:submissions_limit]
+    capped["truncated"] = {
+        "kind": "submissions",
+        "dropped": len(submissions) - submissions_limit,
+        "filter": {"submissions_limit": submissions_limit},
+        "to_disable": "raise submissions_limit (max 200)",
+        "to_restore": f"submissions_limit={min(len(submissions), 200)}",
+    }
+    return capped
 
 
 def cap_region_span(

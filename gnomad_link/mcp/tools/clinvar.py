@@ -10,6 +10,7 @@ from pydantic import Field
 
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
+from gnomad_link.mcp.shaping import shape_clinvar_submissions
 from gnomad_link.models import ClinVarVariant
 from gnomad_link.services import FrequencyService
 
@@ -35,6 +36,10 @@ def register_clinvar_tools(
             ),
         ],
         reference_genome: Annotated[Literal["GRCh37", "GRCh38"], Field()] = "GRCh38",
+        submissions_limit: Annotated[
+            int,
+            Field(ge=1, le=200, description="Cap on submissions[] returned. Default 25."),
+        ] = 25,
     ) -> dict[str, Any]:
         """Use this when a caller needs ClinVar clinical significance, review status, gold stars, or submissions for a single variant id. Complementary to get_variant_frequencies for clinical workflows."""
 
@@ -42,6 +47,7 @@ def register_clinvar_tools(
             service = service_factory()
             result = await service.get_clinvar_variant(variant_id, reference_genome)
             payload = result.model_dump()
+            payload = shape_clinvar_submissions(payload, submissions_limit=submissions_limit)
             # Suggest pairing with frequency data using the same variant_id.
             existing_meta: dict[str, Any] = payload.get("_meta") or {}
             existing_next: list[Any] = existing_meta.get("next_commands", [])
