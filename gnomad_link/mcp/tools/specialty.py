@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from typing import Annotated, Any, Literal, cast
 
@@ -16,6 +17,18 @@ from gnomad_link.services import FrequencyService
 # gnomAD SV IDs are <TYPE>_chr<CHROM>_<UID>. TYPE covers the documented SV
 # classes (DEL/DUP/INS/INV/BND/CPX/CTX/MCNV). CHROM is 1-22, X, Y, M (no MT).
 _SV_ID_PATTERN = r"^(DEL|DUP|INS|INV|BND|CPX|CTX|MCNV)_chr([1-9]|1\d|2[0-2]|X|Y|M)_\w+$"
+
+# Accept canonical `M-` plus `chrM-`, `MT-`, `chrMT-` (case-insensitive) aliases
+# at schema validation time; the tool normalizes to canonical `M-` before
+# invoking the service.
+_MITO_VARIANT_ID_PATTERN = r"^(?:chr)?(?:M|MT|m|mt)-\d+-[ACGTacgt]+-[ACGTacgt]+$"
+_MITO_PREFIX_RE = re.compile(r"^(?:chr)?(?:MT?)-", re.IGNORECASE)
+
+
+def _normalize_mito_variant_id(variant_id: str) -> str:
+    """Normalize chrM/MT/chrMT prefixes to canonical M-."""
+
+    return _MITO_PREFIX_RE.sub("M-", variant_id, count=1)
 
 
 def register_specialty_tools(
@@ -72,9 +85,13 @@ def register_specialty_tools(
         variant_id: Annotated[
             str,
             Field(
-                description="Mitochondrial variant in M-POS-REF-ALT format.",
+                description=(
+                    "Mitochondrial variant in M-POS-REF-ALT format. "
+                    "Accepts chrM-, MT-, and chrMT- aliases (normalized to M-)."
+                ),
                 min_length=5,
                 max_length=100,
+                pattern=_MITO_VARIANT_ID_PATTERN,
                 examples=["M-7497-G-A"],
             ),
         ],
@@ -88,9 +105,11 @@ def register_specialty_tools(
     ) -> dict[str, Any]:
         """Use this when a caller has a mitochondrial variant id (M-POS-REF-ALT). Mitochondrial ploidy and heteroplasmy fields are returned; for autosomal variants use get_variant_frequencies."""
 
+        normalized = _normalize_mito_variant_id(variant_id)
+
         async def call() -> dict[str, Any]:
             service = service_factory()
-            raw = await service.get_mitochondrial_variant(variant_id, dataset)
+            raw = await service.get_mitochondrial_variant(normalized, dataset)
             return cast(dict[str, Any], raw.get("mitochondrial_variant", raw))
 
         return await run_mcp_tool(
@@ -98,7 +117,7 @@ def register_specialty_tools(
             call,
             context=McpErrorContext(
                 tool_name="get_mitochondrial_variant",
-                variant_id=variant_id,
+                variant_id=normalized,
                 dataset=dataset,
             ),
         )
