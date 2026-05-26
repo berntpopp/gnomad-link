@@ -9,6 +9,11 @@ RESEARCH_USE_NOTICE = "Research use only; not for clinical decision support."
 
 MCP_PROTOCOL_VERSION = "2025-06-18"
 
+# Current gnomAD upstream release. Surfaced in every MCP response's `_meta`
+# so LLM callers can cite the precise data version. v4.1.0 was released
+# 2024-11; bump this constant when upstream revs.
+GNOMAD_DATA_RELEASE = "4.1.0"
+
 
 def _server_version() -> str:
     try:
@@ -22,6 +27,7 @@ def get_capabilities_resource() -> dict[str, Any]:
         "server": "gnomad-link",
         "server_version": _server_version(),
         "mcp_protocol_version": MCP_PROTOCOL_VERSION,
+        "gnomad_release": GNOMAD_DATA_RELEASE,
         "research_use_only": True,
         "datasets": {
             "gnomad_r2_1": {"reference_genome": "GRCh37"},

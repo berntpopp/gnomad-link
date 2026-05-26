@@ -17,13 +17,20 @@ from typing import Any
 from pydantic import ValidationError as PydanticValidationError
 
 from gnomad_link.api import DataNotFoundError, GnomadApiError
+from gnomad_link.mcp.resources import GNOMAD_DATA_RELEASE
 
 logger = logging.getLogger(__name__)
 
 RECENT_MCP_ERROR_LIMIT = 50
 _RECENT_ERRORS: deque[dict[str, Any]] = deque(maxlen=RECENT_MCP_ERROR_LIMIT)
 
-_RESEARCH_USE_META = {"unsafe_for_clinical_use": True}
+# Base `_meta` block merged into every success and error envelope. The
+# `gnomad_release` value lets LLM callers cite the upstream data version
+# alongside the research-use disclaimer.
+_BASE_META = {
+    "unsafe_for_clinical_use": True,
+    "gnomad_release": GNOMAD_DATA_RELEASE,
+}
 
 # Fallback tool used in validation and output-validation error envelopes.
 # Points to get_gnomad_diagnostics for rich health context on error recovery.
@@ -169,7 +176,7 @@ def mcp_validation_tool_error(
         ),
         "_meta": {
             "next_commands": [{"tool": _FALLBACK_TOOL, "arguments": {}}],
-            **_RESEARCH_USE_META,
+            **_BASE_META,
         },
     }
     return McpToolError(payload)
@@ -241,7 +248,7 @@ def mcp_tool_error(exc: BaseException, context: McpErrorContext) -> McpToolError
             "next_commands": [
                 {"tool": _FALLBACK_TOOL, "arguments": {}},
             ],
-            **_RESEARCH_USE_META,
+            **_BASE_META,
         },
     }
     return McpToolError(payload)
@@ -286,7 +293,7 @@ async def run_mcp_tool(
         # the tool already provides _meta (e.g. search_variants deprecation note).
         if isinstance(result, dict):
             existing_meta: dict[str, Any] = result.get("_meta") or {}
-            result["_meta"] = {**existing_meta, **_RESEARCH_USE_META}
+            result["_meta"] = {**existing_meta, **_BASE_META}
         return result
     except McpToolError as exc:
         record_mcp_error(
