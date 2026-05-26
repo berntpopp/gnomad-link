@@ -14,7 +14,7 @@ from typing import Any, cast
 
 import mcp.types
 
-from gnomad_link.mcp.errors import _FALLBACK_TOOL, record_mcp_error
+from gnomad_link.mcp.errors import _BASE_META, _FALLBACK_TOOL, record_mcp_error
 
 OUTPUT_VALIDATION_PREFIX = "Output validation error:"
 _REQUIRED_PROPERTY_RE = re.compile(r"'(?P<field>[^']+)' is a required property")
@@ -41,7 +41,7 @@ def actionable_output_validation_error(
             "next_commands": [
                 {"tool": _FALLBACK_TOOL, "arguments": {}},
             ],
-            "unsafe_for_clinical_use": True,
+            **_BASE_META,
         },
     }
     record_mcp_error(
