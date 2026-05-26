@@ -17,6 +17,11 @@ from gnomad_link.mcp.shaping import (
 from gnomad_link.models import VariantDetails
 from gnomad_link.services import FrequencyService
 
+# Autosomal CHROM-POS-REF-ALT grammar. Chromosomes 1-22, X, Y only; mito
+# variants must go through get_mitochondrial_variant. Allele letters are upper
+# case A/C/G/T (no N, no IUPAC ambiguity codes — gnomAD does not return those).
+_AUTOSOMAL_VARIANT_ID_PATTERN = r"^([1-9]|1\d|2[0-2]|X|Y)-\d+-[ACGT]+-[ACGT]+$"
+
 _FREQ_OUTPUT_SCHEMA = {
     "type": "object",
     "properties": {
@@ -50,7 +55,7 @@ def register_variant_tools(
                 description="CHROM-POS-REF-ALT (e.g. 1-55051215-G-GA). Use M-POS-REF-ALT only with get_mitochondrial_variant.",
                 min_length=5,
                 max_length=200,
-                pattern=r"^[^'\"]+$",
+                pattern=_AUTOSOMAL_VARIANT_ID_PATTERN,
                 examples=["1-55051215-G-GA", "17-7674232-G-A"],
             ),
         ],
@@ -132,7 +137,7 @@ def register_variant_tools(
             Field(
                 min_length=5,
                 max_length=200,
-                pattern=r"^[^'\"]+$",
+                pattern=_AUTOSOMAL_VARIANT_ID_PATTERN,
                 examples=["1-55051215-G-GA"],
             ),
         ],

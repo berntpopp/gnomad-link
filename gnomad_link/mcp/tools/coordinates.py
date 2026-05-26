@@ -16,6 +16,9 @@ from gnomad_link.services import FrequencyService
 
 _REGION_PATTERN = r"^(chr)?([1-9]|1[0-9]|2[0-2]|X|Y|M|MT)-\d+-\d+$"
 
+# Liftover accepts mito too — converting M-... between builds is a valid call.
+_LIFTOVER_VARIANT_ID_PATTERN = r"^([1-9]|1\d|2[0-2]|X|Y|MT?)-\d+-[ACGT]+-[ACGT]+$"
+
 
 def register_coordinate_tools(
     mcp: FastMCP, *, service_factory: Callable[[], FrequencyService]
@@ -31,8 +34,11 @@ def register_coordinate_tools(
         source_variant_id: Annotated[
             str,
             Field(
-                description="Variant ID to convert (CHROM-POS-REF-ALT).",
-                examples=["1-55051215-G-GA"],
+                description="Variant ID to convert (CHROM-POS-REF-ALT). Mitochondrial M/MT prefixes are accepted.",
+                min_length=5,
+                max_length=200,
+                pattern=_LIFTOVER_VARIANT_ID_PATTERN,
+                examples=["1-55051215-G-GA", "MT-7497-G-A"],
             ),
         ],
         reference_genome: Annotated[

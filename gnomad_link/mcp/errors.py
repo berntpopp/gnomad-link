@@ -145,11 +145,25 @@ def mcp_validation_tool_error(
 
 
 def install_validation_error_handler(mcp_server: Any) -> None:
-    """Wrap registered tools so FastMCP argument validation returns our envelope."""
+    """Wrap registered tools so FastMCP argument validation returns our envelope.
+
+    FastMCP stores tools on ``_local_provider._components`` (modern path) or the
+    legacy ``_tool_manager._tools`` mapping. We probe both so the handler keeps
+    working across FastMCP minor versions. Tools without a ``run`` method (e.g.
+    resources or prompts that happen to share the registry) are skipped.
+    """
+    candidates: list[Any] = []
+    local_provider = getattr(mcp_server, "_local_provider", None)
+    components = getattr(local_provider, "_components", None)
+    if isinstance(components, dict):
+        candidates.extend(components.values())
     tool_manager = getattr(mcp_server, "_tool_manager", None)
-    tools = getattr(tool_manager, "_tools", {})
-    for tool in tools.values():
-        if getattr(tool, "_gnomad_validation_wrapped", False):
+    legacy_tools = getattr(tool_manager, "_tools", None)
+    if isinstance(legacy_tools, dict):
+        candidates.extend(legacy_tools.values())
+
+    for tool in candidates:
+        if not hasattr(tool, "run") or getattr(tool, "_gnomad_validation_wrapped", False):
             continue
         original_run = tool.run
 
@@ -162,10 +176,20 @@ def install_validation_error_handler(mcp_server: Any) -> None:
             try:
                 return await _original_run(arguments)
             except PydanticValidationError as exc:
-                raise mcp_validation_tool_error(
-                    tool_name=str(_tool.name),
+                envelope = mcp_validation_tool_error(
+                    tool_name=str(getattr(_tool, "name", "unknown")),
                     exc=exc,
-                ) from None
+                ).payload
+                record_mcp_error(
+                    tool_name=str(getattr(_tool, "name", "unknown")),
+                    error_code="validation_failed",
+                    message=envelope["message"],
+                    raw_message=str(exc),
+                )
+                convert_result = getattr(_tool, "convert_result", None)
+                if callable(convert_result):
+                    return convert_result(envelope)
+                return envelope
 
         object.__setattr__(tool, "run", wrapped_run)
         object.__setattr__(tool, "_gnomad_validation_wrapped", True)

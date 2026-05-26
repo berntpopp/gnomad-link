@@ -199,3 +199,145 @@ def test_output_validation_handler_returns_envelope() -> None:
     next_commands = payload["_meta"]["next_commands"]
     assert isinstance(next_commands, list)
     assert any(isinstance(c, dict) and c.get("tool") for c in next_commands)
+
+
+# ---------------------------------------------------------------------------
+# Variant ID schema tightening (Task A3): CHROM-POS-REF-ALT grammar.
+# These tests exercise the in-process FastMCP client so they exercise the
+# validation-error envelope path end-to-end.
+# ---------------------------------------------------------------------------
+
+
+class _FreqStubService:
+    """Stub FrequencyService used by variant-id schema tests."""
+
+    def __init__(self, *, frequency_response: object | None = None) -> None:
+        from gnomad_link.models import VariantFrequencyResponse
+
+        self._frequency_response = frequency_response or VariantFrequencyResponse(
+            variant_id="1-55051215-G-GA",
+            dataset="gnomad_r4",
+            exome=None,
+            genome=None,
+        )
+
+    async def get_variant_frequencies(self, variant_id: str, dataset: str) -> object:
+        return self._frequency_response
+
+    async def liftover_variant(
+        self, source_variant_id: str, reference_genome: str
+    ) -> list[dict[str, object]]:
+        return []
+
+    async def get_structural_variant(self, variant_id: str, dataset: str) -> dict[str, object]:
+        return {
+            "structural_variant": {
+                "variant_id": variant_id,
+                "type": "DEL",
+                "chrom": "1",
+                "pos": 1,
+                "end": 2,
+                "length": 1,
+            }
+        }
+
+
+def _is_validation_failed(payload: dict[str, object]) -> bool:
+    return (
+        isinstance(payload, dict)
+        and payload.get("success") is False
+        and payload.get("error_code") == "validation_failed"
+    )
+
+
+@pytest.mark.asyncio
+async def test_get_variant_frequencies_rejects_malformed_id() -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    mcp = create_gnomad_mcp(service_factory=lambda: _FreqStubService())
+    result = await mcp.call_tool(
+        "get_variant_frequencies",
+        {"variant_id": "not-a-variant", "dataset": "gnomad_r4"},
+    )
+    payload = result.structured_content or {}
+
+    assert _is_validation_failed(payload)
+    field_errors = payload.get("field_errors", [])
+    assert any(
+        fe.get("field") == "variant_id" and "pattern" in fe.get("reason", "").lower()
+        for fe in field_errors
+    ), f"expected pattern field_error for variant_id, got {field_errors!r}"
+
+
+@pytest.mark.asyncio
+async def test_get_variant_frequencies_rejects_mitochondrial_id() -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    mcp = create_gnomad_mcp(service_factory=lambda: _FreqStubService())
+    result = await mcp.call_tool(
+        "get_variant_frequencies",
+        {"variant_id": "M-7497-G-A", "dataset": "gnomad_r4"},
+    )
+    payload = result.structured_content or {}
+
+    assert _is_validation_failed(payload)
+
+
+@pytest.mark.asyncio
+async def test_get_variant_frequencies_accepts_valid_id() -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    mcp = create_gnomad_mcp(service_factory=lambda: _FreqStubService())
+    result = await mcp.call_tool(
+        "get_variant_frequencies",
+        {"variant_id": "1-55051215-G-GA", "dataset": "gnomad_r4"},
+    )
+    payload = result.structured_content or {}
+
+    # Not a validation envelope: either no error_code at all, or success is not False.
+    assert payload.get("error_code") != "validation_failed", payload
+    assert payload.get("success") is not False, payload
+
+
+@pytest.mark.asyncio
+async def test_liftover_variant_accepts_mitochondrial_id() -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    mcp = create_gnomad_mcp(service_factory=lambda: _FreqStubService())
+    result = await mcp.call_tool(
+        "liftover_variant",
+        {"source_variant_id": "MT-7497-G-A", "reference_genome": "GRCh37"},
+    )
+    payload = result.structured_content or {}
+
+    assert payload.get("error_code") != "validation_failed", payload
+    assert payload.get("success") is not False, payload
+
+
+@pytest.mark.asyncio
+async def test_get_structural_variant_rejects_malformed_id() -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    mcp = create_gnomad_mcp(service_factory=lambda: _FreqStubService())
+    result = await mcp.call_tool(
+        "get_structural_variant",
+        {"variant_id": "not-an-sv", "dataset": "gnomad_sv_r4"},
+    )
+    payload = result.structured_content or {}
+
+    assert _is_validation_failed(payload)
+
+
+@pytest.mark.asyncio
+async def test_get_structural_variant_accepts_valid_id() -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    mcp = create_gnomad_mcp(service_factory=lambda: _FreqStubService())
+    result = await mcp.call_tool(
+        "get_structural_variant",
+        {"variant_id": "DEL_chr1_1", "dataset": "gnomad_sv_r4"},
+    )
+    payload = result.structured_content or {}
+
+    assert payload.get("error_code") != "validation_failed", payload
+    assert payload.get("success") is not False, payload

@@ -13,6 +13,10 @@ from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
 from gnomad_link.models import MitochondrialVariant, StructuralVariant, Transcript
 from gnomad_link.services import FrequencyService
 
+# gnomAD SV IDs are <TYPE>_chr<CHROM>_<UID>. TYPE covers the documented SV
+# classes (DEL/DUP/INS/INV/BND/CPX/CTX/MCNV). CHROM is 1-22, X, Y, M (no MT).
+_SV_ID_PATTERN = r"^(DEL|DUP|INS|INV|BND|CPX|CTX|MCNV)_chr([1-9]|1\d|2[0-2]|X|Y|M)_\w+$"
+
 
 def register_specialty_tools(
     mcp: FastMCP, *, service_factory: Callable[[], FrequencyService]
@@ -31,6 +35,7 @@ def register_specialty_tools(
                 description="gnomAD SV identifier (e.g. DEL_chr1_1 or DUP_chr17_5).",
                 min_length=3,
                 max_length=200,
+                pattern=_SV_ID_PATTERN,
                 examples=["DEL_chr1_1"],
             ),
         ],
