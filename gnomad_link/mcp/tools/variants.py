@@ -9,7 +9,8 @@ from fastmcp import FastMCP
 from pydantic import Field
 
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
-from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
+from gnomad_link.mcp.build_check import detect_variant_id_mismatch
+from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, run_mcp_tool
 from gnomad_link.mcp.shaping import (
     shape_variant_details_compact,
     shape_variant_frequencies,
@@ -89,6 +90,11 @@ def register_variant_tools(
         """Use this when a caller has a fully-resolved CHROM-POS-REF-ALT id and needs allele counts/frequencies per population. Pair with get_clinvar_variant_details for clinical context. Compact defaults trim subcohort and zero-AC rows; toggle the boolean flags to expand. Returns a `truncated` block when filters drop rows so the LLM can re-call with explicit overrides."""
 
         async def call() -> dict[str, Any]:
+            inferred = detect_variant_id_mismatch(variant_id, dataset)
+            if inferred is not None:
+                raise BuildMismatchError(
+                    variant_id=variant_id, inferred_build=inferred, dataset=dataset
+                )
             service = service_factory()
             response = await service.get_variant_frequencies(variant_id, dataset)
             shaped = shape_variant_frequencies(
@@ -160,6 +166,11 @@ def register_variant_tools(
         """Use this when a caller needs transcript consequences, in-silico predictors, or ClinVar annotation for a single variant id. Prefer get_variant_frequencies if only allele counts are needed; this tool returns the larger annotation payload."""
 
         async def call() -> dict[str, Any]:
+            inferred = detect_variant_id_mismatch(variant_id, dataset)
+            if inferred is not None:
+                raise BuildMismatchError(
+                    variant_id=variant_id, inferred_build=inferred, dataset=dataset
+                )
             service = service_factory()
             raw = await service.get_variant(variant_id, dataset)
             if response_mode == "compact":

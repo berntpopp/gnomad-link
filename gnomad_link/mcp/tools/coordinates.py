@@ -9,7 +9,8 @@ from fastmcp import FastMCP
 from pydantic import Field
 
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
-from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
+from gnomad_link.mcp.build_check import detect_region_mismatch
+from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, run_mcp_tool
 from gnomad_link.mcp.shaping import cap_region_span
 from gnomad_link.models import LiftoverResponse, Region
 from gnomad_link.services import FrequencyService
@@ -101,6 +102,13 @@ def register_coordinate_tools(
             start, stop = int(start_s), int(stop_s)
             if stop <= start:
                 raise ValueError("Region stop must be greater than start.")
+            inferred = detect_region_mismatch(chrom, start, dataset)
+            if inferred is not None:
+                raise BuildMismatchError(
+                    variant_id=f"{chrom}-{start}-{stop}",
+                    inferred_build=inferred,
+                    dataset=dataset,
+                )
             adj_start, adj_stop, capped = cap_region_span(chrom, start, stop)
             service = service_factory()
             raw = await service.get_region(chrom, adj_start, adj_stop, dataset)

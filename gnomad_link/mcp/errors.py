@@ -51,6 +51,19 @@ class McpToolError(Exception):
         self.payload = payload
 
 
+class BuildMismatchError(ValueError):
+    """Raised when a variant's coordinate clearly belongs to a different build than the requested dataset."""
+
+    def __init__(self, *, variant_id: str, inferred_build: str, dataset: str):
+        self.variant_id = variant_id
+        self.inferred_build = inferred_build
+        self.dataset = dataset
+        super().__init__(
+            f"{variant_id} appears to use {inferred_build} coordinates but "
+            f"dataset {dataset} expects the other build."
+        )
+
+
 def _safe_message(exc: BaseException) -> str:
     text = str(exc) or exc.__class__.__name__
     # gnomAD errors are user-input shaped; trim long tracebacks/identifiers.
@@ -62,6 +75,16 @@ def _classify(exc: BaseException) -> tuple[str, bool, str | None, dict[str, Any]
 
     if isinstance(exc, DataNotFoundError):
         return "not_found", False, "search_genes", None
+    if isinstance(exc, BuildMismatchError):
+        return (
+            "build_mismatch",
+            False,
+            "liftover_variant",
+            {
+                "source_variant_id": exc.variant_id,
+                "reference_genome": exc.inferred_build,
+            },
+        )
     if isinstance(exc, ValueError):
         return "validation_failed", False, "get_server_capabilities", None
     if isinstance(exc, GnomadApiError):
@@ -83,6 +106,11 @@ def _recovery_text(error_code: str, fallback_tool: str | None) -> str:
             "Inputs failed validation. Check the tool schema and call "
             "get_server_capabilities for accepted dataset and population codes."
         )
+    if error_code == "build_mismatch":
+        return (
+            "Variant coordinates appear to use a different reference build than "
+            "the requested dataset. Run liftover_variant to convert, or switch dataset."
+        )
     if error_code == "upstream_unavailable":
         return "gnomAD upstream API failed. Safe to retry with exponential backoff."
     return (
@@ -99,6 +127,9 @@ def _envelope_message(exc: BaseException, error_code: str) -> str:
     receiving raw user input.  Internal errors are fully opaque to avoid leaking
     implementation details or sensitive values.
     """
+    if error_code == "build_mismatch":
+        # The constructed message is already safe and informative for callers.
+        return _safe_message(exc)
     if error_code == "validation_failed":
         return f"Invalid input: {exc.__class__.__name__}"
     if error_code == "internal_error":
