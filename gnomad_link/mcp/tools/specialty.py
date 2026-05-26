@@ -12,6 +12,7 @@ from pydantic import Field
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
 from gnomad_link.mcp.schema_relax import relax_output_schema
+from gnomad_link.mcp.shaping import shape_mitochondrial_variant
 from gnomad_link.models import MitochondrialVariant, StructuralVariant, Transcript
 from gnomad_link.services import FrequencyService
 
@@ -103,15 +104,22 @@ def register_specialty_tools(
                 examples=["gnomad_r4"],
             ),
         ] = "gnomad_r4",
+        include_heteroplasmy_zeros: Annotated[
+            bool,
+            Field(description="Keep zero-count bins in heteroplasmy_distribution histograms."),
+        ] = False,
     ) -> dict[str, Any]:
-        """Use this when a caller has a mitochondrial variant id (M-POS-REF-ALT). Mitochondrial ploidy and heteroplasmy fields are returned; for autosomal variants use get_variant_frequencies. Returns ~2-4kB."""
+        """Use this when a caller has a mitochondrial variant id (M-POS-REF-ALT). Mitochondrial ploidy and heteroplasmy fields are returned; for autosomal variants use get_variant_frequencies. By default zero-count heteroplasmy bins are trimmed and a `truncated.kind=heteroplasmy_zeros` block reports the count; set `include_heteroplasmy_zeros=True` to keep them. Returns ~2-4kB."""
 
         normalized = _normalize_mito_variant_id(variant_id)
 
         async def call() -> dict[str, Any]:
             service = service_factory()
             raw = await service.get_mitochondrial_variant(normalized, dataset)
-            return cast(dict[str, Any], raw.get("mitochondrial_variant", raw))
+            payload = cast(dict[str, Any], raw.get("mitochondrial_variant", raw))
+            return shape_mitochondrial_variant(
+                payload, include_heteroplasmy_zeros=include_heteroplasmy_zeros
+            )
 
         return await run_mcp_tool(
             "get_mitochondrial_variant",

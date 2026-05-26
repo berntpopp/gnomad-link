@@ -4,7 +4,16 @@ from __future__ import annotations
 
 from typing import Any
 
+from gnomad_link.mcp.heteroplasmy import (
+    shape_mitochondrial_variant,
+    trim_heteroplasmy_distribution,
+)
 from gnomad_link.models import VariantFrequencyResponse
+
+__all__ = [
+    "shape_mitochondrial_variant",
+    "trim_heteroplasmy_distribution",
+]
 
 BASE_POPULATION_CODES = {
     "afr",
