@@ -311,6 +311,16 @@ def shape_gene_variants(
     return payload
 
 
+def _rank_transcript(tx: dict[str, Any]) -> int:
+    """Rank transcripts so canonical/MANE win the cap, then protein_coding, then others."""
+
+    if tx.get("canonical") or tx.get("mane_select"):
+        return 0
+    if tx.get("biotype") == "protein_coding":
+        return 1
+    return 2
+
+
 def shape_variant_details_compact(
     raw: dict[str, Any], *, max_transcripts: int = 10
 ) -> dict[str, Any]:
@@ -318,7 +328,9 @@ def shape_variant_details_compact(
 
     Caps ``transcript_consequences`` at ``max_transcripts`` entries and emits a
     self-describing ``truncated`` block so the LLM can request the full payload
-    with ``response_mode='full'``.
+    with ``response_mode='full'``. Within the cap, canonical / MANE-Select
+    transcripts win the slots first, then ``protein_coding`` entries, then the
+    rest; original order is preserved within each rank tier.
     """
 
     keep = {
@@ -337,16 +349,26 @@ def shape_variant_details_compact(
     }
     compact = {k: v for k, v in raw.items() if k in keep}
     transcripts = compact.get("transcript_consequences")
-    if isinstance(transcripts, list) and len(transcripts) > max_transcripts:
-        dropped = len(transcripts) - max_transcripts
-        compact["transcript_consequences"] = transcripts[:max_transcripts]
-        compact["truncated"] = {
-            "kind": "transcript_consequences",
-            "dropped": dropped,
-            "filter": {"max_transcripts": max_transcripts},
-            "to_disable": "response_mode='full' returns every transcript",
-            "to_restore": "response_mode='full'",
-        }
+    if isinstance(transcripts, list):
+        # Stable sort: rank canonical/MANE first, then protein_coding, then
+        # other biotypes; preserve original order within a rank tier.
+        ranked = sorted(
+            enumerate(transcripts),
+            key=lambda item: (_rank_transcript(item[1]), item[0]),
+        )
+        ordered = [tx for _, tx in ranked]
+        if len(ordered) > max_transcripts:
+            dropped = len(ordered) - max_transcripts
+            compact["transcript_consequences"] = ordered[:max_transcripts]
+            compact["truncated"] = {
+                "kind": "transcript_consequences",
+                "dropped": dropped,
+                "filter": {"max_transcripts": max_transcripts},
+                "to_disable": "response_mode='full' returns every transcript",
+                "to_restore": "response_mode='full'",
+            }
+        else:
+            compact["transcript_consequences"] = ordered
     return compact
 
 

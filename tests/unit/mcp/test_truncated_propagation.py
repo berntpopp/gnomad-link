@@ -64,3 +64,68 @@ def test_clinvar_submissions_emit_truncated_when_capped() -> None:
     assert trunc["dropped"] == 25
     assert trunc["to_disable"] == "raise submissions_limit (max 200)"
     assert trunc["to_restore"] == "submissions_limit=30"
+
+
+def test_compact_keeps_canonical_transcript_first() -> None:
+    from gnomad_link.mcp.shaping import shape_variant_details_compact
+
+    raw: dict[str, Any] = {
+        "variant_id": "1-55051215-G-GA",
+        "transcript_consequences": [
+            {"transcript_id": "ENST00000000001", "biotype": "protein_coding"},
+            {"transcript_id": "ENST00000000002", "biotype": "nonsense_mediated_decay"},
+            {
+                "transcript_id": "ENST00000000003",
+                "biotype": "protein_coding",
+                "canonical": True,
+            },
+            {
+                "transcript_id": "ENST00000000004",
+                "biotype": "protein_coding",
+                "mane_select": "NM_xxx",
+            },
+            {"transcript_id": "ENST00000000005", "biotype": "protein_coding"},
+        ],
+    }
+
+    result = shape_variant_details_compact(raw, max_transcripts=2)
+
+    kept_ids = [tx["transcript_id"] for tx in result["transcript_consequences"]]
+    assert kept_ids == ["ENST00000000003", "ENST00000000004"]
+
+
+def test_compact_falls_back_to_first_protein_coding() -> None:
+    from gnomad_link.mcp.shaping import shape_variant_details_compact
+
+    raw: dict[str, Any] = {
+        "variant_id": "1-55051215-G-GA",
+        "transcript_consequences": [
+            {"transcript_id": "ENST00000000001", "biotype": "nonsense_mediated_decay"},
+            {"transcript_id": "ENST00000000002", "biotype": "protein_coding"},
+            {"transcript_id": "ENST00000000003", "biotype": "retained_intron"},
+            {"transcript_id": "ENST00000000004", "biotype": "protein_coding"},
+        ],
+    }
+
+    result = shape_variant_details_compact(raw, max_transcripts=2)
+
+    kept_ids = [tx["transcript_id"] for tx in result["transcript_consequences"]]
+    assert kept_ids == ["ENST00000000002", "ENST00000000004"]
+
+
+def test_compact_falls_back_to_original_order_for_other_biotypes() -> None:
+    from gnomad_link.mcp.shaping import shape_variant_details_compact
+
+    raw: dict[str, Any] = {
+        "variant_id": "1-55051215-G-GA",
+        "transcript_consequences": [
+            {"transcript_id": "ENST00000000001", "biotype": "lincRNA"},
+            {"transcript_id": "ENST00000000002", "biotype": "lincRNA"},
+            {"transcript_id": "ENST00000000003", "biotype": "lincRNA"},
+        ],
+    }
+
+    result = shape_variant_details_compact(raw, max_transcripts=2)
+
+    kept_ids = [tx["transcript_id"] for tx in result["transcript_consequences"]]
+    assert kept_ids == ["ENST00000000001", "ENST00000000002"]
