@@ -120,11 +120,30 @@ class VariantFrequencyResponse(BaseModel):
 
 
 class VariantSearchResult(BaseModel):
-    """Minimal result from resolve_variant_id / search_variants -- IDs only."""
+    """Result from resolve_variant_id / search_variants.
+
+    Carries the canonical variant ID plus optional second-pass enrichment fields
+    (gene symbol, VEP major_consequence, and overall allele frequency) so the
+    caller can rank or filter candidates without a follow-up call. Enrichment is
+    skipped when ``enrich=False`` or when the second-pass lookup fails; in those
+    cases the optional fields stay ``None``.
+    """
 
     variant_id: str = Field(..., description="gnomAD variant ID (CHROM-POS-REF-ALT)")
     rsid: str | None = None
     dataset: str | None = None
+    gene_symbol: str | None = Field(
+        None,
+        description="HGNC gene symbol attached via second-pass enrichment, when available.",
+    )
+    major_consequence: str | None = Field(
+        None,
+        description="VEP major_consequence attached via second-pass enrichment, when available.",
+    )
+    af: float | None = Field(
+        None,
+        description="Overall allele frequency from the preferred data source (exome, else genome).",
+    )
 
 
 class VariantDetails(BaseModel):

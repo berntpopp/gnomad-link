@@ -42,21 +42,45 @@ def register_coordinate_tools(
                 examples=["1-55051215-G-GA", "MT-7497-G-A"],
             ),
         ],
+        source_genome: Annotated[
+            Literal["GRCh37", "GRCh38"] | None,
+            Field(
+                description="Reference build of source_variant_id. Preferred name.",
+            ),
+        ] = None,
         reference_genome: Annotated[
-            Literal["GRCh37", "GRCh38"],
-            Field(description="Reference build of source_variant_id."),
-        ],
+            Literal["GRCh37", "GRCh38"] | None,
+            Field(
+                description="Deprecated alias for source_genome; will be removed in the next release.",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
-        """Use this when a caller has a variant id in one reference build and needs the equivalent id in the other. Use this BEFORE calling frequency tools if the dataset and coordinate build do not match."""
+        """Use this when a caller has a variant id in one reference build and needs the equivalent id in the other. Use this BEFORE calling frequency tools if the dataset and coordinate build do not match. Prefer source_genome; reference_genome is a deprecated alias."""
 
         async def call() -> dict[str, Any]:
+            build = source_genome or reference_genome
+            if build is None:
+                raise ValueError(
+                    "Provide source_genome (or legacy reference_genome) to indicate "
+                    "the build of source_variant_id."
+                )
             service = service_factory()
-            results = await service.liftover_variant(source_variant_id, reference_genome)
-            return {
+            results = await service.liftover_variant(source_variant_id, build)
+            payload: dict[str, Any] = {
                 "results": results,
                 "source_variant_id": source_variant_id,
-                "source_reference_genome": reference_genome,
+                "source_reference_genome": build,
             }
+            if source_genome is None and reference_genome is not None:
+                payload["_meta"] = {
+                    "deprecated_params": {
+                        "reference_genome": (
+                            "Use source_genome; reference_genome will be removed "
+                            "in the next release."
+                        )
+                    }
+                }
+            return payload
 
         return await run_mcp_tool(
             "liftover_variant",

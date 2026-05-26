@@ -20,6 +20,62 @@ _RANK_ORDER = {
     "substring": 3,
 }
 
+# Cap second-pass enrichment cost: only fetch frequencies for the first N hits.
+_ENRICHMENT_CAP = 5
+
+
+async def _enrich_variant_id(
+    service: FrequencyService, variant_id: str, dataset: str
+) -> dict[str, Any]:
+    """Second-pass fetch to attach gene/consequence/af to a search hit.
+
+    Returns the enrichment fields on success, or an empty dict if the upstream
+    call fails. Enrichment is best-effort and must not block the response.
+    """
+    try:
+        freq = await service.get_variant_frequencies(variant_id, dataset)
+    except Exception:
+        return {}
+    af: float | None = None
+    if freq.exome is not None and freq.exome.an:
+        af = freq.exome.ac / freq.exome.an
+    elif freq.genome is not None and freq.genome.an:
+        af = freq.genome.ac / freq.genome.an
+    return {
+        "gene_symbol": freq.gene_symbol,
+        "major_consequence": freq.major_consequence,
+        "af": af,
+    }
+
+
+async def _resolve_and_enrich(
+    service: FrequencyService,
+    *,
+    query: str,
+    dataset: str,
+    limit: int,
+    enrich: bool,
+) -> tuple[list[dict[str, Any]], int]:
+    """Resolve `query` to variant IDs and optionally enrich the top hits.
+
+    Returns the result list and the count of enrichment failures so the caller
+    can attach ``_meta.enrichment_partial`` when relevant.
+    """
+    raw = await service.search_variants(query, dataset)
+    ids = raw[:limit]
+    enrichment_failures = 0
+    results: list[dict[str, Any]] = []
+    for idx, vid in enumerate(ids):
+        item: dict[str, Any] = {"variant_id": vid}
+        if enrich and idx < _ENRICHMENT_CAP:
+            enriched = await _enrich_variant_id(service, vid, dataset)
+            if enriched:
+                item.update(enriched)
+            else:
+                enrichment_failures += 1
+        results.append(item)
+    return results, enrichment_failures
+
 
 def _classify_gene_match(hit: GeneSearchResult, query_upper: str) -> str:
     """Classify how `query_upper` matches the given gene search hit.
@@ -143,15 +199,28 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
             ),
         ] = "gnomad_r4",
         limit: Annotated[int, Field(ge=1, le=25)] = 10,
+        enrich: Annotated[
+            bool,
+            Field(
+                description=(
+                    "Second-pass fetch gene_symbol, major_consequence, and AF "
+                    f"for the top {_ENRICHMENT_CAP} hits."
+                ),
+            ),
+        ] = True,
     ) -> dict[str, Any]:
-        """Use this when the caller only has an rsID, partial coordinates, or text fragment and needs to obtain a canonical gnomAD variant id. Returns IDs only -- call get_variant_frequencies or get_variant_details next."""
+        """Use this when the caller only has an rsID, partial coordinates, or text fragment and needs to obtain a canonical gnomAD variant id. With enrich=True (default) the top hits include gene_symbol, major_consequence, and AF so the caller can rank candidates without a follow-up call."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()
-            # search_variants returns list[str] (variant IDs); wrap as VariantSearchResult dicts
-            raw = await service.search_variants(query, dataset)
-            results = [{"variant_id": vid} for vid in raw[:limit]]
-            return {
+            results, enrichment_failures = await _resolve_and_enrich(
+                service,
+                query=query,
+                dataset=dataset,
+                limit=limit,
+                enrich=enrich,
+            )
+            payload: dict[str, Any] = {
                 "results": results,
                 "returned": len(results),
                 "next_steps": [
@@ -159,6 +228,12 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
                     "Or call get_variant_details(variant_id, dataset) for annotations.",
                 ],
             }
+            if enrichment_failures > 0:
+                payload["_meta"] = {
+                    "enrichment_partial": True,
+                    "enrichment_failures": enrichment_failures,
+                }
+            return payload
 
         return await run_mcp_tool(
             "resolve_variant_id",
@@ -195,21 +270,41 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
             ),
         ] = "gnomad_r4",
         limit: Annotated[int, Field(ge=1, le=25)] = 10,
+        enrich: Annotated[
+            bool,
+            Field(
+                description=(
+                    "Second-pass fetch gene_symbol, major_consequence, and AF "
+                    f"for the top {_ENRICHMENT_CAP} hits."
+                ),
+            ),
+        ] = True,
     ) -> dict[str, Any]:
-        """Use this when a caller uses the legacy tool name -- deprecated alias for resolve_variant_id. Same behaviour; will be removed in the next release."""
+        """Use this when a caller uses the legacy tool name -- deprecated alias for resolve_variant_id. Mirrors the same enrichment behaviour; will be removed in the next release."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()
-            # search_variants returns list[str] (variant IDs); wrap as VariantSearchResult dicts
-            raw = await service.search_variants(query, dataset)
-            results = [{"variant_id": vid} for vid in raw[:limit]]
+            results, enrichment_failures = await _resolve_and_enrich(
+                service,
+                query=query,
+                dataset=dataset,
+                limit=limit,
+                enrich=enrich,
+            )
+            meta: dict[str, Any] = {
+                "deprecated": True,
+                "use_instead": "resolve_variant_id",
+            }
+            if enrichment_failures > 0:
+                meta["enrichment_partial"] = True
+                meta["enrichment_failures"] = enrichment_failures
             return {
                 "results": results,
                 "returned": len(results),
                 "next_steps": [
                     "Pick one variant_id and call get_variant_frequencies(variant_id, dataset).",
                 ],
-                "_meta": {"deprecated": True, "use_instead": "resolve_variant_id"},
+                "_meta": meta,
             }
 
         return await run_mcp_tool(
