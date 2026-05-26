@@ -193,3 +193,77 @@ def test_gene_symbol_and_consequence_pass_through() -> None:
     assert payload["gene_symbol"] == "PCSK9"
     assert payload["major_consequence"] == "frameshift_variant"
     assert "summary" not in payload  # no populations means no summary
+
+
+class _StubFrequencyService:
+    """Minimal FrequencyService stub returning a fixed VariantFrequencyResponse."""
+
+    def __init__(self, response: VariantFrequencyResponse) -> None:
+        self._response = response
+
+    async def get_variant_frequencies(
+        self, variant_id: str, dataset: str
+    ) -> VariantFrequencyResponse:
+        return self._response
+
+
+@pytest.mark.asyncio
+async def test_get_variant_frequencies_emits_next_commands_to_clinvar() -> None:
+    """Tool wrapper injects a chain-of-thought hint pointing at ClinVar."""
+
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    stub_response = VariantFrequencyResponse(
+        variant_id="1-55051215-G-GA",
+        dataset="gnomad_r4",
+        exome=None,
+        genome=None,
+    )
+    stub = _StubFrequencyService(stub_response)
+    mcp = create_gnomad_mcp(service_factory=lambda: stub)
+
+    result = await mcp.call_tool(
+        "get_variant_frequencies",
+        {"variant_id": "1-55051215-G-GA", "dataset": "gnomad_r4"},
+    )
+    payload = result.structured_content or {}
+
+    next_commands = payload.get("_meta", {}).get("next_commands", [])
+    assert {
+        "tool": "get_clinvar_variant_details",
+        "arguments": {
+            "variant_id": "1-55051215-G-GA",
+            "reference_genome": "GRCh38",
+        },
+    } in next_commands
+
+
+@pytest.mark.asyncio
+async def test_get_variant_frequencies_next_commands_uses_grch37_for_r2_1() -> None:
+    """gnomad_r2_1 maps to GRCh37 in the ClinVar follow-up command."""
+
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    stub_response = VariantFrequencyResponse(
+        variant_id="1-55051215-G-GA",
+        dataset="gnomad_r2_1",
+        exome=None,
+        genome=None,
+    )
+    stub = _StubFrequencyService(stub_response)
+    mcp = create_gnomad_mcp(service_factory=lambda: stub)
+
+    result = await mcp.call_tool(
+        "get_variant_frequencies",
+        {"variant_id": "1-55051215-G-GA", "dataset": "gnomad_r2_1"},
+    )
+    payload = result.structured_content or {}
+
+    next_commands = payload.get("_meta", {}).get("next_commands", [])
+    assert {
+        "tool": "get_clinvar_variant_details",
+        "arguments": {
+            "variant_id": "1-55051215-G-GA",
+            "reference_genome": "GRCh37",
+        },
+    } in next_commands

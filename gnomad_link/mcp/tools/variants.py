@@ -86,13 +86,28 @@ def register_variant_tools(
         async def call() -> dict[str, Any]:
             service = service_factory()
             response = await service.get_variant_frequencies(variant_id, dataset)
-            return shape_variant_frequencies(
+            shaped = shape_variant_frequencies(
                 response,
                 populations=populations,
                 include_subcohorts=include_subcohorts,
                 include_sex_split=include_sex_split,
                 exclude_zero_populations=exclude_zero_populations,
             )
+            # Suggest pairing with ClinVar for clinical annotation context.
+            existing_meta: dict[str, Any] = shaped.get("_meta") or {}
+            existing_next: list[Any] = existing_meta.get("next_commands", [])
+            clinvar_cmd: dict[str, Any] = {
+                "tool": "get_clinvar_variant_details",
+                "arguments": {
+                    "variant_id": variant_id,
+                    "reference_genome": "GRCh37" if dataset == "gnomad_r2_1" else "GRCh38",
+                },
+            }
+            shaped["_meta"] = {
+                **existing_meta,
+                "next_commands": [*existing_next, clinvar_cmd],
+            }
+            return shaped
 
         return await run_mcp_tool(
             "get_variant_frequencies",
