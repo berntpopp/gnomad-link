@@ -87,7 +87,7 @@ def register_variant_tools(
             Field(description="Drop populations with allele_count == 0."),
         ] = True,
     ) -> dict[str, Any]:
-        """Use this when a caller has a fully-resolved CHROM-POS-REF-ALT id and needs allele counts/frequencies per population. Pair with get_clinvar_variant_details for clinical context. Compact defaults trim subcohort and zero-AC rows; toggle the boolean flags to expand. Returns a `truncated` block when filters drop rows so the LLM can re-call with explicit overrides."""
+        """Use this when a caller has a fully-resolved CHROM-POS-REF-ALT id and needs allele counts/frequencies per population. Pair with get_clinvar_variant_details for clinical context. Compact defaults trim subcohort and zero-AC rows; toggle the boolean flags to expand. Returns a `truncated` block when filters drop rows so the LLM can re-call with explicit overrides. Returns ~2-4kB."""
 
         async def call() -> dict[str, Any]:
             inferred = detect_variant_id_mismatch(variant_id, dataset)
@@ -163,7 +163,7 @@ def register_variant_tools(
             Field(ge=1, le=200, description="Cap on transcript_consequences in compact mode."),
         ] = 10,
     ) -> dict[str, Any]:
-        """Use this when a caller needs transcript consequences, in-silico predictors, or ClinVar annotation for a single variant id. Prefer get_variant_frequencies if only allele counts are needed; this tool returns the larger annotation payload."""
+        """Use this when a caller needs transcript consequences, in-silico predictors, or ClinVar annotation for a single variant id. Prefer get_variant_frequencies if only allele counts are needed; this tool returns the larger annotation payload. Returns compact ~3kB, full up to ~50kB."""
 
         async def call() -> dict[str, Any]:
             inferred = detect_variant_id_mismatch(variant_id, dataset)

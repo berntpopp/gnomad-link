@@ -57,7 +57,7 @@ def register_specialty_tools(
             Field(examples=["gnomad_sv_r4"]),
         ] = "gnomad_sv_r4",
     ) -> dict[str, Any]:
-        """Use this when a caller has a gnomAD structural variant id (deletions, duplications, inversions, BNDs). For SNVs/indels use get_variant_frequencies instead."""
+        """Use this when a caller has a gnomAD structural variant id (deletions, duplications, inversions, BNDs). For SNVs/indels use get_variant_frequencies instead. Returns ~1-3kB."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()
@@ -103,7 +103,7 @@ def register_specialty_tools(
             ),
         ] = "gnomad_r4",
     ) -> dict[str, Any]:
-        """Use this when a caller has a mitochondrial variant id (M-POS-REF-ALT). Mitochondrial ploidy and heteroplasmy fields are returned; for autosomal variants use get_variant_frequencies."""
+        """Use this when a caller has a mitochondrial variant id (M-POS-REF-ALT). Mitochondrial ploidy and heteroplasmy fields are returned; for autosomal variants use get_variant_frequencies. Returns ~2-4kB."""
 
         normalized = _normalize_mito_variant_id(variant_id)
 
@@ -141,7 +141,7 @@ def register_specialty_tools(
         ],
         reference_genome: Annotated[Literal["GRCh37", "GRCh38"], Field()] = "GRCh38",
     ) -> dict[str, Any]:
-        """Use this when a caller has an Ensembl transcript id and needs exon structure or GTEx tissue expression. For gene-level info use get_gene_details."""
+        """Use this when a caller has an Ensembl transcript id and needs exon structure or GTEx tissue expression. For gene-level info use get_gene_details. Returns ~5-15kB."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()

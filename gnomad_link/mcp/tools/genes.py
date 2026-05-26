@@ -49,7 +49,7 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
             ),
         ] = "compact",
     ) -> dict[str, Any]:
-        """Use this when a caller has a gene id or symbol and needs constraint scores (pLI/oe_lof), canonical transcript, and basic coordinates. Follow with get_gene_variants if they then need per-variant rows."""
+        """Use this when a caller has a gene id or symbol and needs constraint scores (pLI/oe_lof), canonical transcript, and basic coordinates. Follow with get_gene_variants if they then need per-variant rows. Returns compact ~2kB, full up to ~30kB."""
 
         async def call() -> dict[str, Any]:
             if not gene_id and not gene_symbol:
@@ -134,7 +134,7 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
             int | None, Field(ge=0, description="Drop variants whose AC is below this threshold.")
         ] = None,
     ) -> dict[str, Any]:
-        """Use this when a caller wants per-variant rows inside a gene. Large genes (e.g. TTN) return tens of thousands of variants upstream; this tool caps at 500 and exposes consequence/AF/AC filters. Returns a `truncated` block whenever the cap fires."""
+        """Use this when a caller wants per-variant rows inside a gene. Large genes (e.g. TTN) return tens of thousands of variants upstream; this tool caps at 500 and exposes consequence/AF/AC filters. Returns a `truncated` block whenever the cap fires. Returns ~5-50kB (limit-dependent)."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()

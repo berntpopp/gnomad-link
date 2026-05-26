@@ -26,7 +26,7 @@ def register_metadata_tools(mcp: FastMCP) -> None:
         tags={"metadata"},
     )
     async def get_server_capabilities() -> dict[str, Any]:
-        """Use this when a client needs supported tools, datasets, population codes, recommended workflows, or current limitations."""
+        """Use this when a client needs supported tools, datasets, population codes, recommended workflows, or current limitations. Returns <2kB."""
 
         return await run_mcp_tool(
             "get_server_capabilities",

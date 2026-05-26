@@ -41,7 +41,7 @@ def register_clinvar_tools(
             Field(ge=1, le=200, description="Cap on submissions[] returned. Default 25."),
         ] = 25,
     ) -> dict[str, Any]:
-        """Use this when a caller needs ClinVar clinical significance, review status, gold stars, or submissions for a single variant id. Complementary to get_variant_frequencies for clinical workflows."""
+        """Use this when a caller needs ClinVar clinical significance, review status, gold stars, or submissions for a single variant id. Complementary to get_variant_frequencies for clinical workflows. Returns ~3-15kB (submissions_limit dependent)."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()
@@ -79,7 +79,7 @@ def register_clinvar_tools(
         tags={"clinical"},
     )
     async def get_clinvar_meta() -> dict[str, Any]:
-        """Use this when a caller only needs the ClinVar release date or revision currently served by gnomAD -- cheaper than full capabilities."""
+        """Use this when a caller only needs the ClinVar release date or revision currently served by gnomAD -- cheaper than full capabilities. Returns <1kB."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()

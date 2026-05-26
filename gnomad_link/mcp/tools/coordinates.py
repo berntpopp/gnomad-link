@@ -55,7 +55,7 @@ def register_coordinate_tools(
             ),
         ] = None,
     ) -> dict[str, Any]:
-        """Use this when a caller has a variant id in one reference build and needs the equivalent id in the other. Use this BEFORE calling frequency tools if the dataset and coordinate build do not match. Prefer source_genome; reference_genome is a deprecated alias."""
+        """Use this when a caller has a variant id in one reference build and needs the equivalent id in the other. Use this BEFORE calling frequency tools if the dataset and coordinate build do not match. Prefer source_genome; reference_genome is a deprecated alias. Returns <1kB."""
 
         async def call() -> dict[str, Any]:
             build = source_genome or reference_genome
@@ -119,7 +119,7 @@ def register_coordinate_tools(
             Field(description="Include overlapping genes."),
         ] = True,
     ) -> dict[str, Any]:
-        """Use this when a caller wants genes and/or ClinVar variants in a small region (<=100kb). Spans larger than 100kb are clamped and a `truncated` block reports it. For per-variant SNV listings use get_gene_variants instead."""
+        """Use this when a caller wants genes and/or ClinVar variants in a small region (<=100kb). Spans larger than 100kb are clamped and a `truncated` block reports it. For per-variant SNV listings use get_gene_variants instead. Returns ~5-50kB."""
 
         async def call() -> dict[str, Any]:
             chrom, start_s, stop_s = region.removeprefix("chr").split("-")

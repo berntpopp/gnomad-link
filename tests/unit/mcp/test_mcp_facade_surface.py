@@ -211,3 +211,32 @@ async def test_data_tools_have_category_tags(fake_service_factory) -> None:
     assert tools_by_name["get_clinvar_variant_details"].tags == {"clinical"}
     assert tools_by_name["liftover_variant"].tags == {"coordinates"}
     assert tools_by_name["get_gnomad_diagnostics"].tags == {"metadata", "diagnostics"}
+
+
+def test_capabilities_resource_lists_token_cost_hints() -> None:
+    from gnomad_link.mcp.resources import get_capabilities_resource
+
+    caps = get_capabilities_resource()
+    hints = caps.get("token_cost_hints")
+    assert isinstance(hints, dict)
+    # Every advertised tool has an entry.
+    for tool_name in caps["tools"]:
+        assert tool_name in hints, f"missing token_cost_hint for {tool_name}"
+        assert isinstance(hints[tool_name], str)
+        assert len(hints[tool_name]) <= 80
+
+
+@pytest.mark.asyncio
+async def test_capabilities_tools_match_facade_tools(fake_service_factory) -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+    from gnomad_link.mcp.resources import get_capabilities_resource
+
+    mcp = create_gnomad_mcp(service_factory=fake_service_factory)
+    registered = {tool.name for tool in await mcp.list_tools()}
+    caps = get_capabilities_resource()
+    advertised = set(caps["tools"])
+    assert advertised == registered, (
+        f"Capabilities tools list drifted from registered facade tools. "
+        f"Only in caps: {advertised - registered}. "
+        f"Only registered: {registered - advertised}."
+    )

@@ -128,7 +128,7 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
             Field(ge=1, le=50, description="Max matches returned."),
         ] = 25,
     ) -> dict[str, Any]:
-        """Use this when a caller has a fuzzy gene query (symbol, alias, partial name). Follow with get_gene_details for full constraint metrics."""
+        """Use this when a caller has a fuzzy gene query (symbol, alias, partial name). Follow with get_gene_details for full constraint metrics. Returns ~1-3kB."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()
@@ -209,7 +209,7 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
             ),
         ] = True,
     ) -> dict[str, Any]:
-        """Use this when the caller only has an rsID, partial coordinates, or text fragment and needs to obtain a canonical gnomAD variant id. With enrich=True (default) the top hits include gene_symbol, major_consequence, and AF so the caller can rank candidates without a follow-up call."""
+        """Use this when the caller only has an rsID, partial coordinates, or text fragment and needs to obtain a canonical gnomAD variant id. With enrich=True (default) the top hits include gene_symbol, major_consequence, and AF so the caller can rank candidates without a follow-up call. Returns ~1-5kB (enrichment dependent)."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()
@@ -280,7 +280,7 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
             ),
         ] = True,
     ) -> dict[str, Any]:
-        """Use this when a caller uses the legacy tool name -- deprecated alias for resolve_variant_id. Mirrors the same enrichment behaviour; will be removed in the next release."""
+        """Use this when a caller uses the legacy tool name -- deprecated alias for resolve_variant_id. Mirrors the same enrichment behaviour; will be removed in the next release. Returns ~1-5kB (deprecated alias)."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()

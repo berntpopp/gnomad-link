@@ -43,7 +43,7 @@ def register_diagnostics_tools(
         },
     )
     async def get_gnomad_diagnostics() -> dict[str, Any]:
-        """Use this when an LLM hits repeated errors or needs server health information; returns recent error history, server version, and upstream availability flag."""
+        """Use this when an LLM hits repeated errors or needs server health information; returns recent error history, server version, and upstream availability flag. Returns <1kB."""
 
         async def call() -> dict[str, Any]:
             recent = get_recent_errors()
