@@ -13,6 +13,30 @@ from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
 from gnomad_link.models import GeneSearchResult, VariantSearchResult
 from gnomad_link.services import FrequencyService
 
+_RANK_ORDER = {
+    "exact_symbol": 0,
+    "exact_ensembl_id": 1,
+    "prefix": 2,
+    "substring": 3,
+}
+
+
+def _classify_gene_match(hit: GeneSearchResult, query_upper: str) -> str:
+    """Classify how `query_upper` matches the given gene search hit.
+
+    Order of preference: exact symbol, exact Ensembl id, prefix on either,
+    falling back to substring.
+    """
+    sym = (hit.symbol or "").upper()
+    gid = (hit.ensembl_id or "").upper()
+    if sym == query_upper:
+        return "exact_symbol"
+    if gid == query_upper:
+        return "exact_ensembl_id"
+    if sym.startswith(query_upper) or gid.startswith(query_upper):
+        return "prefix"
+    return "substring"
+
 
 def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], FrequencyService]) -> None:
     @mcp.tool(
@@ -53,9 +77,22 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
         async def call() -> dict[str, Any]:
             service = service_factory()
             raw = await service.search_genes(query, reference_genome)
-            total = len(raw)
-            items = raw[:limit]
-            results = [r.model_dump() if isinstance(r, GeneSearchResult) else r for r in items]
+            query_upper = query.upper()
+            ranked: list[tuple[int, int, GeneSearchResult]] = []
+            for idx, hit in enumerate(raw):
+                hit_model = (
+                    hit
+                    if isinstance(hit, GeneSearchResult)
+                    else GeneSearchResult.model_validate(hit)
+                )
+                quality = _classify_gene_match(hit_model, query_upper)
+                hit_with_quality = hit_model.model_copy(update={"match_quality": quality})
+                ranked.append((_RANK_ORDER[quality], idx, hit_with_quality))
+            ranked.sort(key=lambda t: (t[0], t[1]))
+            sorted_hits = [hit for _, _, hit in ranked]
+            total = len(sorted_hits)
+            items = sorted_hits[:limit]
+            results = [r.model_dump() for r in items]
             payload: dict[str, Any] = {"results": results, "returned": len(results)}
             if total > len(results):
                 payload["truncated"] = {

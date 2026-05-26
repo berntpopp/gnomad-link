@@ -1,5 +1,7 @@
 """Data models for gene-related queries."""
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -76,3 +78,12 @@ class GeneSearchResult(BaseModel):
     ensembl_id: str = Field(..., description="Ensembl gene ID")
     ensembl_version: str | None = Field(None, description="Ensembl version")
     symbol: str = Field(..., description="Gene symbol")
+    match_quality: Literal["exact_symbol", "exact_ensembl_id", "prefix", "substring"] | None = (
+        Field(
+            None,
+            description=(
+                "Ranking signal added by search_genes: how the query matched this hit. "
+                "Ordering is exact_symbol > exact_ensembl_id > prefix > substring."
+            ),
+        )
+    )
