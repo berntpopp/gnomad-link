@@ -473,3 +473,93 @@ def cap_region_span(
     if span <= max_bp:
         return start, stop, False
     return start, start + max_bp, True
+
+
+_REGION_CLINVAR_KEEP = {
+    "variant_id",
+    "clinical_significance",
+    "review_status",
+    "gold_stars",
+    "major_consequence",
+    "consequence",
+    "pos",
+    "ref",
+    "alt",
+}
+
+_REGION_GENE_KEEP = {
+    "gene_id",
+    "ensembl_id",
+    "symbol",
+    "chrom",
+    "start",
+    "stop",
+    "strand",
+    "biotype",
+    "reference_genome",
+}
+
+
+def _project_row(row: dict[str, Any], keep: set[str]) -> dict[str, Any]:
+    return {k: v for k, v in row.items() if k in keep}
+
+
+def shape_region_payload(
+    payload: dict[str, Any],
+    *,
+    include_clinvar: bool,
+    include_genes: bool,
+    max_clinvar_variants: int,
+    max_genes: int,
+    compact_rows: bool,
+) -> dict[str, Any]:
+    """Cap clinvar_variants[] and genes[] in a region payload.
+
+    Optionally projects each row to a compact key set (drops heavy fields like
+    `submissions` on ClinVar rows and `transcripts`/`exons` on gene rows).
+    When any list is capped, emits a self-describing ``truncated_payload``
+    block alongside the existing ``truncated`` span block (kept separate so
+    callers that key off ``truncated.kind == "region_span"`` keep working).
+    """
+
+    out = dict(payload)
+    dropped: dict[str, int] = {}
+
+    if include_clinvar:
+        rows = list(payload.get("clinvar_variants") or [])
+        if compact_rows:
+            rows = [_project_row(r, _REGION_CLINVAR_KEEP) for r in rows]
+        if len(rows) > max_clinvar_variants:
+            dropped["clinvar_variants"] = len(rows) - max_clinvar_variants
+            rows = rows[:max_clinvar_variants]
+        out["clinvar_variants"] = rows
+    else:
+        out.pop("clinvar_variants", None)
+
+    if include_genes:
+        rows = list(payload.get("genes") or [])
+        if compact_rows:
+            rows = [_project_row(r, _REGION_GENE_KEEP) for r in rows]
+        if len(rows) > max_genes:
+            dropped["genes"] = len(rows) - max_genes
+            rows = rows[:max_genes]
+        out["genes"] = rows
+    else:
+        out.pop("genes", None)
+
+    if dropped:
+        restore_clinvar = max_clinvar_variants + dropped.get("clinvar_variants", 0)
+        restore_genes = max_genes + dropped.get("genes", 0)
+        out["truncated_payload"] = {
+            "kind": "region_payload",
+            "dropped": dropped,
+            "filter": {
+                "max_clinvar_variants": max_clinvar_variants,
+                "max_genes": max_genes,
+                "compact_rows": compact_rows,
+            },
+            "to_disable": ("raise max_clinvar_variants / max_genes or set compact_rows=False"),
+            "to_restore": (f"max_clinvar_variants={restore_clinvar}, max_genes={restore_genes}"),
+        }
+
+    return out

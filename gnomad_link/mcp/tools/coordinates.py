@@ -12,7 +12,7 @@ from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.build_check import detect_region_mismatch
 from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, run_mcp_tool
 from gnomad_link.mcp.schema_relax import relax_output_schema
-from gnomad_link.mcp.shaping import cap_region_span
+from gnomad_link.mcp.shaping import cap_region_span, shape_region_payload
 from gnomad_link.models import LiftoverResponse, Region
 from gnomad_link.services import FrequencyService
 
@@ -119,8 +119,28 @@ def register_coordinate_tools(
             bool,
             Field(description="Include overlapping genes."),
         ] = True,
+        max_clinvar_variants: Annotated[
+            int,
+            Field(
+                ge=1,
+                le=2000,
+                description="Cap on clinvar_variants[] returned. Default 100.",
+            ),
+        ] = 100,
+        max_genes: Annotated[
+            int,
+            Field(
+                ge=1,
+                le=500,
+                description="Cap on genes[] returned. Default 50.",
+            ),
+        ] = 50,
+        compact_rows: Annotated[
+            bool,
+            Field(description="Project clinvar/gene rows to a compact key set."),
+        ] = True,
     ) -> dict[str, Any]:
-        """Use this when a caller wants genes and/or ClinVar variants in a small region (<=100kb). Spans larger than 100kb are clamped and a `truncated` block reports it. For per-variant SNV listings use get_gene_variants instead. Returns ~5-50kB."""
+        """Use this when a caller wants genes and/or ClinVar variants in a small region (<=100kb). Spans larger than 100kb are clamped and a `truncated` block reports it. Per-category caps (`max_clinvar_variants`, `max_genes`) keep payload bounded; surplus rows are summarised in a `truncated_payload` block. For per-variant SNV listings use get_gene_variants instead. Returns ~5-30kB at compact defaults; up to ~50kB with compact_rows=False."""
 
         async def call() -> dict[str, Any]:
             chrom, start_s, stop_s = region.removeprefix("chr").split("-")
@@ -138,10 +158,14 @@ def register_coordinate_tools(
             service = service_factory()
             raw = await service.get_region(chrom, adj_start, adj_stop, dataset)
             payload = cast(dict[str, Any], raw.get("region", raw))
-            if not include_clinvar:
-                payload.pop("clinvar_variants", None)
-            if not include_genes:
-                payload.pop("genes", None)
+            payload = shape_region_payload(
+                payload,
+                include_clinvar=include_clinvar,
+                include_genes=include_genes,
+                max_clinvar_variants=max_clinvar_variants,
+                max_genes=max_genes,
+                compact_rows=compact_rows,
+            )
             if capped:
                 payload["truncated"] = {
                     "kind": "region_span",
