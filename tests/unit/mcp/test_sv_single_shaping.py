@@ -29,7 +29,8 @@ def _bnd_payload() -> dict[str, Any]:
         "ac": None,
         "an": None,
         "cpx_type": "delINV",
-        "cpx_intervals": [{"type": "DEL", "chrom": "1"}],
+        # gnomAD returns cpx_intervals as interval STRINGS, not objects.
+        "cpx_intervals": ["DEL_chr22:10957963-12548894", "INV_chr22:12548894-12600000"],
         "genes": ["GENEA", "GENEB"],
         "consequences": [{"consequence": "lof", "genes": ["GENEA", "GENEB"]}],
         "age_distribution": {"het": {"bin_edges": [0], "bin_freq": [0]}},

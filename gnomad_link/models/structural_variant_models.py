@@ -1,7 +1,5 @@
 """Data models for structural variant queries."""
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 
@@ -60,7 +58,8 @@ class StructuralVariant(BaseModel):
         default_factory=list, description="Variant consequences"
     )
     copy_numbers: list[SVCopyNumber] | None = Field(None, description="Copy number data")
-    cpx_intervals: list[dict[str, Any]] | None = Field(None, description="Complex intervals")
+    # gnomAD returns complex intervals as strings, e.g. "DEL_chr22:10957963-12548894".
+    cpx_intervals: list[str] | None = Field(None, description="Complex intervals")
     cpx_type: str | None = Field(None, description="Complex variant type")
     evidence: list[str] | None = Field(None, description="Supporting evidence")
     genes: list[str] | None = Field(None, description="Affected genes")
