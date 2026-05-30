@@ -15,19 +15,19 @@ dependencies; no live gnomAD calls in default CI; research-use scope only.
 
 ## Fix groups (commit boundaries)
 
-- [ ] **G1 data-fidelity / ClinVar correctness (#1)** — `conflicting` short-circuit
+- [x] **G1 data-fidelity / ClinVar correctness (#1)** — `conflicting` short-circuit
   in `shaping._classify_clinical_significance` + new `conflicting` counts key;
   `gene_summary_shaping._is_pathogenic` excludes conflicting. Matches the
   already-correct `gene_carrier_filters` path. Visible numeric correction.
-- [ ] **G2 errors.py cluster (#5,#6,#14,#16, error_handling-1/-2)** — envelope
+- [x] **G2 errors.py cluster (#5,#6,#14,#16, error_handling-1/-2)** — envelope
   `next_commands` from classified fallback; `ToolInputError(ValueError)` so
   hand-authored guards surface; tool-aware not_found recovery prose; symmetric
   `success` flag; truthful rate_limited prose; build_mismatch key
   `reference_genome`->`source_genome`; mito `_fallback_for` branch.
-- [ ] **G3 ClinVar date in _meta (#7)** — leaf `clinvar_date_cache.py` to break the
+- [x] **G3 ClinVar date in _meta (#7)** — leaf `clinvar_date_cache.py` to break the
   metadata->errors cycle; merge nullable `clinvar_release_date` into `_BASE_META`;
   capabilities resource reads the cache.
-- [ ] **G4 capabilities discovery enrichment (#9,#3-doc,#13-static)** — add
+- [x] **G4 capabilities discovery enrichment (#9,#3-doc,#13-static)** — add
   `prompts`, `truncation_contract`, `field_glossary`, `error_taxonomy`,
   `parameter_conventions`, carrier `recommended_workflows`, `next_commands` doc
   in cheatsheet/response_fields, concurrency `queue_wait_seconds`/fanout note;

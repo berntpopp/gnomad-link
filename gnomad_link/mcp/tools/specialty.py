@@ -128,9 +128,15 @@ def register_specialty_tools(
             service = service_factory()
             raw = await service.get_mitochondrial_variant(normalized, dataset)
             payload = cast(dict[str, Any], raw.get("mitochondrial_variant", raw))
-            return shape_mitochondrial_variant(
+            shaped = shape_mitochondrial_variant(
                 payload, include_heteroplasmy_zeros=include_heteroplasmy_zeros
             )
+            gene_symbol = shaped.get("gene_symbol")
+            if gene_symbol:
+                shaped.setdefault("_meta", {})["next_commands"] = [
+                    {"tool": "get_gene_details", "arguments": {"gene_symbol": gene_symbol}}
+                ]
+            return shaped
 
         return await run_mcp_tool(
             "get_mitochondrial_variant",
@@ -173,11 +179,17 @@ def register_specialty_tools(
 
         async def call() -> dict[str, Any]:
             service = service_factory()
-            return await service.get_transcript_details(
+            result = await service.get_transcript_details(
                 transcript_id=transcript_id,
                 reference_genome=reference_genome,
                 include_expression=include_expression,
             )
+            gene_id = result.get("gene_id") if isinstance(result, dict) else None
+            if gene_id:
+                result.setdefault("_meta", {})["next_commands"] = [
+                    {"tool": "get_gene_summary", "arguments": {"gene_id": gene_id}}
+                ]
+            return result
 
         return await run_mcp_tool(
             "get_transcript_details",

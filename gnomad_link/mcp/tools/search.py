@@ -170,6 +170,19 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
                     "short query. If an expected gene is missing, query its full symbol "
                     "(e.g. 'GRIN1') or call get_gene_details/get_gene_summary directly."
                 )
+            # Close the gene workflow's first hop: chain the top hit straight into
+            # get_gene_details so the LLM does not have to re-form the call.
+            if results:
+                top = results[0]
+                gene_args: dict[str, Any] = {}
+                if top.get("ensembl_id"):
+                    gene_args = {"gene_id": top["ensembl_id"]}
+                elif top.get("symbol"):
+                    gene_args = {"gene_symbol": top["symbol"]}
+                if gene_args:
+                    payload["_meta"] = {
+                        "next_commands": [{"tool": "get_gene_details", "arguments": gene_args}]
+                    }
             return payload
 
         return await run_mcp_tool(

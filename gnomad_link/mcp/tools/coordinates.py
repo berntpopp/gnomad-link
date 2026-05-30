@@ -93,15 +93,29 @@ def register_coordinate_tools(
                     "in the other genome), an indel that does not lift cleanly, or absent "
                     "from the liftover tables. Confirm the id with resolve_variant_id."
                 )
+            meta: dict[str, Any] = {}
             if source_genome is None and reference_genome is not None:
-                payload["_meta"] = {
-                    "deprecated_params": {
-                        "reference_genome": (
-                            "Use source_genome; reference_genome will be removed "
-                            "in the next release."
-                        )
-                    }
+                meta["deprecated_params"] = {
+                    "reference_genome": (
+                        "Use source_genome; reference_genome will be removed in the next release."
+                    )
                 }
+            # Close the build-conversion loop: chain the converted coordinate
+            # straight into a frequency lookup against the build-correct dataset.
+            target_id = next(
+                (r.get("target_variant_id") for r in results if r.get("target_variant_id")),
+                None,
+            )
+            if target_id:
+                target_dataset = "gnomad_r4" if target == "GRCh38" else "gnomad_r2_1"
+                meta["next_commands"] = [
+                    {
+                        "tool": "get_variant_frequencies",
+                        "arguments": {"variant_id": target_id, "dataset": target_dataset},
+                    }
+                ]
+            if meta:
+                payload["_meta"] = meta
             return payload
 
         return await run_mcp_tool(
@@ -194,6 +208,30 @@ def register_coordinate_tools(
                     "served_bp": adj_stop - adj_start,
                     "to_disable": "request smaller windows; max 100kb per call",
                 }
+            # Chain the first gene/ClinVar hit into the natural drill-down tools.
+            next_cmds: list[dict[str, Any]] = []
+            genes = payload.get("genes") or []
+            if genes and genes[0].get("gene_id"):
+                next_cmds.append(
+                    {
+                        "tool": "get_gene_variants",
+                        "arguments": {"gene_id": genes[0]["gene_id"], "dataset": dataset},
+                    }
+                )
+            clinvars = payload.get("clinvar_variants") or []
+            if clinvars and clinvars[0].get("variant_id"):
+                region_build = "GRCh37" if dataset == "gnomad_r2_1" else "GRCh38"
+                next_cmds.append(
+                    {
+                        "tool": "get_clinvar_variant_details",
+                        "arguments": {
+                            "variant_id": clinvars[0]["variant_id"],
+                            "reference_genome": region_build,
+                        },
+                    }
+                )
+            if next_cmds:
+                payload.setdefault("_meta", {})["next_commands"] = next_cmds
             return payload
 
         return await run_mcp_tool(
