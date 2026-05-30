@@ -62,6 +62,40 @@ class UnifiedGnomadClient(BaseGnomadClient):
 
         return await self.execute_query("gene", processed_vars, version)
 
+    async def get_gene_summary(
+        self,
+        *,
+        gene_id: str | None = None,
+        gene_symbol: str | None = None,
+        reference_genome: str | None = None,
+        dataset: str | None = None,
+    ) -> dict[str, Any]:
+        """Get the gene-summary payload (constraint + MANE + clinvar_variants + pext).
+
+        Args:
+            gene_id: Ensembl gene ID
+            gene_symbol: Gene symbol
+            reference_genome: Reference genome (optional, auto-determined from dataset)
+            dataset: Dataset (optional, for version determination)
+
+        Returns:
+            Raw gene_summary query result keyed by "gene"
+        """
+        version = "v4"
+        if dataset:
+            version = QueryBuilder.get_version_for_dataset(dataset)
+
+        variables: dict[str, Any] = {}
+        if gene_id:
+            variables["gene_id"] = gene_id
+        if gene_symbol:
+            variables["gene_symbol"] = gene_symbol
+        if reference_genome:
+            variables["reference_genome"] = reference_genome
+
+        processed_vars = self.query_builder.process_variables("gene_summary", variables, version)
+        return await self.execute_query("gene_summary", processed_vars, version)
+
     async def search_variants(self, query: str, dataset: str = "gnomad_r4") -> list[dict[str, Any]]:
         """Search for variants.
 

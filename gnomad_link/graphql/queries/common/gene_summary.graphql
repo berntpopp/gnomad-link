@@ -1,0 +1,41 @@
+#import "fragments.graphql"
+
+query gene_summary($gene_symbol: String, $gene_id: String, $reference_genome: ReferenceGenomeId!) {
+    gene(gene_symbol: $gene_symbol, gene_id: $gene_id, reference_genome: $reference_genome) {
+        gene_id
+        symbol
+        name
+        chrom
+        start
+        stop
+        strand
+        canonical_transcript_id
+        mane_select_transcript {
+            ensembl_id
+            ensembl_version
+            refseq_id
+            refseq_version
+        }
+        gnomad_constraint {
+            ...GeneConstraintFields
+        }
+        clinvar_variants {
+            variant_id
+            clinical_significance
+            gold_stars
+            major_consequence
+            review_status
+            hgvsc
+            hgvsp
+        }
+        pext {
+            flags
+            regions {
+                start
+                stop
+                mean
+            }
+        }
+        flags
+    }
+}
