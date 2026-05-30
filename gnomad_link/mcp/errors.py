@@ -16,7 +16,12 @@ from typing import Any
 
 from pydantic import ValidationError as PydanticValidationError
 
-from gnomad_link.api import DataNotFoundError, GnomadApiError
+from gnomad_link.api import (
+    DataNotFoundError,
+    GnomadApiError,
+    RateLimitedError,
+    UpstreamInputError,
+)
 from gnomad_link.mcp.resources import GNOMAD_DATA_RELEASE
 
 logger = logging.getLogger(__name__)
@@ -83,11 +88,39 @@ def _safe_message(exc: BaseException) -> str:
     return text[:240]
 
 
-def _classify(exc: BaseException) -> tuple[str, bool, str | None, dict[str, Any] | None]:
-    """Return (error_code, retryable, fallback_tool, fallback_args)."""
+def _fallback_for(context: McpErrorContext) -> tuple[str, dict[str, Any] | None]:
+    """Resolve the context-appropriate resolver tool for not_found / invalid_input.
+
+    Variant tools point at resolve_variant_id, gene/transcript tools at
+    search_genes, and everything else at the discovery entrypoint. fallback_args
+    are populated from context so the LLM gets a ready-to-call next step.
+    """
+    # A failing variant resolver almost always received a gene symbol / free
+    # text; point it at gene search rather than circularly back at itself.
+    if context.tool_name in {"resolve_variant_id", "search_variants"}:
+        return "search_genes", None
+    if context.variant_id:
+        return "resolve_variant_id", {"query": context.variant_id}
+    if context.gene_symbol or context.gene_id:
+        return "search_genes", {"query": context.gene_symbol or context.gene_id}
+    return "get_server_capabilities", None
+
+
+def _classify(
+    exc: BaseException, context: McpErrorContext
+) -> tuple[str, bool, str | None, dict[str, Any] | None]:
+    """Return (error_code, retryable, fallback_tool, fallback_args).
+
+    Subclass ordering matters: DataNotFoundError, UpstreamInputError, and
+    RateLimitedError all subclass GnomadApiError, so they MUST be checked before
+    the generic GnomadApiError branch or they fall through to the (retryable)
+    upstream_unavailable bucket. The load-bearing invariant: retryable=true means
+    an identical call may later succeed; false means it never will.
+    """
 
     if isinstance(exc, DataNotFoundError):
-        return "not_found", False, "search_genes", None
+        tool, args = _fallback_for(context)
+        return "not_found", False, tool, args
     if isinstance(exc, BuildMismatchError):
         return (
             "build_mismatch",
@@ -98,6 +131,13 @@ def _classify(exc: BaseException) -> tuple[str, bool, str | None, dict[str, Any]
                 "reference_genome": exc.inferred_build,
             },
         )
+    if isinstance(exc, UpstreamInputError):
+        # Deterministic upstream rejection (wrong id shape, gene symbol to a
+        # variant tool). Retrying unchanged can never succeed.
+        tool, args = _fallback_for(context)
+        return "invalid_input", False, tool, args
+    if isinstance(exc, RateLimitedError):
+        return "rate_limited", True, "get_gnomad_diagnostics", {}
     if isinstance(exc, ValueError):
         return "validation_failed", False, "get_server_capabilities", None
     if isinstance(exc, GnomadApiError):
@@ -107,12 +147,39 @@ def _classify(exc: BaseException) -> tuple[str, bool, str | None, dict[str, Any]
     return "internal_error", False, "get_gnomad_diagnostics", {}
 
 
+def _recovery_action(error_code: str, retryable: bool) -> str:
+    """Action-typed guidance so the LLM does not infer behavior from a bare bool.
+
+    retry_backoff (wait + retry same call) | reformulate_input (fix the id/fields,
+    same tool) | switch_tool (call the fallback_tool, then the original).
+    """
+    if retryable:
+        return "retry_backoff"
+    if error_code in {"invalid_input", "validation_failed"}:
+        return "reformulate_input"
+    return "switch_tool"
+
+
 def _recovery_text(error_code: str, fallback_tool: str | None) -> str:
     if error_code == "not_found":
+        resolver = fallback_tool or "resolve_variant_id"
         return (
-            "Variant or gene not present in the requested dataset. "
-            "Try a different dataset (gnomad_r4 default; r3/r2_1 for older builds) "
-            "or use search_genes / resolve_variant_id to verify the identifier."
+            "Identifier well-formed but absent in the requested dataset. This is a "
+            "reformulate, not a retry: try a different dataset (gnomad_r4 default; "
+            f"r3/r2_1 for older builds) or call {resolver} to verify the identifier."
+        )
+    if error_code == "invalid_input":
+        resolver = fallback_tool or "get_server_capabilities"
+        return (
+            "The upstream API rejected this request as malformed (the identifier or "
+            "query shape is wrong for this tool). Do not retry unchanged. Reformulate "
+            f"the identifier or call {resolver} to convert free text / symbols / rsIDs "
+            "into the required id."
+        )
+    if error_code == "rate_limited":
+        return (
+            "Upstream rate limit hit (HTTP 429). Safe to retry after a short delay "
+            "with exponential backoff; honor any Retry-After header."
         )
     if error_code == "validation_failed":
         return (
@@ -125,7 +192,10 @@ def _recovery_text(error_code: str, fallback_tool: str | None) -> str:
             "the requested dataset. Run liftover_variant to convert, or switch dataset."
         )
     if error_code == "upstream_unavailable":
-        return "gnomAD upstream API failed. Safe to retry with exponential backoff."
+        return (
+            "gnomAD upstream API failed transiently. Safe to retry with exponential "
+            "backoff (cap attempts)."
+        )
     return (
         f"Unexpected failure. Call {fallback_tool} for a safe entry point."
         if fallback_tool
@@ -173,6 +243,7 @@ def mcp_validation_tool_error(
         "error_code": "validation_failed",
         "message": "Invalid MCP arguments.",
         "retryable": False,
+        "recovery_action": "reformulate_input",
         "fallback_tool": _FALLBACK_TOOL,
         "fallback_args": {},
         "field_errors": field_errors,
@@ -240,12 +311,13 @@ def install_validation_error_handler(mcp_server: Any) -> None:
 
 
 def mcp_tool_error(exc: BaseException, context: McpErrorContext) -> McpToolError:
-    error_code, retryable, fallback_tool, fallback_args = _classify(exc)
+    error_code, retryable, fallback_tool, fallback_args = _classify(exc, context)
     payload = {
         "success": False,
         "error_code": error_code,
         "message": _envelope_message(exc, error_code),
         "retryable": retryable,
+        "recovery_action": _recovery_action(error_code, retryable),
         "fallback_tool": fallback_tool,
         "fallback_args": fallback_args,
         "recovery": _recovery_text(error_code, fallback_tool),
