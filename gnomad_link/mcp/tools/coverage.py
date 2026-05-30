@@ -16,13 +16,12 @@ from gnomad_link.mcp.build_check import (
 from gnomad_link.mcp.coverage_shaping import shape_coverage_payload
 from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, ToolInputError, run_mcp_tool
 from gnomad_link.mcp.headline import coverage_headline
+from gnomad_link.mcp.patterns import GENE_ID_PATTERN, GENE_SYMBOL_PATTERN
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.shaping import cap_region_span
 from gnomad_link.services import FrequencyService
 
 _AUTOSOMAL_VARIANT_ID_PATTERN = r"^([1-9]|1\d|2[0-2]|X|Y)-\d+-[ACGT]+-[ACGT]+$"
-_GENE_ID_PATTERN = r"^ENSG\d{11}$"
-_GENE_SYMBOL_PATTERN = r"^[A-Za-z0-9._-]{1,32}$"
 _REGION_PATTERN = r"^(chr)?([1-9]|1[0-9]|2[0-2]|X|Y)-\d+-\d+$"
 
 _COVERAGE_OUTPUT_SCHEMA = {
@@ -55,7 +54,7 @@ def register_coverage_tools(
             Field(
                 default=None,
                 description="HGNC gene symbol (e.g. PCSK9). One scope arg only.",
-                pattern=_GENE_SYMBOL_PATTERN,
+                pattern=GENE_SYMBOL_PATTERN,
                 examples=["PCSK9"],
             ),
         ] = None,
@@ -64,7 +63,7 @@ def register_coverage_tools(
             Field(
                 default=None,
                 description="Ensembl gene ID (ENSG...). One scope arg only.",
-                pattern=_GENE_ID_PATTERN,
+                pattern=GENE_ID_PATTERN,
                 examples=["ENSG00000169174"],
             ),
         ] = None,

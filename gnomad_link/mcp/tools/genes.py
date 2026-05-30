@@ -11,6 +11,7 @@ from pydantic import Field
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, ToolInputError, run_mcp_tool
 from gnomad_link.mcp.headline import gene_details_headline
+from gnomad_link.mcp.patterns import GENE_ID_PATTERN, GENE_SYMBOL_PATTERN
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.shaping import shape_gene_details_compact, shape_gene_variants
 from gnomad_link.models import Gene
@@ -30,6 +31,7 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
             str | None,
             Field(
                 description="Ensembl gene ID (preferred over symbol).",
+                pattern=GENE_ID_PATTERN,
                 examples=["ENSG00000169174"],
             ),
         ] = None,
@@ -37,6 +39,7 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
             str | None,
             Field(
                 description="HGNC gene symbol, used if gene_id is absent.",
+                pattern=GENE_SYMBOL_PATTERN,
                 examples=["PCSK9"],
             ),
         ] = None,
@@ -122,7 +125,11 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
     async def get_gene_variants(
         gene_id: Annotated[
             str,
-            Field(description="Ensembl gene ID.", examples=["ENSG00000169174"]),
+            Field(
+                description="Ensembl gene ID.",
+                pattern=GENE_ID_PATTERN,
+                examples=["ENSG00000169174"],
+            ),
         ],
         dataset: Annotated[
             Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"],

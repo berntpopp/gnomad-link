@@ -10,12 +10,14 @@ from pydantic import Field
 
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, ToolInputError, run_mcp_tool
+from gnomad_link.mcp.patterns import GENE_ID_PATTERN, GENE_SYMBOL_PATTERN
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.sv_shaping import shape_sv_search
 from gnomad_link.services import FrequencyService
 
 # Cap how many returned ids become next_commands (no self-reference; <=3).
 _NEXT_COMMAND_CAP = 3
+_SV_REGION_PATTERN = r"^(chr)?([1-9]|1[0-9]|2[0-2]|X|Y)-\d+-\d+$"
 
 _SV_SEARCH_OUTPUT_SCHEMA = {
     "type": "object",
@@ -46,6 +48,7 @@ def register_sv_search_tools(
             str | None,
             Field(
                 description="HGNC gene symbol. Provide exactly one of gene_symbol, gene_id, or region.",
+                pattern=GENE_SYMBOL_PATTERN,
                 examples=["SMARCA4"],
             ),
         ] = None,
@@ -53,6 +56,7 @@ def register_sv_search_tools(
             str | None,
             Field(
                 description="Ensembl gene ID (preferred over symbol).",
+                pattern=GENE_ID_PATTERN,
                 examples=["ENSG00000127616"],
             ),
         ] = None,
@@ -60,6 +64,7 @@ def register_sv_search_tools(
             str | None,
             Field(
                 description="Region in CHROM-START-STOP format (e.g. 19-11089000-11200000).",
+                pattern=_SV_REGION_PATTERN,
                 examples=["19-11089000-11200000"],
             ),
         ] = None,

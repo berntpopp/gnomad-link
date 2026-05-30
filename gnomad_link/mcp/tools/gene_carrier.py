@@ -16,12 +16,10 @@ from pydantic import Field
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, ToolInputError, run_mcp_tool
 from gnomad_link.mcp.gene_carrier_shaping import shape_gene_carrier
+from gnomad_link.mcp.patterns import GENE_ID_PATTERN, GENE_SYMBOL_PATTERN
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.services import FrequencyService
 from gnomad_link.services.gene_carrier_filters import FilterConfig
-
-_GENE_ID_PATTERN = r"^ENSG\d{11}$"
-_GENE_SYMBOL_PATTERN = r"^[A-Za-z0-9._-]{1,32}$"
 
 _GENE_CARRIER_OUTPUT_SCHEMA = {
     "type": "object",
@@ -55,7 +53,7 @@ def register_gene_carrier_tools(
             Field(
                 default=None,
                 description="HGNC gene symbol (e.g. CFTR). Provide exactly one of gene_symbol/gene_id.",
-                pattern=_GENE_SYMBOL_PATTERN,
+                pattern=GENE_SYMBOL_PATTERN,
                 examples=["CFTR"],
             ),
         ] = None,
@@ -64,7 +62,7 @@ def register_gene_carrier_tools(
             Field(
                 default=None,
                 description="Ensembl gene ID (ENSG...). Provide exactly one of gene_symbol/gene_id.",
-                pattern=_GENE_ID_PATTERN,
+                pattern=GENE_ID_PATTERN,
                 examples=["ENSG00000001626"],
             ),
         ] = None,

@@ -133,21 +133,20 @@ class BaseGnomadClient:
                     self._session = await self._client.connect_async(reconnecting=True)
         return self._session
 
-    async def _acquire_slot(self) -> None:
+    async def _acquire_slot(self, *, timeout: float | None = None) -> None:
         """Acquire a concurrency slot, bounding the wait to give fast backpressure.
 
         An aggressive fan-out (e.g. 20 concurrent tool calls against a cap of 5)
         otherwise queues every excess request on the semaphore until the caller's
-        OWN tool-call timeout fires, surfacing as an opaque timeout. Instead we
-        wait at most GNOMAD_QUEUE_WAIT_TIMEOUT for a slot and then raise a
-        retryable RateLimitedError, so the LLM gets actionable backpressure
-        (retry with backoff) rather than a hang. The request timeout still covers
-        only the upstream call, not this queue wait.
+        OWN tool-call timeout fires, surfacing as an opaque timeout. The retry
+        layer passes a per-call remaining budget so all attempts share one
+        GNOMAD_QUEUE_WAIT_TIMEOUT window for slot waits, then raise a retryable
+        RateLimitedError. The request timeout still covers only the upstream
+        call, not this queue wait.
         """
+        wait_timeout = settings.GNOMAD_QUEUE_WAIT_TIMEOUT if timeout is None else timeout
         try:
-            await asyncio.wait_for(
-                self._semaphore.acquire(), timeout=settings.GNOMAD_QUEUE_WAIT_TIMEOUT
-            )
+            await asyncio.wait_for(self._semaphore.acquire(), timeout=max(0.0, wait_timeout))
         except TimeoutError as exc:
             raise RateLimitedError(
                 "Local concurrency limit saturated "
@@ -167,10 +166,13 @@ class BaseGnomadClient:
         NOT retried here (fast backpressure) and propagates for classification.
         """
         delay = _BACKOFF_BASE_SECONDS
+        loop = asyncio.get_running_loop()
+        queue_wait_deadline = loop.time() + settings.GNOMAD_QUEUE_WAIT_TIMEOUT
         for attempt in range(_MAX_ATTEMPTS):
             try:
                 session = await self._ensure_session()
-                await self._acquire_slot()
+                queue_wait_remaining = max(0.0, queue_wait_deadline - loop.time())
+                await self._acquire_slot(timeout=queue_wait_remaining)
                 try:
                     result: dict[str, Any] = await session.execute(
                         query_doc, variable_values=variables

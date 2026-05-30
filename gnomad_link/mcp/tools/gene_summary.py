@@ -12,6 +12,7 @@ from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, ToolInputError, run_mcp_tool
 from gnomad_link.mcp.gene_summary_shaping import rank_pathogenic_clinvar
 from gnomad_link.mcp.headline import gene_summary_headline
+from gnomad_link.mcp.patterns import GENE_ID_PATTERN, GENE_SYMBOL_PATTERN
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.services import FrequencyService
 
@@ -49,12 +50,17 @@ def register_gene_summary_tools(
     async def get_gene_summary(
         gene_symbol: Annotated[
             str | None,
-            Field(description="HGNC gene symbol; provide this OR gene_id.", examples=["PCSK9"]),
+            Field(
+                description="HGNC gene symbol; provide this OR gene_id.",
+                pattern=GENE_SYMBOL_PATTERN,
+                examples=["PCSK9"],
+            ),
         ] = None,
         gene_id: Annotated[
             str | None,
             Field(
                 description="Ensembl gene ID; provide this OR gene_symbol.",
+                pattern=GENE_ID_PATTERN,
                 examples=["ENSG00000169174"],
             ),
         ] = None,

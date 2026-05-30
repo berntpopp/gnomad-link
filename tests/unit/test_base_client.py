@@ -28,6 +28,16 @@ class _FakeSession:
         self.execute = execute
 
 
+class _FakeLoop:
+    """Deterministic clock for retry budget tests."""
+
+    def __init__(self, times: list[float]) -> None:
+        self._times = iter(times)
+
+    def time(self) -> float:
+        return next(self._times)
+
+
 class TestBaseGnomadClient:
     """Test base gnomAD client functionality."""
 
@@ -158,6 +168,38 @@ class TestBaseGnomadClient:
 
         assert result == {"gene": {"symbol": "OK"}}
         assert execute.call_count == 2
+
+    @pytest.mark.asyncio
+    async def test_retry_reuses_one_queue_wait_budget(self, client, monkeypatch):
+        """Retries must share one GNOMAD_QUEUE_WAIT_TIMEOUT budget for slot waits."""
+        from gql.transport.exceptions import TransportServerError
+
+        from gnomad_link.config import settings
+
+        monkeypatch.setattr(settings, "GNOMAD_QUEUE_WAIT_TIMEOUT", 10.0)
+        monkeypatch.setattr(asyncio, "sleep", AsyncMock())
+        monkeypatch.setattr(asyncio, "get_running_loop", lambda: _FakeLoop([100.0, 100.0, 102.0]))
+        execute = AsyncMock(
+            side_effect=[
+                TransportServerError("bad gateway", 503),
+                {"gene": {"symbol": "OK"}},
+            ]
+        )
+        acquire_slot = AsyncMock()
+
+        with (
+            patch.object(
+                client, "_ensure_session", new=AsyncMock(return_value=_FakeSession(execute=execute))
+            ),
+            patch.object(client, "_acquire_slot", new=acquire_slot),
+        ):
+            result = await client.execute_query("gene", {})
+
+        assert result == {"gene": {"symbol": "OK"}}
+        first_wait = acquire_slot.await_args_list[0].kwargs["timeout"]
+        second_wait = acquire_slot.await_args_list[1].kwargs["timeout"]
+        assert first_wait == pytest.approx(10.0)
+        assert second_wait == pytest.approx(8.0)
 
     @pytest.mark.asyncio
     async def test_no_retry_on_graphql_query_error(self, client, monkeypatch):

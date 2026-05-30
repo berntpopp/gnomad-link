@@ -38,10 +38,10 @@ dependencies; no live gnomAD calls in default CI; research-use scope only.
 - [x] **G6 output structure (#10)** — headline builders for the 6 headline-less
   tools; `has_clinvar` self-describing sentinel; normalize region_span truncation
   block. (af_source labels #2 moved to G10.)
-- [ ] **G7 token efficiency (#8)** — compare_variant compact `response_mode`
+- [x] **G7 token efficiency (#8)** — compare_variant compact `response_mode`
   (drop redundant per-dataset populations[]); delete duplicate `sources` key in
   gene_carrier_shaping.
-- [ ] **G8 input schema + patterns (#11,#12)** — clinvar variant_id pattern,
+- [x] **G8 input schema + patterns (#11,#12)** — clinvar variant_id pattern,
   sv_type Literal (non-breaking via case-normalizing), transcript_id pattern,
   compare datasets list[Literal], bare-Field descriptions, prompts consequence
   example; shared `patterns.py`; per-call queue-wait deadline in base_client.
