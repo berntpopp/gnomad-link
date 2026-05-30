@@ -23,6 +23,7 @@ from gnomad_link.api import (
     UpstreamInputError,
 )
 from gnomad_link.config import settings
+from gnomad_link.mcp.clinvar_date_cache import get_cached_clinvar_release_date
 from gnomad_link.mcp.resources import GNOMAD_DATA_RELEASE
 
 logger = logging.getLogger(__name__)
@@ -113,6 +114,12 @@ def _provenance_meta(context: McpErrorContext | None = None) -> dict[str, Any]:
     the provenance pointer is self-contained even on an error envelope.
     """
     meta: dict[str, Any] = dict(_BASE_META)
+    # Once the first capabilities call has fetched it, pin the ClinVar release on
+    # every envelope so an LLM citing a ClinVar classification can name the
+    # version that produced it. Omitted while still unknown to avoid null noise.
+    clinvar_date = get_cached_clinvar_release_date()
+    if clinvar_date is not None:
+        meta["clinvar_release_date"] = clinvar_date
     if context is not None and context.dataset:
         meta["dataset"] = context.dataset
         build = _DATASET_BUILD.get(context.dataset)
@@ -328,7 +335,7 @@ def mcp_validation_tool_error(
         ),
         "_meta": {
             "next_commands": [{"tool": _FALLBACK_TOOL, "arguments": {}}],
-            **_BASE_META,
+            **_provenance_meta(),
         },
     }
     return McpToolError(payload)

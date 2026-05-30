@@ -15,8 +15,8 @@ from typing import Any, cast
 import mcp.types
 
 from gnomad_link.mcp.errors import (
-    _BASE_META,
     _FALLBACK_TOOL,
+    _provenance_meta,
     record_mcp_error,
     record_schema_drift,
 )
@@ -47,7 +47,7 @@ def actionable_output_validation_error(
             "next_commands": [
                 {"tool": _FALLBACK_TOOL, "arguments": {}},
             ],
-            **_BASE_META,
+            **_provenance_meta(),
         },
     }
     record_mcp_error(

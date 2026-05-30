@@ -6,6 +6,7 @@ from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
 from gnomad_link.config import settings
+from gnomad_link.mcp.clinvar_date_cache import get_cached_clinvar_release_date
 
 RESEARCH_USE_NOTICE = "Research use only; not for clinical decision support."
 
@@ -30,9 +31,10 @@ def get_capabilities_resource() -> dict[str, Any]:
         "server_version": _server_version(),
         "mcp_protocol_version": MCP_PROTOCOL_VERSION,
         "gnomad_release": GNOMAD_DATA_RELEASE,
-        # Populated by a startup probe in a future task; remains None when the
-        # probe is unavailable so callers can still discover the field shape.
-        "clinvar_release_date": None,
+        # Echoes the process-cached live ClinVar release date once the first
+        # get_server_capabilities tool call has fetched it; None until then (the
+        # sync resource handler never calls upstream itself).
+        "clinvar_release_date": get_cached_clinvar_release_date(),
         "research_use_only": True,
         "datasets": {
             "gnomad_r2_1": {"reference_genome": "GRCh37"},
