@@ -158,12 +158,24 @@ def register_specialty_tools(
             ),
         ],
         reference_genome: Annotated[Literal["GRCh37", "GRCh38"], Field()] = "GRCh38",
+        include_expression: Annotated[
+            bool,
+            Field(
+                description="Attach a compact GTEx tissue-expression summary (top tissues) "
+                "for this transcript via the gene path. Set False to skip the extra "
+                "upstream call and return only exon structure.",
+            ),
+        ] = True,
     ) -> dict[str, Any]:
-        """Use this when a caller has an Ensembl transcript id and needs exon structure or GTEx tissue expression. For gene-level info use get_gene_details. Returns ~5-15kB."""
+        """Use this when a caller has an Ensembl transcript id and needs exon structure and (by default) a compact GTEx tissue-expression summary for that transcript. GTEx is sourced via the gene path; the lookup is best-effort, so exon structure is returned even if expression is unavailable. For gene-level info use get_gene_details. Returns ~3-8kB (set include_expression=False to skip GTEx)."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()
-            return await service.get_transcript(transcript_id, reference_genome)
+            return await service.get_transcript_details(
+                transcript_id=transcript_id,
+                reference_genome=reference_genome,
+                include_expression=include_expression,
+            )
 
         return await run_mcp_tool(
             "get_transcript_details",

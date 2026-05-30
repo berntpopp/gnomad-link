@@ -477,6 +477,22 @@ class FrequencyService:
         """Raw transcript data pass-through."""
         return await self.client.get_transcript(transcript_id, reference_genome)
 
+    async def get_transcript_details(
+        self,
+        *,
+        transcript_id: str,
+        reference_genome: str = "GRCh38",
+        include_expression: bool = True,
+    ) -> dict[str, Any]:
+        """Delegate to TranscriptService: unwrapped transcript + best-effort GTEx."""
+        from gnomad_link.services.transcript_service import TranscriptService
+
+        return await TranscriptService(client=self.client).get_transcript_details(
+            transcript_id=transcript_id,
+            reference_genome=reference_genome,
+            include_expression=include_expression,
+        )
+
     async def liftover_variant(
         self, source_variant_id: str, reference_genome: str = "GRCh38"
     ) -> list[dict[str, Any]]:
