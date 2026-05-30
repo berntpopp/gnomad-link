@@ -72,6 +72,17 @@ def register_coordinate_tools(
                 "source_variant_id": source_variant_id,
                 "source_reference_genome": build,
             }
+            if not results:
+                # An empty result is a valid answer, not an error: explain it so the
+                # LLM does not read bare results:[] as a failure (mirrors how
+                # compare_variant_across_datasets surfaces build_notes).
+                target = "GRCh38" if build == "GRCh37" else "GRCh37"
+                payload["build_note"] = (
+                    f"No liftover mapping found for {source_variant_id} from {build} to "
+                    f"{target}. The variant may be build-specific (no equivalent coordinate "
+                    "in the other genome), an indel that does not lift cleanly, or absent "
+                    "from the liftover tables. Confirm the id with resolve_variant_id."
+                )
             if source_genome is None and reference_genome is not None:
                 payload["_meta"] = {
                     "deprecated_params": {
