@@ -60,6 +60,27 @@ def test_rank_pathogenic_emits_truncated_when_capped() -> None:
     }
 
 
+def test_rank_pathogenic_excludes_conflicting() -> None:
+    """"Conflicting classifications of pathogenicity" must not count as P/LP.
+
+    The string contains the "pathogenic" substring, so a naive membership test
+    would wrongly include it. Mirrors gene_carrier_filters.is_pathogenic_clinvar.
+    """
+    rows = [
+        {"variant_id": "1-1-A-G", "clinical_significance": "Pathogenic", "gold_stars": 3},
+        {
+            "variant_id": "1-2-A-G",
+            "clinical_significance": "Conflicting classifications of pathogenicity",
+            "gold_stars": 2,
+        },
+    ]
+
+    summary = rank_pathogenic_clinvar(rows, clinvar_limit=10)
+
+    assert summary["pathogenic_count"] == 1
+    assert [r["variant_id"] for r in summary["top_pathogenic"]] == ["1-1-A-G"]
+
+
 def test_rank_pathogenic_handles_missing_gold_stars() -> None:
     rows = [
         {"variant_id": "1-1-A-G", "clinical_significance": "Pathogenic", "gold_stars": None},

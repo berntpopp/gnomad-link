@@ -37,12 +37,37 @@ def test_summary_counts_classifications_correctly() -> None:
         "pathogenic": 2,
         "likely_pathogenic": 1,
         "uncertain": 1,
+        "conflicting": 0,
         "likely_benign": 1,
         "benign": 1,
         "other": 2,
         "conflict": True,
         "total": 8,
     }
+
+
+def test_conflicting_classification_not_counted_pathogenic() -> None:
+    """"Conflicting classifications of pathogenicity" lands in its own bucket.
+
+    It contains the "pathogenic" substring, so a naive `"pathogenic" in s` test
+    would over-count it as pathogenic. It must not inflate the pathogenic side
+    nor (on its own) trip the pathogenic-vs-benign `conflict` flag.
+    """
+    from gnomad_link.mcp.shaping import summarize_clinvar_submissions
+
+    submissions: list[dict[str, Any]] = [
+        {"clinical_significance": "Conflicting classifications of pathogenicity"},
+        {"clinical_significance": "Conflicting classifications of pathogenicity"},
+        {"clinical_significance": "Uncertain significance"},
+    ]
+
+    summary = summarize_clinvar_submissions(submissions)
+
+    assert summary["conflicting"] == 2
+    assert summary["pathogenic"] == 0
+    assert summary["likely_pathogenic"] == 0
+    assert summary["conflict"] is False
+    assert summary["total"] == 3
 
 
 def test_summary_no_conflict_when_only_pathogenic() -> None:
@@ -103,6 +128,7 @@ def test_summary_empty_submissions() -> None:
         "pathogenic": 0,
         "likely_pathogenic": 0,
         "uncertain": 0,
+        "conflicting": 0,
         "likely_benign": 0,
         "benign": 0,
         "other": 0,
@@ -170,6 +196,7 @@ async def test_get_clinvar_variant_details_emits_summary_via_facade() -> None:
         "pathogenic": 2,
         "likely_pathogenic": 1,
         "uncertain": 1,
+        "conflicting": 0,
         "likely_benign": 1,
         "benign": 1,
         "other": 2,

@@ -390,7 +390,10 @@ def _classify_clinical_significance(sig: str | None) -> str:
     """Map a free-text ClinVar clinical_significance to a canonical bucket.
 
     Ordering matters: "uncertain" is checked first so "Uncertain significance"
-    cannot fall through to the pathogenic/benign branches. Then "likely
+    cannot fall through to the pathogenic/benign branches. "conflicting" is
+    checked next so "Conflicting classifications of pathogenicity" is not
+    swallowed by the bare "pathogenic" substring branch (mirrors the
+    gene_carrier_filters P/LP rule, which excludes conflicting). Then "likely
     pathogenic" / "likely benign" win over their bare counterparts so the
     "likely" substring is not swallowed by a broader match.
     """
@@ -399,6 +402,8 @@ def _classify_clinical_significance(sig: str | None) -> str:
     s = sig.lower()
     if "uncertain" in s or "vus" in s:
         return "uncertain"
+    if "conflicting" in s:
+        return "conflicting"
     if "pathogenic" in s and "likely" in s:
         return "likely_pathogenic"
     if "pathogenic" in s:
@@ -416,12 +421,15 @@ def summarize_clinvar_submissions(submissions: list[dict[str, Any]]) -> dict[str
     Returns a dict with counts per classification bucket, a `conflict` flag
     (True when both pathogenic-side and benign-side reviewers are present),
     and total. Counts are computed from the FULL input, so a truncated
-    response still reports accurate aggregates.
+    response still reports accurate aggregates. "Conflicting classifications of
+    pathogenicity" submissions land in their own `conflicting` bucket and do not
+    inflate the pathogenic side.
     """
     counts = {
         "pathogenic": 0,
         "likely_pathogenic": 0,
         "uncertain": 0,
+        "conflicting": 0,
         "likely_benign": 0,
         "benign": 0,
         "other": 0,

@@ -14,10 +14,16 @@ _PATHOGENIC_ROW_KEEP = ("variant_id", "clinical_significance", "gold_stars", "ma
 
 
 def _is_pathogenic(significance: str | None) -> bool:
-    """True for ClinVar Pathogenic / Likely pathogenic (and combined) classifications."""
+    """True for ClinVar Pathogenic / Likely pathogenic classifications.
+
+    Excludes "Conflicting classifications of pathogenicity" (which contains the
+    "pathogenic" substring) so it is not counted as P/LP, matching the
+    gene_carrier_filters.is_pathogenic_clinvar rule.
+    """
     if not significance:
         return False
-    return "pathogenic" in significance.lower()
+    s = significance.lower()
+    return "pathogenic" in s and "conflicting" not in s
 
 
 def _project_pathogenic_row(row: dict[str, Any]) -> dict[str, Any]:
