@@ -37,6 +37,7 @@ EXPECTED_RESOURCE_URIS = {
     "gnomad://capabilities",
     "gnomad://usage",
     "gnomad://research-use",
+    "gnomad://reference",
     "gnomad://citations",
 }
 
@@ -264,6 +265,77 @@ def test_capabilities_deprecated_tools_includes_get_clinvar_meta() -> None:
 
     caps = get_capabilities_resource()
     assert "get_clinvar_meta" in caps["deprecated_tools"]
+
+
+def test_capabilities_documents_prompts() -> None:
+    from gnomad_link.mcp.resources import get_capabilities_resource
+
+    caps = get_capabilities_resource()
+    assert set(caps["prompts"]) == {
+        "variant_frequency_workflow",
+        "gene_constraint_workflow",
+        "clinical_variant_workflow",
+        "region_scan_workflow",
+    }
+
+
+def test_capabilities_lists_full_error_code_set() -> None:
+    from gnomad_link.mcp.resources import get_capabilities_resource
+
+    caps = get_capabilities_resource()
+    assert set(caps["error_codes"]) == {
+        "not_found",
+        "invalid_input",
+        "build_mismatch",
+        "rate_limited",
+        "validation_failed",
+        "upstream_unavailable",
+        "output_validation_failed",
+        "internal_error",
+    }
+
+
+def test_capabilities_documents_parameter_conventions_and_contracts() -> None:
+    from gnomad_link.mcp.resources import get_capabilities_resource
+
+    caps = get_capabilities_resource()
+    assert {"dataset", "reference_genome", "sv_dataset", "liftover"} <= set(
+        caps["parameter_conventions"]
+    )
+    assert caps["contracts"]["resource"] == "gnomad://reference"
+    assert caps["concurrency"]["queue_wait_seconds"] >= 1
+
+
+def test_reference_resource_has_taxonomy_truncation_glossary() -> None:
+    from gnomad_link.mcp.resources import get_reference_resource
+
+    ref = get_reference_resource()
+    # All 8 error codes documented with retryable + when.
+    assert set(ref["error_taxonomy"]["codes"]) == {
+        "not_found",
+        "invalid_input",
+        "build_mismatch",
+        "rate_limited",
+        "validation_failed",
+        "upstream_unavailable",
+        "output_validation_failed",
+        "internal_error",
+    }
+    # All 14 truncation kinds enumerated, including both SV singular/plural.
+    kinds = set(ref["truncation_contract"]["kinds"])
+    assert {"structural_variant", "structural_variants"} <= kinds
+    assert len(kinds) == 14
+    # Field glossary states units/scale for the load-bearing fields.
+    assert "ac / an" in ref["field_glossary"]["af"]
+
+
+@pytest.mark.asyncio
+async def test_reference_resource_registered(fake_service_factory) -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    mcp = create_gnomad_mcp(service_factory=fake_service_factory)
+    resource_uris = {str(res.uri) for res in await mcp.list_resources()}
+    assert "gnomad://reference" in resource_uris
 
 
 @pytest.mark.asyncio

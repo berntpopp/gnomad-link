@@ -29,7 +29,12 @@ _INSTRUCTIONS = (
     "gnomad_r4 is default.\n"
     "- Compact defaults trim subcohort and zero-AC populations; pass "
     "include_subcohorts=True or response_mode='full' for raw payloads.\n"
-    "- Discovery: call get_server_capabilities or read gnomad://capabilities. "
+    "- Chaining: every response carries _meta.next_commands, a ready-to-call list "
+    "of {tool, arguments} next steps (on success and error); execute the first "
+    "entry to advance without guessing the next tool.\n"
+    "- Discovery: call get_server_capabilities or read gnomad://capabilities; "
+    "gnomad://reference holds the error taxonomy, truncation contract, and field "
+    "glossary. "
     f"{RESEARCH_USE_NOTICE}"
 )
 

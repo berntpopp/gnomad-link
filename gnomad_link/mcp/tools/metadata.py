@@ -19,6 +19,7 @@ from gnomad_link.mcp.provenance import get_citations_resource
 from gnomad_link.mcp.resources import (
     RESEARCH_USE_NOTICE,
     get_capabilities_resource,
+    get_reference_resource,
     get_usage_resource,
 )
 from gnomad_link.services import FrequencyService
@@ -50,6 +51,12 @@ def register_metadata_tools(
     @mcp.resource("gnomad://usage", annotations=_RESOURCE_ANNOTATIONS)
     def usage_resource() -> str:
         return get_usage_resource()
+
+    @mcp.resource("gnomad://reference", annotations=_RESOURCE_ANNOTATIONS)
+    def reference_resource() -> dict[str, Any]:
+        # Detailed error taxonomy, truncation contract, and field/unit glossary,
+        # kept out of the always-read capabilities doc.
+        return get_reference_resource()
 
     @mcp.resource("gnomad://research-use", annotations=_RESOURCE_ANNOTATIONS)
     def research_use_resource() -> dict[str, Any]:
