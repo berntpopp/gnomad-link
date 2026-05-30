@@ -36,6 +36,10 @@ class Settings(BaseSettings):
 
     # API Configuration
     GNOMAD_API_URL: str = "https://gnomad.broadinstitute.org/api"
+    # Max concurrent in-flight upstream GraphQL requests per client. Bounds burst
+    # pressure on gnomAD's rate limiter; the jittered retry layer absorbs residual
+    # 429s. Keep conservative for the public endpoint; raise for trusted runs.
+    GNOMAD_MAX_CONCURRENCY: int = 5
 
     # Cache Configuration
     CACHE_SIZE: int = 1024  # Maximum number of variants to cache

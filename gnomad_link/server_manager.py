@@ -45,10 +45,18 @@ class UnifiedServerManager:
         @asynccontextmanager
         async def lifespan(app: FastAPI):
             self.logger.info("Starting gnomAD Link host application...")
-            app.state.frequency_service = self._create_frequency_service()
+            service = self._create_frequency_service()
+            app.state.frequency_service = service
             self.logger.info("Service ready")
-            yield
-            self.logger.info("Shutting down host application...")
+            try:
+                yield
+            finally:
+                self.logger.info("Shutting down host application...")
+                # Close the persistent gql session cleanly to avoid leaked sockets.
+                try:
+                    await service.close()
+                except Exception:  # best-effort teardown
+                    self.logger.debug("service close raised during shutdown", exc_info=True)
 
         app = FastAPI(
             title="gnomAD Link MCP Host",

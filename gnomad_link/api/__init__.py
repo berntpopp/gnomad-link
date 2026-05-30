@@ -1,6 +1,12 @@
 """API client module for gnomAD."""
 
-from .base_client import DataNotFoundError, GnomadApiError, VariantNotFoundError
+from .base_client import (
+    DataNotFoundError,
+    GnomadApiError,
+    RateLimitedError,
+    UpstreamInputError,
+    VariantNotFoundError,
+)
 from .client import UnifiedGnomadClient
 
 __all__ = [
@@ -10,4 +16,6 @@ __all__ = [
     "GnomadApiError",
     "VariantNotFoundError",
     "DataNotFoundError",
+    "UpstreamInputError",
+    "RateLimitedError",
 ]
