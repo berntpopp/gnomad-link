@@ -165,3 +165,114 @@ async def test_compute_carrier_frequency_emits_next_commands() -> None:
     assert next_tools == {"get_clinvar_variant_details", "get_variant_frequencies"}
     # No self-reference.
     assert "compute_carrier_frequency" not in next_tools
+
+
+def _ad_response() -> VariantFrequencyResponse:
+    # q = 0.011 (ac=220, an=20000).
+    return VariantFrequencyResponse(
+        variant_id="17-43044295-A-G",
+        dataset="gnomad_r4",
+        exome=VariantDataSource(
+            ac=220,
+            an=20000,
+            homozygote_count=0,
+            populations=[PopulationFrequency(id="nfe", ac=220, an=20000, homozygote_count=0)],
+        ),
+        genome=None,
+        gene_symbol="BRCA1",
+        major_consequence="missense_variant",
+    )
+
+
+def _xl_response() -> VariantFrequencyResponse:
+    # Sex-split rows: XX (q_XX=0.01) and XY (q_XY=0.02), plus ancestry+sex rows.
+    return VariantFrequencyResponse(
+        variant_id="X-153296777-C-T",
+        dataset="gnomad_r4",
+        exome=VariantDataSource(
+            ac=300,
+            an=20000,
+            homozygote_count=0,
+            hemizygote_count=100,
+            populations=[
+                PopulationFrequency(id="XX", ac=100, an=10000, homozygote_count=0),
+                PopulationFrequency(id="XY", ac=200, an=10000, homozygote_count=0),
+                PopulationFrequency(id="nfe_XX", ac=60, an=6000, homozygote_count=0),
+                PopulationFrequency(id="nfe_XY", ac=120, an=6000, homozygote_count=0),
+            ],
+        ),
+        genome=None,
+        gene_symbol="F8",
+        major_consequence="missense_variant",
+    )
+
+
+@pytest.mark.asyncio
+async def test_compute_carrier_frequency_ad_affected_or_carrier() -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    service = _StubFreqService(_ad_response())
+    mcp = create_gnomad_mcp(service_factory=lambda: service)
+    result = await mcp.call_tool(
+        "compute_carrier_frequency",
+        {"variant_id": "17-43044295-A-G", "inheritance": "AD"},
+    )
+    payload = result.structured_content or {}
+
+    # AD overall: 1 - (1 - 0.011)^2 == 2*0.011 - 0.011^2 == 0.021879.
+    assert payload["inheritance"] == "AD"
+    assert payload["overall"]["affected_or_carrier_frequency"] == pytest.approx(0.021879, abs=1e-6)
+    assert payload["overall"]["ci_low"] < payload["overall"]["affected_or_carrier_frequency"]
+    assert payload["overall"]["ci_high"] > payload["overall"]["affected_or_carrier_frequency"]
+
+
+@pytest.mark.asyncio
+async def test_compute_carrier_frequency_xl_sex_split() -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    service = _StubFreqService(_xl_response())
+    mcp = create_gnomad_mcp(service_factory=lambda: service)
+    result = await mcp.call_tool(
+        "compute_carrier_frequency",
+        {"variant_id": "X-153296777-C-T", "inheritance": "XL"},
+    )
+    payload = result.structured_content or {}
+
+    assert payload["inheritance"] == "XL"
+    # Overall q_XX = 0.01 -> female_carrier = 0.02, affected_female = 0.0001.
+    assert payload["overall"]["female_carrier_frequency"] == pytest.approx(0.02, abs=1e-9)
+    assert payload["overall"]["affected_female_frequency"] == pytest.approx(0.0001, abs=1e-9)
+    # q_XY = 0.02 -> hemizygous affected male = 0.02 (no 2x, no square).
+    assert payload["overall"]["affected_male_frequency"] == pytest.approx(0.02, abs=1e-9)
+    # Ancestry rows are sex-split: nfe -> female_carrier from nfe_XX (q=0.01) = 0.02.
+    by_pop = {row["population"]: row for row in payload["per_population"]}
+    assert by_pop["nfe"]["female_carrier_frequency"] == pytest.approx(0.02, abs=1e-9)
+    assert by_pop["nfe"]["affected_male_frequency"] == pytest.approx(0.02, abs=1e-9)
+
+
+@pytest.mark.asyncio
+async def test_compute_carrier_frequency_xl_missing_sex_rows_yields_none() -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    response = VariantFrequencyResponse(
+        variant_id="X-153296777-C-T",
+        dataset="gnomad_r4",
+        exome=VariantDataSource(
+            ac=10,
+            an=10000,
+            homozygote_count=0,
+            populations=[PopulationFrequency(id="nfe", ac=10, an=10000, homozygote_count=0)],
+        ),
+        genome=None,
+    )
+    service = _StubFreqService(response)
+    mcp = create_gnomad_mcp(service_factory=lambda: service)
+    result = await mcp.call_tool(
+        "compute_carrier_frequency",
+        {"variant_id": "X-153296777-C-T", "inheritance": "XL"},
+    )
+    payload = result.structured_content or {}
+
+    # No XX/XY rows present -> sex-split estimates undefined, not zero.
+    assert payload["overall"]["female_carrier_frequency"] is None
+    assert payload["overall"]["affected_male_frequency"] is None

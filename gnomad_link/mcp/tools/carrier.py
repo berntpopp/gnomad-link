@@ -12,13 +12,17 @@ from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.build_check import detect_variant_id_mismatch
 from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, run_mcp_tool
 from gnomad_link.mcp.schema_relax import relax_output_schema
-from gnomad_link.models import VariantDataSource, VariantFrequencyResponse
+from gnomad_link.models import PopulationFrequency, VariantDataSource, VariantFrequencyResponse
 from gnomad_link.services import FrequencyService
 from gnomad_link.services.carrier_math import (
+    ad_affected_or_carrier,
     ar_affected,
     ar_carrier,
     variant_carrier_rate,
     wilson_ci,
+    xl_affected_female,
+    xl_affected_male,
+    xl_female_carrier,
 )
 
 # Shared with get_variant_frequencies: autosomal CHROM-POS-REF-ALT grammar.
@@ -130,10 +134,121 @@ def _ar_per_population(source: VariantDataSource | None, method: str) -> list[di
 
 
 def _max_carrier_population(rows: list[dict[str, Any]]) -> str | None:
-    scored = [r for r in rows if r.get("carrier_frequency") is not None]
+    def _score(row: dict[str, Any]) -> float | None:
+        for key in ("carrier_frequency", "female_carrier_frequency"):
+            value = row.get(key)
+            if value is not None:
+                return float(value)
+        return None
+
+    scored: list[tuple[dict[str, Any], float]] = [
+        (row, s) for row in rows for s in (_score(row),) if s is not None
+    ]
     if not scored:
         return None
-    return str(max(scored, key=lambda r: r["carrier_frequency"])["population"])
+    return str(max(scored, key=lambda item: item[1])[0]["population"])
+
+
+def _ad_overall(source: VariantDataSource | None) -> dict[str, Any]:
+    if source is None or source.an <= 0:
+        return {
+            "af": None,
+            "affected_or_carrier_frequency": None,
+            "ci_low": None,
+            "ci_high": None,
+        }
+    af = source.ac / source.an
+    ci_low, ci_high = wilson_ci(af=af, n=source.an)
+    return {
+        "af": af,
+        "affected_or_carrier_frequency": ad_affected_or_carrier(af),
+        "ci_low": ad_affected_or_carrier(ci_low) if ci_low is not None else None,
+        "ci_high": ad_affected_or_carrier(ci_high) if ci_high is not None else None,
+    }
+
+
+def _ad_per_population(source: VariantDataSource | None) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    if source is None:
+        return rows
+    for pop in source.populations:
+        af = pop.allele_frequency
+        rows.append(
+            {
+                "population": pop.name,
+                "ac": pop.allele_count,
+                "an": pop.allele_number,
+                "af": af,
+                "affected_or_carrier_frequency": (
+                    ad_affected_or_carrier(af) if af is not None else None
+                ),
+                "carrier_frequency": ad_affected_or_carrier(af) if af is not None else None,
+            }
+        )
+    return rows
+
+
+def _sex_af(populations: list[PopulationFrequency], pop_id: str) -> float | None:
+    for pop in populations:
+        if pop.name == pop_id:
+            return pop.allele_frequency
+    return None
+
+
+def _xl_block(q_xx: float | None, q_xy: float | None) -> dict[str, Any]:
+    return {
+        "q_xx": q_xx,
+        "q_xy": q_xy,
+        "female_carrier_frequency": xl_female_carrier(q_xx) if q_xx is not None else None,
+        "affected_female_frequency": xl_affected_female(q_xx) if q_xx is not None else None,
+        "affected_male_frequency": xl_affected_male(q_xy) if q_xy is not None else None,
+    }
+
+
+def _xl_ancestries(populations: list[PopulationFrequency]) -> list[str]:
+    # Ancestry codes that carry sex-split rows like "<anc>_XX" / "<anc>_XY".
+    ancestries: list[str] = []
+    seen: set[str] = set()
+    for pop in populations:
+        name = pop.name
+        if name in ("XX", "XY"):
+            continue
+        if name.endswith("_XX") or name.endswith("_XY"):
+            anc = name.rsplit("_", 1)[0]
+            if anc not in seen:
+                seen.add(anc)
+                ancestries.append(anc)
+    return ancestries
+
+
+def _xl_overall(source: VariantDataSource | None) -> dict[str, Any]:
+    if source is None:
+        return _xl_block(None, None)
+    return _xl_block(
+        _sex_af(source.populations, "XX"),
+        _sex_af(source.populations, "XY"),
+    )
+
+
+def _xl_per_population(source: VariantDataSource | None) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    if source is None:
+        return rows
+    for anc in _xl_ancestries(source.populations):
+        q_xx = _sex_af(source.populations, f"{anc}_XX")
+        q_xy = _sex_af(source.populations, f"{anc}_XY")
+        block = _xl_block(q_xx, q_xy)
+        rows.append(
+            {
+                "population": anc,
+                "af_xx": q_xx,
+                "af_xy": q_xy,
+                "female_carrier_frequency": block["female_carrier_frequency"],
+                "affected_female_frequency": block["affected_female_frequency"],
+                "affected_male_frequency": block["affected_male_frequency"],
+            }
+        )
+    return rows
 
 
 def register_carrier_tools(
@@ -197,8 +312,15 @@ def register_carrier_tools(
             service = service_factory()
             response = await service.get_variant_frequencies(variant_id, dataset)
             source = _preferred_source(response)
-            overall = _ar_overall(source, method)
-            per_population = _ar_per_population(source, method)
+            if inheritance == "AD":
+                overall = _ad_overall(source)
+                per_population = _ad_per_population(source)
+            elif inheritance == "XL":
+                overall = _xl_overall(source)
+                per_population = _xl_per_population(source)
+            else:  # AR
+                overall = _ar_overall(source, method)
+                per_population = _ar_per_population(source, method)
             if populations is not None:
                 wanted = {p.lower() for p in populations}
                 per_population = [
