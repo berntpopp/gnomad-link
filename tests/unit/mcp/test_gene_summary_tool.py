@@ -19,8 +19,16 @@ class _StubGeneSummaryService:
         gene_id: str | None = None,
         gene_symbol: str | None = None,
         dataset: str = "gnomad_r4",
+        include_expression: bool = True,
     ) -> dict[str, Any]:
-        self.calls.append({"gene_id": gene_id, "gene_symbol": gene_symbol, "dataset": dataset})
+        self.calls.append(
+            {
+                "gene_id": gene_id,
+                "gene_symbol": gene_symbol,
+                "dataset": dataset,
+                "include_expression": include_expression,
+            }
+        )
         return {
             "gene_id": "ENSG00000169174",
             "symbol": "PCSK9",
@@ -100,6 +108,54 @@ async def test_get_gene_summary_full_returns_raw_clinvar_variants() -> None:
     assert isinstance(payload["clinvar_variants"], list)
     assert len(payload["clinvar_variants"]) == 3
     assert "clinvar_summary" not in payload
+
+
+@pytest.mark.asyncio
+async def test_include_clinvar_false_drops_clinvar_block() -> None:
+    stub = _StubGeneSummaryService()
+    mcp = create_gnomad_mcp(service_factory=lambda: stub)
+
+    result = await mcp.call_tool(
+        "get_gene_summary", {"gene_symbol": "PCSK9", "include_clinvar": False}
+    )
+    payload = result.structured_content or {}
+
+    assert "clinvar_summary" not in payload
+    assert "clinvar_variants" not in payload
+    # Other sections remain.
+    assert payload["constraint"] == {"pli": 0.01, "oe_lof": 0.8}
+
+
+@pytest.mark.asyncio
+async def test_expression_only_projection() -> None:
+    stub = _StubGeneSummaryService()
+    mcp = create_gnomad_mcp(service_factory=lambda: stub)
+
+    result = await mcp.call_tool(
+        "get_gene_summary",
+        {"gene_symbol": "PCSK9", "include_clinvar": False, "include_constraint": False},
+    )
+    payload = result.structured_content or {}
+
+    assert "clinvar_summary" not in payload
+    assert "clinvar_variants" not in payload
+    assert "constraint" not in payload
+    assert payload["expression"]["mean_pext"] == 0.7  # expression still present
+
+
+@pytest.mark.asyncio
+async def test_include_expression_false_skips_service_fetch() -> None:
+    stub = _StubGeneSummaryService()
+    mcp = create_gnomad_mcp(service_factory=lambda: stub)
+
+    result = await mcp.call_tool(
+        "get_gene_summary", {"gene_symbol": "PCSK9", "include_expression": False}
+    )
+    payload = result.structured_content or {}
+
+    assert "expression" not in payload
+    # The flag is forwarded to the service so the GTEx call is skipped upstream.
+    assert stub.calls[0]["include_expression"] is False
 
 
 @pytest.mark.asyncio

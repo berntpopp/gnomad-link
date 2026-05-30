@@ -505,12 +505,19 @@ class FrequencyService:
         gene_id: str | None = None,
         gene_symbol: str | None = None,
         dataset: str = "gnomad_r4",
+        include_expression: bool = True,
     ) -> dict[str, Any]:
-        """Delegate to GeneSummaryService for the one-shot gene dossier."""
+        """Delegate to GeneSummaryService for the one-shot gene dossier.
+
+        include_expression=False skips the extra GTEx upstream call entirely.
+        """
         from gnomad_link.services.gene_summary_service import GeneSummaryService
 
         return await GeneSummaryService(client=self.client).get_gene_summary(
-            gene_id=gene_id, gene_symbol=gene_symbol, dataset=dataset
+            gene_id=gene_id,
+            gene_symbol=gene_symbol,
+            dataset=dataset,
+            include_expression=include_expression,
         )
 
     async def search_structural_variants(
