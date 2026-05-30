@@ -282,15 +282,26 @@ class UnifiedGnomadClient(BaseGnomadClient):
             return list(result["gene"]["variants"])
         return []
 
-    async def get_transcript_gtex(
-        self, transcript_id: str, reference_genome: str = "GRCh37"
+    async def get_gene_gtex(
+        self,
+        *,
+        gene_id: str | None = None,
+        gene_symbol: str | None = None,
+        reference_genome: str = "GRCh38",
     ) -> dict[str, Any]:
-        """Fetch only GTEx tissue expression for a transcript (GRCh37-populated)."""
-        variables = {
-            "transcript_id": transcript_id,
-            "reference_genome": reference_genome,
-        }
-        return await self.execute_query("transcript_gtex", variables, "v2")
+        """Fetch GTEx tissue expression via the gene's transcripts.
+
+        GTEx is exposed on ``gene.transcripts[].gtex_tissue_expression``. The
+        standalone ``transcript(transcript_id).gtex_tissue_expression`` field is
+        unavailable on GRCh38 and errors upstream on GRCh37, so the gene path is
+        the only working source.
+        """
+        variables: dict[str, Any] = {"reference_genome": reference_genome}
+        if gene_id:
+            variables["gene_id"] = gene_id
+        if gene_symbol:
+            variables["gene_symbol"] = gene_symbol
+        return await self.execute_query("gene_gtex", variables, "v4")
 
     async def get_liftover(
         self,

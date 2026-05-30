@@ -89,9 +89,9 @@ def test_compact_expression_returns_mean_pext_and_top_tissues() -> None:
         {"tissue": "Skin", "value": 1.0},
     ]
 
-    expr = compact_expression(pext=pext, gtex_tissue_expression=gtex)
+    expr = compact_expression(pext=pext, gtex_tissue_expression=gtex, source_build="GRCh38")
 
-    assert expr["source_build"] == "GRCh37"
+    assert expr["source_build"] == "GRCh38"
     assert expr["mean_pext"] == 0.7  # (0.8 + 0.6) / 2
     # Top 5 tissues by value, descending.
     assert [t["tissue"] for t in expr["top_tissues"]] == [
@@ -108,4 +108,4 @@ def test_compact_expression_unavailable_when_empty() -> None:
     expr = compact_expression(pext={"flags": [], "regions": []}, gtex_tissue_expression=[])
 
     assert expr["unavailable"] is True
-    assert "GRCh38" in expr["note"]
+    assert "empty" in expr["note"]

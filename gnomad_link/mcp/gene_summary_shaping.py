@@ -70,25 +70,25 @@ def compact_expression(
     *,
     pext: dict[str, Any] | None,
     gtex_tissue_expression: list[dict[str, Any]] | None,
+    source_build: str = "GRCh38",
 ) -> dict[str, Any]:
-    """Compact expression: mean pext + top-5 GTEx tissues, sourced from GRCh37.
+    """Compact expression: mean pext + top-5 GTEx tissues for the canonical transcript.
 
-    Returns ``{"unavailable": True, "note": ...}`` when neither pext regions
-    nor GTEx tissue values are present (the typical GRCh38 case).
+    pext is read from ``gene.pext`` and GTEx from the canonical transcript's
+    ``gtex_tissue_expression`` (both available on GRCh38). Returns
+    ``{"unavailable": True, "note": ...}`` only when neither pext regions nor
+    GTEx tissue values are present.
     """
     mean_pext = _mean_pext(pext)
     tissues = [t for t in (gtex_tissue_expression or []) if t.get("value") is not None]
     if mean_pext is None and not tissues:
         return {
             "unavailable": True,
-            "note": (
-                "Expression (pext/GTEx) is empty for this gene; gnomAD populates "
-                "it on GRCh37 (gnomad_r2_1) and typically not on GRCh38."
-            ),
+            "note": "Expression (pext/GTEx) is empty for this gene in gnomAD.",
         }
     top_tissues = sorted(tissues, key=lambda t: t.get("value") or 0.0, reverse=True)[:5]
     return {
-        "source_build": "GRCh37",
+        "source_build": source_build,
         "mean_pext": mean_pext,
         "top_tissues": [{"tissue": t.get("tissue"), "value": t.get("value")} for t in top_tissues],
     }

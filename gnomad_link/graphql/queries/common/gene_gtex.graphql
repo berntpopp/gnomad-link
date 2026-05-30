@@ -1,0 +1,19 @@
+query gene_gtex(
+    $gene_id: String
+    $gene_symbol: String
+    $reference_genome: ReferenceGenomeId!
+) {
+    gene(gene_id: $gene_id, gene_symbol: $gene_symbol, reference_genome: $reference_genome) {
+        canonical_transcript_id
+        mane_select_transcript {
+            ensembl_id
+        }
+        transcripts {
+            transcript_id
+            gtex_tissue_expression {
+                tissue
+                value
+            }
+        }
+    }
+}

@@ -4,9 +4,11 @@ Assembles a one-shot gene dossier from a single gene_summary GraphQL query:
 identity + coordinates, gnomAD constraint, canonical transcript, MANE-Select
 transcript, ClinVar variants, and a pext scaffold. The ClinVar block is
 best-effort: a malformed upstream shape degrades to an empty list with a
-partial flag rather than failing the whole call. Expression (pext + GTEx) is
-populated on GRCh37 and typically empty on GRCh38; the GRCh37 best-effort
-expression fetch is wired in via include_expression (Task C4.3).
+partial flag rather than failing the whole call. Expression (mean pext + top
+GTEx tissues) is sourced from the dossier's own build: gnomAD populates
+``gene.pext`` and ``gene.transcripts[].gtex_tissue_expression`` on GRCh38, so
+the expression fetch stays on the same build (Task C4.3). The GTEx fetch is
+itself best-effort, so mean pext survives even when GTEx is unavailable.
 """
 
 from __future__ import annotations
@@ -26,8 +28,12 @@ class _GeneSummaryClient(Protocol):
         dataset: str,
     ) -> dict[str, Any]: ...
 
-    async def get_transcript_gtex(
-        self, transcript_id: str, reference_genome: str = "GRCh37"
+    async def get_gene_gtex(
+        self,
+        *,
+        gene_id: str | None = None,
+        gene_symbol: str | None = None,
+        reference_genome: str = "GRCh38",
     ) -> dict[str, Any]: ...
 
 
@@ -122,37 +128,55 @@ class GeneSummaryService:
         dataset: str,
         reference_genome: str,
     ) -> dict[str, Any]:
-        """Resolve pext + canonical-transcript GTEx, backfilling from GRCh37 when needed.
+        """Resolve mean pext + canonical-transcript GTEx on the dossier's build.
 
-        On GRCh38 the primary gene's pext is empty, so re-fetch the gene on
-        GRCh37 (gnomad_r2_1) to obtain populated pext and the canonical
-        transcript GTEx expression. compact_expression downgrades to
-        {"unavailable": True} when both are empty.
+        ``gene.pext`` (already on the primary gene) and
+        ``gene.transcripts[].gtex_tissue_expression`` are both populated on
+        GRCh38, so expression stays on ``reference_genome`` with no GRCh37 hop.
+        The GTEx fetch is best-effort: a failure leaves mean pext intact rather
+        than degrading the whole expression block to unavailable.
         """
         pext = gene.get("pext")
+        mane = (gene.get("mane_select_transcript") or {}).get("ensembl_id")
         canonical_id = gene.get("canonical_transcript_id")
-        if reference_genome == "GRCh37":
-            gtex = await self._canonical_gtex(canonical_id, "GRCh37")
-            return compact_expression(pext=pext, gtex_tissue_expression=gtex)
-
-        # GRCh38 primary: backfill from GRCh37.
-        raw37 = await self.client.get_gene_summary(
+        gtex = await self._canonical_gtex(
             gene_id=gene_id,
             gene_symbol=gene_symbol,
-            reference_genome="GRCh37",
-            dataset="gnomad_r2_1",
+            reference_genome=reference_genome,
+            target_id=mane or canonical_id,
         )
-        gene37 = raw37.get("gene") or {}
-        pext37 = gene37.get("pext")
-        canonical37 = gene37.get("canonical_transcript_id") or canonical_id
-        gtex37 = await self._canonical_gtex(canonical37, "GRCh37")
-        return compact_expression(pext=pext37, gtex_tissue_expression=gtex37)
+        return compact_expression(
+            pext=pext, gtex_tissue_expression=gtex, source_build=reference_genome
+        )
 
     async def _canonical_gtex(
-        self, transcript_id: str | None, reference_genome: str
+        self,
+        *,
+        gene_id: str | None,
+        gene_symbol: str | None,
+        reference_genome: str,
+        target_id: str | None,
     ) -> list[dict[str, Any]]:
-        if not transcript_id:
+        """Best-effort canonical/MANE-transcript GTEx from gene.transcripts.
+
+        Returns [] on any upstream error so mean pext is preserved.
+        """
+        try:
+            raw = await self.client.get_gene_gtex(
+                gene_id=gene_id,
+                gene_symbol=gene_symbol,
+                reference_genome=reference_genome,
+            )
+        except Exception:
             return []
-        raw = await self.client.get_transcript_gtex(transcript_id, reference_genome)
-        transcript = raw.get("transcript") or {}
-        return list(transcript.get("gtex_tissue_expression") or [])
+        transcripts = (raw.get("gene") or {}).get("transcripts") or []
+        if target_id:
+            for transcript in transcripts:
+                if transcript.get("transcript_id") == target_id:
+                    return list(transcript.get("gtex_tissue_expression") or [])
+        # Fall back to the first transcript that carries GTEx values.
+        for transcript in transcripts:
+            gtex = transcript.get("gtex_tissue_expression")
+            if gtex:
+                return list(gtex)
+        return []

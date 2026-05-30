@@ -54,7 +54,8 @@ def _gene_payload() -> dict[str, Any]:
                 "gold_stars": 2,
             },
         ],
-        "pext": {"flags": [], "regions": []},
+        # GRCh38 pext IS populated (verified live against gnomAD r4).
+        "pext": {"flags": [], "regions": [{"start": 1, "stop": 10, "mean": 0.9}]},
     }
 
 
@@ -67,6 +68,7 @@ async def test_get_gene_summary_returns_gene_block_on_dataset_genome() -> None:
         gene_id="ENSG00000169174",
         gene_symbol=None,
         dataset="gnomad_r4",
+        include_expression=False,
     )
 
     assert result["gene_id"] == "ENSG00000169174"
@@ -86,7 +88,12 @@ async def test_get_gene_summary_uses_grch37_for_r2_1_dataset() -> None:
     client = _FakeClient(_gene_payload())
     svc = GeneSummaryService(client=client)
 
-    await svc.get_gene_summary(gene_id="ENSG00000169174", gene_symbol=None, dataset="gnomad_r2_1")
+    await svc.get_gene_summary(
+        gene_id="ENSG00000169174",
+        gene_symbol=None,
+        dataset="gnomad_r2_1",
+        include_expression=False,
+    )
 
     assert client.calls[0]["reference_genome"] == "GRCh37"
 
@@ -100,7 +107,10 @@ async def test_get_gene_summary_clinvar_failure_sets_partial_flag() -> None:
     svc = GeneSummaryService(client=client)
 
     result = await svc.get_gene_summary(
-        gene_id="ENSG00000169174", gene_symbol=None, dataset="gnomad_r4"
+        gene_id="ENSG00000169174",
+        gene_symbol=None,
+        dataset="gnomad_r4",
+        include_expression=False,
     )
 
     assert result["partial"] is True
@@ -108,21 +118,19 @@ async def test_get_gene_summary_clinvar_failure_sets_partial_flag() -> None:
 
 
 class _ExpressionClient:
-    """Captures the GRCh37 fallback fetch and returns canned pext / GTEx."""
+    """Primary gene fetch + the gene.transcripts GTEx fetch (GRCh38 path)."""
 
     def __init__(
         self,
         primary: dict[str, Any],
-        grch37: dict[str, Any] | None = None,
-        gtex: list[dict[str, Any]] | None = None,
-        raise_grch37: bool = False,
+        gtex_gene: dict[str, Any] | None = None,
+        raise_gtex: bool = False,
     ) -> None:
         self.primary = primary
-        self.grch37 = grch37
-        self.gtex = gtex
-        self.raise_grch37 = raise_grch37
+        self.gtex_gene = gtex_gene
+        self.raise_gtex = raise_gtex
         self.gene_calls: list[str] = []
-        self.transcript_calls: list[tuple[str, str]] = []
+        self.gtex_calls: list[str] = []
 
     async def get_gene_summary(
         self,
@@ -133,43 +141,90 @@ class _ExpressionClient:
         dataset: str,
     ) -> dict[str, Any]:
         self.gene_calls.append(reference_genome)
-        if reference_genome == "GRCh37":
-            if self.raise_grch37:
-                raise RuntimeError("upstream GRCh37 fetch failed")
-            return {"gene": self.grch37}
         return {"gene": self.primary}
 
-    async def get_transcript_gtex(
-        self, transcript_id: str, reference_genome: str = "GRCh37"
+    async def get_gene_gtex(
+        self,
+        *,
+        gene_id: str | None = None,
+        gene_symbol: str | None = None,
+        reference_genome: str = "GRCh38",
     ) -> dict[str, Any]:
-        self.transcript_calls.append((transcript_id, reference_genome))
-        return {"transcript": {"gtex_tissue_expression": self.gtex or []}}
+        self.gtex_calls.append(reference_genome)
+        if self.raise_gtex:
+            raise RuntimeError("upstream GTEx fetch failed")
+        return {"gene": self.gtex_gene or {}}
 
 
-def _grch37_gene_with_pext() -> dict[str, Any]:
-    g = _gene_payload()
-    g["pext"] = {"flags": [], "regions": [{"start": 1, "stop": 10, "mean": 0.9}]}
-    return g
+def _gtex_gene(canonical: str = "ENST00000302118") -> dict[str, Any]:
+    return {
+        "canonical_transcript_id": canonical,
+        "mane_select_transcript": {"ensembl_id": canonical},
+        "transcripts": [
+            {
+                "transcript_id": "ENST00000999999",
+                "gtex_tissue_expression": [{"tissue": "Brain", "value": 1.0}],
+            },
+            {
+                "transcript_id": canonical,
+                "gtex_tissue_expression": [
+                    {"tissue": "Liver", "value": 42.0},
+                    {"tissue": "Adipose", "value": 5.0},
+                ],
+            },
+        ],
+    }
 
 
 @pytest.mark.asyncio
-async def test_expression_fetched_from_grch37_when_dataset_is_grch38() -> None:
-    primary = _gene_payload()  # GRCh38 -> empty pext
-    client = _ExpressionClient(
-        primary=primary,
-        grch37=_grch37_gene_with_pext(),
-        gtex=[{"tissue": "Liver", "value": 42.0}],
-    )
+async def test_expression_sourced_from_grch38_gene_transcripts() -> None:
+    # GRCh38 primary gene already carries pext; GTEx comes from gene.transcripts
+    # on the SAME build (no GRCh37 hop).
+    client = _ExpressionClient(primary=_gene_payload(), gtex_gene=_gtex_gene())
     svc = GeneSummaryService(client=client)
 
     result = await svc.get_gene_summary(
         gene_id="ENSG00000169174", gene_symbol=None, dataset="gnomad_r4", include_expression=True
     )
 
-    assert client.gene_calls == ["GRCh38", "GRCh37"]
-    assert result["expression"]["source_build"] == "GRCh37"
-    assert result["expression"]["mean_pext"] == 0.9
-    assert result["expression"]["top_tissues"][0]["tissue"] == "Liver"
+    expr = result["expression"]
+    assert expr["source_build"] == "GRCh38"
+    assert expr["mean_pext"] == 0.9
+    # GTEx is pulled from the MANE/canonical transcript, not the first transcript.
+    assert expr["top_tissues"][0] == {"tissue": "Liver", "value": 42.0}
+    # No GRCh37 backfill: the primary summary is fetched once on GRCh38; GTEx on GRCh38.
+    assert client.gene_calls == ["GRCh38"]
+    assert client.gtex_calls == ["GRCh38"]
+
+
+@pytest.mark.asyncio
+async def test_expression_gtex_best_effort_keeps_mean_pext() -> None:
+    # GTEx fetch failing must NOT wipe mean_pext (still available from gene.pext).
+    client = _ExpressionClient(primary=_gene_payload(), raise_gtex=True)
+    svc = GeneSummaryService(client=client)
+
+    result = await svc.get_gene_summary(
+        gene_id="ENSG00000169174", gene_symbol=None, dataset="gnomad_r4", include_expression=True
+    )
+
+    expr = result["expression"]
+    assert expr.get("unavailable") is not True
+    assert expr["mean_pext"] == 0.9
+    assert expr["top_tissues"] == []
+
+
+@pytest.mark.asyncio
+async def test_expression_unavailable_when_no_pext_and_no_gtex() -> None:
+    primary = _gene_payload()
+    primary["pext"] = {"flags": [], "regions": []}  # truly empty
+    client = _ExpressionClient(primary=primary, raise_gtex=True)
+    svc = GeneSummaryService(client=client)
+
+    result = await svc.get_gene_summary(
+        gene_id="ENSG00000169174", gene_symbol=None, dataset="gnomad_r4", include_expression=True
+    )
+
+    assert result["expression"]["unavailable"] is True
 
 
 @pytest.mark.asyncio
@@ -182,17 +237,5 @@ async def test_expression_skipped_when_include_expression_false() -> None:
     )
 
     assert client.gene_calls == ["GRCh38"]
+    assert client.gtex_calls == []
     assert "expression" not in result
-
-
-@pytest.mark.asyncio
-async def test_expression_failure_degrades_to_unavailable_and_sets_partial() -> None:
-    client = _ExpressionClient(primary=_gene_payload(), raise_grch37=True)
-    svc = GeneSummaryService(client=client)
-
-    result = await svc.get_gene_summary(
-        gene_id="ENSG00000169174", gene_symbol=None, dataset="gnomad_r4", include_expression=True
-    )
-
-    assert result["expression"]["unavailable"] is True
-    assert result["partial"] is True
