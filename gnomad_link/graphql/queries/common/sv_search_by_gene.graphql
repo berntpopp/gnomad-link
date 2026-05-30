@@ -1,0 +1,21 @@
+query sv_search_by_gene(
+    $gene_id: String
+    $gene_symbol: String
+    $reference_genome: ReferenceGenomeId!
+    $sv_dataset: StructuralVariantDatasetId!
+) {
+    gene(gene_id: $gene_id, gene_symbol: $gene_symbol, reference_genome: $reference_genome) {
+        structural_variants(dataset: $sv_dataset) {
+            variant_id
+            type
+            chrom
+            pos
+            end
+            length
+            af
+            ac
+            an
+            major_consequence
+        }
+    }
+}

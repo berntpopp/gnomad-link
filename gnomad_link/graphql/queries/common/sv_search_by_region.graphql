@@ -1,0 +1,22 @@
+query sv_search_by_region(
+    $chrom: String!
+    $start: Int!
+    $stop: Int!
+    $reference_genome: ReferenceGenomeId!
+    $sv_dataset: StructuralVariantDatasetId!
+) {
+    region(chrom: $chrom, start: $start, stop: $stop, reference_genome: $reference_genome) {
+        structural_variants(dataset: $sv_dataset) {
+            variant_id
+            type
+            chrom
+            pos
+            end
+            length
+            af
+            ac
+            an
+            major_consequence
+        }
+    }
+}

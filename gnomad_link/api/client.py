@@ -313,3 +313,64 @@ class UnifiedGnomadClient(BaseGnomadClient):
 
         result = await self.execute_query("liftover", variables)
         return list(result.get("liftover", []))
+
+    async def search_structural_variants_by_gene(
+        self,
+        *,
+        gene_id: str | None,
+        gene_symbol: str | None,
+        reference_genome: str,
+        sv_dataset: str = "gnomad_sv_r4",
+    ) -> list[dict[str, Any]]:
+        """Search structural variants overlapping a gene.
+
+        Args:
+            gene_id: Ensembl gene ID (mutually exclusive with gene_symbol)
+            gene_symbol: HGNC gene symbol
+            reference_genome: GRCh37 or GRCh38 (derived from sv_dataset)
+            sv_dataset: StructuralVariantDatasetId enum value
+
+        Returns:
+            Flat list of structural variant rows (may be empty)
+        """
+        variables: dict[str, Any] = {
+            "gene_id": gene_id,
+            "gene_symbol": gene_symbol,
+            "reference_genome": reference_genome,
+            "sv_dataset": sv_dataset,
+        }
+        result = await self.execute_query("sv_search_by_gene", variables, "v4")
+        gene = result.get("gene") or {}
+        return list(gene.get("structural_variants") or [])
+
+    async def search_structural_variants_by_region(
+        self,
+        *,
+        chrom: str,
+        start: int,
+        stop: int,
+        reference_genome: str,
+        sv_dataset: str = "gnomad_sv_r4",
+    ) -> list[dict[str, Any]]:
+        """Search structural variants overlapping a region.
+
+        Args:
+            chrom: Chromosome (no chr prefix)
+            start: 1-based start position
+            stop: 1-based stop position
+            reference_genome: GRCh37 or GRCh38 (derived from sv_dataset)
+            sv_dataset: StructuralVariantDatasetId enum value
+
+        Returns:
+            Flat list of structural variant rows (may be empty)
+        """
+        variables: dict[str, Any] = {
+            "chrom": chrom,
+            "start": start,
+            "stop": stop,
+            "reference_genome": reference_genome,
+            "sv_dataset": sv_dataset,
+        }
+        result = await self.execute_query("sv_search_by_region", variables, "v4")
+        region = result.get("region") or {}
+        return list(region.get("structural_variants") or [])

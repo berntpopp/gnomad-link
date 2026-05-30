@@ -496,3 +496,23 @@ class FrequencyService:
         return await GeneSummaryService(client=self.client).get_gene_summary(
             gene_id=gene_id, gene_symbol=gene_symbol, dataset=dataset
         )
+
+    async def search_structural_variants(
+        self,
+        *,
+        gene_symbol: str | None = None,
+        gene_id: str | None = None,
+        region: str | None = None,
+        sv_dataset: str = "gnomad_sv_r4",
+    ) -> list[dict[str, Any]]:
+        """Delegate SV search to StructuralVariantService over the shared client."""
+        from gnomad_link.services.structural_variant_service import (
+            StructuralVariantService,
+        )
+
+        return await StructuralVariantService(client=self.client).search_structural_variants(
+            gene_symbol=gene_symbol,
+            gene_id=gene_id,
+            region=region,
+            sv_dataset=sv_dataset,
+        )
