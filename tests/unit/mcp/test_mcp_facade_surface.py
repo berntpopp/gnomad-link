@@ -22,6 +22,7 @@ EXPECTED_TOOLS = {
     "search_genes",
     "resolve_variant_id",
     "search_variants",  # deprecated alias retained for one release
+    "compute_carrier_frequency",
     "get_gnomad_diagnostics",
 }
 

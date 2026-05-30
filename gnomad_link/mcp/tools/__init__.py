@@ -6,6 +6,7 @@ from collections.abc import Callable
 
 from fastmcp import FastMCP
 
+from gnomad_link.mcp.tools.carrier import register_carrier_tools
 from gnomad_link.mcp.tools.clinvar import register_clinvar_tools
 from gnomad_link.mcp.tools.coordinates import register_coordinate_tools
 from gnomad_link.mcp.tools.diagnostics import register_diagnostics_tools
@@ -24,6 +25,7 @@ def register_gnomad_tools(
 ) -> None:
     register_metadata_tools(mcp)
     register_variant_tools(mcp, service_factory=service_factory)
+    register_carrier_tools(mcp, service_factory=service_factory)
     register_gene_tools(mcp, service_factory=service_factory)
     register_clinvar_tools(mcp, service_factory=service_factory)
     register_coordinate_tools(mcp, service_factory=service_factory)

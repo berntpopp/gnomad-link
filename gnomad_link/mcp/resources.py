@@ -78,6 +78,7 @@ def get_capabilities_resource() -> dict[str, Any]:
             "search_genes",
             "resolve_variant_id",
             "search_variants",
+            "compute_carrier_frequency",
             "get_gnomad_diagnostics",
         ],
         "deprecated_tools": {
@@ -100,6 +101,7 @@ def get_capabilities_resource() -> dict[str, Any]:
             "search_genes": "~1-3kB",
             "resolve_variant_id": "~1-5kB (enrichment dependent)",
             "search_variants": "~1-5kB (deprecated alias)",
+            "compute_carrier_frequency": "~2-4kB (per-population dependent)",
             "get_gnomad_diagnostics": "<1kB",
         },
         "limitations": [
@@ -132,6 +134,7 @@ def get_capabilities_resource() -> dict[str, Any]:
                 "get_variant_details",
                 "get_mitochondrial_variant",
                 "get_structural_variant",
+                "compute_carrier_frequency",
             ],
             "gene": ["get_gene_details", "get_gene_variants", "search_genes"],
             "clinical": ["get_clinvar_variant_details", "get_clinvar_meta"],
