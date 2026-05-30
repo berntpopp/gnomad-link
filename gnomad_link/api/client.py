@@ -1,10 +1,32 @@
 """Unified gnomAD client for both FastAPI and MCP."""
 
+import asyncio
 from typing import Any
 
 from gnomad_link.graphql import QueryBuilder
 
 from .base_client import BaseGnomadClient
+
+# gnomAD enforces a per-query cost limit of 25 (one unit per clinvar_variant
+# alias). Batches must stay at or below it; 24 leaves a one-unit safety margin.
+# (The gnomad-carrier-frequency reference uses 50, which now fails every batch.)
+_CLINVAR_SUBMISSIONS_BATCH_SIZE = 24
+
+
+def _build_clinvar_submissions_query(variant_ids: list[str], reference_genome: str) -> str:
+    """Aliased batch query for ClinVar submissions (one alias per variant).
+
+    Ports gnomad-carrier-frequency's buildSubmissionsQuery. Variant ids are
+    inlined as string literals (they contain '-'); reference_genome is a GraphQL
+    enum (unquoted). Callers pass only gnomAD-sourced ids, so this is not an
+    injection surface.
+    """
+    parts = [
+        f'v{i}: clinvar_variant(variant_id: "{vid}", reference_genome: {reference_genome}) '
+        "{ variant_id submissions { clinical_significance } }"
+        for i, vid in enumerate(variant_ids)
+    ]
+    return "query ClinVarSubmissions {\n" + "\n".join(parts) + "\n}"
 
 
 class UnifiedGnomadClient(BaseGnomadClient):
@@ -172,6 +194,43 @@ class UnifiedGnomadClient(BaseGnomadClient):
             Metadata
         """
         return await self.execute_query("meta", {})
+
+    async def get_clinvar_submissions_batch(
+        self,
+        variant_ids: list[str],
+        reference_genome: str = "GRCh38",
+        *,
+        batch_size: int = _CLINVAR_SUBMISSIONS_BATCH_SIZE,
+    ) -> dict[str, list[dict[str, Any]]]:
+        """Fetch ClinVar submissions for many variants via aliased batch queries.
+
+        One upstream request per ``batch_size`` variants (<= the gnomAD query-cost
+        limit), with batches fired concurrently and bounded by the client
+        semaphore + exponential-backoff retry. Returns
+        ``{variant_id: [{clinical_significance}, ...]}``; variants absent from
+        ClinVar are omitted. Each batch is best-effort: a failed batch contributes
+        nothing rather than failing the whole resolution.
+        """
+        if not variant_ids:
+            return {}
+        chunks = [variant_ids[i : i + batch_size] for i in range(0, len(variant_ids), batch_size)]
+
+        async def fetch(chunk: list[str]) -> dict[str, list[dict[str, Any]]]:
+            query = _build_clinvar_submissions_query(chunk, reference_genome)
+            try:
+                data = await self.execute_raw_query(query)
+            except Exception:
+                return {}
+            out: dict[str, list[dict[str, Any]]] = {}
+            for value in data.values():
+                if isinstance(value, dict) and value.get("variant_id"):
+                    out[str(value["variant_id"])] = value.get("submissions") or []
+            return out
+
+        merged: dict[str, list[dict[str, Any]]] = {}
+        for result in await asyncio.gather(*(fetch(chunk) for chunk in chunks)):
+            merged.update(result)
+        return merged
 
     async def get_structural_variant(
         self, variant_id: str, dataset: str = "gnomad_sv_r4"

@@ -104,7 +104,7 @@ class BaseGnomadClient:
         self.api_url = api_url or settings.GNOMAD_API_URL
         self._transport = AIOHTTPTransport(
             url=self.api_url,
-            timeout=30,
+            timeout=settings.GNOMAD_REQUEST_TIMEOUT,
             ssl=True,
         )
         self._client = Client(
@@ -184,8 +184,7 @@ class BaseGnomadClient:
             query_string = self.query_loader.load_query(query_name, version)
             processed_vars = self.query_builder.process_variables(query_name, variables, version)
 
-            query_doc = gql(query_string)
-            result = await self._execute_with_retry(query_doc, processed_vars)
+            result = await self._execute_doc(gql(query_string), processed_vars)
 
             # Check if data was found
             if query_name in result and result[query_name] is None:
@@ -195,6 +194,37 @@ class BaseGnomadClient:
 
             return result
 
+        except FileNotFoundError as e:
+            raise GnomadApiError(f"Query not found: {e!s}") from e
+        except Exception as e:
+            if isinstance(e, GnomadApiError):
+                raise
+            raise GnomadApiError(f"Unexpected error: {e!s}") from e
+
+    async def execute_raw_query(
+        self, query_string: str, variables: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        """Execute a caller-built GraphQL query string through the shared session.
+
+        For DYNAMIC queries (e.g. an aliased ClinVar-submissions batch) that aren't
+        loaded from a named .graphql file. Shares the persistent session, the
+        concurrency semaphore, and the exponential-backoff retry of execute_query.
+        """
+        try:
+            return await self._execute_doc(gql(query_string), variables or {})
+        except Exception as e:
+            if isinstance(e, GnomadApiError):
+                raise
+            raise GnomadApiError(f"Unexpected error: {e!s}") from e
+
+    async def _execute_doc(self, query_doc: Any, variables: dict[str, Any]) -> dict[str, Any]:
+        """Run a parsed document through the retry layer and classify faults.
+
+        Shared by execute_query and execute_raw_query so the fault taxonomy (not
+        found / invalid input / rate limited / upstream) lives in one place.
+        """
+        try:
+            return await self._execute_with_retry(query_doc, variables)
         except TransportQueryError as e:
             if e.errors:
                 error_msg = "; ".join([err.get("message", str(err)) for err in e.errors])
@@ -214,12 +244,6 @@ class BaseGnomadClient:
             raise GnomadApiError(f"API request failed: {e!s}") from e
         except TransportError as e:
             raise GnomadApiError(f"API request failed: {e!s}") from e
-        except FileNotFoundError as e:
-            raise GnomadApiError(f"Query not found: {e!s}") from e
-        except Exception as e:
-            if isinstance(e, GnomadApiError):
-                raise
-            raise GnomadApiError(f"Unexpected error: {e!s}") from e
 
     async def close(self) -> None:
         """Close the client connection (idempotent)."""

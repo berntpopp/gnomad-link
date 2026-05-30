@@ -40,6 +40,10 @@ class Settings(BaseSettings):
     # pressure on gnomAD's rate limiter; the jittered retry layer absorbs residual
     # 429s. Keep conservative for the public endpoint; raise for trusted runs.
     GNOMAD_MAX_CONCURRENCY: int = 5
+    # Per-request upstream timeout (seconds). Large-gene variant payloads (e.g. CFTR
+    # ~13MB) complete in ~5-6s, but cold/slow responses need headroom; a too-tight
+    # timeout would trip the retry layer and multiply wall-clock time.
+    GNOMAD_REQUEST_TIMEOUT: int = 60
 
     # Cache Configuration
     CACHE_SIZE: int = 1024  # Maximum number of variants to cache

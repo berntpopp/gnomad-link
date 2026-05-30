@@ -42,12 +42,11 @@ class _GeneCarrierClient(Protocol):
         dataset: str = "gnomad_r4",
     ) -> dict[str, Any]: ...
 
-    async def get_clinvar_variant(
+    async def get_clinvar_submissions_batch(
         self,
-        variant_id: str,
-        reference_genome: str | None = None,
-        dataset: str | None = None,
-    ) -> dict[str, Any]: ...
+        variant_ids: list[str],
+        reference_genome: str = "GRCh38",
+    ) -> dict[str, list[dict[str, Any]]]: ...
 
 
 def _reference_genome(dataset: str) -> str:
@@ -185,27 +184,39 @@ class GeneCarrierService:
         config: FilterConfig,
         dataset: str,
     ) -> dict[str, bool]:
-        """For opt-in conflicting ClinVar, fetch submissions and resolve P/LP share."""
+        """For opt-in conflicting ClinVar, BATCH-fetch submissions and resolve P/LP share.
+
+        Collects only the conflicting variants that could actually contribute
+        (skip LoF-HC, which qualify without ClinVar, and AC<=0, which can never
+        contribute), fetches all their submissions in a single batched call
+        (ceil(N/24) aliased requests, not one-per-variant), then resolves the
+        threshold in pure code. This replaces the ~470-request storm for CFTR.
+        """
         if not (config.clinvar_enabled and config.include_conflicting):
             return {}
-        reference_genome = _reference_genome(dataset)
-        resolved: dict[str, bool] = {}
+        to_resolve: list[str] = []
         for variant in variants:
             vid = str(variant.get("variant_id") or "")
             clinvar = clinvar_map.get(vid)
             if not clinvar or not is_conflicting(clinvar):
                 continue
-            # LoF HC variants qualify without ClinVar; skip the extra fetch for them.
             if config.lof_hc_enabled and is_hc_lof(variant.get("transcript_consequence")):
                 continue
-            try:
-                payload = await self.client.get_clinvar_variant(vid, reference_genome)
-            except Exception:
-                resolved[vid] = False
+            ac, _an, _hom = _resolve_counts(variant, None)
+            if ac <= 0:
                 continue
-            submissions = (payload.get("clinvar_variant") or {}).get("submissions") or []
-            resolved[vid] = meets_conflicting_threshold(submissions, config.conflicting_threshold)
-        return resolved
+            to_resolve.append(vid)
+        if not to_resolve:
+            return {}
+        submissions_map = await self.client.get_clinvar_submissions_batch(
+            to_resolve, _reference_genome(dataset)
+        )
+        return {
+            vid: meets_conflicting_threshold(
+                submissions_map.get(vid, []), config.conflicting_threshold
+            )
+            for vid in to_resolve
+        }
 
     def _select_qualifying(
         self,

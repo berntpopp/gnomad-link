@@ -71,6 +71,10 @@ class _FakeClient:
     def __init__(self, payload: dict[str, Any]) -> None:
         self.payload = payload
         self.calls: list[dict[str, Any]] = []
+        # Records the variant_ids passed to each batched submissions call. A single
+        # entry means one batched request was made (not one-per-variant).
+        self.batch_calls: list[list[str]] = []
+        self.submissions: dict[str, list[dict[str, Any]]] = {}
 
     async def get_gene_carrier_variants(
         self,
@@ -81,6 +85,12 @@ class _FakeClient:
     ) -> dict[str, Any]:
         self.calls.append({"gene_id": gene_id, "gene_symbol": gene_symbol, "dataset": dataset})
         return self.payload
+
+    async def get_clinvar_submissions_batch(
+        self, variant_ids: list[str], reference_genome: str = "GRCh38"
+    ) -> dict[str, list[dict[str, Any]]]:
+        self.batch_calls.append(list(variant_ids))
+        return {vid: self.submissions.get(vid, []) for vid in variant_ids}
 
 
 @pytest.mark.asyncio
@@ -134,6 +144,72 @@ async def test_gene_carrier_not_found_raises() -> None:
     svc = GeneCarrierService(client=client)
     with pytest.raises(DataNotFoundError):
         await svc.get_gene_carrier_frequency(gene_symbol="NOPE", dataset="gnomad_r4")
+
+
+@pytest.mark.asyncio
+async def test_conflicting_resolution_is_batched_and_ac_filtered() -> None:
+    """include_conflicting must resolve in ONE batched call (not per-variant), and
+    must skip AC<=0 conflicting variants (which can never contribute)."""
+    payload = _gene_payload()
+    # A conflicting missense with AC>0 and a majority of P/LP submissions -> qualifies.
+    payload["gene"]["variants"].append(
+        {
+            "variant_id": "7-4-A-G",
+            "transcript_consequence": {
+                "is_canonical": True,
+                "lof": None,
+                "consequence_terms": ["missense_variant"],
+            },
+            "joint": _joint(30, 10000, 0, {"nfe": (30, 8000, 0)}),
+        }
+    )
+    # A conflicting missense with AC==0 -> must be filtered out before the batch.
+    payload["gene"]["variants"].append(
+        {
+            "variant_id": "7-5-A-G",
+            "transcript_consequence": {
+                "is_canonical": True,
+                "lof": None,
+                "consequence_terms": ["missense_variant"],
+            },
+            "joint": _joint(0, 10000, 0, {"nfe": (0, 8000, 0)}),
+        }
+    )
+    payload["gene"]["clinvar_variants"].extend(
+        [
+            {
+                "variant_id": "7-4-A-G",
+                "clinical_significance": "Conflicting interpretations of pathogenicity",
+                "gold_stars": 1,
+            },
+            {
+                "variant_id": "7-5-A-G",
+                "clinical_significance": "Conflicting interpretations of pathogenicity",
+                "gold_stars": 1,
+            },
+        ]
+    )
+    client = _FakeClient(payload)
+    client.submissions = {
+        "7-4-A-G": [
+            {"clinical_significance": "Pathogenic"},
+            {"clinical_significance": "Likely pathogenic"},
+        ]
+    }
+    svc = GeneCarrierService(client=client)
+
+    result = await svc.get_gene_carrier_frequency(
+        gene_symbol="CFTR",
+        dataset="gnomad_r4",
+        filter_config=FilterConfig(include_conflicting=True),
+    )
+
+    # Exactly ONE batched submissions request, carrying only the AC>0 conflicting id.
+    assert len(client.batch_calls) == 1
+    assert client.batch_calls[0] == ["7-4-A-G"]
+    qualifying_ids = {v["variant_id"] for v in result["qualifying_variants"]}
+    assert "7-4-A-G" in qualifying_ids  # resolved P/LP majority -> qualifies
+    assert "7-5-A-G" not in qualifying_ids  # AC==0 never qualifies
 
 
 @pytest.mark.asyncio
