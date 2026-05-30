@@ -75,7 +75,7 @@ async def test_get_variant_frequencies_detects_grch37_only_position_against_r4()
     assert payload.get("fallback_tool") == "liftover_variant"
     assert payload.get("fallback_args") == {
         "source_variant_id": "1-249100000-A-T",
-        "reference_genome": "GRCh37",
+        "source_genome": "GRCh37",
     }
     recovery = str(payload.get("recovery", ""))
     assert "liftover" in recovery.lower() or "GRCh37" in recovery
@@ -142,7 +142,7 @@ async def test_get_variant_frequencies_detects_grch38_only_position_against_r2_1
     assert _is_build_mismatch(payload), payload
     assert payload.get("fallback_args") == {
         "source_variant_id": "5-181000000-A-T",
-        "reference_genome": "GRCh38",
+        "source_genome": "GRCh38",
     }
     assert spy.last_variant_id is None
 

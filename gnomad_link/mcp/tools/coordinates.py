@@ -10,7 +10,7 @@ from pydantic import Field
 
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.build_check import detect_region_mismatch
-from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, run_mcp_tool
+from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, ToolInputError, run_mcp_tool
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.shaping import cap_region_span, shape_region_payload
 from gnomad_link.models import LiftoverResponse, Region
@@ -61,7 +61,7 @@ def register_coordinate_tools(
         async def call() -> dict[str, Any]:
             build = source_genome or reference_genome
             if build is None:
-                raise ValueError(
+                raise ToolInputError(
                     "Provide source_genome (or legacy reference_genome) to indicate "
                     "the build of source_variant_id."
                 )
@@ -167,7 +167,7 @@ def register_coordinate_tools(
             chrom, start_s, stop_s = region.removeprefix("chr").split("-")
             start, stop = int(start_s), int(stop_s)
             if stop <= start:
-                raise ValueError("Region stop must be greater than start.")
+                raise ToolInputError("Region stop must be greater than start.")
             inferred = detect_region_mismatch(chrom, start, dataset)
             if inferred is not None:
                 raise BuildMismatchError(

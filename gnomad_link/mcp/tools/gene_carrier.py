@@ -14,7 +14,7 @@ from fastmcp import FastMCP
 from pydantic import Field
 
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
-from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
+from gnomad_link.mcp.errors import McpErrorContext, ToolInputError, run_mcp_tool
 from gnomad_link.mcp.gene_carrier_shaping import shape_gene_carrier
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.services import FrequencyService
@@ -139,7 +139,7 @@ def register_gene_carrier_tools(
 
         async def call() -> dict[str, Any]:
             if len(set_args) != 1:
-                raise ValueError(
+                raise ToolInputError(
                     f"Provide exactly one of gene_symbol or gene_id (got {len(set_args)}: {set_args})."
                 )
             service = service_factory()

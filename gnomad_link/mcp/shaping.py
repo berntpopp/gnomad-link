@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from gnomad_link.mcp.errors import ToolInputError
 from gnomad_link.mcp.heteroplasmy import (
     shape_mitochondrial_variant,
     trim_heteroplasmy_distribution,
@@ -196,7 +197,7 @@ def shape_gene_variants(
     """
 
     if limit <= 0 or limit > 500:
-        raise ValueError("limit must be in [1, 500]")
+        raise ToolInputError("limit must be in [1, 500]")
     filtered: list[dict[str, Any]] = []
     total_seen = 0
     dropped = {"by_consequence": 0, "by_max_af": 0, "by_min_ac": 0}

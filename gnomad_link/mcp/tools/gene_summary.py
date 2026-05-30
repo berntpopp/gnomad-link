@@ -9,7 +9,7 @@ from fastmcp import FastMCP
 from pydantic import Field
 
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
-from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
+from gnomad_link.mcp.errors import McpErrorContext, ToolInputError, run_mcp_tool
 from gnomad_link.mcp.gene_summary_shaping import rank_pathogenic_clinvar
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.services import FrequencyService
@@ -100,7 +100,7 @@ def register_gene_summary_tools(
 
         async def call() -> dict[str, Any]:
             if bool(gene_symbol) == bool(gene_id):
-                raise ValueError("Provide exactly one of gene_symbol or gene_id.")
+                raise ToolInputError("Provide exactly one of gene_symbol or gene_id.")
             service = service_factory()
             summary = await service.get_gene_summary(
                 gene_id=gene_id,

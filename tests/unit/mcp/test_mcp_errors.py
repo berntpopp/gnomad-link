@@ -24,6 +24,64 @@ def test_mcp_tool_error_envelope_contains_required_fields() -> None:
     assert payload["_meta"]["unsafe_for_clinical_use"] is True
 
 
+def test_tool_input_error_message_is_surfaced() -> None:
+    """A developer-authored ToolInputError surfaces its (safe) message verbatim."""
+    from gnomad_link.mcp.errors import McpErrorContext, ToolInputError, mcp_tool_error
+
+    err = mcp_tool_error(
+        ToolInputError("Provide exactly one of gene_symbol, gene_id, or region."),
+        McpErrorContext(tool_name="search_structural_variants"),
+    )
+    payload = json.loads(str(err))
+
+    assert payload["error_code"] == "validation_failed"
+    assert "Provide exactly one of" in payload["message"]
+
+
+def test_bare_value_error_stays_redacted() -> None:
+    """A bare ValueError may carry user input, so its message stays opaque."""
+    from gnomad_link.mcp.errors import McpErrorContext, mcp_tool_error
+
+    err = mcp_tool_error(
+        ValueError("secret user value abc123"),
+        McpErrorContext(tool_name="get_variant_frequencies"),
+    )
+    payload = json.loads(str(err))
+
+    assert payload["error_code"] == "validation_failed"
+    assert "abc123" not in payload["message"]
+    assert payload["message"].startswith("Invalid input:")
+
+
+@pytest.mark.asyncio
+async def test_success_payload_sets_symmetric_success_flag() -> None:
+    from gnomad_link.mcp.errors import run_mcp_tool
+
+    async def ok() -> dict[str, str]:
+        return {"variant_id": "1-1-A-T"}
+
+    result = await run_mcp_tool("get_variant_frequencies", ok)
+
+    assert result["success"] is True
+
+
+@pytest.mark.asyncio
+async def test_success_meta_echoes_dataset_and_build_when_known() -> None:
+    from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
+
+    async def ok() -> dict[str, str]:
+        return {"variant_id": "1-1-A-T"}
+
+    result = await run_mcp_tool(
+        "get_variant_frequencies",
+        ok,
+        context=McpErrorContext(tool_name="get_variant_frequencies", dataset="gnomad_r4"),
+    )
+
+    assert result["_meta"]["dataset"] == "gnomad_r4"
+    assert result["_meta"]["reference_genome"] == "GRCh38"
+
+
 def test_data_not_found_maps_to_not_found_code() -> None:
     from gnomad_link.api import DataNotFoundError
     from gnomad_link.mcp.errors import McpErrorContext, mcp_tool_error

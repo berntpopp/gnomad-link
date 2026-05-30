@@ -11,6 +11,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from gnomad_link.mcp.errors import ToolInputError
+
 # Heavy per-variant histograms the compact single-variant view drops; callers
 # recover them with response_mode='full'. cpx_intervals/copy_numbers stay (small
 # and class-defining for complex/CNV variants).
@@ -87,7 +89,7 @@ def shape_sv_search(
     when the limit cap fires; `total_seen` always reflects the FULL input.
     """
     if limit <= 0 or limit > 500:
-        raise ValueError("limit must be in [1, 500]")
+        raise ToolInputError("limit must be in [1, 500]")
 
     total_seen = len(raw)
     dropped = {"by_sv_type": 0, "by_min_length": 0, "by_max_length": 0}

@@ -117,3 +117,64 @@ def test_genuine_upstream_fault_stays_retryable() -> None:
     assert payload["error_code"] == "upstream_unavailable"
     assert payload["retryable"] is True
     assert payload["recovery_action"] == "retry_backoff"
+
+
+def test_not_found_on_mito_tool_does_not_route_to_resolver() -> None:
+    # M-POS-REF-ALT ids are not resolvable by resolve_variant_id (SNV/indel only).
+    payload = _payload(
+        DataNotFoundError("M-3243-A-G not found"),
+        McpErrorContext(tool_name="get_mitochondrial_variant", variant_id="M-3243-A-G"),
+    )
+    assert payload["error_code"] == "not_found"
+    assert payload["fallback_tool"] == "get_server_capabilities"
+    assert payload["fallback_tool"] != "resolve_variant_id"
+    # Mito-aware recovery prose: name the mito datasets, drop the SNV resolver clause.
+    assert "resolve_variant_id" not in payload["recovery"]
+    assert "gnomad_r4" in payload["recovery"]
+
+
+def test_not_found_on_sv_tool_has_sv_dataset_recovery_prose() -> None:
+    payload = _payload(
+        DataNotFoundError("BND_chr12_x not found"),
+        McpErrorContext(tool_name="get_structural_variant", variant_id="BND_chr12_x"),
+    )
+    assert payload["error_code"] == "not_found"
+    assert "gnomad_sv_r4" in payload["recovery"]
+    assert "r3/r2_1" not in payload["recovery"]
+
+
+def test_error_next_commands_prepends_classified_fallback() -> None:
+    from gnomad_link.mcp.errors import BuildMismatchError
+
+    payload = _payload(
+        BuildMismatchError(
+            variant_id="1-249100000-A-T", inferred_build="GRCh37", dataset="gnomad_r4"
+        ),
+        McpErrorContext(tool_name="get_variant_frequencies", variant_id="1-249100000-A-T"),
+    )
+    cmds = payload["_meta"]["next_commands"]
+    # The task-advancing resolver leads; diagnostics stays as the secondary entry.
+    assert cmds[0]["tool"] == "liftover_variant"
+    assert cmds[0]["arguments"]["source_genome"] == "GRCh37"
+    assert cmds[-1]["tool"] == "get_gnomad_diagnostics"
+
+
+def test_retryable_error_next_commands_is_diagnostics_only() -> None:
+    payload = _payload(
+        RateLimitedError("Rate limited by upstream API (HTTP 429)"),
+        McpErrorContext(tool_name="get_variant_frequencies", variant_id="1-1-A-T"),
+    )
+    cmds = payload["_meta"]["next_commands"]
+    # Retry, not switch: fallback_tool is already diagnostics, so no duplicate prepend.
+    assert [c["tool"] for c in cmds] == ["get_gnomad_diagnostics"]
+
+
+def test_error_meta_echoes_dataset_and_build() -> None:
+    payload = _payload(
+        DataNotFoundError("variant not found"),
+        McpErrorContext(
+            tool_name="get_variant_frequencies", variant_id="1-1-A-T", dataset="gnomad_r4"
+        ),
+    )
+    assert payload["_meta"]["dataset"] == "gnomad_r4"
+    assert payload["_meta"]["reference_genome"] == "GRCh38"

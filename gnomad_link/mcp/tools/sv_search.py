@@ -9,7 +9,7 @@ from fastmcp import FastMCP
 from pydantic import Field
 
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
-from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
+from gnomad_link.mcp.errors import McpErrorContext, ToolInputError, run_mcp_tool
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.sv_shaping import shape_sv_search
 from gnomad_link.services import FrequencyService
@@ -102,7 +102,7 @@ def register_sv_search_tools(
         async def call() -> dict[str, Any]:
             provided = [v for v in (gene_symbol, gene_id, region) if v]
             if len(provided) != 1:
-                raise ValueError("Provide exactly one of gene_symbol, gene_id, or region.")
+                raise ToolInputError("Provide exactly one of gene_symbol, gene_id, or region.")
             service = service_factory()
             raw = await service.search_structural_variants(
                 gene_symbol=gene_symbol,

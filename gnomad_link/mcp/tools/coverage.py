@@ -14,7 +14,7 @@ from gnomad_link.mcp.build_check import (
     detect_variant_id_mismatch,
 )
 from gnomad_link.mcp.coverage_shaping import shape_coverage_payload
-from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, run_mcp_tool
+from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, ToolInputError, run_mcp_tool
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.shaping import cap_region_span
 from gnomad_link.services import FrequencyService
@@ -119,7 +119,7 @@ def register_coverage_tools(
 
         async def call() -> dict[str, Any]:
             if len(set_args) != 1:
-                raise ValueError(
+                raise ToolInputError(
                     "Provide exactly one of gene_symbol, gene_id, region, or variant_id "
                     f"(got {len(set_args)}: {set_args})."
                 )
@@ -129,7 +129,7 @@ def register_coverage_tools(
                 chrom, start_s, stop_s = region.removeprefix("chr").split("-")
                 start, stop = int(start_s), int(stop_s)
                 if stop <= start:
-                    raise ValueError("Region stop must be greater than start.")
+                    raise ToolInputError("Region stop must be greater than start.")
                 inferred = detect_region_mismatch(chrom, start, dataset)
                 if inferred is not None:
                     raise BuildMismatchError(

@@ -47,7 +47,7 @@ def test_summary_counts_classifications_correctly() -> None:
 
 
 def test_conflicting_classification_not_counted_pathogenic() -> None:
-    """"Conflicting classifications of pathogenicity" lands in its own bucket.
+    """ "Conflicting classifications of pathogenicity" lands in its own bucket.
 
     It contains the "pathogenic" substring, so a naive `"pathogenic" in s` test
     would over-count it as pathogenic. It must not inflate the pathogenic side

@@ -12,6 +12,7 @@ import re
 from typing import Any
 
 from gnomad_link.api.client import UnifiedGnomadClient
+from gnomad_link.mcp.errors import ToolInputError
 
 # StructuralVariantDatasetId -> reference build. gnomad_sv_r4 is GRCh38;
 # gnomad_sv_r2_1 is GRCh37. This is a DISTINCT enum from the SNV DatasetId.
@@ -44,21 +45,21 @@ class StructuralVariantService:
         """
         provided = [v for v in (gene_symbol, gene_id, region) if v]
         if len(provided) != 1:
-            raise ValueError("Provide exactly one of gene_symbol, gene_id, or region.")
+            raise ToolInputError("Provide exactly one of gene_symbol, gene_id, or region.")
         if sv_dataset not in _SV_DATASET_BUILD:
-            raise ValueError("Invalid sv_dataset; expected gnomad_sv_r4 or gnomad_sv_r2_1.")
+            raise ToolInputError("Invalid sv_dataset; expected gnomad_sv_r4 or gnomad_sv_r2_1.")
         reference_genome = _SV_DATASET_BUILD[sv_dataset]
 
         if region:
             match = _REGION_RE.match(region)
             if not match:
-                raise ValueError(
+                raise ToolInputError(
                     "Invalid region; expected CHROM-START-STOP (e.g. 19-11089000-11200000)."
                 )
             chrom, start_s, stop_s = match.groups()
             start, stop = int(start_s), int(stop_s)
             if stop <= start:
-                raise ValueError("Region stop must be greater than start.")
+                raise ToolInputError("Region stop must be greater than start.")
             return await self.client.search_structural_variants_by_region(
                 chrom=chrom,
                 start=start,

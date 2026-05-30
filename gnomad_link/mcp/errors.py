@@ -22,6 +22,7 @@ from gnomad_link.api import (
     RateLimitedError,
     UpstreamInputError,
 )
+from gnomad_link.config import settings
 from gnomad_link.mcp.resources import GNOMAD_DATA_RELEASE
 
 logger = logging.getLogger(__name__)
@@ -82,6 +83,44 @@ class BuildMismatchError(ValueError):
         )
 
 
+class ToolInputError(ValueError):
+    """A local, pre-upstream validation failure whose message is developer-authored.
+
+    A bare ``ValueError`` may carry raw user input, so its message is redacted in
+    the envelope. The strings raised by our own guard sites contain no user
+    VALUES -- only static guidance or parameter NAMES -- so a ``ToolInputError``
+    message is safe to surface verbatim (capped by ``_safe_message``). It still
+    classifies as ``validation_failed`` because it subclasses ``ValueError``.
+    """
+
+
+# Maps each dataset to its reference build so error/success envelopes can echo a
+# self-contained provenance pointer (which release + which build the call hit).
+_DATASET_BUILD = {
+    "gnomad_r2_1": "GRCh37",
+    "gnomad_r3": "GRCh38",
+    "gnomad_r4": "GRCh38",
+    "gnomad_sv_r2_1": "GRCh37",
+    "gnomad_sv_r4": "GRCh38",
+}
+
+
+def _provenance_meta(context: McpErrorContext | None = None) -> dict[str, Any]:
+    """Base ``_meta`` provenance merged into every success and error envelope.
+
+    Always carries the research-use flag and gnomAD release. When the call's
+    dataset is known it also echoes the dataset and derived reference build, so
+    the provenance pointer is self-contained even on an error envelope.
+    """
+    meta: dict[str, Any] = dict(_BASE_META)
+    if context is not None and context.dataset:
+        meta["dataset"] = context.dataset
+        build = _DATASET_BUILD.get(context.dataset)
+        if build is not None:
+            meta["reference_genome"] = build
+    return meta
+
+
 def _safe_message(exc: BaseException) -> str:
     text = str(exc) or exc.__class__.__name__
     # gnomAD errors are user-input shaped; trim long tracebacks/identifiers.
@@ -108,6 +147,11 @@ def _fallback_for(context: McpErrorContext) -> tuple[str, dict[str, Any] | None]
         if context.gene_symbol or context.gene_id:
             return "search_genes", {"query": context.gene_symbol or context.gene_id}
         return "search_genes", None
+    # M-POS-REF-ALT ids are NOT resolvable by resolve_variant_id (SNV/indel
+    # only), so a mito not_found must not route there; point at capabilities for
+    # the valid mitochondrial datasets instead.
+    if context.tool_name == "get_mitochondrial_variant":
+        return "get_server_capabilities", None
     if context.variant_id:
         return "resolve_variant_id", {"query": context.variant_id}
     if context.gene_symbol or context.gene_id:
@@ -137,7 +181,9 @@ def _classify(
             "liftover_variant",
             {
                 "source_variant_id": exc.variant_id,
-                "reference_genome": exc.inferred_build,
+                # source_genome is the preferred param; reference_genome is the
+                # deprecated alias, so steer the ready-to-call recovery onto it.
+                "source_genome": exc.inferred_build,
             },
         )
     if isinstance(exc, UpstreamInputError):
@@ -169,8 +215,22 @@ def _recovery_action(error_code: str, retryable: bool) -> str:
     return "switch_tool"
 
 
-def _recovery_text(error_code: str, fallback_tool: str | None) -> str:
+def _recovery_text(error_code: str, fallback_tool: str | None, tool_name: str | None = None) -> str:
     if error_code == "not_found":
+        if tool_name in {"get_structural_variant", "search_structural_variants"}:
+            return (
+                "Identifier well-formed but absent in the requested SV dataset. This is "
+                "a reformulate, not a retry: try the other SV dataset (gnomad_sv_r4 "
+                "default, GRCh38; gnomad_sv_r2_1 for GRCh37) or call "
+                "search_structural_variants to locate a valid structural-variant id."
+            )
+        if tool_name == "get_mitochondrial_variant":
+            return (
+                "Identifier well-formed but absent in the requested dataset. This is a "
+                "reformulate, not a retry: mitochondrial variants are in gnomad_r4 "
+                "(default) and gnomad_r3 only -- not gnomad_r2_1. Confirm the "
+                "M-POS-REF-ALT id and dataset."
+            )
         resolver = fallback_tool or "resolve_variant_id"
         return (
             "Identifier well-formed but absent in the requested dataset. This is a "
@@ -186,9 +246,11 @@ def _recovery_text(error_code: str, fallback_tool: str | None) -> str:
             "into the required id."
         )
     if error_code == "rate_limited":
+        floor = settings.GNOMAD_QUEUE_WAIT_TIMEOUT
         return (
-            "Upstream rate limit hit (HTTP 429). Safe to retry after a short delay "
-            "with exponential backoff; honor any Retry-After header."
+            "Upstream rate limit (HTTP 429) or local concurrency saturation. Safe to "
+            f"retry after backing off exponentially (start around {floor}s) and reduce "
+            "the number of concurrent calls to this server."
         )
     if error_code == "validation_failed":
         return (
@@ -221,6 +283,10 @@ def _envelope_message(exc: BaseException, error_code: str) -> str:
     """
     if error_code == "build_mismatch":
         # The constructed message is already safe and informative for callers.
+        return _safe_message(exc)
+    if isinstance(exc, ToolInputError):
+        # Developer-authored guard string (static or parameter NAMES only, no user
+        # values), so it is safe to surface verbatim instead of redacting.
         return _safe_message(exc)
     if error_code == "validation_failed":
         return f"Invalid input: {exc.__class__.__name__}"
@@ -321,6 +387,14 @@ def install_validation_error_handler(mcp_server: Any) -> None:
 
 def mcp_tool_error(exc: BaseException, context: McpErrorContext) -> McpToolError:
     error_code, retryable, fallback_tool, fallback_args = _classify(exc, context)
+    # next_commands must agree with the classified fallback: prepend the
+    # task-advancing resolver when there is one, keeping diagnostics as the
+    # secondary entry. For retryable codes fallback_tool is already diagnostics,
+    # so the guard collapses to a single diagnostics entry (retry, not switch).
+    next_commands: list[dict[str, Any]] = []
+    if fallback_tool and fallback_tool != _FALLBACK_TOOL:
+        next_commands.append({"tool": fallback_tool, "arguments": fallback_args or {}})
+    next_commands.append({"tool": _FALLBACK_TOOL, "arguments": {}})
     payload = {
         "success": False,
         "error_code": error_code,
@@ -329,13 +403,11 @@ def mcp_tool_error(exc: BaseException, context: McpErrorContext) -> McpToolError
         "recovery_action": _recovery_action(error_code, retryable),
         "fallback_tool": fallback_tool,
         "fallback_args": fallback_args,
-        "recovery": _recovery_text(error_code, fallback_tool),
+        "recovery": _recovery_text(error_code, fallback_tool, context.tool_name),
         "_meta": {
             "tool": context.tool_name,
-            "next_commands": [
-                {"tool": _FALLBACK_TOOL, "arguments": {}},
-            ],
-            **_BASE_META,
+            "next_commands": next_commands,
+            **_provenance_meta(context),
         },
     }
     return McpToolError(payload)
@@ -404,9 +476,12 @@ async def run_mcp_tool(
         result = await call()
         # Inject research-use meta into every successful dict response unless
         # the tool already provides _meta (e.g. search_variants deprecation note).
+        # A symmetric success:true flag lets callers branch on `success` instead
+        # of special-casing `is False`.
         if isinstance(result, dict):
+            result.setdefault("success", True)
             existing_meta: dict[str, Any] = result.get("_meta") or {}
-            result["_meta"] = {**existing_meta, **_BASE_META}
+            result["_meta"] = {**existing_meta, **_provenance_meta(ctx)}
         return result
     except McpToolError as exc:
         record_mcp_error(

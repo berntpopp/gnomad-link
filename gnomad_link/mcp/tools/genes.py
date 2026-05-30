@@ -9,7 +9,7 @@ from fastmcp import FastMCP
 from pydantic import Field
 
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
-from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
+from gnomad_link.mcp.errors import McpErrorContext, ToolInputError, run_mcp_tool
 from gnomad_link.mcp.headline import gene_details_headline
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.shaping import shape_gene_details_compact, shape_gene_variants
@@ -55,7 +55,7 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
 
         async def call() -> dict[str, Any]:
             if not gene_id and not gene_symbol:
-                raise ValueError("Provide gene_id or gene_symbol.")
+                raise ToolInputError("Provide gene_id or gene_symbol.")
             service = service_factory()
             gene_obj = await service.get_gene(
                 gene_id=gene_id,

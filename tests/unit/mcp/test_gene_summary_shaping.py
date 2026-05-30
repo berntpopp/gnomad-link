@@ -61,7 +61,7 @@ def test_rank_pathogenic_emits_truncated_when_capped() -> None:
 
 
 def test_rank_pathogenic_excludes_conflicting() -> None:
-    """"Conflicting classifications of pathogenicity" must not count as P/LP.
+    """ "Conflicting classifications of pathogenicity" must not count as P/LP.
 
     The string contains the "pathogenic" substring, so a naive membership test
     would wrongly include it. Mirrors gene_carrier_filters.is_pathogenic_clinvar.
