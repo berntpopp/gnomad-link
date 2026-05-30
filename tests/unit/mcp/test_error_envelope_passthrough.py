@@ -38,7 +38,10 @@ def test_relax_output_schema_strips_required() -> None:
 
     assert "required" not in relaxed
     assert relaxed["additionalProperties"] is True
-    assert relaxed["properties"]["a"] == {"type": "string"}
+    # Bare scalar types are defensively nullable-ized (see test_schema_relax_nulls)
+    # so upstream nulls never trip output-schema validation.
+    assert relaxed["properties"]["a"]["type"] == ["string", "null"]
+    assert relaxed["properties"]["b"]["type"] == ["integer", "null"]
 
 
 def test_relax_output_schema_recurses_into_nested_structures() -> None:

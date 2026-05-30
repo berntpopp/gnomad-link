@@ -13,6 +13,7 @@ from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.shaping import shape_mitochondrial_variant
+from gnomad_link.mcp.sv_shaping import shape_structural_variant
 from gnomad_link.models import MitochondrialVariant, StructuralVariant, Transcript
 from gnomad_link.services import FrequencyService
 
@@ -58,13 +59,21 @@ def register_specialty_tools(
             Literal["gnomad_sv_r2_1", "gnomad_sv_r4"],
             Field(examples=["gnomad_sv_r4"]),
         ] = "gnomad_sv_r4",
+        response_mode: Annotated[
+            Literal["compact", "full"],
+            Field(
+                description="compact drops heavy age/genotype-quality histograms and the "
+                "duplicated flat gene list; full returns the raw payload.",
+            ),
+        ] = "compact",
     ) -> dict[str, Any]:
-        """Use this when a caller has a gnomAD structural variant id (deletions, duplications, inversions, BNDs). For SNVs/indels use get_variant_frequencies instead. Returns ~1-3kB."""
+        """Use this when a caller has a gnomAD structural variant id (deletions, duplications, inversions, translocations/BND, complex/CPX, MCNV). For SNVs/indels use get_variant_frequencies instead. Compact (default) drops heavy histograms + the duplicated flat gene list and emits a `truncated` block; response_mode='full' returns everything. Returns compact ~2-5kB; full ~10-20kB (histograms + populations)."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()
             raw = await service.get_structural_variant(variant_id, dataset)
-            return cast(dict[str, Any], raw.get("structural_variant", raw))
+            payload = cast(dict[str, Any], raw.get("structural_variant", raw))
+            return shape_structural_variant(payload, response_mode=response_mode)
 
         return await run_mcp_tool(
             "get_structural_variant",

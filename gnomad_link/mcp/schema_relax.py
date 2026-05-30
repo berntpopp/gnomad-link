@@ -12,6 +12,11 @@ from __future__ import annotations
 
 from typing import Any
 
+# Scalar JSON Schema type tokens we defensively allow null on. Object/array
+# containers are intentionally excluded: null must never stand in for a list or
+# dict, or downstream consumers would silently accept a shape regression.
+_SCALAR_TYPES = frozenset({"integer", "number", "string", "boolean"})
+
 
 def relax_output_schema(schema: Any) -> Any:
     """Return a deep-copied schema with `required` stripped and additionalProperties=True.
@@ -51,5 +56,21 @@ def relax_output_schema(schema: Any) -> Any:
     # Ensure object schemas accept extra keys (the _meta block we inject).
     if relaxed.get("type") == "object" and "additionalProperties" not in relaxed:
         relaxed["additionalProperties"] = True
+
+    # Defensively allow null on bare scalar types so upstream nulls (e.g. BND/CTX
+    # structural variants returning null end/af/pos) never trip output-schema
+    # validation. Skip any node carrying enum/const (null would pass `type` but
+    # fail the independent enum assertion) and never touch container types.
+    if "enum" not in relaxed and "const" not in relaxed:
+        type_value = relaxed.get("type")
+        if isinstance(type_value, str) and type_value in _SCALAR_TYPES:
+            relaxed["type"] = [type_value, "null"]
+        elif (
+            isinstance(type_value, list)
+            and type_value
+            and "null" not in type_value
+            and all(token in _SCALAR_TYPES for token in type_value)
+        ):
+            relaxed["type"] = [*type_value, "null"]
 
     return relaxed
