@@ -27,14 +27,22 @@ def trim_heteroplasmy_distribution(
     if not isinstance(dist, dict):
         return dist, 0
     edges, freqs = dist.get("bin_edges"), dist.get("bin_freq")
-    if not isinstance(edges, list) or not isinstance(freqs, list) or len(edges) != len(freqs):
+    if not isinstance(edges, list) or not isinstance(freqs, list):
+        return dist, 0
+    # gnomAD histograms carry N+1 edges for N bins; treat the leading N edges as
+    # per-bin lower bounds and drop the trailing closing edge so edges align with
+    # freqs. (Without this the length guard never matched real data and trimming
+    # silently never fired.) Any other length mismatch passes through unchanged.
+    if len(edges) == len(freqs) + 1:
+        edges = edges[:-1]
+    elif len(edges) != len(freqs):
         return dist, 0
     pairs = [
         (e, f)
         for e, f in zip(edges, freqs, strict=True)
         if not (isinstance(f, int | float) and f == 0)
     ]
-    dropped = len(edges) - len(pairs)
+    dropped = len(freqs) - len(pairs)
     if not pairs:
         return None, dropped
     trimmed = dict(dist)

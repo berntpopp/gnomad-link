@@ -75,6 +75,40 @@ def test_trim_heteroplasmy_distribution_drops_zero_bins() -> None:
     assert dropped == 3
 
 
+def test_trim_handles_real_gnomad_n_plus_one_edges() -> None:
+    """Real gnomAD histograms ship N+1 bin_edges for N bin_freq; trimming must fire.
+
+    Regression: the length guard required len(edges) == len(freqs), which is never
+    true for live data (11 edges, 10 freqs), so zero-bin trimming silently never
+    fired in production.
+    """
+    from gnomad_link.mcp.shaping import trim_heteroplasmy_distribution
+
+    dist = {
+        "bin_edges": [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],  # 11
+        "bin_freq": [0, 1, 1, 0, 0, 0, 0, 0, 0, 0],  # 10
+    }
+
+    trimmed, dropped = trim_heteroplasmy_distribution(dist)
+
+    assert trimmed == {"bin_edges": [0.1, 0.2], "bin_freq": [1, 1]}
+    assert dropped == 8
+
+
+def test_trim_drops_all_zero_real_gnomad_histogram() -> None:
+    from gnomad_link.mcp.shaping import trim_heteroplasmy_distribution
+
+    dist = {
+        "bin_edges": [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+        "bin_freq": [0] * 10,
+    }
+
+    trimmed, dropped = trim_heteroplasmy_distribution(dist)
+
+    assert trimmed is None
+    assert dropped == 10
+
+
 def test_trim_returns_none_when_all_zero() -> None:
     from gnomad_link.mcp.shaping import trim_heteroplasmy_distribution
 
