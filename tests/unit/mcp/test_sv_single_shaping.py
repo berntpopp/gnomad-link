@@ -14,7 +14,6 @@ from typing import Any
 import pytest
 
 import mcp.types
-
 from gnomad_link.mcp.sv_shaping import shape_structural_variant
 
 

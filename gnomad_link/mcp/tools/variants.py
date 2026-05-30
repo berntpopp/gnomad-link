@@ -178,7 +178,7 @@ def register_variant_tools(
             # unwrap (like the SV/mito/region tools) before shaping. Guard against
             # a silent-empty success: an absent variant block is a not_found, not
             # a bare _meta payload.
-            variant = raw.get("variant", raw) if isinstance(raw, dict) else raw
+            variant: dict[str, Any] = raw.get("variant", raw) if isinstance(raw, dict) else raw
             if not variant:
                 from gnomad_link.api.base_client import VariantNotFoundError
 
