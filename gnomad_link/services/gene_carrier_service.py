@@ -123,7 +123,7 @@ class GeneCarrierService:
         clinvar_map: dict[str, Any] = {
             str(cv.get("variant_id")): cv for cv in (gene.get("clinvar_variants") or [])
         }
-        conflicting_ok = await self._resolve_conflicting(
+        conflicting_ok, conflicting_degraded = await self._resolve_conflicting(
             gene["variants"], clinvar_map, config, dataset
         )
 
@@ -157,7 +157,7 @@ class GeneCarrierService:
         for item in qualifying:
             sources[item["source"]] += 1
 
-        return {
+        result: dict[str, Any] = {
             "gene": {"gene_id": gene.get("gene_id"), "symbol": gene.get("symbol")},
             "dataset": dataset,
             "reference_genome": _reference_genome(dataset),
@@ -169,6 +169,7 @@ class GeneCarrierService:
                 "include_clinvar": config.clinvar_enabled,
                 "clinvar_star_threshold": config.clinvar_star_threshold,
                 "include_conflicting_clinvar": config.include_conflicting,
+                "omitted_populations": ["sex_split", "subcohort"],
             },
             "global": global_metrics,
             "populations": populations,
@@ -176,6 +177,9 @@ class GeneCarrierService:
             "qualifying_count": len(qualifying),
             "sources": sources,
         }
+        if conflicting_degraded is not None:
+            result["conflicting_resolution_degraded"] = conflicting_degraded
+        return result
 
     async def _resolve_conflicting(
         self,
@@ -183,7 +187,7 @@ class GeneCarrierService:
         clinvar_map: dict[str, Any],
         config: FilterConfig,
         dataset: str,
-    ) -> dict[str, bool]:
+    ) -> tuple[dict[str, bool], dict[str, Any] | None]:
         """For opt-in conflicting ClinVar, BATCH-fetch submissions and resolve P/LP share.
 
         Collects only the conflicting variants that could actually contribute
@@ -193,7 +197,7 @@ class GeneCarrierService:
         threshold in pure code. This replaces the ~470-request storm for CFTR.
         """
         if not (config.clinvar_enabled and config.include_conflicting):
-            return {}
+            return {}, None
         to_resolve: list[str] = []
         for variant in variants:
             vid = str(variant.get("variant_id") or "")
@@ -207,16 +211,30 @@ class GeneCarrierService:
                 continue
             to_resolve.append(vid)
         if not to_resolve:
-            return {}
+            return {}, None
         submissions_map = await self.client.get_clinvar_submissions_batch(
             to_resolve, _reference_genome(dataset)
         )
+        failed_variant_ids = {
+            str(vid) for vid in getattr(submissions_map, "failed_variant_ids", [])
+        }
+        degraded = None
+        if failed_variant_ids:
+            degraded = {
+                "kind": "conflicting_resolution_incomplete",
+                "dropped": len(failed_variant_ids),
+                "cause": "upstream_backpressure",
+                "to_restore": (
+                    "retry compute_gene_carrier_frequency with include_conflicting_clinvar=True"
+                ),
+            }
         return {
             vid: meets_conflicting_threshold(
                 submissions_map.get(vid, []), config.conflicting_threshold
             )
             for vid in to_resolve
-        }
+            if vid not in failed_variant_ids
+        }, degraded
 
     def _select_qualifying(
         self,

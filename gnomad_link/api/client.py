@@ -13,6 +13,21 @@ from .base_client import BaseGnomadClient
 _CLINVAR_SUBMISSIONS_BATCH_SIZE = 24
 
 
+class ClinvarSubmissionsBatchResult(dict[str, list[dict[str, Any]]]):
+    """Dict-compatible batch result with degradation counters."""
+
+    def __init__(
+        self,
+        *args: Any,
+        failed_chunks: int = 0,
+        failed_variant_ids: list[str] | None = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        self.failed_chunks = failed_chunks
+        self.failed_variant_ids = failed_variant_ids or []
+
+
 def _build_clinvar_submissions_query(variant_ids: list[str], reference_genome: str) -> str:
     """Aliased batch query for ClinVar submissions (one alias per variant).
 
@@ -201,7 +216,7 @@ class UnifiedGnomadClient(BaseGnomadClient):
         reference_genome: str = "GRCh38",
         *,
         batch_size: int = _CLINVAR_SUBMISSIONS_BATCH_SIZE,
-    ) -> dict[str, list[dict[str, Any]]]:
+    ) -> ClinvarSubmissionsBatchResult:
         """Fetch ClinVar submissions for many variants via aliased batch queries.
 
         One upstream request per ``batch_size`` variants (<= the gnomAD query-cost
@@ -209,27 +224,32 @@ class UnifiedGnomadClient(BaseGnomadClient):
         semaphore + exponential-backoff retry. Returns
         ``{variant_id: [{clinical_significance}, ...]}``; variants absent from
         ClinVar are omitted. Each batch is best-effort: a failed batch contributes
-        nothing rather than failing the whole resolution.
+        nothing rather than failing the whole resolution, and increments
+        ``failed_chunks`` / ``failed_variant_ids`` on the dict-compatible result.
         """
         if not variant_ids:
-            return {}
+            return ClinvarSubmissionsBatchResult()
         chunks = [variant_ids[i : i + batch_size] for i in range(0, len(variant_ids), batch_size)]
 
-        async def fetch(chunk: list[str]) -> dict[str, list[dict[str, Any]]]:
+        async def fetch(chunk: list[str]) -> ClinvarSubmissionsBatchResult:
             query = _build_clinvar_submissions_query(chunk, reference_genome)
             try:
                 data = await self.execute_raw_query(query)
             except Exception:
-                return {}
+                return ClinvarSubmissionsBatchResult(
+                    failed_chunks=1, failed_variant_ids=list(chunk)
+                )
             out: dict[str, list[dict[str, Any]]] = {}
             for value in data.values():
                 if isinstance(value, dict) and value.get("variant_id"):
                     out[str(value["variant_id"])] = value.get("submissions") or []
-            return out
+            return ClinvarSubmissionsBatchResult(out)
 
-        merged: dict[str, list[dict[str, Any]]] = {}
+        merged = ClinvarSubmissionsBatchResult()
         for result in await asyncio.gather(*(fetch(chunk) for chunk in chunks)):
             merged.update(result)
+            merged.failed_chunks += result.failed_chunks
+            merged.failed_variant_ids.extend(result.failed_variant_ids)
         return merged
 
     async def get_structural_variant(

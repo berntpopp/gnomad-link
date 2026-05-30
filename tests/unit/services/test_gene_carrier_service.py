@@ -8,6 +8,11 @@ from gnomad_link.services.gene_carrier_filters import FilterConfig
 from gnomad_link.services.gene_carrier_service import GeneCarrierService
 
 
+class _BatchResult(dict[str, list[dict[str, Any]]]):
+    failed_chunks: int = 0
+    failed_variant_ids: list[str] = []
+
+
 def _joint(ac: int, an: int, hom: int, pops: dict[str, tuple[int, int, int]]) -> dict[str, Any]:
     return {
         "ac": ac,
@@ -210,6 +215,57 @@ async def test_conflicting_resolution_is_batched_and_ac_filtered() -> None:
     qualifying_ids = {v["variant_id"] for v in result["qualifying_variants"]}
     assert "7-4-A-G" in qualifying_ids  # resolved P/LP majority -> qualifies
     assert "7-5-A-G" not in qualifying_ids  # AC==0 never qualifies
+
+
+@pytest.mark.asyncio
+async def test_conflicting_resolution_reports_failed_batch_degradation() -> None:
+    payload = _gene_payload()
+    payload["gene"]["variants"].append(
+        {
+            "variant_id": "7-4-A-G",
+            "transcript_consequence": {
+                "is_canonical": True,
+                "lof": None,
+                "consequence_terms": ["missense_variant"],
+            },
+            "joint": _joint(30, 10000, 0, {"nfe": (30, 8000, 0)}),
+        }
+    )
+    payload["gene"]["clinvar_variants"].append(
+        {
+            "variant_id": "7-4-A-G",
+            "clinical_significance": "Conflicting interpretations of pathogenicity",
+            "gold_stars": 1,
+        }
+    )
+
+    class _BackpressureClient(_FakeClient):
+        async def get_clinvar_submissions_batch(
+            self, variant_ids: list[str], reference_genome: str = "GRCh38"
+        ) -> _BatchResult:
+            self.batch_calls.append(list(variant_ids))
+            result = _BatchResult()
+            result.failed_chunks = 1
+            result.failed_variant_ids = list(variant_ids)
+            return result
+
+    client = _BackpressureClient(payload)
+    svc = GeneCarrierService(client=client)
+
+    result = await svc.get_gene_carrier_frequency(
+        gene_symbol="CFTR",
+        dataset="gnomad_r4",
+        filter_config=FilterConfig(include_conflicting=True),
+    )
+
+    assert result["conflicting_resolution_degraded"] == {
+        "kind": "conflicting_resolution_incomplete",
+        "dropped": 1,
+        "cause": "upstream_backpressure",
+        "to_restore": "retry compute_gene_carrier_frequency with include_conflicting_clinvar=True",
+    }
+    qualifying_ids = {v["variant_id"] for v in result["qualifying_variants"]}
+    assert "7-4-A-G" not in qualifying_ids
 
 
 @pytest.mark.asyncio

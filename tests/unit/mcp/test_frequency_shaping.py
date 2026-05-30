@@ -162,6 +162,7 @@ def test_summary_includes_overall_af_and_max_pop() -> None:
     summary = payload["summary"]
     assert "overall_af" in summary
     assert summary["overall_af"] is not None
+    assert summary["overall_af_source"] == "exome"
     assert "max_pop" in summary
     assert "max_pop_af" in summary
     assert summary["max_pop"] == "afr"
@@ -171,6 +172,28 @@ def test_summary_includes_overall_af_and_max_pop() -> None:
         "known": False,
         "how_to_check": "call get_clinvar_variant_details(variant_id)",
     }
+
+
+def test_summary_labels_overall_af_source_from_largest_an_source() -> None:
+    from gnomad_link.mcp.shaping import shape_variant_frequencies
+
+    response = VariantFrequencyResponse(
+        variant_id="1-1-A-T",
+        dataset="gnomad_r4",
+        exome=VariantDataSource(ac=5, an=100, homozygote_count=0, populations=[]),
+        genome=VariantDataSource(ac=60, an=1000, homozygote_count=0, populations=[]),
+    )
+
+    payload = shape_variant_frequencies(
+        response,
+        populations=None,
+        include_subcohorts=False,
+        include_sex_split=False,
+        exclude_zero_populations=True,
+    )
+
+    assert payload["summary"]["overall_af"] == pytest.approx(0.06)
+    assert payload["summary"]["overall_af_source"] == "genome"
 
 
 def test_gene_symbol_and_consequence_pass_through() -> None:

@@ -108,8 +108,8 @@ def variant_carrier_headline(result: dict[str, Any]) -> str:
     summary = result.get("summary") or {}
     max_pop = summary.get("max_carrier_frequency_population")
     tail = f"; highest in {max_pop}" if max_pop else ""
-    method_tail = f". method={method}" if method else "."
-    return f"{prefix} {body}{tail}{method_tail}"
+    method_tail = f". method={method}." if method else "."
+    return f"{prefix} {body}{tail}{method_tail} Research use only."
 
 
 def variant_frequencies_headline(payload: dict[str, Any]) -> str:

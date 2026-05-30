@@ -55,8 +55,11 @@ async def test_compute_carrier_frequency_ar_overall_golden() -> None:
 
     assert payload["inheritance"] == "AR"
     assert payload["overall"]["af"] == pytest.approx(0.023, abs=1e-6)
+    assert payload["overall"]["af_source"] == "exome"
     assert payload["overall"]["carrier_frequency"] == pytest.approx(0.044942, abs=1e-6)
     assert payload["overall"]["affected_frequency"] == pytest.approx(0.000529, abs=1e-6)
+    assert payload["overall"]["affected_ci_low"] < payload["overall"]["affected_frequency"]
+    assert payload["overall"]["affected_ci_high"] > payload["overall"]["affected_frequency"]
     # Wilson CI present and brackets the point estimate.
     assert payload["overall"]["ci_low"] < payload["overall"]["carrier_frequency"]
     assert payload["overall"]["ci_high"] > payload["overall"]["carrier_frequency"]
@@ -75,10 +78,13 @@ async def test_compute_carrier_frequency_per_population_and_summary() -> None:
     payload = result.structured_content or {}
 
     by_pop = {row["population"]: row for row in payload["per_population"]}
+    assert by_pop["nfe"]["af_source"] == "exome"
     assert by_pop["nfe"]["carrier_frequency"] == pytest.approx(0.044942, abs=1e-6)
     # afr has ac == 0 -> carrier present but zero, row still emitted.
     assert by_pop["afr"]["af"] == pytest.approx(0.0, abs=1e-12)
     assert by_pop["afr"]["carrier_frequency"] == pytest.approx(0.0, abs=1e-12)
+    assert by_pop["afr"]["affected_ci_low"] == pytest.approx(0.0, abs=1e-12)
+    assert by_pop["afr"]["affected_ci_high"] > by_pop["afr"]["affected_frequency"]
     assert payload["summary"]["max_carrier_frequency_population"] == "nfe"
 
 
@@ -317,9 +323,15 @@ async def test_compute_carrier_frequency_ad_affected_or_carrier() -> None:
 
     # AD overall: 1 - (1 - 0.011)^2 == 2*0.011 - 0.011^2 == 0.021879.
     assert payload["inheritance"] == "AD"
+    assert payload["overall"]["af_source"] == "exome"
     assert payload["overall"]["affected_or_carrier_frequency"] == pytest.approx(0.021879, abs=1e-6)
     assert payload["overall"]["ci_low"] < payload["overall"]["affected_or_carrier_frequency"]
     assert payload["overall"]["ci_high"] > payload["overall"]["affected_or_carrier_frequency"]
+    row = payload["per_population"][0]
+    assert row["af_source"] == "exome"
+    assert "carrier_frequency" not in row
+    assert row["affected_or_carrier_frequency"] == pytest.approx(0.021879, abs=1e-6)
+    assert payload["summary"]["max_carrier_frequency_population"] == "nfe"
 
 
 @pytest.mark.asyncio

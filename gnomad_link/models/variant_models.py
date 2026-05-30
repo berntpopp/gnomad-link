@@ -142,7 +142,11 @@ class VariantSearchResult(BaseModel):
     )
     af: float | None = Field(
         None,
-        description="Overall allele frequency from the preferred data source (exome, else genome).",
+        description="Overall allele frequency from the preferred data source.",
+    )
+    af_source: str | None = Field(
+        None,
+        description="Source used for af (exome or genome).",
     )
 
 

@@ -43,6 +43,7 @@ def test_populations_sorted_by_carrier_desc_with_one_in() -> None:
     assert [p["population"] for p in pops] == ["asj", "nfe", "afr"]
     assert pops[0]["carrier_one_in"] == 9  # 1/0.1106
     assert shaped["global"]["carrier_one_in"] == 18  # 1/0.0568
+    assert shaped["settings"]["omitted_populations"] == ["sex_split", "subcohort"]
 
 
 def test_contributing_variants_capped_with_truncated() -> None:
@@ -85,3 +86,17 @@ def test_full_mode_keeps_all_variants() -> None:
     shaped = shape_gene_carrier(_service_result(), response_mode="full", top_variants_limit=3)
     assert len(shaped["contributing_variants"]["top"]) == 5
     assert "truncated" not in shaped["contributing_variants"]
+
+
+def test_conflicting_resolution_degraded_block_is_surfaced() -> None:
+    result = _service_result()
+    result["conflicting_resolution_degraded"] = {
+        "kind": "conflicting_resolution_incomplete",
+        "dropped": 2,
+        "cause": "upstream_backpressure",
+        "to_restore": "retry compute_gene_carrier_frequency with include_conflicting_clinvar=True",
+    }
+
+    shaped = shape_gene_carrier(result, response_mode="compact", top_variants_limit=10)
+
+    assert shaped["degraded"] == result["conflicting_resolution_degraded"]

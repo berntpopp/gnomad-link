@@ -45,6 +45,8 @@ def shape_gene_carrier(
     top_variants_limit: int,
 ) -> dict[str, Any]:
     """Project a GeneCarrierService payload into the tool success shape."""
+    settings = dict(result.get("settings") or {})
+    settings.setdefault("omitted_populations", ["sex_split", "subcohort"])
     populations = [
         {"population": pop_id, **_shape_metrics(metrics)}
         for pop_id, metrics in (result.get("populations") or {}).items()
@@ -75,12 +77,15 @@ def shape_gene_carrier(
         "gene": result.get("gene"),
         "dataset": result.get("dataset"),
         "reference_genome": result.get("reference_genome"),
-        "settings": result.get("settings"),
+        "settings": settings,
         "global": _shape_metrics(result.get("global") or {}),
         "populations": populations,
         "contributing_variants": contributing,
         "sources": result.get("sources"),
     }
+    degraded = result.get("conflicting_resolution_degraded")
+    if degraded:
+        shaped["degraded"] = degraded
     shaped.update(provenance_block("gene_carrier", full=response_mode == "full"))
     # Lead with the plain-English headline so an LLM can answer without parsing.
     return {"headline": gene_carrier_headline(shaped), **shaped}

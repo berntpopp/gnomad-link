@@ -48,10 +48,10 @@ dependencies; no live gnomAD calls in default CI; research-use scope only.
 - [x] **G9 mcp conformance (#13 safe subset)** — get_server_capabilities
   open-world annotation; resource `mime_type`; MCP_PROTOCOL_VERSION from
   SDK; prompt-arg patterns. (Skip fragile private-attr listChanged suppression.)
-- [ ] **G10 remaining data-fidelity / self-doc (#15,#4,#2)** — variant_carrier
+- [x] **G10 remaining data-fidelity / self-doc (#15,#4,#2)** — variant_carrier
   headline research-use caveat; transcript pext_note; gene-carrier
-  omitted_populations + AR affected CIs + AD per-pop key fix + length-weighted
-  mean_pext; ClinVar fan-out backpressure accounting.
+  omitted_populations + AR affected CIs + AD per-pop key fix; ClinVar fan-out
+  backpressure accounting; AF source labels.
 
 ## Verification
 - `make test` after each group; `make ci-local` before handoff.

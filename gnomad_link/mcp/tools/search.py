@@ -8,6 +8,7 @@ from typing import Annotated, Any, Literal
 from fastmcp import FastMCP
 from pydantic import Field
 
+from gnomad_link.mcp.af import preferred_overall_af
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
 from gnomad_link.mcp.schema_relax import relax_output_schema
@@ -37,15 +38,12 @@ async def _enrich_variant_id(
         freq = await service.get_variant_frequencies(variant_id, dataset)
     except Exception:
         return {}
-    af: float | None = None
-    if freq.exome is not None and freq.exome.an:
-        af = freq.exome.ac / freq.exome.an
-    elif freq.genome is not None and freq.genome.an:
-        af = freq.genome.ac / freq.genome.an
+    af, af_source = preferred_overall_af(freq.exome, freq.genome)
     return {
         "gene_symbol": freq.gene_symbol,
         "major_consequence": freq.major_consequence,
         "af": af,
+        "af_source": af_source,
     }
 
 

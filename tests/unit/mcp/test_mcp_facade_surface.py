@@ -368,6 +368,8 @@ def test_capabilities_documents_parameter_conventions_and_contracts() -> None:
     )
     assert caps["contracts"]["resource"] == "gnomad://reference"
     assert caps["concurrency"]["queue_wait_seconds"] >= 1
+    assert "af_source" in caps["response_fields"]
+    assert "overall_af_source" in caps["response_fields"]["af_source"]
 
 
 def test_reference_resource_has_taxonomy_truncation_glossary() -> None:

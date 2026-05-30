@@ -134,7 +134,7 @@ def test_variant_carrier_headline_ar_with_ci() -> None:
     assert headline.startswith("7-117559590-ATCT-A (AR/gnomad_r4): carrier frequency 0.045")
     assert "95% CI" in headline
     assert "highest in nfe" in headline
-    assert headline.endswith("method=hwe")
+    assert headline.endswith("method=hwe. Research use only.")
 
 
 def test_variant_carrier_headline_ad_and_xl_variants() -> None:
@@ -147,6 +147,7 @@ def test_variant_carrier_headline_ad_and_xl_variants() -> None:
         }
     )
     assert "affected-or-carrier frequency" in ad
+    assert ad.endswith("Research use only.")
     xl = variant_carrier_headline(
         {
             "variant_id": "X-1-A-T",
@@ -156,6 +157,7 @@ def test_variant_carrier_headline_ad_and_xl_variants() -> None:
         }
     )
     assert "female carrier frequency" in xl and "affected male frequency" in xl
+    assert xl.endswith("Research use only.")
 
 
 def test_variant_carrier_headline_missing_overall_is_safe() -> None:
@@ -163,6 +165,7 @@ def test_variant_carrier_headline_missing_overall_is_safe() -> None:
         {"variant_id": "1-1-A-T", "inheritance": "AR", "dataset": "gnomad_r4"}
     )
     assert "carrier frequency unavailable" in headline
+    assert headline.endswith("Research use only.")
 
 
 def test_variant_frequencies_headline_renders_summary() -> None:

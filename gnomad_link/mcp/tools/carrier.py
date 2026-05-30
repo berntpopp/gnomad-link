@@ -8,6 +8,7 @@ from typing import Annotated, Any, Literal
 from fastmcp import FastMCP
 from pydantic import Field
 
+from gnomad_link.mcp.af import preferred_overall_af
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.build_check import detect_variant_id_mismatch
 from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, run_mcp_tool
@@ -50,13 +51,20 @@ _CARRIER_OUTPUT_SCHEMA = {
 }
 
 
-def _preferred_source(response: VariantFrequencyResponse) -> VariantDataSource | None:
-    """Prefer exome (larger autosomal cohort), fall back to genome."""
-    if response.exome is not None and response.exome.populations:
-        return response.exome
-    if response.genome is not None and response.genome.populations:
-        return response.genome
-    return response.exome or response.genome
+def _preferred_source(
+    response: VariantFrequencyResponse,
+) -> tuple[VariantDataSource | None, str | None]:
+    """Return the preferred source plus its label for AF-derived estimates."""
+    _af, source_name = preferred_overall_af(response.exome, response.genome)
+    if source_name == "exome":
+        return response.exome, "exome"
+    if source_name == "genome":
+        return response.genome, "genome"
+    if response.exome is not None:
+        return response.exome, "exome"
+    if response.genome is not None:
+        return response.genome, "genome"
+    return None, None
 
 
 def _is_sex_split_population(pop_name: str) -> bool:
@@ -69,14 +77,19 @@ def _is_sex_split_population(pop_name: str) -> bool:
     return pop_name in ("XX", "XY") or pop_name.endswith(("_XX", "_XY"))
 
 
-def _ar_overall(source: VariantDataSource | None, method: str) -> dict[str, Any]:
+def _ar_overall(
+    source: VariantDataSource | None, method: str, source_name: str | None
+) -> dict[str, Any]:
     if source is None or source.an <= 0:
         return {
             "af": None,
+            "af_source": source_name,
             "carrier_frequency": None,
             "ci_low": None,
             "ci_high": None,
             "affected_frequency": None,
+            "affected_ci_low": None,
+            "affected_ci_high": None,
         }
     af = source.ac / source.an
     if method == "hom_corrected":
@@ -88,14 +101,19 @@ def _ar_overall(source: VariantDataSource | None, method: str) -> dict[str, Any]
     ci_low, ci_high = wilson_ci(af=af, n=source.an)
     return {
         "af": af,
+        "af_source": source_name,
         "carrier_frequency": cf,
         "ci_low": ar_carrier(ci_low) if ci_low is not None else None,
         "ci_high": ar_carrier(ci_high) if ci_high is not None else None,
         "affected_frequency": ar_affected(af),
+        "affected_ci_low": ar_affected(ci_low) if ci_low is not None else None,
+        "affected_ci_high": ar_affected(ci_high) if ci_high is not None else None,
     }
 
 
-def _ar_per_population(source: VariantDataSource | None, method: str) -> list[dict[str, Any]]:
+def _ar_per_population(
+    source: VariantDataSource | None, method: str, source_name: str | None
+) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     if source is None:
         return rows
@@ -109,10 +127,13 @@ def _ar_per_population(source: VariantDataSource | None, method: str) -> list[di
                     "ac": pop.allele_count,
                     "an": pop.allele_number,
                     "af": None,
+                    "af_source": source_name,
                     "carrier_frequency": None,
                     "ci_low": None,
                     "ci_high": None,
                     "affected_frequency": None,
+                    "affected_ci_low": None,
+                    "affected_ci_high": None,
                 }
             )
             continue
@@ -133,10 +154,13 @@ def _ar_per_population(source: VariantDataSource | None, method: str) -> list[di
                 "ac": pop.allele_count,
                 "an": pop.allele_number,
                 "af": af,
+                "af_source": source_name,
                 "carrier_frequency": cf,
                 "ci_low": ar_carrier(ci_low) if ci_low is not None else None,
                 "ci_high": ar_carrier(ci_high) if ci_high is not None else None,
                 "affected_frequency": ar_affected(af),
+                "affected_ci_low": ar_affected(ci_low) if ci_low is not None else None,
+                "affected_ci_high": ar_affected(ci_high) if ci_high is not None else None,
             }
         )
     return rows
@@ -144,7 +168,11 @@ def _ar_per_population(source: VariantDataSource | None, method: str) -> list[di
 
 def _max_carrier_population(rows: list[dict[str, Any]]) -> str | None:
     def _score(row: dict[str, Any]) -> float | None:
-        for key in ("carrier_frequency", "female_carrier_frequency"):
+        for key in (
+            "carrier_frequency",
+            "affected_or_carrier_frequency",
+            "female_carrier_frequency",
+        ):
             value = row.get(key)
             if value is not None:
                 return float(value)
@@ -158,10 +186,11 @@ def _max_carrier_population(rows: list[dict[str, Any]]) -> str | None:
     return str(max(scored, key=lambda item: item[1])[0]["population"])
 
 
-def _ad_overall(source: VariantDataSource | None) -> dict[str, Any]:
+def _ad_overall(source: VariantDataSource | None, source_name: str | None) -> dict[str, Any]:
     if source is None or source.an <= 0:
         return {
             "af": None,
+            "af_source": source_name,
             "affected_or_carrier_frequency": None,
             "ci_low": None,
             "ci_high": None,
@@ -170,13 +199,16 @@ def _ad_overall(source: VariantDataSource | None) -> dict[str, Any]:
     ci_low, ci_high = wilson_ci(af=af, n=source.an)
     return {
         "af": af,
+        "af_source": source_name,
         "affected_or_carrier_frequency": ad_affected_or_carrier(af),
         "ci_low": ad_affected_or_carrier(ci_low) if ci_low is not None else None,
         "ci_high": ad_affected_or_carrier(ci_high) if ci_high is not None else None,
     }
 
 
-def _ad_per_population(source: VariantDataSource | None) -> list[dict[str, Any]]:
+def _ad_per_population(
+    source: VariantDataSource | None, source_name: str | None
+) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     if source is None:
         return rows
@@ -196,10 +228,10 @@ def _ad_per_population(source: VariantDataSource | None) -> list[dict[str, Any]]
                 "ac": pop.allele_count,
                 "an": pop.allele_number,
                 "af": af,
+                "af_source": source_name,
                 "affected_or_carrier_frequency": (
                     ad_affected_or_carrier(af) if af is not None else None
                 ),
-                "carrier_frequency": ad_affected_or_carrier(af) if af is not None else None,
                 "ci_low": ci_low,
                 "ci_high": ci_high,
             }
@@ -338,16 +370,16 @@ def register_carrier_tools(
                 )
             service = service_factory()
             response = await service.get_variant_frequencies(variant_id, dataset)
-            source = _preferred_source(response)
+            source, source_name = _preferred_source(response)
             if inheritance == "AD":
-                overall = _ad_overall(source)
-                per_population = _ad_per_population(source)
+                overall = _ad_overall(source, source_name)
+                per_population = _ad_per_population(source, source_name)
             elif inheritance == "XL":
                 overall = _xl_overall(source)
                 per_population = _xl_per_population(source)
             else:  # AR
-                overall = _ar_overall(source, method)
-                per_population = _ar_per_population(source, method)
+                overall = _ar_overall(source, method, source_name)
+                per_population = _ar_per_population(source, method, source_name)
             if populations is not None:
                 wanted = {p.lower() for p in populations}
                 per_population = [

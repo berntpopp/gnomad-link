@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from gnomad_link.mcp.af import preferred_overall_af
 from gnomad_link.mcp.errors import ToolInputError
 from gnomad_link.mcp.heteroplasmy import (
     shape_mitochondrial_variant,
@@ -87,19 +88,11 @@ def _top_enriched_population(
     return best
 
 
-def _overall_af(exome: dict[str, Any] | None, genome: dict[str, Any] | None) -> float | None:
-    """Compute a combined overall AF from the largest source by AN."""
-    best_an = 0
-    best_af: float | None = None
-    for source in (exome, genome):
-        if not source:
-            continue
-        an = source.get("an") or 0
-        af = source.get("af")
-        if an > best_an and af is not None:
-            best_an = an
-            best_af = af
-    return best_af
+def _overall_af(
+    exome: dict[str, Any] | None, genome: dict[str, Any] | None
+) -> tuple[float | None, str | None]:
+    """Compute the preferred overall AF and label which source supplied it."""
+    return preferred_overall_af(exome, genome)
 
 
 def shape_variant_frequencies(
@@ -135,7 +128,7 @@ def shape_variant_frequencies(
         "genome": genome,
     }
     top = _top_enriched_population(exome, genome)
-    overall = _overall_af(exome, genome)
+    overall, overall_source = _overall_af(exome, genome)
     if top is not None or overall is not None:
         summary: dict[str, Any] = {}
         if top is not None:
@@ -144,6 +137,7 @@ def shape_variant_frequencies(
             summary["max_pop_af"] = top["af"]
         if overall is not None:
             summary["overall_af"] = overall
+            summary["overall_af_source"] = overall_source
         # has_clinvar is not knowable from frequency data alone; emit a
         # self-describing sentinel pointing at the tool that can answer it
         # rather than an opaque null the LLM cannot ground on.

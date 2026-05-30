@@ -3,7 +3,9 @@
 The standalone ``transcript().gtex_tissue_expression`` field is unavailable on
 GRCh38 and errors upstream on GRCh37, so GTEx is sourced via the working gene
 path (``gene.transcripts[].gtex_tissue_expression``), filtered to the requested
-transcript. The GTEx fetch is best-effort: exon/structure survive a GTEx error.
+transcript. Transcript expression contains tissue rows only; pext is gene-level,
+so callers should use get_gene_summary for mean_pext. The GTEx fetch is
+best-effort: exon/structure survive a GTEx error.
 """
 
 from __future__ import annotations
@@ -77,9 +79,11 @@ class TranscriptService:
                 "note": "GTEx lookup failed upstream; exon structure above is unaffected.",
             }
         gtex = self._select_transcript_gtex(raw, transcript_id)
-        return compact_expression(
+        expression = compact_expression(
             pext=None, gtex_tissue_expression=gtex, source_build=reference_genome
         )
+        expression["pext_note"] = "pext is gene-level; use get_gene_summary for mean_pext"
+        return expression
 
     @staticmethod
     def _select_transcript_gtex(

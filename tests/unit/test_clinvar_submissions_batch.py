@@ -98,3 +98,5 @@ async def test_submissions_batch_failed_chunk_is_best_effort(
 
     # A failed batch contributes nothing rather than failing the whole resolution.
     assert result == {}
+    assert result.failed_chunks == 1
+    assert result.failed_variant_ids == ["1-1-A-G"]

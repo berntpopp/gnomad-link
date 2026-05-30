@@ -228,6 +228,10 @@ def get_capabilities_resource() -> dict[str, Any]:
                 "both success and error envelopes; execute the first entry to advance the "
                 "workflow without guessing the next tool"
             ),
+            "af_source": (
+                "overall_af_source / af_source labels which source supplied a preferred "
+                "overall AF value: exome or genome, selected by largest allele number"
+            ),
         },
         "tool_categories": {
             "variant": [

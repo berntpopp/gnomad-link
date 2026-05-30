@@ -110,6 +110,7 @@ async def test_resolve_variant_id_enriches_with_gene_consequence_af() -> None:
     assert first["gene_symbol"] == "PCSK9"
     assert first["major_consequence"] == "frameshift_variant"
     assert first["af"] == pytest.approx(0.0001)
+    assert first["af_source"] == "exome"
     assert stub.freq_calls == [("1-55051215-G-GA", "gnomad_r4")]
 
 
@@ -203,6 +204,7 @@ async def test_search_variants_alias_also_enriches() -> None:
     assert first["gene_symbol"] == "PCSK9"
     assert first["major_consequence"] == "frameshift_variant"
     assert first["af"] == pytest.approx(0.0001)
+    assert first["af_source"] == "exome"
     # Alias must still carry its deprecation hint.
     meta = payload.get("_meta") or {}
     assert meta.get("deprecated") is True

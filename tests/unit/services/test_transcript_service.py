@@ -70,6 +70,7 @@ async def test_unwraps_and_attaches_top_tissues() -> None:
     expr = result["expression"]
     assert expr["top_tissues"][0] == {"tissue": "Liver", "value": 90.1}
     assert expr["source_build"] == "GRCh38"
+    assert expr["pext_note"] == "pext is gene-level; use get_gene_summary for mean_pext"
 
 
 @pytest.mark.asyncio
