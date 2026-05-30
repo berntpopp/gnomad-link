@@ -26,6 +26,7 @@ EXPECTED_TOOLS = {
     "compute_carrier_frequency",
     "get_gnomad_diagnostics",
     "compare_variant_across_datasets",
+    "search_structural_variants",
 }
 
 EXPECTED_DATA_TOOLS = EXPECTED_TOOLS - {"get_server_capabilities", "get_gnomad_diagnostics"}

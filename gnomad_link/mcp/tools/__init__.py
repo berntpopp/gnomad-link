@@ -16,6 +16,7 @@ from gnomad_link.mcp.tools.genes import register_gene_tools
 from gnomad_link.mcp.tools.metadata import register_metadata_tools
 from gnomad_link.mcp.tools.search import register_search_tools
 from gnomad_link.mcp.tools.specialty import register_specialty_tools
+from gnomad_link.mcp.tools.sv_search import register_sv_search_tools
 from gnomad_link.mcp.tools.variants import register_variant_tools
 from gnomad_link.services import FrequencyService
 
@@ -34,5 +35,6 @@ def register_gnomad_tools(
     register_clinvar_tools(mcp, service_factory=service_factory)
     register_coordinate_tools(mcp, service_factory=service_factory)
     register_specialty_tools(mcp, service_factory=service_factory)
+    register_sv_search_tools(mcp, service_factory=service_factory)
     register_search_tools(mcp, service_factory=service_factory)
     register_diagnostics_tools(mcp, service_factory=service_factory)
