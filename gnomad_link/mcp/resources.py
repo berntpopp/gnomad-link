@@ -93,10 +93,10 @@ def get_capabilities_resource() -> dict[str, Any]:
         "token_cost_hints": {
             "get_server_capabilities": "<2kB",
             "get_variant_frequencies": "~2-4kB",
-            "get_variant_details": "compact ~3kB, full up to ~50kB",
+            "get_variant_details": "compact ~3-6kB (population-trimmed), full up to ~50kB",
             "compare_variant_across_datasets": "~3-8kB (dataset/liftover dependent)",
             "get_gene_details": "compact ~2kB, full up to ~30kB",
-            "get_gene_variants": "~5-50kB (limit-dependent)",
+            "get_gene_variants": "~5-45kB at limit=100 (include_populations=False ~30% leaner)",
             "get_gene_summary": "compact ~3-8kB (ClinVar-dependent), full up to ~40kB",
             "get_clinvar_variant_details": "~3-15kB (submissions_limit dependent)",
             "get_clinvar_meta": "<1kB",
@@ -117,7 +117,8 @@ def get_capabilities_resource() -> dict[str, Any]:
         "limitations": [
             "Default local CI avoids live gnomAD calls.",
             "get_region capped at 100kb span; get_gene_variants capped at 500 rows.",
-            "Population truncation: subcohort and sex-split rows are omitted by default.",
+            "Population truncation: subcohort, sex-split, and zero-AC rows are omitted by "
+            "default across get_variant_frequencies, get_variant_details, and get_gene_variants.",
             RESEARCH_USE_NOTICE,
         ],
         "llm_driver_contract": {

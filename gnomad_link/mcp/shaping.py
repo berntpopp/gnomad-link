@@ -8,112 +8,19 @@ from gnomad_link.mcp.heteroplasmy import (
     shape_mitochondrial_variant,
     trim_heteroplasmy_distribution,
 )
+from gnomad_link.mcp.population_shaping import (
+    BASE_POPULATION_CODES,
+    build_populations_truncated,
+    filter_populations,
+    population_projection_note,
+    project_variant_source,
+)
 from gnomad_link.models import VariantFrequencyResponse
 
 __all__ = [
     "shape_mitochondrial_variant",
     "trim_heteroplasmy_distribution",
 ]
-
-BASE_POPULATION_CODES = {
-    "afr",
-    "amr",
-    "asj",
-    "eas",
-    "fin",
-    "nfe",
-    "sas",
-    "mid",
-    "ami",
-    "remaining",
-}
-
-SUBCOHORT_PREFIXES = (
-    "non_topmed_",
-    "non_ukb_",
-    "non_v2_",
-    "1kg_",
-    "hgdp_",
-    "controls_",
-    "1kg:",
-    "hgdp:",
-)
-
-
-def _is_subcohort(pop_id: str) -> bool:
-    return pop_id.startswith(SUBCOHORT_PREFIXES)
-
-
-def _is_sex_split(pop_id: str) -> bool:
-    return pop_id in {"XX", "XY"} or pop_id.endswith(("_XX", "_XY"))
-
-
-def _get_pop_attr(pop: Any, attr_name: str, dict_key: str, default: Any = None) -> Any:
-    """Read a field from a Pydantic model or a dict, checking for None explicitly."""
-    val = getattr(pop, attr_name, None)
-    if val is not None:
-        return val
-    if isinstance(pop, dict):
-        return pop.get(dict_key, default)
-    return default
-
-
-def _filter_populations(
-    populations: list[Any],
-    *,
-    select: list[str] | None,
-    include_subcohorts: bool,
-    include_sex_split: bool,
-    exclude_zero: bool,
-) -> tuple[list[dict[str, Any]], dict[str, int]]:
-    dropped = {"zero_ac": 0, "subcohorts": 0, "sex_split": 0, "not_selected": 0}
-    kept: list[dict[str, Any]] = []
-    for pop in populations:
-        pop_id = _get_pop_attr(pop, "name", "id") or _get_pop_attr(pop, "id", "name")
-        ac_raw = getattr(pop, "allele_count", None)
-        ac = ac_raw if ac_raw is not None else (pop.get("ac", 0) if isinstance(pop, dict) else 0)
-        an_raw = getattr(pop, "allele_number", None)
-        an = an_raw if an_raw is not None else (pop.get("an", 0) if isinstance(pop, dict) else 0)
-        hom_raw = getattr(pop, "homozygote_count", None)
-        hom = (
-            hom_raw
-            if hom_raw is not None
-            else (pop.get("homozygote_count", 0) if isinstance(pop, dict) else 0)
-        )
-        if select is not None and pop_id not in select:
-            dropped["not_selected"] += 1
-            continue
-        if not include_subcohorts and _is_subcohort(pop_id):
-            dropped["subcohorts"] += 1
-            continue
-        if not include_sex_split and _is_sex_split(pop_id):
-            dropped["sex_split"] += 1
-            continue
-        if exclude_zero and ac == 0:
-            dropped["zero_ac"] += 1
-            continue
-        af = (ac / an) if an else None
-        kept.append({"id": pop_id, "ac": ac, "an": an, "af": af, "homozygote_count": hom})
-    return kept, dropped
-
-
-def _to_restore_hint(dropped: dict[str, int]) -> str | None:
-    """Return the most targeted parameter override to restore the largest dropped category."""
-    best_key: str | None = None
-    best_count = 0
-    for key, count in dropped.items():
-        if count > best_count:
-            best_count = count
-            best_key = key
-    if best_key is None or best_count == 0:
-        return None
-    mapping = {
-        "subcohorts": "include_subcohorts=True",
-        "sex_split": "include_sex_split=True",
-        "zero_ac": "exclude_zero_populations=False",
-        "not_selected": "populations=None (remove population filter)",
-    }
-    return mapping.get(best_key)
 
 
 def _shape_source(
@@ -128,7 +35,7 @@ def _shape_source(
         return None
     ac = getattr(source, "ac", 0)
     an = getattr(source, "an", 0)
-    populations, dropped = _filter_populations(
+    populations, dropped = filter_populations(
         getattr(source, "populations", []),
         select=select,
         include_subcohorts=include_subcohorts,
@@ -143,25 +50,14 @@ def _shape_source(
         "hemizygote_count": getattr(source, "hemizygote_count", None),
         "populations": populations,
     }
-    total_dropped = sum(dropped.values())
-    if total_dropped:
-        to_restore = _to_restore_hint(dropped)
-        truncated: dict[str, Any] = {
-            "kind": "populations",
-            "dropped": dropped,
-            "filter": {
-                "include_subcohorts": include_subcohorts,
-                "include_sex_split": include_sex_split,
-                "exclude_zero_populations": exclude_zero,
-                "populations": select,
-            },
-            "to_disable": (
-                "set include_subcohorts=True and include_sex_split=True and "
-                "exclude_zero_populations=False for the full upstream payload"
-            ),
-        }
-        if to_restore:
-            truncated["to_restore"] = to_restore
+    truncated = build_populations_truncated(
+        dropped,
+        select=select,
+        include_subcohorts=include_subcohorts,
+        include_sex_split=include_sex_split,
+        exclude_zero=exclude_zero,
+    )
+    if truncated:
         out["truncated"] = truncated
     return out
 
@@ -253,6 +149,31 @@ def shape_variant_frequencies(
     return payload
 
 
+def _project_gene_variant(
+    v: dict[str, Any],
+    *,
+    select: list[str] | None,
+    include_subcohorts: bool,
+    include_sex_split: bool,
+    exclude_zero: bool,
+    include_populations: bool,
+) -> dict[str, Any]:
+    """Return a copy of a gene-variant row with its exome/genome populations trimmed."""
+    out = dict(v)
+    for source_key in ("exome", "genome"):
+        if isinstance(out.get(source_key), dict):
+            out[source_key] = project_variant_source(
+                out[source_key],
+                select=select,
+                include_subcohorts=include_subcohorts,
+                include_sex_split=include_sex_split,
+                exclude_zero=exclude_zero,
+                include_populations=include_populations,
+                emit_truncated=False,
+            )
+    return out
+
+
 def shape_gene_variants(
     raw: list[dict[str, Any]],
     *,
@@ -260,8 +181,19 @@ def shape_gene_variants(
     consequence: str | None,
     max_af: float | None,
     min_ac: int | None,
+    include_populations: bool = True,
+    include_subcohorts: bool = False,
+    include_sex_split: bool = False,
+    exclude_zero_populations: bool = True,
 ) -> dict[str, Any]:
-    """Filter and cap a gene-variants list. Always returns a `truncated` block when the cap fires."""
+    """Filter and cap a gene-variants list. Always returns a `truncated` block when the cap fires.
+
+    Each kept row's exome/genome population breakdown is trimmed through the same
+    projector as the single-variant tools (drop subcohort, sex-split, and zero-AC
+    rows by default; ``include_populations=False`` drops the arrays entirely for
+    list scans). The projection is reported once via a payload-level
+    ``population_projection`` note rather than per-row ``truncated`` blocks.
+    """
 
     if limit <= 0 or limit > 500:
         raise ValueError("limit must be in [1, 500]")
@@ -283,10 +215,39 @@ def shape_gene_variants(
         if min_ac is not None and (v.get("ac") or 0) < min_ac:
             dropped["by_min_ac"] += 1
             continue
-        filtered.append(v)
+        filtered.append(
+            _project_gene_variant(
+                v,
+                select=None,
+                include_subcohorts=include_subcohorts,
+                include_sex_split=include_sex_split,
+                exclude_zero=exclude_zero_populations,
+                include_populations=include_populations,
+            )
+        )
         if len(filtered) >= limit:
             break
-    payload = {"variants": filtered, "returned": len(filtered), "total_seen": total_seen}
+    payload: dict[str, Any] = {
+        "variants": filtered,
+        "returned": len(filtered),
+        "total_seen": total_seen,
+    }
+    # One payload-level note describing the per-variant population projection,
+    # unless the caller explicitly asked for the full untrimmed breakdown.
+    full_passthrough = (
+        include_populations
+        and include_subcohorts
+        and include_sex_split
+        and not exclude_zero_populations
+    )
+    if filtered and not full_passthrough:
+        payload["population_projection"] = population_projection_note(
+            select=None,
+            include_subcohorts=include_subcohorts,
+            include_sex_split=include_sex_split,
+            exclude_zero=exclude_zero_populations,
+            include_populations=include_populations,
+        )
     limit_hit = len(filtered) >= limit and total_seen < len(raw)
     any_dropped = sum(dropped.values()) > 0
     if limit_hit or any_dropped or total_seen > len(filtered):
@@ -331,7 +292,13 @@ def _rank_transcript(tx: dict[str, Any]) -> int:
 
 
 def shape_variant_details_compact(
-    raw: dict[str, Any], *, max_transcripts: int = 10
+    raw: dict[str, Any],
+    *,
+    max_transcripts: int = 10,
+    populations: list[str] | None = None,
+    include_subcohorts: bool = False,
+    include_sex_split: bool = False,
+    exclude_zero_populations: bool = True,
 ) -> dict[str, Any]:
     """Project the gnomAD variant payload to the compact subset advertised in VariantDetails.
 
@@ -340,6 +307,11 @@ def shape_variant_details_compact(
     with ``response_mode='full'``. Within the cap, canonical / MANE-Select
     transcripts win the slots first, then ``protein_coding`` entries, then the
     rest; original order is preserved within each rank tier.
+
+    The exome/genome population breakdowns are trimmed through the same projector
+    as ``get_variant_frequencies`` (drop subcohort, sex-split, and zero-AC rows by
+    default); each source gains its own ``truncated.kind == "populations"`` block
+    when rows are dropped. QC ``filters`` and source-level counts are preserved.
     """
 
     keep = {
@@ -357,6 +329,15 @@ def shape_variant_details_compact(
         "genome",
     }
     compact = {k: v for k, v in raw.items() if k in keep}
+    for source_key in ("exome", "genome"):
+        if isinstance(compact.get(source_key), dict):
+            compact[source_key] = project_variant_source(
+                compact[source_key],
+                select=populations,
+                include_subcohorts=include_subcohorts,
+                include_sex_split=include_sex_split,
+                exclude_zero=exclude_zero_populations,
+            )
     transcripts = compact.get("transcript_consequences")
     if isinstance(transcripts, list):
         # Stable sort: rank canonical/MANE first, then protein_coding, then

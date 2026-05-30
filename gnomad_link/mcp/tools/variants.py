@@ -157,14 +157,38 @@ def register_variant_tools(
         ] = "gnomad_r4",
         response_mode: Annotated[
             Literal["compact", "full"],
-            Field(description="compact strips raw GraphQL extras; full passes through everything."),
+            Field(
+                description=(
+                    "compact strips raw GraphQL extras and trims the population "
+                    "breakdown (see the toggles below); full passes through everything."
+                )
+            ),
         ] = "compact",
         max_transcripts: Annotated[
             int,
             Field(ge=1, le=200, description="Cap on transcript_consequences in compact mode."),
         ] = 10,
+        populations: Annotated[
+            list[str] | None,
+            Field(
+                description="Restrict population rows to these codes (e.g. ['afr','nfe']). None keeps all kept rows.",
+                examples=[["afr", "nfe"]],
+            ),
+        ] = None,
+        include_subcohorts: Annotated[
+            bool,
+            Field(description="Include non_topmed_*, non_ukb_*, 1kg_*, hgdp_*, controls_* rows."),
+        ] = False,
+        include_sex_split: Annotated[
+            bool,
+            Field(description="Include _XX/_XY sex-split rows."),
+        ] = False,
+        exclude_zero_populations: Annotated[
+            bool,
+            Field(description="Drop populations with allele_count == 0 (compact mode)."),
+        ] = True,
     ) -> dict[str, Any]:
-        """Use this when a caller needs transcript consequences, in-silico predictors, or ClinVar annotation for a single variant id. Prefer get_variant_frequencies if only allele counts are needed; this tool returns the larger annotation payload. Returns compact ~3kB, full up to ~50kB."""
+        """Use this when a caller needs transcript consequences, in-silico predictors, or ClinVar annotation for a single variant id. Prefer get_variant_frequencies if only allele counts are needed; this tool returns the larger annotation payload. Compact trims the exome/genome population breakdown (drops subcohort, sex-split, and zero-AC rows; toggle the booleans to expand) and emits a `truncated` block per source. Returns compact ~3-6kB, full up to ~50kB."""
 
         async def call() -> dict[str, Any]:
             inferred = detect_variant_id_mismatch(variant_id, dataset)
@@ -184,7 +208,14 @@ def register_variant_tools(
 
                 raise VariantNotFoundError(f"Variant {variant_id} not found in {dataset}")
             if response_mode == "compact":
-                return shape_variant_details_compact(variant, max_transcripts=max_transcripts)
+                return shape_variant_details_compact(
+                    variant,
+                    max_transcripts=max_transcripts,
+                    populations=populations,
+                    include_subcohorts=include_subcohorts,
+                    include_sex_split=include_sex_split,
+                    exclude_zero_populations=exclude_zero_populations,
+                )
             return variant
 
         return await run_mcp_tool(

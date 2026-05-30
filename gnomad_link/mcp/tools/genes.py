@@ -136,8 +136,30 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
         min_ac: Annotated[
             int | None, Field(ge=0, description="Drop variants whose AC is below this threshold.")
         ] = None,
+        include_populations: Annotated[
+            bool,
+            Field(
+                description=(
+                    "Keep each variant's per-population breakdown (trimmed). Set False to "
+                    "drop the population arrays entirely (keeps ac/an/af) for a lean list scan "
+                    "— the biggest token saving."
+                )
+            ),
+        ] = True,
+        include_subcohorts: Annotated[
+            bool,
+            Field(description="Include non_topmed_*, non_ukb_*, 1kg_*, hgdp_*, controls_* rows."),
+        ] = False,
+        include_sex_split: Annotated[
+            bool,
+            Field(description="Include _XX/_XY sex-split rows."),
+        ] = False,
+        exclude_zero_populations: Annotated[
+            bool,
+            Field(description="Drop populations with allele_count == 0 from each variant."),
+        ] = True,
     ) -> dict[str, Any]:
-        """Use this when a caller wants per-variant rows inside a gene. Large genes (e.g. TTN) return tens of thousands of variants upstream; this tool caps at 500 and exposes consequence/AF/AC filters. Returns a `truncated` block whenever the cap fires. Returns ~5-50kB (limit-dependent)."""
+        """Use this when a caller wants per-variant rows inside a gene. Large genes (e.g. TTN) return tens of thousands of variants upstream; this tool caps at 500 and exposes consequence/AF/AC filters. Each variant's population breakdown is trimmed (drops subcohort, sex-split, and zero-AC rows; set include_populations=False to drop the arrays entirely for a ~30% leaner scan); the projection is described once in `population_projection`. Returns a `truncated` block whenever the cap fires. Returns ~5-45kB at the default limit=100 (lower the limit or set include_populations=False to shrink)."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()
@@ -148,6 +170,10 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
                 consequence=consequence,
                 max_af=max_af,
                 min_ac=min_ac,
+                include_populations=include_populations,
+                include_subcohorts=include_subcohorts,
+                include_sex_split=include_sex_split,
+                exclude_zero_populations=exclude_zero_populations,
             )
 
         return await run_mcp_tool(
