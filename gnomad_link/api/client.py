@@ -374,3 +374,55 @@ class UnifiedGnomadClient(BaseGnomadClient):
         result = await self.execute_query("sv_search_by_region", variables, "v4")
         region = result.get("region") or {}
         return list(region.get("structural_variants") or [])
+
+    async def get_gene_coverage(
+        self,
+        *,
+        gene_id: str | None,
+        gene_symbol: str | None,
+        reference_genome: str,
+        dataset: str,
+    ) -> dict[str, Any]:
+        """Get per-position exome/genome coverage bins for a gene."""
+        version = QueryBuilder.get_version_for_dataset(dataset)
+        variables: dict[str, Any] = {
+            "reference_genome": reference_genome,
+            "dataset": dataset,
+        }
+        if gene_id:
+            variables["gene_id"] = gene_id
+        if gene_symbol:
+            variables["gene_symbol"] = gene_symbol
+        return await self.execute_query(
+            "coverage", variables, version, operation_name="gene_coverage"
+        )
+
+    async def get_region_coverage(
+        self,
+        *,
+        chrom: str,
+        start: int,
+        stop: int,
+        reference_genome: str,
+        dataset: str,
+    ) -> dict[str, Any]:
+        """Get per-position exome/genome coverage bins for a region."""
+        version = QueryBuilder.get_version_for_dataset(dataset)
+        variables: dict[str, Any] = {
+            "chrom": chrom,
+            "start": start,
+            "stop": stop,
+            "reference_genome": reference_genome,
+            "dataset": dataset,
+        }
+        return await self.execute_query(
+            "coverage", variables, version, operation_name="region_coverage"
+        )
+
+    async def get_variant_coverage(self, *, variant_id: str, dataset: str) -> dict[str, Any]:
+        """Get scalar exome/genome coverage for a single variant."""
+        version = QueryBuilder.get_version_for_dataset(dataset)
+        variables: dict[str, Any] = {"variantId": variant_id, "dataset": dataset}
+        return await self.execute_query(
+            "coverage", variables, version, operation_name="variant_coverage"
+        )

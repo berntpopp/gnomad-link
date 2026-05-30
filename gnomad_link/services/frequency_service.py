@@ -516,3 +516,30 @@ class FrequencyService:
             region=region,
             sv_dataset=sv_dataset,
         )
+
+    async def get_coverage(
+        self,
+        *,
+        scope: str,
+        dataset: str,
+        gene_id: str | None = None,
+        gene_symbol: str | None = None,
+        chrom: str | None = None,
+        start: int | None = None,
+        stop: int | None = None,
+        variant_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Delegate to CoverageService; keeps tool call sites on a single service."""
+        from gnomad_link.services.coverage_service import CoverageService
+
+        coverage = CoverageService(client=self.client)
+        if scope == "gene":
+            return await coverage.get_gene_coverage(
+                gene_id=gene_id, gene_symbol=gene_symbol, dataset=dataset
+            )
+        if scope == "region":
+            assert chrom is not None and start is not None and stop is not None
+            return await coverage.get_region_coverage(
+                chrom=chrom, start=start, stop=stop, dataset=dataset
+            )
+        return await coverage.get_variant_coverage(variant_id=variant_id or "", dataset=dataset)

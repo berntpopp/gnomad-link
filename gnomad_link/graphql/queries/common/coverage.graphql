@@ -1,0 +1,105 @@
+query gene_coverage(
+    $gene_id: String
+    $gene_symbol: String
+    $reference_genome: ReferenceGenomeId!
+    $dataset: DatasetId
+) {
+    gene(gene_id: $gene_id, gene_symbol: $gene_symbol, reference_genome: $reference_genome) {
+        gene_id
+        symbol
+        coverage(dataset: $dataset) {
+            exome {
+                pos
+                mean
+                median
+                over_1
+                over_5
+                over_10
+                over_15
+                over_20
+                over_25
+                over_30
+                over_50
+                over_100
+            }
+            genome {
+                pos
+                mean
+                median
+                over_1
+                over_5
+                over_10
+                over_15
+                over_20
+                over_25
+                over_30
+                over_50
+                over_100
+            }
+        }
+    }
+}
+
+query region_coverage(
+    $chrom: String!
+    $start: Int!
+    $stop: Int!
+    $reference_genome: ReferenceGenomeId!
+    $dataset: DatasetId!
+) {
+    region(chrom: $chrom, start: $start, stop: $stop, reference_genome: $reference_genome) {
+        chrom
+        start
+        stop
+        coverage(dataset: $dataset) {
+            exome {
+                pos
+                mean
+                median
+                over_1
+                over_5
+                over_10
+                over_15
+                over_20
+                over_25
+                over_30
+                over_50
+                over_100
+            }
+            genome {
+                pos
+                mean
+                median
+                over_1
+                over_5
+                over_10
+                over_15
+                over_20
+                over_25
+                over_30
+                over_50
+                over_100
+            }
+        }
+    }
+}
+
+query variant_coverage($variantId: String!, $dataset: DatasetId!) {
+    variant(variantId: $variantId, dataset: $dataset) {
+        variant_id
+        coverage {
+            exome {
+                mean
+                median
+                over_20
+                over_30
+            }
+            genome {
+                mean
+                median
+                over_20
+                over_30
+            }
+        }
+    }
+}

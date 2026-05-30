@@ -6,6 +6,7 @@ from .clinvar_models import (
     ClinVarVariant,
     GnomadInClinVar,
 )
+from .coverage_models import Coverage, CoverageBin, FeatureCoverage
 from .enums import GnomadDataset, ReferenceGenome, StructuralVariantDataset
 from .gene_models import (
     Gene,
@@ -80,4 +81,8 @@ __all__ = [
     # Transcript models
     "Transcript",
     "TranscriptExon",
+    # Coverage models
+    "Coverage",
+    "CoverageBin",
+    "FeatureCoverage",
 ]
