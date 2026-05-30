@@ -282,6 +282,31 @@ class UnifiedGnomadClient(BaseGnomadClient):
             return list(result["gene"]["variants"])
         return []
 
+    async def get_gene_carrier_variants(
+        self,
+        *,
+        gene_id: str | None = None,
+        gene_symbol: str | None = None,
+        dataset: str = "gnomad_r4",
+    ) -> dict[str, Any]:
+        """Fetch enriched gene variants + clinvar for gene-level carrier frequency.
+
+        Returns the raw ``{"gene": {...}}`` payload (variants with per-population
+        ac/an/homozygote_count + transcript_consequence LOFTEE, plus the parallel
+        clinvar_variants array). One call covers a whole gene (~500 variants).
+        """
+        version = QueryBuilder.get_version_for_dataset(dataset)
+        reference_genome = QueryBuilder.get_reference_genome(version)
+        variables: dict[str, Any] = {
+            "dataset": dataset,
+            "reference_genome": reference_genome,
+        }
+        if gene_id:
+            variables["gene_id"] = gene_id
+        if gene_symbol:
+            variables["gene_symbol"] = gene_symbol
+        return await self.execute_query("gene_carrier_variants", variables, version)
+
     async def get_gene_gtex(
         self,
         *,
