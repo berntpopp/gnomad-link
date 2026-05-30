@@ -145,6 +145,8 @@ def register_variant_tools(
         variant_id: Annotated[
             str,
             Field(
+                description="CHROM-POS-REF-ALT id (e.g. 1-55051215-G-GA). "
+                "Use get_mitochondrial_variant for M-POS-REF-ALT.",
                 min_length=5,
                 max_length=200,
                 pattern=_AUTOSOMAL_VARIANT_ID_PATTERN,

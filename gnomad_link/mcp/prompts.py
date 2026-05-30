@@ -31,7 +31,7 @@ def register_workflow_prompts(mcp: FastMCP) -> None:
             "1. Call search_genes(query='{gene_symbol}') to resolve to an Ensembl gene_id.\n"
             "2. Call get_gene_details(gene_id='<resolved_id>') for pLI/oe_lof scores, "
             "canonical transcript, and coordinates.\n"
-            "3. Call get_gene_variants(gene_id='<resolved_id>', consequence='lof') "
+            "3. Call get_gene_variants(gene_id='<resolved_id>', consequence='frameshift_variant') "
             "to review loss-of-function variants. Raise limit or relax filters as needed.\n"
             "4. The summary.max_pop_af field in frequencies shows population enrichment.\n"
             "Research use only; not for clinical decision support."

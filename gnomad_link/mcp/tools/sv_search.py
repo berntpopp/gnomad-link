@@ -76,7 +76,8 @@ def register_sv_search_tools(
         sv_type: Annotated[
             str | None,
             Field(
-                description="Filter by SV class (e.g. DEL, DUP, INS, INV, BND, CPX). Case-insensitive.",
+                description="Filter by SV class (case-insensitive). One of "
+                "DEL, DUP, INS, INV, BND, CPX, CTX, MCNV.",
                 examples=["DEL"],
             ),
         ] = None,

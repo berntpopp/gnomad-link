@@ -98,7 +98,7 @@ def register_comparison_tools(
             ),
         ],
         datasets: Annotated[
-            list[str] | None,
+            list[Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"]] | None,
             Field(
                 description="Datasets to compare. None compares gnomad_r4, gnomad_r3, gnomad_r2_1.",
                 examples=[["gnomad_r4", "gnomad_r3", "gnomad_r2_1"]],

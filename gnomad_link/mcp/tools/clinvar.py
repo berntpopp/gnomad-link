@@ -15,6 +15,11 @@ from gnomad_link.mcp.shaping import shape_clinvar_submissions, summarize_clinvar
 from gnomad_link.models import ClinVarVariant
 from gnomad_link.services import FrequencyService
 
+# ClinVar is keyed on CHROM-POS-REF-ALT (autosomes, X, Y, and M/MT). The old
+# pattern accepted any non-quote string, so a ClinVar variation id or rsID passed
+# validation and 404'd downstream; this rejects non-coordinate ids at the boundary.
+_CLINVAR_VARIANT_ID_PATTERN = r"^([1-9]|1\d|2[0-2]|X|Y|MT?)-\d+-[ACGT]+-[ACGT]+$"
+
 
 def register_clinvar_tools(
     mcp: FastMCP, *, service_factory: Callable[[], FrequencyService]
@@ -30,13 +35,18 @@ def register_clinvar_tools(
         variant_id: Annotated[
             str,
             Field(
+                description="CHROM-POS-REF-ALT id (autosomes, X, Y, M/MT), e.g. 1-55051215-G-GA. "
+                "Match the build to reference_genome (GRCh38 default).",
                 min_length=5,
                 max_length=200,
-                pattern=r"^[^'\"]+$",
+                pattern=_CLINVAR_VARIANT_ID_PATTERN,
                 examples=["1-55051215-G-GA"],
             ),
         ],
-        reference_genome: Annotated[Literal["GRCh37", "GRCh38"], Field()] = "GRCh38",
+        reference_genome: Annotated[
+            Literal["GRCh37", "GRCh38"],
+            Field(description="Lookup build for the variant id. GRCh38 (default) or GRCh37."),
+        ] = "GRCh38",
         submissions_limit: Annotated[
             int,
             Field(ge=1, le=200, description="Cap on submissions[] returned. Default 25."),

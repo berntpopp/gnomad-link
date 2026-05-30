@@ -40,7 +40,10 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
                 examples=["PCSK9"],
             ),
         ] = None,
-        reference_genome: Annotated[Literal["GRCh37", "GRCh38"], Field()] = "GRCh38",
+        reference_genome: Annotated[
+            Literal["GRCh37", "GRCh38"],
+            Field(description="Lookup build for gene coordinates and constraint. GRCh38 default."),
+        ] = "GRCh38",
         response_mode: Annotated[
             Literal["compact", "full"],
             Field(
@@ -133,7 +136,11 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
         ] = 100,
         consequence: Annotated[
             str | None,
-            Field(description="VEP major_consequence to keep (e.g. 'missense_variant')."),
+            Field(
+                description="Exact VEP major_consequence term to keep, case-sensitive "
+                "(e.g. 'missense_variant', 'frameshift_variant', 'stop_gained'). "
+                "Not a category like 'lof'/'plof'."
+            ),
         ] = None,
         max_af: Annotated[
             float | None,

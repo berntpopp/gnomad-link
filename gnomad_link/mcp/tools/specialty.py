@@ -167,13 +167,17 @@ def register_specialty_tools(
         transcript_id: Annotated[
             str,
             Field(
-                description="Ensembl transcript ID (ENST...)",
+                description="Ensembl transcript ID (ENST + 11 digits, optional .version).",
                 min_length=4,
                 max_length=80,
+                pattern=r"^ENST\d{11}(\.\d+)?$",
                 examples=["ENST00000302118"],
             ),
         ],
-        reference_genome: Annotated[Literal["GRCh37", "GRCh38"], Field()] = "GRCh38",
+        reference_genome: Annotated[
+            Literal["GRCh37", "GRCh38"],
+            Field(description="Lookup build for the transcript. GRCh38 default."),
+        ] = "GRCh38",
         include_expression: Annotated[
             bool,
             Field(

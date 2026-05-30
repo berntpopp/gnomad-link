@@ -125,7 +125,10 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
                 description="Gene symbol, name fragment, or Ensembl ID.",
             ),
         ],
-        reference_genome: Annotated[Literal["GRCh37", "GRCh38"], Field()] = "GRCh38",
+        reference_genome: Annotated[
+            Literal["GRCh37", "GRCh38"],
+            Field(description="Reference build to search gene symbols/ids within. GRCh38 default."),
+        ] = "GRCh38",
         limit: Annotated[
             int,
             Field(ge=1, le=50, description="Max matches returned."),
@@ -227,7 +230,9 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
                 examples=["gnomad_r4"],
             ),
         ] = "gnomad_r4",
-        limit: Annotated[int, Field(ge=1, le=25)] = 10,
+        limit: Annotated[
+            int, Field(ge=1, le=25, description="Max candidate variant ids returned.")
+        ] = 10,
         enrich: Annotated[
             bool,
             Field(
@@ -300,7 +305,9 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
                 examples=["gnomad_r4"],
             ),
         ] = "gnomad_r4",
-        limit: Annotated[int, Field(ge=1, le=25)] = 10,
+        limit: Annotated[
+            int, Field(ge=1, le=25, description="Max candidate variant ids returned.")
+        ] = 10,
         enrich: Annotated[
             bool,
             Field(
