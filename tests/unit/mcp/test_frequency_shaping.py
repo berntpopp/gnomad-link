@@ -236,6 +236,44 @@ async def test_get_variant_frequencies_emits_next_commands_to_clinvar() -> None:
             "reference_genome": "GRCh38",
         },
     } in next_commands
+    # No frequency data -> headline says so plainly.
+    assert payload["headline"] == "1-55051215-G-GA (gnomad_r4): no allele-frequency data."
+
+
+@pytest.mark.asyncio
+async def test_get_variant_frequencies_leads_with_headline() -> None:
+    """A populated variant renders an AF headline at the top of the payload."""
+
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    stub_response = VariantFrequencyResponse(
+        variant_id="1-55051215-G-GA",
+        dataset="gnomad_r4",
+        major_consequence="missense_variant",
+        exome=VariantDataSource(
+            ac=10,
+            an=20000,
+            homozygote_count=0,
+            populations=[
+                PopulationFrequency(id="nfe", ac=9, an=12000, homozygote_count=0),
+                PopulationFrequency(id="afr", ac=1, an=8000, homozygote_count=0),
+            ],
+        ),
+        genome=None,
+    )
+    stub = _StubFrequencyService(stub_response)
+    mcp = create_gnomad_mcp(service_factory=lambda: stub)
+
+    result = await mcp.call_tool(
+        "get_variant_frequencies",
+        {"variant_id": "1-55051215-G-GA", "dataset": "gnomad_r4"},
+    )
+    payload = result.structured_content or {}
+
+    headline = payload["headline"]
+    assert headline.startswith("1-55051215-G-GA missense_variant: AF ")
+    assert "gnomad_r4" in headline
+    assert "highest in nfe" in headline
 
 
 @pytest.mark.asyncio

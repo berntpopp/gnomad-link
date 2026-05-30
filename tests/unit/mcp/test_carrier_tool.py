@@ -150,6 +150,54 @@ async def test_compute_carrier_frequency_emits_citations_and_assumptions() -> No
 
 
 @pytest.mark.asyncio
+async def test_compute_carrier_frequency_leads_with_headline() -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    service = _StubFreqService(_ar_response())
+    mcp = create_gnomad_mcp(service_factory=lambda: service)
+    result = await mcp.call_tool(
+        "compute_carrier_frequency",
+        {"variant_id": "7-117559590-ATCT-A", "inheritance": "AR"},
+    )
+    payload = result.structured_content or {}
+
+    headline = payload["headline"]
+    assert headline.startswith("7-117559590-ATCT-A (AR/gnomad_r4): carrier frequency")
+    assert "highest in nfe" in headline
+    # Compact (default) carries a citations_ref pointer and short citations.
+    assert payload["citations_ref"] == "gnomad://citations"
+
+
+@pytest.mark.asyncio
+async def test_compute_carrier_frequency_full_mode_inlines_full_citations() -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    service = _StubFreqService(_ar_response())
+    mcp = create_gnomad_mcp(service_factory=lambda: service)
+    compact = (
+        await mcp.call_tool(
+            "compute_carrier_frequency",
+            {"variant_id": "7-117559590-ATCT-A", "inheritance": "AR"},
+        )
+    ).structured_content or {}
+    full = (
+        await mcp.call_tool(
+            "compute_carrier_frequency",
+            {
+                "variant_id": "7-117559590-ATCT-A",
+                "inheritance": "AR",
+                "response_mode": "full",
+            },
+        )
+    ).structured_content or {}
+
+    # full inlines bibliographic detail (DOIs) that compact omits.
+    assert not any("doi:" in c for c in compact["citations"])
+    assert any("doi:" in c for c in full["citations"])
+    assert full["citations_ref"] == "gnomad://citations"
+
+
+@pytest.mark.asyncio
 async def test_compute_carrier_frequency_emits_next_commands() -> None:
     from gnomad_link.mcp.facade import create_gnomad_mcp
 

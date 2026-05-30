@@ -11,6 +11,8 @@ from pydantic import Field
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.build_check import detect_variant_id_mismatch
 from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, run_mcp_tool
+from gnomad_link.mcp.headline import variant_carrier_headline
+from gnomad_link.mcp.provenance import provenance_block
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.models import PopulationFrequency, VariantDataSource, VariantFrequencyResponse
 from gnomad_link.services import FrequencyService
@@ -28,22 +30,10 @@ from gnomad_link.services.carrier_math import (
 # Shared with get_variant_frequencies: autosomal CHROM-POS-REF-ALT grammar.
 _AUTOSOMAL_VARIANT_ID_PATTERN = r"^([1-9]|1\d|2[0-2]|X|Y)-\d+-[ACGT]+-[ACGT]+$"
 
-_CITATIONS = [
-    "Schrodi et al. 2015, Hum Genet, doi:10.1007/s00439-015-1551-8 (2pq/q^2 carrier framework + CI concept)",
-    "Karczewski et al. 2020, Nature (gnomAD allele-frequency reference)",
-    "Guo et al. 2019; Zhu et al. 2022 (homozygote-corrected variant carrier rate)",
-    "Hotakainen et al. 2025; Kandolin et al. 2024 (X-linked sex-split estimation)",
-]
-
-_ASSUMPTIONS_NOTE = (
-    "Estimates assume Hardy-Weinberg equilibrium, random mating, complete "
-    "penetrance, and a single causal variant. Frequencies are a minimum "
-    "estimate from one gnomAD variant and are unsafe for clinical use."
-)
-
 _CARRIER_OUTPUT_SCHEMA = {
     "type": "object",
     "properties": {
+        "headline": {"type": "string"},
         "variant_id": {"type": "string"},
         "dataset": {"type": "string"},
         "inheritance": {"type": "string"},
@@ -53,6 +43,7 @@ _CARRIER_OUTPUT_SCHEMA = {
         "summary": {"type": ["object", "null"]},
         "assumptions_note": {"type": "string"},
         "citations": {"type": "array", "items": {"type": "string"}},
+        "citations_ref": {"type": "string"},
     },
     "required": ["variant_id", "dataset", "inheritance", "method"],
     "additionalProperties": True,
@@ -300,8 +291,16 @@ def register_carrier_tools(
                 examples=["hwe"],
             ),
         ] = "hwe",
+        response_mode: Annotated[
+            Literal["compact", "full"],
+            Field(
+                description="compact (default) returns short citations + a citations_ref pointer "
+                "to gnomad://citations; full inlines the complete bibliographic citations and "
+                "assumptions prose."
+            ),
+        ] = "compact",
     ) -> dict[str, Any]:
-        """Use this when a caller needs an estimated carrier/affected frequency derived from a single gnomAD allele frequency under Hardy-Weinberg assumptions for AR, AD, or X-linked inheritance. Pure local math on top of get_variant_frequencies; returns Wilson 95% CIs, per-population breakdown, and embedded citations. Estimates are research-use only, never clinical decision support. Returns ~2-4kB."""
+        """Use this when a caller needs an estimated carrier/affected frequency derived from a single gnomAD allele frequency under Hardy-Weinberg assumptions for AR, AD, or X-linked inheritance. Pure local math on top of get_variant_frequencies; returns a one-line `headline`, Wilson 95% CIs, per-population breakdown, and provenance (short citations + a gnomad://citations pointer in compact mode; full citations with response_mode='full'). Estimates are research-use only, never clinical decision support. Returns ~2-4kB."""
 
         async def call() -> dict[str, Any]:
             inferred = detect_variant_id_mismatch(variant_id, dataset)
@@ -336,9 +335,10 @@ def register_carrier_tools(
                 "summary": {
                     "max_carrier_frequency_population": _max_carrier_population(per_population)
                 },
-                "assumptions_note": _ASSUMPTIONS_NOTE,
-                "citations": list(_CITATIONS),
+                **provenance_block("variant_carrier", full=response_mode == "full"),
             }
+            # Lead with the plain-English headline so an LLM can answer fast.
+            result = {"headline": variant_carrier_headline(result), **result}
             reference_genome = "GRCh37" if dataset == "gnomad_r2_1" else "GRCh38"
             result["_meta"] = {
                 "next_commands": [

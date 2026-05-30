@@ -9,6 +9,7 @@ from mcp.types import Annotations
 
 from gnomad_link.mcp.annotations import READ_ONLY_CLOSED_WORLD
 from gnomad_link.mcp.errors import run_mcp_tool
+from gnomad_link.mcp.provenance import get_citations_resource
 from gnomad_link.mcp.resources import (
     RESEARCH_USE_NOTICE,
     get_capabilities_resource,
@@ -44,6 +45,12 @@ def register_metadata_tools(mcp: FastMCP) -> None:
     @mcp.resource("gnomad://research-use", annotations=_RESOURCE_ANNOTATIONS)
     def research_use_resource() -> dict[str, Any]:
         return {"notice": RESEARCH_USE_NOTICE}
+
+    @mcp.resource("gnomad://citations", annotations=_RESOURCE_ANNOTATIONS)
+    def citations_resource() -> dict[str, Any]:
+        # Full carrier-frequency citations + assumptions, referenced by the
+        # `citations_ref` pointer the carrier tools emit in compact mode.
+        return get_citations_resource()
 
 
 async def _coro_capabilities() -> dict[str, Any]:

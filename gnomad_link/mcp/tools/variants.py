@@ -11,6 +11,7 @@ from pydantic import Field
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.build_check import detect_variant_id_mismatch
 from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, run_mcp_tool
+from gnomad_link.mcp.headline import variant_frequencies_headline
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.shaping import (
     shape_variant_details_compact,
@@ -105,6 +106,8 @@ def register_variant_tools(
                 include_sex_split=include_sex_split,
                 exclude_zero_populations=exclude_zero_populations,
             )
+            # Lead with the plain-English headline so an LLM can answer fast.
+            shaped = {"headline": variant_frequencies_headline(shaped), **shaped}
             # Suggest pairing with ClinVar for clinical annotation context.
             existing_meta: dict[str, Any] = shaped.get("_meta") or {}
             existing_next: list[Any] = existing_meta.get("next_commands", [])

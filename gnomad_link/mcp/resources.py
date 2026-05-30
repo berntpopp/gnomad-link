@@ -137,7 +137,28 @@ def get_capabilities_resource() -> dict[str, Any]:
             "exome_populations": "exome.populations[]",
             "genome_populations": "genome.populations[]",
             "summary_block": "summary",
+            "headline_field": "headline",
             "truncation_block": "exome.truncated",
+        },
+        "resources": {
+            "gnomad://capabilities": "this capabilities document",
+            "gnomad://usage": "compact usage notes",
+            "gnomad://research-use": "research-use-only notice",
+            "gnomad://citations": (
+                "full carrier-frequency citations + assumptions, referenced by the "
+                "citations_ref pointer carrier tools emit in compact mode"
+            ),
+        },
+        "response_fields": {
+            "headline": (
+                "one-line plain-English answer at the top of get_variant_frequencies, "
+                "get_gene_details, compute_carrier_frequency, and "
+                "compute_gene_carrier_frequency; read it before parsing the tree"
+            ),
+            "citations_ref": (
+                "pointer to gnomad://citations; carrier tools inline short citations in "
+                "compact mode and full bibliographic prose with response_mode='full'"
+            ),
         },
         "tool_categories": {
             "variant": [

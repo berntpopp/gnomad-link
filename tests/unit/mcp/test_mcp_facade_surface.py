@@ -37,6 +37,7 @@ EXPECTED_RESOURCE_URIS = {
     "gnomad://capabilities",
     "gnomad://usage",
     "gnomad://research-use",
+    "gnomad://citations",
 }
 
 

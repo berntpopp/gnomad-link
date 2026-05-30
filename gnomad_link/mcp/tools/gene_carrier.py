@@ -26,11 +26,13 @@ _GENE_SYMBOL_PATTERN = r"^[A-Za-z0-9._-]{1,32}$"
 _GENE_CARRIER_OUTPUT_SCHEMA = {
     "type": "object",
     "properties": {
+        "headline": {"type": "string"},
         "gene": {"type": ["object", "null"]},
         "dataset": {"type": "string"},
         "global": {"type": ["object", "null"]},
         "populations": {"type": "array"},
         "contributing_variants": {"type": ["object", "null"]},
+        "citations_ref": {"type": "string"},
     },
     "required": ["dataset"],
     "additionalProperties": True,
@@ -130,7 +132,7 @@ def register_gene_carrier_tools(
             int, Field(ge=1, le=200, description="Cap on contributing variants in compact mode.")
         ] = 25,
     ) -> dict[str, Any]:
-        """Use this when a caller needs the GENE-level autosomal-recessive carrier frequency (all qualifying pathogenic variants summed), not a single variant. This is ONE efficient server-side computation over the whole gene (a single variants query plus, only when include_conflicting_clinvar=True, batched ClinVar submission lookups) — call it once per gene; do NOT loop over variants yourself. Provide exactly one of gene_symbol or gene_id. Mirrors the gnomad-carrier-frequency calculator: LoF-HC + missense/other with ClinVar P/LP (>= star threshold), per-population + global carrier frequency via GCR (homozygote exclusion) by default, with genetic and Bayesian prevalence. Toggle filters, method, penetrance, and quality exclusions. Research use only; not clinical decision support. Returns ~4-30kB (gene/limit dependent)."""
+        """Use this when a caller needs the GENE-level autosomal-recessive carrier frequency (all qualifying pathogenic variants summed), not a single variant. This is ONE efficient server-side computation over the whole gene (a single variants query plus, only when include_conflicting_clinvar=True, batched ClinVar submission lookups) — call it once per gene; do NOT loop over variants yourself. Provide exactly one of gene_symbol or gene_id. Mirrors the gnomad-carrier-frequency calculator: LoF-HC + missense/other with ClinVar P/LP (>= star threshold), per-population + global carrier frequency via GCR (homozygote exclusion) by default, with genetic and Bayesian prevalence. Leads with a one-line `headline` so you can answer without parsing the tree, and carries provenance (short citations + a gnomad://citations pointer in compact mode; full citations with response_mode='full'). Toggle filters, method, penetrance, and quality exclusions. Research use only; not clinical decision support. Returns ~4-30kB (gene/limit dependent)."""
 
         provided = [("gene_symbol", gene_symbol), ("gene_id", gene_id)]
         set_args = [name for name, value in provided if value]

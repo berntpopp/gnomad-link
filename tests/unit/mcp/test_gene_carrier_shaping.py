@@ -62,6 +62,25 @@ def test_carries_citations_and_assumptions() -> None:
     assert shaped["sources"] == {"plof_only": 5, "clinvar_only": 0, "both": 0}
 
 
+def test_leads_with_headline_and_citations_ref() -> None:
+    shaped = shape_gene_carrier(_service_result(), response_mode="compact", top_variants_limit=10)
+    # headline is the first key so an LLM reads it before parsing the tree.
+    assert next(iter(shaped)) == "headline"
+    assert shaped["headline"] == (
+        "CFTR (gnomad_r4): carrier frequency 1 in 18 globally; "
+        "highest 1 in 9 (asj); 5 qualifying variants. Research use only."
+    )
+    assert shaped["citations_ref"] == "gnomad://citations"
+    # compact citations are short (author-year, no DOI prose).
+    assert not any("doi:" in c for c in shaped["citations"])
+
+
+def test_full_mode_inlines_full_citations() -> None:
+    shaped = shape_gene_carrier(_service_result(), response_mode="full", top_variants_limit=10)
+    assert shaped["citations_ref"] == "gnomad://citations"
+    assert any("PMC9763236" in c for c in shaped["citations"])
+
+
 def test_full_mode_keeps_all_variants() -> None:
     shaped = shape_gene_carrier(_service_result(), response_mode="full", top_variants_limit=3)
     assert len(shaped["contributing_variants"]["top"]) == 5

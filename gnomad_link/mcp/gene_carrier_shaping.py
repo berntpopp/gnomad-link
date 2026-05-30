@@ -9,18 +9,8 @@ from __future__ import annotations
 
 from typing import Any
 
-_ASSUMPTIONS_NOTE = (
-    "Gene-level estimate: sums qualifying pathogenic variants under Hardy-Weinberg "
-    "equilibrium (random mating, complete penetrance unless penetrance<1). Carrier "
-    "frequency uses the selected method (hom_exclusion=GCR is the default). A minimum "
-    "estimate bounded by gnomAD ascertainment and ClinVar completeness; not clinical "
-    "decision support."
-)
-_CITATIONS = (
-    "Karczewski et al. 2022 (PMC9763236) - variant/gene carrier rate.",
-    "Schrodi et al. 2015, Hum Genet, doi:10.1007/s00439-015-1551-8 - 2pq carrier framework.",
-    "Karczewski et al. 2020, Nature - gnomAD allele frequencies.",
-)
+from gnomad_link.mcp.headline import gene_carrier_headline
+from gnomad_link.mcp.provenance import provenance_block
 
 
 def _one_in(value: float | None) -> int | None:
@@ -80,7 +70,7 @@ def shape_gene_carrier(
             "to_restore": "response_mode='full'",
         }
 
-    return {
+    shaped: dict[str, Any] = {
         "gene": result.get("gene"),
         "dataset": result.get("dataset"),
         "reference_genome": result.get("reference_genome"),
@@ -89,6 +79,7 @@ def shape_gene_carrier(
         "populations": populations,
         "contributing_variants": contributing,
         "sources": result.get("sources"),
-        "assumptions_note": _ASSUMPTIONS_NOTE,
-        "citations": list(_CITATIONS),
     }
+    shaped.update(provenance_block("gene_carrier", full=response_mode == "full"))
+    # Lead with the plain-English headline so an LLM can answer without parsing.
+    return {"headline": gene_carrier_headline(shaped), **shaped}

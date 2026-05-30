@@ -10,6 +10,7 @@ from pydantic import Field
 
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
+from gnomad_link.mcp.headline import gene_details_headline
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.shaping import shape_gene_details_compact, shape_gene_variants
 from gnomad_link.models import Gene
@@ -66,6 +67,11 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
             )
             if response_mode == "compact":
                 result = shape_gene_details_compact(result)
+            # Lead with the plain-English headline so an LLM can answer fast.
+            result = {
+                "headline": gene_details_headline(result, reference_genome=reference_genome),
+                **result,
+            }
             # Suggest the natural follow-up call using the resolved gene_id.
             resolved_id = result.get("gene_id") or gene_id
             if resolved_id:
