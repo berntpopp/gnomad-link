@@ -1,0 +1,9 @@
+query transcript_gtex($transcript_id: String!, $reference_genome: ReferenceGenomeId!) {
+    transcript(transcript_id: $transcript_id, reference_genome: $reference_genome) {
+        transcript_id
+        gtex_tissue_expression {
+            tissue
+            value
+        }
+    }
+}

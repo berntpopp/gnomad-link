@@ -282,6 +282,16 @@ class UnifiedGnomadClient(BaseGnomadClient):
             return list(result["gene"]["variants"])
         return []
 
+    async def get_transcript_gtex(
+        self, transcript_id: str, reference_genome: str = "GRCh37"
+    ) -> dict[str, Any]:
+        """Fetch only GTEx tissue expression for a transcript (GRCh37-populated)."""
+        variables = {
+            "transcript_id": transcript_id,
+            "reference_genome": reference_genome,
+        }
+        return await self.execute_query("transcript_gtex", variables, "v2")
+
     async def get_liftover(
         self,
         source_variant_id: str,
