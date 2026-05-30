@@ -99,3 +99,37 @@ async def test_match_quality_case_insensitive() -> None:
     results = payload["results"]
 
     assert results[0]["match_quality"] == "exact_symbol"
+
+
+@pytest.mark.asyncio
+async def test_short_family_prefix_with_no_exact_match_emits_search_hint() -> None:
+    """F4: gnomAD autocomplete omits some family members for a short prefix; the
+    tool surfaces an actionable recovery hint instead of a silently-incomplete list."""
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    # Mirrors gnomAD's real 'GRIN' result set (no GRIN1/GRIN2B, no exact match).
+    stub = _StubGeneService(
+        [
+            GeneSearchResult(symbol="GRINA", ensembl_id="ENSG00000000001"),
+            GeneSearchResult(symbol="GRIN2A", ensembl_id="ENSG00000000002"),
+            GeneSearchResult(symbol="GCOM1", ensembl_id="ENSG00000000003"),
+        ]
+    )
+    mcp = create_gnomad_mcp(service_factory=lambda: stub)
+    result = await mcp.call_tool("search_genes", {"query": "GRIN"})
+    payload = result.structured_content or {}
+
+    assert "search_hint" in payload
+    assert "full symbol" in payload["search_hint"]
+
+
+@pytest.mark.asyncio
+async def test_exact_match_suppresses_search_hint() -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    stub = _StubGeneService([GeneSearchResult(symbol="BRCA1", ensembl_id="ENSG00000012048")])
+    mcp = create_gnomad_mcp(service_factory=lambda: stub)
+    result = await mcp.call_tool("search_genes", {"query": "BRCA1"})
+    payload = result.structured_content or {}
+
+    assert "search_hint" not in payload

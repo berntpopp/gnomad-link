@@ -392,19 +392,29 @@ class UnifiedGnomadClient(BaseGnomadClient):
         source_variant_id: str,
         reference_genome: str = "GRCh38",
     ) -> list[dict[str, Any]]:
-        """Get liftover mapping between reference genomes.
+        """Get liftover mapping between reference genomes (bidirectional).
+
+        gnomAD's liftover table is keyed on the GRCh37 ``source`` coordinate, so
+        a GRCh38 input is the liftover *target*, not the source. Querying it via
+        ``source_variant_id`` therefore returns nothing. To recover the GRCh37
+        coordinate we must query by ``liftover_variant_id`` instead. The variant
+        id is the same; only the argument it binds to changes with direction.
 
         Args:
-            source_variant_id: Variant ID to liftover
-            reference_genome: Source reference genome of the variant
+            source_variant_id: Variant ID to convert (in ``reference_genome``).
+            reference_genome: Reference build of ``source_variant_id``.
 
         Returns:
-            List of liftover results (may be empty if no mapping exists)
+            List of liftover records (each with both ``source`` GRCh37 and
+            ``liftover`` GRCh38 entries); empty when no mapping exists.
         """
-        variables = {
-            "source_variant_id": source_variant_id,
-            "reference_genome": reference_genome,
-        }
+        variables: dict[str, Any] = {"reference_genome": reference_genome}
+        if reference_genome == "GRCh38":
+            # Reverse direction (GRCh38 -> GRCh37): the input is the liftover target.
+            variables["liftover_variant_id"] = source_variant_id
+        else:
+            # Forward direction (GRCh37 -> GRCh38): the input is the source.
+            variables["source_variant_id"] = source_variant_id
 
         result = await self.execute_query("liftover", variables)
         return list(result.get("liftover", []))

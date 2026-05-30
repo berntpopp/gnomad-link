@@ -28,7 +28,7 @@ def register_gnomad_tools(
     *,
     service_factory: Callable[[], FrequencyService],
 ) -> None:
-    register_metadata_tools(mcp)
+    register_metadata_tools(mcp, service_factory=service_factory)
     register_variant_tools(mcp, service_factory=service_factory)
     register_comparison_tools(mcp, service_factory=service_factory)
     register_carrier_tools(mcp, service_factory=service_factory)

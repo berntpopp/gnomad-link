@@ -48,11 +48,13 @@ def register_specialty_tools(
         variant_id: Annotated[
             str,
             Field(
-                description="gnomAD SV identifier (e.g. DEL_chr1_1 or DUP_chr17_5).",
+                description="gnomAD SV identifier as returned by search_structural_variants "
+                "(e.g. BND_chr12_e99836ac, DEL_chr1_1234abcd). Discover ids via "
+                "search_structural_variants for a gene/region; do not guess the suffix.",
                 min_length=3,
                 max_length=200,
                 pattern=_SV_ID_PATTERN,
-                examples=["DEL_chr1_1"],
+                examples=["BND_chr12_e99836ac"],
             ),
         ],
         dataset: Annotated[
@@ -67,7 +69,7 @@ def register_specialty_tools(
             ),
         ] = "compact",
     ) -> dict[str, Any]:
-        """Use this when a caller has a gnomAD structural variant id (deletions, duplications, inversions, translocations/BND, complex/CPX, MCNV). For SNVs/indels use get_variant_frequencies instead. Compact (default) drops heavy histograms + the duplicated flat gene list and emits a `truncated` block; response_mode='full' returns everything. Returns compact ~2-5kB; full ~10-20kB (histograms + populations)."""
+        """Use this when a caller has a gnomAD structural variant id (deletions, duplications, inversions, translocations/BND, complex/CPX, MCNV). SV ids come from search_structural_variants (search a gene/region first); they are NOT resolvable by resolve_variant_id, which is SNV/indel only. For SNVs/indels use get_variant_frequencies instead. Compact (default) drops heavy histograms + the duplicated flat gene list and emits a `truncated` block; response_mode='full' returns everything. Returns compact ~2-5kB; full ~10-20kB (histograms + populations)."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()

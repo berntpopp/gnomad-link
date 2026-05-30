@@ -131,7 +131,7 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
             Field(ge=1, le=50, description="Max matches returned."),
         ] = 25,
     ) -> dict[str, Any]:
-        """Use this when a caller has a fuzzy gene query (symbol, alias, partial name). Follow with get_gene_details for full constraint metrics. Returns ~1-3kB."""
+        """Use this when a caller has a fuzzy gene query (symbol, alias, partial name). Follow with get_gene_details for full constraint metrics. Note: gnomAD's gene autocomplete returns a bounded set and may omit exact members of a large gene family for a SHORT prefix (e.g. 'GRIN' does not return GRIN1/GRIN2B). If an expected gene is missing, query its FULL symbol (e.g. 'GRIN1') or call get_gene_details/get_gene_summary directly. Returns ~1-3kB."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()
@@ -159,6 +159,17 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
                     "total_seen": total,
                     "to_disable": "raise limit (max 50) or refine the query",
                 }
+            # gnomAD's autocomplete is upstream-bounded and can omit exact family
+            # members for a short prefix with no exact hit (e.g. 'GRIN' drops
+            # GRIN1/GRIN2B). Surface an actionable recovery instead of silently
+            # returning an incomplete list.
+            has_exact = any(r.get("match_quality") == "exact_symbol" for r in results)
+            if not has_exact and len(query) <= 5:
+                payload["search_hint"] = (
+                    "gnomAD autocomplete may omit exact members of a gene family for a "
+                    "short query. If an expected gene is missing, query its full symbol "
+                    "(e.g. 'GRIN1') or call get_gene_details/get_gene_summary directly."
+                )
             return payload
 
         return await run_mcp_tool(

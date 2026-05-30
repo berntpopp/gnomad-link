@@ -60,6 +60,26 @@ def test_not_found_on_variant_tool_falls_back_to_resolver() -> None:
     assert payload["recovery_action"] == "switch_tool"
 
 
+def test_not_found_on_sv_tool_falls_back_to_sv_search_not_resolver() -> None:
+    # SV ids are NOT resolvable by resolve_variant_id (SNV-only); route to SV search.
+    payload = _payload(
+        DataNotFoundError("DEL_chr1_1 not found"),
+        McpErrorContext(tool_name="get_structural_variant", variant_id="DEL_chr1_1"),
+    )
+    assert payload["error_code"] == "not_found"
+    assert payload["fallback_tool"] == "search_structural_variants"
+    assert payload["fallback_tool"] != "resolve_variant_id"
+
+
+def test_sv_search_not_found_steers_to_gene_search() -> None:
+    payload = _payload(
+        DataNotFoundError("no SVs for gene"),
+        McpErrorContext(tool_name="search_structural_variants", gene_symbol="NOTAGENE"),
+    )
+    assert payload["fallback_tool"] == "search_genes"
+    assert payload["fallback_args"] == {"query": "NOTAGENE"}
+
+
 def test_not_found_on_gene_tool_falls_back_to_search_genes() -> None:
     payload = _payload(
         DataNotFoundError("gene not found"),

@@ -210,6 +210,34 @@ class TestBaseGnomadClient:
         assert state["peak"] <= 2  # semaphore bounded concurrency
 
     @pytest.mark.asyncio
+    async def test_queue_saturation_returns_rate_limited(self, monkeypatch):
+        """When the concurrency slot can't be acquired in time, callers get a fast,
+        retryable RateLimitedError (backpressure) rather than an opaque hang."""
+        from gnomad_link.config import settings
+
+        monkeypatch.setattr(settings, "GNOMAD_QUEUE_WAIT_TIMEOUT", 0.05)
+        client = BaseGnomadClient(api_url="https://test.api.com/graphql", max_concurrency=1)
+        holding = asyncio.Event()
+
+        async def slow_execute(_doc, variable_values=None):
+            holding.set()
+            await asyncio.sleep(0.5)  # hold the only slot past the queue-wait window
+            return {"gene": {"ok": True}}
+
+        connect = AsyncMock(return_value=_FakeSession(execute=AsyncMock(side_effect=slow_execute)))
+        with (
+            patch.object(client.query_loader, "load_query", return_value="query { gene { id } }"),
+            patch.object(client.query_builder, "process_variables", return_value={}),
+            patch.object(client._client, "connect_async", new=connect),
+        ):
+            first = asyncio.create_task(client.execute_query("gene", {}))
+            await holding.wait()  # the only slot is now held
+            with pytest.raises(RateLimitedError):
+                await client.execute_query("gene", {})  # waits 0.05s -> saturated
+            assert await first == {"gene": {"ok": True}}
+        await client.close()
+
+    @pytest.mark.asyncio
     async def test_close_without_session_closes_transport(self, client):
         """When no session was opened, close() falls back to closing the transport."""
         with patch.object(client, "_transport") as mock_transport:

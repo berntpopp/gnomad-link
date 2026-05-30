@@ -44,6 +44,11 @@ class Settings(BaseSettings):
     # ~13MB) complete in ~5-6s, but cold/slow responses need headroom; a too-tight
     # timeout would trip the retry layer and multiply wall-clock time.
     GNOMAD_REQUEST_TIMEOUT: int = 60
+    # Max seconds a request waits for a concurrency slot before returning fast,
+    # retryable backpressure (rate_limited) instead of letting an aggressive
+    # fan-out queue until the caller's own tool-call timeout fires. Bounds only
+    # the queue wait; the request timeout above still covers the upstream call.
+    GNOMAD_QUEUE_WAIT_TIMEOUT: int = 20
 
     # Cache Configuration
     CACHE_SIZE: int = 1024  # Maximum number of variants to cache

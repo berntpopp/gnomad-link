@@ -56,7 +56,7 @@ def register_coordinate_tools(
             ),
         ] = None,
     ) -> dict[str, Any]:
-        """Use this when a caller has a variant id in one reference build and needs the equivalent id in the other. Use this BEFORE calling frequency tools if the dataset and coordinate build do not match. Prefer source_genome; reference_genome is a deprecated alias. Returns <1kB."""
+        """Use this when a caller has a variant id in one reference build and needs the equivalent id in the other. Works BOTH directions (GRCh37<->GRCh38); the converted coordinate is in each result's `target_variant_id` (and `target_reference_genome` names the build). Use this BEFORE calling frequency tools if the dataset and coordinate build do not match. Prefer source_genome; reference_genome is a deprecated alias. Returns <1kB."""
 
         async def call() -> dict[str, Any]:
             build = source_genome or reference_genome
@@ -67,16 +67,26 @@ def register_coordinate_tools(
                 )
             service = service_factory()
             results = await service.liftover_variant(source_variant_id, build)
+            target = "GRCh38" if build == "GRCh37" else "GRCh37"
+            # Each gnomAD record carries BOTH the GRCh37 `source` and GRCh38
+            # `liftover` coordinate; surface the one in the target build directly
+            # so the LLM does not have to know which field to read per direction.
+            for record in results:
+                for key in ("source", "liftover"):
+                    entry = record.get(key) or {}
+                    if entry.get("reference_genome") == target:
+                        record["target_variant_id"] = entry.get("variant_id")
             payload: dict[str, Any] = {
                 "results": results,
                 "source_variant_id": source_variant_id,
                 "source_reference_genome": build,
+                "target_reference_genome": target,
+                "query_type": "forward" if build == "GRCh37" else "reverse",
             }
             if not results:
                 # An empty result is a valid answer, not an error: explain it so the
                 # LLM does not read bare results:[] as a failure (mirrors how
                 # compare_variant_across_datasets surfaces build_notes).
-                target = "GRCh38" if build == "GRCh37" else "GRCh37"
                 payload["build_note"] = (
                     f"No liftover mapping found for {source_variant_id} from {build} to "
                     f"{target}. The variant may be build-specific (no equivalent coordinate "

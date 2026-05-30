@@ -149,6 +149,54 @@ async def test_compute_carrier_frequency_emits_citations_and_assumptions() -> No
     assert payload["_meta"]["unsafe_for_clinical_use"] is True
 
 
+def _ar_response_with_sex_split() -> VariantFrequencyResponse:
+    return VariantFrequencyResponse(
+        variant_id="7-117559590-ATCT-A",
+        dataset="gnomad_r4",
+        exome=VariantDataSource(
+            ac=460,
+            an=20000,
+            homozygote_count=5,
+            populations=[
+                PopulationFrequency(id="nfe", ac=460, an=20000, homozygote_count=5),
+                PopulationFrequency(id="afr", ac=20, an=8000, homozygote_count=0),
+                # Sex-split pseudo-populations: must NOT appear for AR and must not
+                # win the max-population pick (regression for F5).
+                PopulationFrequency(id="XX", ac=300, an=11000, homozygote_count=3),
+                PopulationFrequency(id="XY", ac=160, an=9000, homozygote_count=2),
+                PopulationFrequency(id="nfe_XX", ac=290, an=10000, homozygote_count=3),
+                PopulationFrequency(id="nfe_XY", ac=170, an=10000, homozygote_count=2),
+            ],
+        ),
+        genome=None,
+        gene_symbol="CFTR",
+        major_consequence="frameshift_variant",
+    )
+
+
+@pytest.mark.asyncio
+async def test_ar_suppresses_sex_split_rows_and_adds_per_pop_ci() -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    service = _StubFreqService(_ar_response_with_sex_split())
+    mcp = create_gnomad_mcp(service_factory=lambda: service)
+    result = await mcp.call_tool(
+        "compute_carrier_frequency",
+        {"variant_id": "7-117559590-ATCT-A", "inheritance": "AR"},
+    )
+    payload = result.structured_content or {}
+
+    pops = {row["population"] for row in payload["per_population"]}
+    assert pops == {"nfe", "afr"}  # no XX/XY/nfe_XX/nfe_XY
+    # The max-population pick (and thus the headline) is a real ancestry, not nfe_XX.
+    assert payload["summary"]["max_carrier_frequency_population"] == "nfe"
+    assert "_XX" not in payload["headline"] and "_XY" not in payload["headline"]
+    # Per-population rows now carry Wilson CIs for parity with the overall block.
+    nfe = next(r for r in payload["per_population"] if r["population"] == "nfe")
+    assert nfe["ci_low"] is not None and nfe["ci_high"] is not None
+    assert nfe["ci_low"] < nfe["carrier_frequency"] < nfe["ci_high"]
+
+
 @pytest.mark.asyncio
 async def test_compute_carrier_frequency_leads_with_headline() -> None:
     from gnomad_link.mcp.facade import create_gnomad_mcp

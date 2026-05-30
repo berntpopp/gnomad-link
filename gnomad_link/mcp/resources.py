@@ -5,6 +5,8 @@ from __future__ import annotations
 from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
+from gnomad_link.config import settings
+
 RESEARCH_USE_NOTICE = "Research use only; not for clinical decision support."
 
 MCP_PROTOCOL_VERSION = "2025-06-18"
@@ -119,8 +121,18 @@ def get_capabilities_resource() -> dict[str, Any]:
             "get_region capped at 100kb span; get_gene_variants capped at 500 rows.",
             "Population truncation: subcohort, sex-split, and zero-AC rows are omitted by "
             "default across get_variant_frequencies, get_variant_details, and get_gene_variants.",
+            "search_genes uses gnomAD's bounded autocomplete; a short gene-family prefix can "
+            "omit exact members (e.g. 'GRIN' omits GRIN1/GRIN2B) -- query the full symbol.",
             RESEARCH_USE_NOTICE,
         ],
+        "concurrency": {
+            "max_concurrent_requests": settings.GNOMAD_MAX_CONCURRENCY,
+            "guidance": (
+                "The server caps in-flight upstream requests at this value. Fan out tool "
+                "calls in batches no larger than this; excess concurrent calls receive a "
+                "retryable rate_limited error (back off and retry), not a timeout."
+            ),
+        },
         "llm_driver_contract": {
             "recommended_entrypoint": "get_server_capabilities",
             "core_workflow_tools": [

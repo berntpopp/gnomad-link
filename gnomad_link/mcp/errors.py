@@ -99,6 +99,15 @@ def _fallback_for(context: McpErrorContext) -> tuple[str, dict[str, Any] | None]
     # text; point it at gene search rather than circularly back at itself.
     if context.tool_name in {"resolve_variant_id", "search_variants"}:
         return "search_genes", None
+    # Structural-variant ids (DEL_chr1_..., BND_chr12_...) are NOT resolvable by
+    # resolve_variant_id (SNV/indel only); steer to SV discovery instead.
+    if context.tool_name == "get_structural_variant":
+        return "search_structural_variants", None
+    if context.tool_name == "search_structural_variants":
+        # SV search needs a valid gene/region; help locate one.
+        if context.gene_symbol or context.gene_id:
+            return "search_genes", {"query": context.gene_symbol or context.gene_id}
+        return "search_genes", None
     if context.variant_id:
         return "resolve_variant_id", {"query": context.variant_id}
     if context.gene_symbol or context.gene_id:

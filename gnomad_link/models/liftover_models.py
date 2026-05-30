@@ -19,6 +19,11 @@ class LiftoverResult(BaseModel):
     liftover: LiftoverVariant = Field(
         ..., description="Lifted over variant in target reference genome"
     )
+    target_variant_id: str | None = Field(
+        None,
+        description="The converted coordinate in the requested target build "
+        "(the source or liftover entry whose reference_genome == target_reference_genome).",
+    )
     datasets: list[str] = Field(
         default_factory=list,
         description="List of datasets where this liftover mapping is available",
@@ -33,7 +38,10 @@ class LiftoverResponse(BaseModel):
         description="List of liftover results (may be empty if no mapping exists)",
     )
     query_type: str = Field(
-        ..., description="Type of liftover query performed: 'forward' or 'reverse'"
+        ..., description="Type of liftover query performed: 'forward' (GRCh37->GRCh38) or 'reverse'"
+    )
+    target_reference_genome: str | None = Field(
+        None, description="Build the source coordinate was converted to (GRCh37 or GRCh38)."
     )
 
     model_config = {

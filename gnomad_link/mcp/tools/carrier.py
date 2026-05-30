@@ -59,6 +59,16 @@ def _preferred_source(response: VariantFrequencyResponse) -> VariantDataSource |
     return response.exome or response.genome
 
 
+def _is_sex_split_population(pop_name: str) -> bool:
+    """True for sex-split pseudo-population rows (XX, XY, <anc>_XX, <anc>_XY).
+
+    These are meaningful only for X-linked inheritance; for autosomal AR/AD they
+    are noise (an autosomal variant has the same frequency in XX and XY) and must
+    not appear in per-population rows or win the max-population pick.
+    """
+    return pop_name in ("XX", "XY") or pop_name.endswith(("_XX", "_XY"))
+
+
 def _ar_overall(source: VariantDataSource | None, method: str) -> dict[str, Any]:
     if source is None or source.an <= 0:
         return {
@@ -90,6 +100,8 @@ def _ar_per_population(source: VariantDataSource | None, method: str) -> list[di
     if source is None:
         return rows
     for pop in source.populations:
+        if _is_sex_split_population(pop.name):
+            continue  # XL-only rows; meaningless for autosomal AR
         if pop.allele_number <= 0:
             rows.append(
                 {
@@ -98,6 +110,8 @@ def _ar_per_population(source: VariantDataSource | None, method: str) -> list[di
                     "an": pop.allele_number,
                     "af": None,
                     "carrier_frequency": None,
+                    "ci_low": None,
+                    "ci_high": None,
                     "affected_frequency": None,
                 }
             )
@@ -111,6 +125,8 @@ def _ar_per_population(source: VariantDataSource | None, method: str) -> list[di
             )
         else:
             cf = ar_carrier(af)
+        # Wilson CI on AF, mapped through the carrier transform, for parity with overall.
+        ci_low, ci_high = wilson_ci(af=af, n=pop.allele_number)
         rows.append(
             {
                 "population": pop.name,
@@ -118,6 +134,8 @@ def _ar_per_population(source: VariantDataSource | None, method: str) -> list[di
                 "an": pop.allele_number,
                 "af": af,
                 "carrier_frequency": cf,
+                "ci_low": ar_carrier(ci_low) if ci_low is not None else None,
+                "ci_high": ar_carrier(ci_high) if ci_high is not None else None,
                 "affected_frequency": ar_affected(af),
             }
         )
@@ -163,7 +181,15 @@ def _ad_per_population(source: VariantDataSource | None) -> list[dict[str, Any]]
     if source is None:
         return rows
     for pop in source.populations:
+        if _is_sex_split_population(pop.name):
+            continue  # XL-only rows; meaningless for autosomal AD
         af = pop.allele_frequency
+        ci_low: float | None = None
+        ci_high: float | None = None
+        if af is not None and pop.allele_number > 0:
+            wl, wh = wilson_ci(af=af, n=pop.allele_number)
+            ci_low = ad_affected_or_carrier(wl) if wl is not None else None
+            ci_high = ad_affected_or_carrier(wh) if wh is not None else None
         rows.append(
             {
                 "population": pop.name,
@@ -174,6 +200,8 @@ def _ad_per_population(source: VariantDataSource | None) -> list[dict[str, Any]]
                     ad_affected_or_carrier(af) if af is not None else None
                 ),
                 "carrier_frequency": ad_affected_or_carrier(af) if af is not None else None,
+                "ci_low": ci_low,
+                "ci_high": ci_high,
             }
         )
     return rows

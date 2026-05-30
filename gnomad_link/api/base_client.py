@@ -133,6 +133,28 @@ class BaseGnomadClient:
                     self._session = await self._client.connect_async(reconnecting=True)
         return self._session
 
+    async def _acquire_slot(self) -> None:
+        """Acquire a concurrency slot, bounding the wait to give fast backpressure.
+
+        An aggressive fan-out (e.g. 20 concurrent tool calls against a cap of 5)
+        otherwise queues every excess request on the semaphore until the caller's
+        OWN tool-call timeout fires, surfacing as an opaque timeout. Instead we
+        wait at most GNOMAD_QUEUE_WAIT_TIMEOUT for a slot and then raise a
+        retryable RateLimitedError, so the LLM gets actionable backpressure
+        (retry with backoff) rather than a hang. The request timeout still covers
+        only the upstream call, not this queue wait.
+        """
+        try:
+            await asyncio.wait_for(
+                self._semaphore.acquire(), timeout=settings.GNOMAD_QUEUE_WAIT_TIMEOUT
+            )
+        except TimeoutError as exc:
+            raise RateLimitedError(
+                "Local concurrency limit saturated "
+                f"(max {settings.GNOMAD_MAX_CONCURRENCY} concurrent upstream requests). "
+                "Retry with exponential backoff or fan out fewer calls at once."
+            ) from exc
+
     async def _execute_with_retry(
         self, query_doc: Any, variables: dict[str, Any]
     ) -> dict[str, Any]:
@@ -141,16 +163,20 @@ class BaseGnomadClient:
         The semaphore is acquired per attempt (released during backoff sleep so
         other requests proceed). Only transient transport faults retry; GraphQL
         business errors (TransportQueryError) propagate immediately for the
-        caller to classify.
+        caller to classify. A saturated queue raises RateLimitedError, which is
+        NOT retried here (fast backpressure) and propagates for classification.
         """
         delay = _BACKOFF_BASE_SECONDS
         for attempt in range(_MAX_ATTEMPTS):
             try:
                 session = await self._ensure_session()
-                async with self._semaphore:
+                await self._acquire_slot()
+                try:
                     result: dict[str, Any] = await session.execute(
                         query_doc, variable_values=variables
                     )
+                finally:
+                    self._semaphore.release()
                 return result
             except (TransportServerError, TransportClosed, TimeoutError) as exc:
                 if not _is_retryable_transport_error(exc) or attempt == _MAX_ATTEMPTS - 1:
