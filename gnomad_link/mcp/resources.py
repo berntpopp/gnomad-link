@@ -66,6 +66,7 @@ def get_capabilities_resource() -> dict[str, Any]:
             "get_server_capabilities",
             "get_variant_frequencies",
             "get_variant_details",
+            "compare_variant_across_datasets",
             "get_gene_details",
             "get_gene_variants",
             "get_clinvar_variant_details",
@@ -89,6 +90,7 @@ def get_capabilities_resource() -> dict[str, Any]:
             "get_server_capabilities": "<2kB",
             "get_variant_frequencies": "~2-4kB",
             "get_variant_details": "compact ~3kB, full up to ~50kB",
+            "compare_variant_across_datasets": "~3-8kB (dataset/liftover dependent)",
             "get_gene_details": "compact ~2kB, full up to ~30kB",
             "get_gene_variants": "~5-50kB (limit-dependent)",
             "get_clinvar_variant_details": "~3-15kB (submissions_limit dependent)",
@@ -132,6 +134,7 @@ def get_capabilities_resource() -> dict[str, Any]:
             "variant": [
                 "get_variant_frequencies",
                 "get_variant_details",
+                "compare_variant_across_datasets",
                 "get_mitochondrial_variant",
                 "get_structural_variant",
                 "compute_carrier_frequency",
