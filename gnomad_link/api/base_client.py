@@ -56,11 +56,7 @@ class BaseGnomadClient:
         self.query_builder = QueryBuilder()
 
     async def execute_query(
-        self,
-        query_name: str,
-        variables: dict[str, Any],
-        version: str = "v4",
-        operation_name: str | None = None,
+        self, query_name: str, variables: dict[str, Any], version: str = "v4"
     ) -> dict[str, Any]:
         """Execute a GraphQL query.
 
@@ -68,7 +64,6 @@ class BaseGnomadClient:
             query_name: Name of the query to execute
             variables: Query variables
             version: API version
-            operation_name: Named operation to select in a multi-op document
 
         Returns:
             Query result
@@ -85,17 +80,10 @@ class BaseGnomadClient:
 
             # Execute
             query_doc = gql(query_string)
-            if operation_name is not None:
-                result = await self._client.execute_async(
-                    query_doc,
-                    variable_values=processed_vars,
-                    operation_name=operation_name,
-                )
-            else:
-                result = await self._client.execute_async(query_doc, variable_values=processed_vars)
+            result = await self._client.execute_async(query_doc, variable_values=processed_vars)
 
-            # Check if data was found (single-op queries are keyed by query_name).
-            if operation_name is None and query_name in result and result[query_name] is None:
+            # Check if data was found
+            if query_name in result and result[query_name] is None:
                 raise DataNotFoundError(
                     f"No data found for {query_name} with parameters: {processed_vars}"
                 )

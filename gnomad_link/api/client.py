@@ -393,9 +393,7 @@ class UnifiedGnomadClient(BaseGnomadClient):
             variables["gene_id"] = gene_id
         if gene_symbol:
             variables["gene_symbol"] = gene_symbol
-        return await self.execute_query(
-            "coverage", variables, version, operation_name="gene_coverage"
-        )
+        return await self.execute_query("coverage_gene", variables, version)
 
     async def get_region_coverage(
         self,
@@ -415,14 +413,10 @@ class UnifiedGnomadClient(BaseGnomadClient):
             "reference_genome": reference_genome,
             "dataset": dataset,
         }
-        return await self.execute_query(
-            "coverage", variables, version, operation_name="region_coverage"
-        )
+        return await self.execute_query("coverage_region", variables, version)
 
     async def get_variant_coverage(self, *, variant_id: str, dataset: str) -> dict[str, Any]:
         """Get scalar exome/genome coverage for a single variant."""
         version = QueryBuilder.get_version_for_dataset(dataset)
         variables: dict[str, Any] = {"variantId": variant_id, "dataset": dataset}
-        return await self.execute_query(
-            "coverage", variables, version, operation_name="variant_coverage"
-        )
+        return await self.execute_query("coverage_variant", variables, version)

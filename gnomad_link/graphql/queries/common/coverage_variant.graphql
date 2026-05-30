@@ -1,0 +1,19 @@
+query variant_coverage($variantId: String!, $dataset: DatasetId!) {
+    variant(variantId: $variantId, dataset: $dataset) {
+        variant_id
+        coverage {
+            exome {
+                mean
+                median
+                over_20
+                over_30
+            }
+            genome {
+                mean
+                median
+                over_20
+                over_30
+            }
+        }
+    }
+}
