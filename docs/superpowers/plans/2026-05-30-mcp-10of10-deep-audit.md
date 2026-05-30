@@ -32,12 +32,12 @@ dependencies; no live gnomAD calls in default CI; research-use scope only.
   `parameter_conventions`, carrier `recommended_workflows`, `next_commands` doc
   in cheatsheet/response_fields, concurrency `queue_wait_seconds`/fanout note;
   one facade.py instructions bullet.
-- [ ] **G5 next_commands emission on success paths (#3-emit)** —
+- [x] **G5 next_commands emission on success paths (#3-emit)** —
   search_genes->get_gene_details, liftover->get_variant_frequencies(target),
   get_region->get_gene_variants/get_clinvar_variant_details, specialty tools.
-- [ ] **G6 output structure (#10,#2)** — headline builders for the 6 headline-less
+- [x] **G6 output structure (#10)** — headline builders for the 6 headline-less
   tools; `has_clinvar` self-describing sentinel; normalize region_span truncation
-  block; `*_af_source` labels via shared `preferred_overall_af` helper.
+  block. (af_source labels #2 moved to G10.)
 - [ ] **G7 token efficiency (#8)** — compare_variant compact `response_mode`
   (drop redundant per-dataset populations[]); delete duplicate `sources` key in
   gene_carrier_shaping.
@@ -48,7 +48,7 @@ dependencies; no live gnomAD calls in default CI; research-use scope only.
 - [ ] **G9 mcp conformance (#13 safe subset)** — get_server_capabilities
   open-world annotation; resource `mime_type`/`name`; MCP_PROTOCOL_VERSION from
   SDK; prompt-arg patterns. (Skip fragile private-attr listChanged suppression.)
-- [ ] **G10 remaining data-fidelity / self-doc (#15,#4)** — variant_carrier
+- [ ] **G10 remaining data-fidelity / self-doc (#15,#4,#2)** — variant_carrier
   headline research-use caveat; transcript pext_note; gene-carrier
   omitted_populations + AR affected CIs + AD per-pop key fix + length-weighted
   mean_pext; ClinVar fan-out backpressure accounting.

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from fastmcp import FastMCP
 from pydantic import Field
@@ -117,8 +117,16 @@ def register_comparison_tools(
                 description="Lift the GRCh38 id to GRCh37 for gnomad_r2_1. Off skips r2_1 with a build note.",
             ),
         ] = True,
+        response_mode: Annotated[
+            Literal["compact", "full"],
+            Field(
+                description="compact (default) drops the duplicated per-dataset exome/genome "
+                "population arrays (~half the payload) since comparison.per_population_af_deltas "
+                "already carries every per-population AF; full keeps the raw ac/an rows.",
+            ),
+        ] = "compact",
     ) -> dict[str, Any]:
-        """Use this when a caller wants to see how one variant's allele frequencies shift across gnomAD releases (r4 vs r3 vs r2_1) and which populations diverge most. Datasets that lack the variant are marked present=false (partial success); the GRCh37 gnomad_r2_1 leg is auto-lifted from the GRCh38 id. Pair with get_clinvar_variant_details for clinical context. Returns ~3-8kB."""
+        """Use this when a caller wants to see how one variant's allele frequencies shift across gnomAD releases (r4 vs r3 vs r2_1) and which populations diverge most. Datasets that lack the variant are marked present=false (partial success); the GRCh37 gnomad_r2_1 leg is auto-lifted from the GRCh38 id. Pair with get_clinvar_variant_details for clinical context. Compact (default) drops the per-dataset population arrays (comparison.per_population_af_deltas keeps the per-pop AFs); response_mode='full' returns the raw rows. Returns ~2-4kB compact, ~3-8kB full."""
 
         async def call() -> dict[str, Any]:
             selected = datasets if datasets is not None else list(_DEFAULT_DATASETS)
@@ -173,7 +181,17 @@ def register_comparison_tools(
                     f"{variant_id}; none could be compared."
                 )
 
+            # Build deltas from the FULL per-dataset populations first, then (in
+            # compact mode) drop those arrays: per_population_af_deltas already
+            # carries every per-population AF, so keeping them is pure duplication.
             comparison = build_comparison(per_dataset)
+            if response_mode == "compact":
+                for entry in per_dataset.values():
+                    for src_key in ("exome", "genome"):
+                        src = entry.get(src_key)
+                        if isinstance(src, dict):
+                            src.pop("populations", None)
+                            src.pop("truncated", None)
             payload: dict[str, Any] = {
                 "headline": comparison_headline(
                     {"variant_id": variant_id, "comparison": comparison}
@@ -183,6 +201,12 @@ def register_comparison_tools(
                 "comparison": comparison,
                 "build_notes": build_notes,
             }
+            if response_mode == "compact":
+                payload["populations_note"] = (
+                    "Per-dataset population arrays omitted (response_mode=compact); "
+                    "per-population AFs are in comparison.per_population_af_deltas. "
+                    "Use response_mode='full' for raw ac/an rows."
+                )
             payload["_meta"] = {
                 "next_commands": [
                     {

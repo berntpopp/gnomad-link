@@ -113,6 +113,51 @@ async def test_compares_two_present_datasets_and_emits_deltas() -> None:
 
 
 @pytest.mark.asyncio
+async def test_compact_default_drops_per_dataset_populations_keeps_deltas() -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    stub = _StubService(
+        freq_by_dataset={
+            "gnomad_r4": _freq("1-55039974-G-T", "gnomad_r4", afr_ac=100),
+            "gnomad_r3": _freq("1-55039974-G-T", "gnomad_r3", afr_ac=80),
+        }
+    )
+    mcp = create_gnomad_mcp(service_factory=lambda: stub)
+    result = await mcp.call_tool(
+        "compare_variant_across_datasets",
+        {"variant_id": "1-55039974-G-T", "datasets": ["gnomad_r4", "gnomad_r3"]},
+    )
+    payload = _structured(result)
+
+    # Per-dataset population arrays are dropped in the default compact mode...
+    assert "populations" not in payload["datasets"]["gnomad_r4"]["exome"]
+    assert "populations_note" in payload
+    # ...but the per-population deltas (the actual signal) survive.
+    by_pop = {row["population"]: row for row in payload["comparison"]["per_population_af_deltas"]}
+    assert abs(by_pop["afr"]["max_minus_min_delta"] - 0.002) < 1e-12
+
+
+@pytest.mark.asyncio
+async def test_full_mode_keeps_per_dataset_populations() -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    stub = _StubService(freq_by_dataset={"gnomad_r4": _freq("1-55039974-G-T", "gnomad_r4")})
+    mcp = create_gnomad_mcp(service_factory=lambda: stub)
+    result = await mcp.call_tool(
+        "compare_variant_across_datasets",
+        {
+            "variant_id": "1-55039974-G-T",
+            "datasets": ["gnomad_r4"],
+            "response_mode": "full",
+        },
+    )
+    payload = _structured(result)
+
+    assert payload["datasets"]["gnomad_r4"]["exome"]["populations"]
+    assert "populations_note" not in payload
+
+
+@pytest.mark.asyncio
 async def test_missing_dataset_marked_present_false_partial_success() -> None:
     from gnomad_link.mcp.facade import create_gnomad_mcp
 

@@ -59,7 +59,8 @@ def shape_gene_carrier(
     cap = len(variants) if response_mode == "full" else top_variants_limit
     contributing: dict[str, Any] = {
         "count": result.get("qualifying_count", len(variants)),
-        "sources": result.get("sources"),
+        # `sources` is carried once at the top level of the shaped payload; do not
+        # duplicate it inside contributing_variants.
         "top": variants[:cap],
     }
     if len(variants) > cap:
