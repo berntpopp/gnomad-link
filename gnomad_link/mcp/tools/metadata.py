@@ -8,7 +8,7 @@ from typing import Any
 from fastmcp import FastMCP
 from mcp.types import Annotations
 
-from gnomad_link.mcp.annotations import READ_ONLY_CLOSED_WORLD
+from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.clinvar_date_cache import (
     has_cached_clinvar_release_date,
     reset_clinvar_date_cache,
@@ -33,7 +33,7 @@ def register_metadata_tools(
     @mcp.tool(
         name="get_server_capabilities",
         title="Get gnomAD Link Capabilities",
-        annotations=READ_ONLY_CLOSED_WORLD,
+        annotations=READ_ONLY_OPEN_WORLD,
         tags={"metadata"},
     )
     async def get_server_capabilities() -> dict[str, Any]:
@@ -44,7 +44,11 @@ def register_metadata_tools(
             lambda: _coro_capabilities(service_factory),
         )
 
-    @mcp.resource("gnomad://capabilities", annotations=_RESOURCE_ANNOTATIONS)
+    @mcp.resource(
+        "gnomad://capabilities",
+        annotations=_RESOURCE_ANNOTATIONS,
+        mime_type="application/json",
+    )
     def capabilities_resource() -> dict[str, Any]:
         return get_capabilities_resource()
 
@@ -52,17 +56,29 @@ def register_metadata_tools(
     def usage_resource() -> str:
         return get_usage_resource()
 
-    @mcp.resource("gnomad://reference", annotations=_RESOURCE_ANNOTATIONS)
+    @mcp.resource(
+        "gnomad://reference",
+        annotations=_RESOURCE_ANNOTATIONS,
+        mime_type="application/json",
+    )
     def reference_resource() -> dict[str, Any]:
         # Detailed error taxonomy, truncation contract, and field/unit glossary,
         # kept out of the always-read capabilities doc.
         return get_reference_resource()
 
-    @mcp.resource("gnomad://research-use", annotations=_RESOURCE_ANNOTATIONS)
+    @mcp.resource(
+        "gnomad://research-use",
+        annotations=_RESOURCE_ANNOTATIONS,
+        mime_type="application/json",
+    )
     def research_use_resource() -> dict[str, Any]:
         return {"notice": RESEARCH_USE_NOTICE}
 
-    @mcp.resource("gnomad://citations", annotations=_RESOURCE_ANNOTATIONS)
+    @mcp.resource(
+        "gnomad://citations",
+        annotations=_RESOURCE_ANNOTATIONS,
+        mime_type="application/json",
+    )
     def citations_resource() -> dict[str, Any]:
         # Full carrier-frequency citations + assumptions, referenced by the
         # `citations_ref` pointer the carrier tools emit in compact mode.

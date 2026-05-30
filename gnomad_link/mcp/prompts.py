@@ -1,15 +1,32 @@
 """Canonical workflow prompts for gnomAD Link MCP."""
 
-from __future__ import annotations
+from typing import Annotated
 
 from fastmcp import FastMCP
+from pydantic import Field
+
+from gnomad_link.mcp.patterns import GENE_SYMBOL_PATTERN
+from gnomad_link.mcp.tools.clinvar import _CLINVAR_VARIANT_ID_PATTERN
+from gnomad_link.mcp.tools.coordinates import _REGION_PATTERN
+from gnomad_link.mcp.tools.variants import _AUTOSOMAL_VARIANT_ID_PATTERN
 
 
 def register_workflow_prompts(mcp: FastMCP) -> None:
     """Register canonical workflow prompts that guide LLM callers through tool chains."""
 
     @mcp.prompt(name="variant_frequency_workflow")
-    def variant_frequency_workflow(variant_id: str) -> str:
+    def variant_frequency_workflow(
+        variant_id: Annotated[
+            str,
+            Field(
+                pattern=_AUTOSOMAL_VARIANT_ID_PATTERN,
+                description=(
+                    "Autosomal CHROM-POS-REF-ALT variant id matching "
+                    f"{_AUTOSOMAL_VARIANT_ID_PATTERN}."
+                ),
+            ),
+        ],
+    ) -> str:
         """Guide for looking up allele frequencies and optional ClinVar annotation."""
         return (
             f"Variant frequency workflow for {variant_id}:\n"
@@ -24,7 +41,15 @@ def register_workflow_prompts(mcp: FastMCP) -> None:
         ).replace("{variant_id}", variant_id)
 
     @mcp.prompt(name="gene_constraint_workflow")
-    def gene_constraint_workflow(gene_symbol: str) -> str:
+    def gene_constraint_workflow(
+        gene_symbol: Annotated[
+            str,
+            Field(
+                pattern=GENE_SYMBOL_PATTERN,
+                description=f"HGNC gene symbol matching {GENE_SYMBOL_PATTERN}.",
+            ),
+        ],
+    ) -> str:
         """Guide for reviewing gene constraint metrics and variant inventory."""
         return (
             f"Gene constraint workflow for {gene_symbol}:\n"
@@ -38,7 +63,17 @@ def register_workflow_prompts(mcp: FastMCP) -> None:
         ).replace("{gene_symbol}", gene_symbol)
 
     @mcp.prompt(name="clinical_variant_workflow")
-    def clinical_variant_workflow(variant_id: str) -> str:
+    def clinical_variant_workflow(
+        variant_id: Annotated[
+            str,
+            Field(
+                pattern=_CLINVAR_VARIANT_ID_PATTERN,
+                description=(
+                    f"ClinVar CHROM-POS-REF-ALT variant id matching {_CLINVAR_VARIANT_ID_PATTERN}."
+                ),
+            ),
+        ],
+    ) -> str:
         """Guide for a clinically oriented variant review combining ClinVar and gnomAD."""
         return (
             f"Clinical variant workflow for {variant_id}:\n"
@@ -53,7 +88,15 @@ def register_workflow_prompts(mcp: FastMCP) -> None:
         ).replace("{variant_id}", variant_id)
 
     @mcp.prompt(name="region_scan_workflow")
-    def region_scan_workflow(region: str) -> str:
+    def region_scan_workflow(
+        region: Annotated[
+            str,
+            Field(
+                pattern=_REGION_PATTERN,
+                description=f"Region in CHROM-START-STOP form matching {_REGION_PATTERN}.",
+            ),
+        ],
+    ) -> str:
         """Guide for scanning a genomic region for variants and overlapping genes."""
         return (
             f"Region scan workflow for {region}:\n"

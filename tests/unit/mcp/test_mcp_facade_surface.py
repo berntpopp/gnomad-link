@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from typing import Any
 
 import pytest
 
@@ -86,7 +87,7 @@ async def test_every_data_tool_has_read_only_open_world_annotations(fake_service
 
 
 @pytest.mark.asyncio
-async def test_capabilities_tool_is_closed_world(fake_service_factory) -> None:
+async def test_capabilities_tool_is_open_world(fake_service_factory) -> None:
     from gnomad_link.mcp.facade import create_gnomad_mcp
 
     mcp = create_gnomad_mcp(service_factory=fake_service_factory)
@@ -94,7 +95,7 @@ async def test_capabilities_tool_is_closed_world(fake_service_factory) -> None:
     ann = tools_by_name["get_server_capabilities"].annotations
 
     assert ann is not None
-    assert ann.openWorldHint is False
+    assert ann.openWorldHint is True
 
 
 @pytest.mark.asyncio
@@ -145,6 +146,22 @@ async def test_capabilities_resources_are_registered(fake_service_factory) -> No
 
 
 @pytest.mark.asyncio
+async def test_json_resources_advertise_application_json(fake_service_factory) -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    mcp = create_gnomad_mcp(service_factory=fake_service_factory)
+    resources = {str(res.uri): res for res in await mcp.list_resources()}
+
+    for uri in {
+        "gnomad://capabilities",
+        "gnomad://research-use",
+        "gnomad://reference",
+        "gnomad://citations",
+    }:
+        assert resources[uri].mime_type == "application/json"
+
+
+@pytest.mark.asyncio
 async def test_get_gnomad_diagnostics_returns_health_and_recent_errors(
     fake_service_factory,
 ) -> None:
@@ -182,6 +199,46 @@ async def test_workflow_prompts_registered(fake_service_factory) -> None:
     assert "gene_constraint_workflow" in prompt_names
     assert "clinical_variant_workflow" in prompt_names
     assert "region_scan_workflow" in prompt_names
+
+
+@pytest.mark.asyncio
+async def test_workflow_prompt_args_advertise_tool_patterns(fake_service_factory) -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+    from gnomad_link.mcp.patterns import GENE_SYMBOL_PATTERN
+    from gnomad_link.mcp.tools.clinvar import _CLINVAR_VARIANT_ID_PATTERN
+    from gnomad_link.mcp.tools.coordinates import _REGION_PATTERN
+    from gnomad_link.mcp.tools.variants import _AUTOSOMAL_VARIANT_ID_PATTERN
+
+    mcp = create_gnomad_mcp(service_factory=fake_service_factory)
+    prompts = {prompt.name: prompt for prompt in await mcp.list_prompts()}
+
+    expected = {
+        "variant_frequency_workflow": _AUTOSOMAL_VARIANT_ID_PATTERN,
+        "gene_constraint_workflow": GENE_SYMBOL_PATTERN,
+        "clinical_variant_workflow": _CLINVAR_VARIANT_ID_PATTERN,
+        "region_scan_workflow": _REGION_PATTERN,
+    }
+    for prompt_name, pattern in expected.items():
+        arguments = prompts[prompt_name].arguments
+        assert arguments is not None
+        assert pattern in (arguments[0].description or "")
+
+
+@pytest.mark.asyncio
+async def test_workflow_prompt_args_are_pattern_validated(fake_service_factory) -> None:
+    from fastmcp.exceptions import PromptError
+
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    mcp = create_gnomad_mcp(service_factory=fake_service_factory)
+
+    await mcp.render_prompt("variant_frequency_workflow", {"variant_id": "1-55051215-G-GA"})
+    await mcp.render_prompt("gene_constraint_workflow", {"gene_symbol": "PCSK9"})
+    await mcp.render_prompt("clinical_variant_workflow", {"variant_id": "MT-7497-G-A"})
+    await mcp.render_prompt("region_scan_workflow", {"region": "MT-1-200"})
+
+    with pytest.raises(PromptError):
+        await mcp.render_prompt("variant_frequency_workflow", {"variant_id": "not-a-variant"})
 
 
 @pytest.mark.asyncio
@@ -232,6 +289,13 @@ def test_capabilities_resource_lists_token_cost_hints() -> None:
         assert tool_name in hints, f"missing token_cost_hint for {tool_name}"
         assert isinstance(hints[tool_name], str)
         assert len(hints[tool_name]) <= 80
+
+
+def test_capabilities_protocol_version_tracks_mcp_sdk() -> None:
+    from gnomad_link.mcp.resources import MCP_PROTOCOL_VERSION
+    from mcp.types import LATEST_PROTOCOL_VERSION
+
+    assert MCP_PROTOCOL_VERSION == LATEST_PROTOCOL_VERSION
 
 
 @pytest.mark.asyncio
@@ -346,7 +410,10 @@ async def test_get_clinvar_meta_marks_deprecated() -> None:
         async def get_clinvar_meta(self) -> dict[str, object]:
             return {"clinvar_release_date": "2024-10-15"}
 
-    mcp = create_gnomad_mcp(service_factory=lambda: _StubMetaService())
+    def service_factory() -> Any:
+        return _StubMetaService()
+
+    mcp = create_gnomad_mcp(service_factory=service_factory)
     result = await mcp.call_tool("get_clinvar_meta", {})
     payload = result.structured_content or {}
 

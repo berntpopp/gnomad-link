@@ -5,12 +5,12 @@ from __future__ import annotations
 from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
+from mcp.types import LATEST_PROTOCOL_VERSION as MCP_PROTOCOL_VERSION
+
 from gnomad_link.config import settings
 from gnomad_link.mcp.clinvar_date_cache import get_cached_clinvar_release_date
 
 RESEARCH_USE_NOTICE = "Research use only; not for clinical decision support."
-
-MCP_PROTOCOL_VERSION = "2025-06-18"
 
 # Current gnomAD upstream release. Surfaced in every MCP response's `_meta`
 # so LLM callers can cite the precise data version. v4.1.0 was released

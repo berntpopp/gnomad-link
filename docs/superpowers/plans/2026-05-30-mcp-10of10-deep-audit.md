@@ -45,8 +45,8 @@ dependencies; no live gnomAD calls in default CI; research-use scope only.
   sv_type Literal (non-breaking via case-normalizing), transcript_id pattern,
   compare datasets list[Literal], bare-Field descriptions, prompts consequence
   example; shared `patterns.py`; per-call queue-wait deadline in base_client.
-- [ ] **G9 mcp conformance (#13 safe subset)** — get_server_capabilities
-  open-world annotation; resource `mime_type`/`name`; MCP_PROTOCOL_VERSION from
+- [x] **G9 mcp conformance (#13 safe subset)** — get_server_capabilities
+  open-world annotation; resource `mime_type`; MCP_PROTOCOL_VERSION from
   SDK; prompt-arg patterns. (Skip fragile private-attr listChanged suppression.)
 - [ ] **G10 remaining data-fidelity / self-doc (#15,#4,#2)** — variant_carrier
   headline research-use caveat; transcript pext_note; gene-carrier
