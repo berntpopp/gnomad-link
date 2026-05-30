@@ -12,6 +12,7 @@ EXPECTED_TOOLS = {
     "get_variant_details",
     "get_gene_details",
     "get_gene_variants",
+    "get_gene_summary",
     "get_clinvar_variant_details",
     "get_clinvar_meta",
     "liftover_variant",
