@@ -157,7 +157,9 @@ class VariantDetails(BaseModel):
     rsids: list[str] = Field(default_factory=list)
     major_consequence: str | None = None
     transcript_consequences: list[dict] | None = None
-    in_silico_predictors: dict | None = None
+    # gnomAD returns in-silico predictors as a LIST of {id, value, flags} rows,
+    # not a mapping.
+    in_silico_predictors: list[dict] | None = None
     clinvar: dict | None = None
     exome: dict | None = None
     genome: dict | None = None

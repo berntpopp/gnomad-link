@@ -13,9 +13,32 @@ than an empty payload.
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 import pytest
+
+import mcp.types
+
+
+async def _invoke(mcp_instance: Any, tool: str, arguments: dict[str, Any]) -> dict[str, Any]:
+    """Route through the SDK lowlevel handler so output-schema validation runs."""
+    handler = mcp_instance._mcp_server.request_handlers[mcp.types.CallToolRequest]
+    request = mcp.types.CallToolRequest(
+        method="tools/call",
+        params=mcp.types.CallToolRequestParams(name=tool, arguments=arguments),
+    )
+    result = await handler(request)
+    call_result = result.root if hasattr(result, "root") else result
+    assert isinstance(call_result, mcp.types.CallToolResult)
+    if call_result.structuredContent is not None:
+        return dict(call_result.structuredContent)
+    if call_result.content:
+        text = getattr(call_result.content[0], "text", None)
+        if isinstance(text, str):
+            return json.loads(text)
+    return {}
+
 
 _RAW_VARIANT = {
     "variant_id": "7-117559590-ATCT-A",
@@ -34,7 +57,11 @@ _RAW_VARIANT = {
             "major_consequence": "inframe_deletion",
         }
     ],
-    "in_silico_predictors": {"cadd": 22.1},
+    # gnomAD returns predictors as a LIST of {id, value, flags} rows.
+    "in_silico_predictors": [
+        {"id": "cadd", "value": "19.2", "flags": []},
+        {"id": "spliceai_ds_max", "value": "0.00", "flags": []},
+    ],
     "clinvar": {"clinical_significance": "Pathogenic"},
     "exome": {"ac": 1000, "an": 1200000, "populations": []},
     "genome": None,
@@ -60,11 +87,11 @@ async def test_get_variant_details_compact_returns_variant_block() -> None:
     from gnomad_link.mcp.facade import create_gnomad_mcp
 
     mcp = create_gnomad_mcp(service_factory=lambda: _VariantDetailsStub())
-    result = await mcp.call_tool(
+    payload = await _invoke(
+        mcp,
         "get_variant_details",
         {"variant_id": "7-117559590-ATCT-A", "dataset": "gnomad_r4"},
     )
-    payload = result.structured_content or {}
 
     assert payload.get("error_code") is None, payload
     # The whole point of H-1: the variant block is present, not a bare _meta.
@@ -80,7 +107,9 @@ async def test_get_variant_details_full_returns_variant_block() -> None:
     from gnomad_link.mcp.facade import create_gnomad_mcp
 
     mcp = create_gnomad_mcp(service_factory=lambda: _VariantDetailsStub())
-    result = await mcp.call_tool(
+    # Route through the lowlevel handler so output-schema validation actually runs.
+    payload = await _invoke(
+        mcp,
         "get_variant_details",
         {
             "variant_id": "7-117559590-ATCT-A",
@@ -88,12 +117,16 @@ async def test_get_variant_details_full_returns_variant_block() -> None:
             "response_mode": "full",
         },
     )
-    payload = result.structured_content or {}
 
     assert payload.get("variant_id") == "7-117559590-ATCT-A", payload
     # Full mode is unwrapped too — never the {"variant": {...}} wrapper.
     assert "variant" not in payload or isinstance(payload.get("variant"), str)
-    assert payload.get("in_silico_predictors") == {"cadd": 22.1}
+    # in_silico_predictors is a list of rows (gnomAD shape), and the list-valued
+    # payload must survive output-schema validation (regression: the model used to
+    # type this as a dict, so the real list tripped output_validation_failed).
+    assert payload.get("error_code") != "output_validation_failed", payload
+    assert isinstance(payload.get("in_silico_predictors"), list)
+    assert payload["in_silico_predictors"][0]["id"] == "cadd"
 
 
 @pytest.mark.asyncio
