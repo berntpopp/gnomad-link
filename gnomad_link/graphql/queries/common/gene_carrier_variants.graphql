@@ -45,6 +45,18 @@ query gene_carrier_variants(
                     homozygote_count
                 }
             }
+            joint {
+                ac
+                an
+                homozygote_count
+                filters
+                populations {
+                    id
+                    ac
+                    an
+                    homozygote_count
+                }
+            }
         }
         clinvar_variants {
             variant_id
