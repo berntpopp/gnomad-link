@@ -7,11 +7,94 @@ a sentence an LLM can hand back to the user.
 from __future__ import annotations
 
 from gnomad_link.mcp.headline import (
+    comparison_headline,
+    coverage_headline,
     gene_carrier_headline,
     gene_details_headline,
+    gene_summary_headline,
+    mitochondrial_variant_headline,
+    region_headline,
+    structural_variant_headline,
     variant_carrier_headline,
     variant_frequencies_headline,
 )
+
+
+def test_structural_variant_headline_renders_type_length_af() -> None:
+    h = structural_variant_headline(
+        {"variant_id": "DEL_chr1_x", "type": "DEL", "length": 1500, "af": 0.0032},
+        dataset="gnomad_sv_r4",
+    )
+    assert "DEL_chr1_x: DEL 1.5kb" in h
+    assert "AF 0.0032" in h
+    assert "(gnomad_sv_r4)" in h
+
+
+def test_structural_variant_headline_null_safe() -> None:
+    h = structural_variant_headline({}, dataset="gnomad_sv_r4")
+    assert h.startswith("SV: SV")
+
+
+def test_mitochondrial_variant_headline_combines_hom_het() -> None:
+    h = mitochondrial_variant_headline(
+        {
+            "variant_id": "M-3243-A-G",
+            "an": 56000,
+            "ac_hom": 3,
+            "ac_het": 12,
+            "max_heteroplasmy": 0.9,
+        },
+        dataset="gnomad_r4",
+    )
+    assert "M-3243-A-G (gnomad_r4)" in h
+    assert "3 hom + 12 het / 56000" in h
+    assert "max heteroplasmy 0.9" in h
+
+
+def test_mitochondrial_variant_headline_null_safe() -> None:
+    h = mitochondrial_variant_headline({"variant_id": "M-1-A-G"}, dataset="gnomad_r4")
+    assert "no frequency data" in h
+
+
+def test_gene_summary_headline_renders_pli_and_pathogenic() -> None:
+    h = gene_summary_headline(
+        {"symbol": "TP53", "constraint": {"pli": 1.0}, "clinvar_summary": {"pathogenic_count": 17}},
+        dataset="gnomad_r4",
+    )
+    assert "TP53 (gnomad_r4)" in h
+    assert "pLI 1.000" in h
+    assert "17 pathogenic ClinVar" in h
+
+
+def test_comparison_headline_lists_af_per_dataset() -> None:
+    h = comparison_headline(
+        {
+            "variant_id": "1-1-A-G",
+            "comparison": {"overall_af_by_dataset": {"gnomad_r4": 0.01, "gnomad_r3": 0.008}},
+        },
+    )
+    assert "1-1-A-G:" in h
+    assert "gnomad_r4 0.01" in h
+    assert "gnomad_r3 0.008" in h
+
+
+def test_coverage_headline_handles_summary_and_scalar_shapes() -> None:
+    gene = coverage_headline(
+        {"exome": {"summary": {"mean_coverage": 45.2, "fraction_over_20": 0.98}}}
+    )
+    assert "exome mean 45.2x" in gene
+    assert "0.98 >=20x" in gene
+    variant = coverage_headline({"exome": {"mean": 30.0, "over_20": 0.9}})
+    assert "exome mean 30.0x" in variant
+
+
+def test_region_headline_counts_genes_and_clinvar() -> None:
+    h = region_headline(
+        {"genes": [{}, {}], "clinvar_variants": [{}]},
+        region="17-7676154-7676254",
+        dataset="gnomad_r4",
+    )
+    assert "17-7676154-7676254 (gnomad_r4): 2 genes, 1 ClinVar variants" in h
 
 
 def test_gene_carrier_headline_matches_reviewer_format() -> None:

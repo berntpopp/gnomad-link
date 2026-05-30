@@ -15,6 +15,7 @@ from gnomad_link.mcp.build_check import (
 )
 from gnomad_link.mcp.coverage_shaping import shape_coverage_payload
 from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, ToolInputError, run_mcp_tool
+from gnomad_link.mcp.headline import coverage_headline
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.shaping import cap_region_span
 from gnomad_link.services import FrequencyService
@@ -195,7 +196,7 @@ def register_coverage_tools(
                 **existing_meta,
                 "next_commands": [*existing_next, *next_commands],
             }
-            return shaped
+            return {"headline": coverage_headline(shaped), **shaped}
 
         return await run_mcp_tool(
             "get_coverage",

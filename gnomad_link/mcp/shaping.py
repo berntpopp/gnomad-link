@@ -144,8 +144,13 @@ def shape_variant_frequencies(
             summary["max_pop_af"] = top["af"]
         if overall is not None:
             summary["overall_af"] = overall
-        # Placeholder: set to None to indicate unknown without get_clinvar_variant_details call.
-        summary["has_clinvar"] = None
+        # has_clinvar is not knowable from frequency data alone; emit a
+        # self-describing sentinel pointing at the tool that can answer it
+        # rather than an opaque null the LLM cannot ground on.
+        summary["has_clinvar"] = {
+            "known": False,
+            "how_to_check": "call get_clinvar_variant_details(variant_id)",
+        }
         payload["summary"] = summary
     return payload
 

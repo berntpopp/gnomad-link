@@ -136,6 +136,103 @@ def variant_frequencies_headline(payload: dict[str, Any]) -> str:
     return "; ".join(parts) + "."
 
 
+def _fmt_length_bp(value: Any) -> str | None:
+    """Render a structural-variant length in bp, switching to kb past 1000."""
+    n = _num(value)
+    if n is None:
+        return None
+    n = int(n)
+    return f"{n / 1000:.1f}kb" if abs(n) >= 1000 else f"{n}bp"
+
+
+def structural_variant_headline(payload: dict[str, Any], *, dataset: str) -> str:
+    """Headline for get_structural_variant."""
+    variant_id = payload.get("variant_id") or "SV"
+    sv_type = payload.get("type") or "SV"
+    parts = [f"{variant_id}: {sv_type}"]
+    length = _fmt_length_bp(payload.get("length"))
+    if length:
+        parts[0] += f" {length}"
+    af = _fmt_af(payload.get("af"))
+    if af:
+        parts.append(f"AF {af}")
+    elif _num(payload.get("ac")) is not None:
+        parts.append(f"AC {int(payload['ac'])}")
+    return f"{'; '.join(parts)} ({dataset})."
+
+
+def mitochondrial_variant_headline(payload: dict[str, Any], *, dataset: str) -> str:
+    """Headline for get_mitochondrial_variant (combined homoplasmic+heteroplasmic AF)."""
+    variant_id = payload.get("variant_id") or "variant"
+    an = _num(payload.get("an"))
+    ac_hom = _num(payload.get("ac_hom"))
+    ac_het = _num(payload.get("ac_het"))
+    parts = [f"{variant_id} ({dataset}):"]
+    if an and an > 0 and (ac_hom is not None or ac_het is not None):
+        combined = (ac_hom or 0) + (ac_het or 0)
+        af = _fmt_af(combined / an)
+        parts.append(f"AF {af} ({int(ac_hom or 0)} hom + {int(ac_het or 0)} het / {int(an)})")
+    else:
+        parts.append("no frequency data")
+    mh = _fmt_af(payload.get("max_heteroplasmy"))
+    if mh:
+        parts.append(f"max heteroplasmy {mh}")
+    return f"{parts[0]} {'; '.join(parts[1:])}."
+
+
+def gene_summary_headline(payload: dict[str, Any], *, dataset: str) -> str:
+    """Headline for get_gene_summary (constraint + pathogenic ClinVar count)."""
+    symbol = payload.get("symbol") or payload.get("gene_id") or "gene"
+    constraint = payload.get("constraint") or {}
+    pli = _num(constraint.get("pli"))
+    parts = [f"{symbol} ({dataset}):"]
+    body = [f"pLI {pli:.3f}"] if pli is not None else []
+    clinvar_summary = payload.get("clinvar_summary") or {}
+    path_count = clinvar_summary.get("pathogenic_count")
+    if isinstance(path_count, int):
+        body.append(f"{path_count} pathogenic ClinVar")
+    parts.append(", ".join(body) if body else "summary available")
+    return f"{parts[0]} {parts[1]}."
+
+
+def comparison_headline(result: dict[str, Any]) -> str:
+    """Headline for compare_variant_across_datasets (overall AF per dataset)."""
+    variant_id = result.get("variant_id") or "variant"
+    comparison = result.get("comparison") or {}
+    by_dataset = comparison.get("overall_af_by_dataset") or {}
+    pairs = [f"{ds} {_fmt_af(af)}" for ds, af in by_dataset.items() if _fmt_af(af) is not None]
+    if pairs:
+        return f"{variant_id}: AF {', '.join(pairs)}."
+    return f"{variant_id}: no comparable allele-frequency data."
+
+
+def coverage_headline(payload: dict[str, Any]) -> str:
+    """Headline for get_coverage (exome-first mean depth + fraction over 20x).
+
+    Handles both the gene/region shape (``source.summary.mean_coverage``) and the
+    single-variant scalar shape (``source.mean``).
+    """
+    for source_name in ("exome", "genome"):
+        source = payload.get(source_name) or {}
+        summary = source.get("summary") or {}
+        mean = _num(summary.get("mean_coverage"))
+        frac = _num(summary.get("fraction_over_20"))
+        if mean is None:  # single-variant scalar shape
+            mean = _num(source.get("mean"))
+            frac = _num(source.get("over_20"))
+        if mean is not None:
+            tail = f", {frac:.2f} >=20x" if frac is not None else ""
+            return f"coverage: {source_name} mean {mean:.1f}x{tail}."
+    return "coverage: no depth data."
+
+
+def region_headline(payload: dict[str, Any], *, region: str, dataset: str) -> str:
+    """Headline for get_region (gene + ClinVar counts in the window)."""
+    n_genes = len(payload.get("genes") or [])
+    n_clinvar = len(payload.get("clinvar_variants") or [])
+    return f"{region} ({dataset}): {n_genes} genes, {n_clinvar} ClinVar variants."
+
+
 def gene_details_headline(result: dict[str, Any], *, reference_genome: str) -> str:
     """Headline for get_gene_details (reads the Gene model dump)."""
     symbol = result.get("symbol") or "gene"

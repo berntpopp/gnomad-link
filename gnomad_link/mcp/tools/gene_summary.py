@@ -11,6 +11,7 @@ from pydantic import Field
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, ToolInputError, run_mcp_tool
 from gnomad_link.mcp.gene_summary_shaping import rank_pathogenic_clinvar
+from gnomad_link.mcp.headline import gene_summary_headline
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.services import FrequencyService
 
@@ -148,7 +149,7 @@ def register_gene_summary_tools(
                 seen.add(tool_name)
                 deduped.append(cmd)
             result["_meta"] = {**existing_meta, "next_commands": deduped[:3]}
-            return result
+            return {"headline": gene_summary_headline(result, dataset=dataset), **result}
 
         return await run_mcp_tool(
             "get_gene_summary",

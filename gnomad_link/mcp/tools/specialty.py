@@ -11,6 +11,10 @@ from pydantic import Field
 
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
+from gnomad_link.mcp.headline import (
+    mitochondrial_variant_headline,
+    structural_variant_headline,
+)
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.shaping import shape_mitochondrial_variant
 from gnomad_link.mcp.sv_shaping import shape_structural_variant
@@ -75,7 +79,8 @@ def register_specialty_tools(
             service = service_factory()
             raw = await service.get_structural_variant(variant_id, dataset)
             payload = cast(dict[str, Any], raw.get("structural_variant", raw))
-            return shape_structural_variant(payload, response_mode=response_mode)
+            shaped = shape_structural_variant(payload, response_mode=response_mode)
+            return {"headline": structural_variant_headline(shaped, dataset=dataset), **shaped}
 
         return await run_mcp_tool(
             "get_structural_variant",
@@ -136,7 +141,10 @@ def register_specialty_tools(
                 shaped.setdefault("_meta", {})["next_commands"] = [
                     {"tool": "get_gene_details", "arguments": {"gene_symbol": gene_symbol}}
                 ]
-            return shaped
+            return {
+                "headline": mitochondrial_variant_headline(shaped, dataset=dataset),
+                **shaped,
+            }
 
         return await run_mcp_tool(
             "get_mitochondrial_variant",

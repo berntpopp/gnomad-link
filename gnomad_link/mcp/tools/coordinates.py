@@ -11,6 +11,7 @@ from pydantic import Field
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.build_check import detect_region_mismatch
 from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, ToolInputError, run_mcp_tool
+from gnomad_link.mcp.headline import region_headline
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.shaping import cap_region_span, shape_region_payload
 from gnomad_link.models import LiftoverResponse, Region
@@ -206,7 +207,11 @@ def register_coordinate_tools(
                     "kind": "region_span",
                     "requested_bp": stop - start,
                     "served_bp": adj_stop - adj_start,
+                    # Conform to the common truncation shape (dropped + to_restore)
+                    # while keeping the existing requested_bp/served_bp keys.
+                    "dropped": {"base_pairs": (stop - start) - (adj_stop - adj_start)},
                     "to_disable": "request smaller windows; max 100kb per call",
+                    "to_restore": "split the window into <=100kb sub-windows and call get_region per chunk",
                 }
             # Chain the first gene/ClinVar hit into the natural drill-down tools.
             next_cmds: list[dict[str, Any]] = []
@@ -232,7 +237,7 @@ def register_coordinate_tools(
                 )
             if next_cmds:
                 payload.setdefault("_meta", {})["next_commands"] = next_cmds
-            return payload
+            return {"headline": region_headline(payload, region=region, dataset=dataset), **payload}
 
         return await run_mcp_tool(
             "get_region",

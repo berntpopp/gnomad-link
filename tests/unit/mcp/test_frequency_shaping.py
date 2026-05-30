@@ -165,9 +165,12 @@ def test_summary_includes_overall_af_and_max_pop() -> None:
     assert "max_pop" in summary
     assert "max_pop_af" in summary
     assert summary["max_pop"] == "afr"
-    # has_clinvar placeholder is None (unknown without get_clinvar_variant_details)
+    # has_clinvar is a self-describing sentinel (unknown without a ClinVar lookup).
     assert "has_clinvar" in summary
-    assert summary["has_clinvar"] is None
+    assert summary["has_clinvar"] == {
+        "known": False,
+        "how_to_check": "call get_clinvar_variant_details(variant_id)",
+    }
 
 
 def test_gene_symbol_and_consequence_pass_through() -> None:

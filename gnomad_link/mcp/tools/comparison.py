@@ -13,6 +13,7 @@ from gnomad_link.api.base_client import VariantNotFoundError
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.comparison_shaping import build_comparison
 from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
+from gnomad_link.mcp.headline import comparison_headline
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.shaping import shape_variant_frequencies
 from gnomad_link.services import FrequencyService
@@ -174,6 +175,9 @@ def register_comparison_tools(
 
             comparison = build_comparison(per_dataset)
             payload: dict[str, Any] = {
+                "headline": comparison_headline(
+                    {"variant_id": variant_id, "comparison": comparison}
+                ),
                 "variant_id": variant_id,
                 "datasets": per_dataset,
                 "comparison": comparison,
