@@ -27,6 +27,7 @@ EXPECTED_TOOLS = {
     "get_gnomad_diagnostics",
     "compare_variant_across_datasets",
     "search_structural_variants",
+    "get_coverage",
 }
 
 EXPECTED_DATA_TOOLS = EXPECTED_TOOLS - {"get_server_capabilities", "get_gnomad_diagnostics"}
