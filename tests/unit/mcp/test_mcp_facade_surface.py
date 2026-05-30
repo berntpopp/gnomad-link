@@ -24,6 +24,7 @@ EXPECTED_TOOLS = {
     "resolve_variant_id",
     "search_variants",  # deprecated alias retained for one release
     "compute_carrier_frequency",
+    "compute_gene_carrier_frequency",
     "get_gnomad_diagnostics",
     "compare_variant_across_datasets",
     "search_structural_variants",

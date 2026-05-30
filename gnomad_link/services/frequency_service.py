@@ -543,3 +543,9 @@ class FrequencyService:
                 chrom=chrom, start=start, stop=stop, dataset=dataset
             )
         return await coverage.get_variant_coverage(variant_id=variant_id or "", dataset=dataset)
+
+    async def get_gene_carrier_frequency(self, **kwargs: Any) -> dict[str, Any]:
+        """Delegate to GeneCarrierService for gene-level carrier frequency."""
+        from gnomad_link.services.gene_carrier_service import GeneCarrierService
+
+        return await GeneCarrierService(client=self.client).get_gene_carrier_frequency(**kwargs)
