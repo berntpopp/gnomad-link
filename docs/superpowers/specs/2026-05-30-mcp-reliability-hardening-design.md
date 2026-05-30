@@ -79,6 +79,16 @@ root-caused in current-`main` source; best practices were researched against gql
 ### L-4 (LOW) Field-level response control
 - Fix: add section/`include_*` projection to `get_gene_summary` (decouple
   "full ClinVar rows" from "full everything"); document token impact per flag.
+- Follow-through (post-review): the finding also named `get_variant_details` and
+  `get_gene_variants`, which still leaked the untrimmed population firehose while
+  their sibling `get_variant_frequencies` trimmed it. Unify all three on one
+  projector extracted to `population_shaping.py` (`project_variant_source`):
+  drop subcohort / sex-split / zero-AC by default, additive toggles with
+  back-compat to `get_variant_frequencies`, `response_mode='full'` (variant
+  details) / `include_populations` (gene variants) as the escape hatches. Measured
+  live: variant-details F508del 28.8 kB → 4.8 kB. Best-practice basis: Anthropic
+  "Code execution with MCP" and StackOne token-optimization — filter before the
+  model, lightweight-by-default with an opt-in detailed mode.
 
 ### L-2 (already fixed in code) heteroplasmy zero-bin trim
 - The live container was stale; current-`main` `heteroplasmy.py` already trims and
