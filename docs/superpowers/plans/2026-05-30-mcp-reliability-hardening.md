@@ -10,47 +10,42 @@ verification. TDD per task; atomic commit per task; `make ci-local` at the end.
 ## P0
 
 - [x] **H-1** unwrap `get_variant_details` + not_found guard + regression test. (351b918)
-- [ ] **M-3a** `base_client`: persistent reconnecting session, lazy double-checked
-  lock bootstrap, `asyncio.Semaphore(GNOMAD_MAX_CONCURRENCY)`, `backoff` retry with
-  full jitter on retryable transport codes; idempotent `close()` closing the session.
-  Add `GNOMAD_MAX_CONCURRENCY` to settings. Update `test_base_client.py` to the new
-  seam; add concurrency + retry tests (fake session). 
-- [ ] **M-3b** `server_manager` FastAPI lifespan teardown closes the service.
-- [ ] **M-2a** `base_client`: `UpstreamInputError` + `RateLimitedError`; classify
-  GraphQL-validation phrasing → `UpstreamInputError`, 429 → `RateLimitedError`; keep
-  `not found` → `DataNotFoundError`; everything else → `GnomadApiError`. Tests per phrase.
+  - Follow-up: `in_silico_predictors` is a list, not a dict — latent schema mismatch
+    the bug had masked, caught by live smoke and fixed.
+- [x] **M-3a** persistent reconnecting session + lazy double-checked lock + semaphore
+  (`GNOMAD_MAX_CONCURRENCY`) + dependency-free jittered retry on retryable transport
+  codes; idempotent `close()`. New base_client seam tests (concurrency/retry/429). (bd10b56)
+- [x] **M-3b** FastAPI lifespan teardown closes the service. (bd10b56)
+- [x] **M-2a** `UpstreamInputError` + `RateLimitedError` classified at the boundary. (bd10b56)
 
 ## P1
 
-- [ ] **M-2b** `errors.py`: add `invalid_input` (non-retryable) + `rate_limited`
-  (retryable) codes, isinstance-checked before `GnomadApiError`; context-aware
-  `fallback_tool`/`fallback_args` from `McpErrorContext`. Tests (envelope passthrough).
-- [ ] **M-1a** `schema_relax`: nullable-ize bare scalar types (skip enum/const,
-  skip containers). Unit tests: null-bearing BND schema accepts; enum still rejects.
-- [ ] **M-1b** `structural_variant_models`: make `end`/`af`/`pos`/`ac`/`an`/`chrom`
-  Optional where genuinely nullable. Tests.
+- [x] **M-2b** `invalid_input` + `rate_limited` codes; context-aware fallback +
+  action-typed `recovery_action`. (M-2 commit)
+- [x] **M-1a** `schema_relax` nullable-izes bare scalars (skip enum/const/containers).
+- [x] **M-1b** SV model `pos/end/ac/an/af` Optional; `cpx_intervals` is list[str]
+  (caught live). (M-1 commits)
 
 ## P2
 
-- [ ] **M-1c / L-3** `sv_shaping`: `shape_structural_variant` trims heavy
-  distributions + drops duplicated top-level `genes`; wire into `get_structural_variant`
-  with `response_mode` (compact default). Fix token hint. Tests per SV class.
-- [ ] **L-4** `gene_summary` section/`include_*` projection (decouple full-ClinVar);
-  document token deltas. Tests (clinvar-excluded, expression-only).
-- [ ] **Token hints** convert drift-prone kB hints to parameter-anchored ranges;
-  optional measured `token_estimate` in `_meta`.
+- [x] **M-1c / L-3** `shape_structural_variant` trims histograms + dedupes the flat
+  gene list; `get_structural_variant` gains `response_mode`. Live-verified on CPX/BND/INV.
+- [x] **L-4** `gene_summary` section/`include_*` projection (decouple full-ClinVar).
+- [x] **Token hints** converted to parameter-anchored ranges.
 
 ## Findings outside the research punch-list
 
-- [ ] **M-4** `get_transcript_details`: unwrap; best-effort GTEx via gene path +
-  compact top-tissues summary; correct description. Tests.
-- [ ] **L-1** `liftover_variant`: `build_note` when results empty. Test.
+- [x] **M-4** `get_transcript_details`: TranscriptService unwrap + best-effort GTEx
+  top-tissues via the gene path. Live-verified (liver top tissue).
+- [x] **L-1** `liftover_variant` `build_note` on empty mapping. Live-verified.
+- [x] **L-2** heteroplasmy zero-bin trim never fired on real N+1 histograms; fixed.
+  Live-verified (106 bins dropped).
 
 ## Verification
 
-- [ ] Update `resources.py` token hints; capabilities parity (`test_mcp_facade_surface`).
-- [ ] `make ci-local` green (format, lint, lint-loc, typecheck, tests).
-- [ ] Rebuild Docker MCP; live-smoke every fixed tool (variant details, each SV
-  class incl. CPX/BND, BRCA2→invalid_input, transcript GTEx, liftover note,
-  heteroplasmy trim).
+- [x] `resources.py` token hints updated; capabilities parity green.
+- [x] `make ci-local` green (format, lint, lint-loc, mypy, 375 tests).
+- [x] Docker rebuilt; live-smoked every fixed tool incl. CPX/BND/INV, BRCA2→invalid_input,
+  transcript GTEx, liftover note, heteroplasmy trim.
+- [x] Live integration test for M-3 concurrency (12 concurrent real-API calls, no race).
 - [ ] Present finishing-a-development-branch options (no merge/push without go-ahead).
