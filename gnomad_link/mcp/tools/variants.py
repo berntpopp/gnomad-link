@@ -174,9 +174,18 @@ def register_variant_tools(
                 )
             service = service_factory()
             raw = await service.get_variant(variant_id, dataset)
+            # service.get_variant returns the GraphQL wrapper {"variant": {...}};
+            # unwrap (like the SV/mito/region tools) before shaping. Guard against
+            # a silent-empty success: an absent variant block is a not_found, not
+            # a bare _meta payload.
+            variant = raw.get("variant", raw) if isinstance(raw, dict) else raw
+            if not variant:
+                from gnomad_link.api.base_client import VariantNotFoundError
+
+                raise VariantNotFoundError(f"Variant {variant_id} not found in {dataset}")
             if response_mode == "compact":
-                return shape_variant_details_compact(raw, max_transcripts=max_transcripts)
-            return raw
+                return shape_variant_details_compact(variant, max_transcripts=max_transcripts)
+            return variant
 
         return await run_mcp_tool(
             "get_variant_details",
