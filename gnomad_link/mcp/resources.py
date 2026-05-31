@@ -148,6 +148,11 @@ def get_capabilities_resource() -> dict[str, Any]:
                 "ceil(N/24) concurrent upstream calls, so a single large-gene call can itself "
                 "saturate the queue."
             ),
+            "sequential_fanout": (
+                "compare_variant_across_datasets issues ~4 sequential upstream calls per "
+                "invocation (one variant query per dataset plus the gnomad_r2_1 liftover), so "
+                "N concurrent compare calls hold N slots continuously for the duration."
+            ),
         },
         "llm_driver_contract": {
             "recommended_entrypoint": "get_server_capabilities",

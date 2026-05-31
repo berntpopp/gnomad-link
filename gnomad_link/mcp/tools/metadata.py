@@ -37,7 +37,7 @@ def register_metadata_tools(
         tags={"metadata"},
     )
     async def get_server_capabilities() -> dict[str, Any]:
-        """Use this when a client needs supported tools, datasets, population codes, recommended workflows, the live ClinVar release date, or current limitations. Returns <2kB."""
+        """Use this when a client needs supported tools, datasets, population codes, recommended workflows, the live ClinVar release date, or current limitations. Returns ~7kB."""
 
         return await run_mcp_tool(
             "get_server_capabilities",
