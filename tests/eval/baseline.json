@@ -1,5 +1,5 @@
 {
-  "envelope_conformance": 9.266667,
+  "envelope_conformance": 9.6,
   "measured_bytes": {
     "compare_variant_across_datasets_r4_r2_1": [
       2221
@@ -11,7 +11,7 @@
       1531
     ],
     "resolve_then_xl_carrier_frequency": [
-      413,
+      630,
       1351
     ],
     "variant_clinical_evidence": [
@@ -20,6 +20,6 @@
     ]
   },
   "token_cost": 10.0,
-  "total": 9.755556,
+  "total": 9.866667,
   "trajectory": 10.0
 }

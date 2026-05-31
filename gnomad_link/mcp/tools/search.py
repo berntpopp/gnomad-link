@@ -11,6 +11,7 @@ from pydantic import Field
 from gnomad_link.mcp.af import preferred_overall_af
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
+from gnomad_link.mcp.next_commands import for_variant
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.models import GeneSearchResult, VariantSearchResult
 from gnomad_link.services import FrequencyService
@@ -260,11 +261,14 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
                     "Or call get_variant_details(variant_id, dataset) for annotations.",
                 ],
             }
+            meta: dict[str, Any] = {}
+            if results:
+                meta["next_commands"] = for_variant(results[0]["variant_id"], dataset)
             if enrichment_failures > 0:
-                payload["_meta"] = {
-                    "enrichment_partial": True,
-                    "enrichment_failures": enrichment_failures,
-                }
+                meta["enrichment_partial"] = True
+                meta["enrichment_failures"] = enrichment_failures
+            if meta:
+                payload["_meta"] = meta
             return payload
 
         return await run_mcp_tool(
@@ -334,6 +338,8 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
             if enrichment_failures > 0:
                 meta["enrichment_partial"] = True
                 meta["enrichment_failures"] = enrichment_failures
+            if results:
+                meta["next_commands"] = for_variant(results[0]["variant_id"], dataset)
             return {
                 "results": results,
                 "returned": len(results),
