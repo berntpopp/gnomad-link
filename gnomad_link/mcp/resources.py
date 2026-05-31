@@ -221,8 +221,10 @@ def get_capabilities_resource() -> dict[str, Any]:
         "response_fields": {
             "headline": (
                 "one-line plain-English answer at the top of get_variant_frequencies, "
-                "get_gene_details, compute_carrier_frequency, and "
-                "compute_gene_carrier_frequency; read it before parsing the tree"
+                "get_gene_details, get_gene_summary, compute_carrier_frequency, "
+                "compute_gene_carrier_frequency, compare_variant_across_datasets, get_region, "
+                "get_structural_variant, get_mitochondrial_variant, and get_coverage; read it "
+                "before parsing the tree (get_variant_details returns no headline)"
             ),
             "citations_ref": (
                 "pointer to gnomad://citations; carrier tools inline short citations in "

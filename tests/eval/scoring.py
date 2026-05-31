@@ -143,16 +143,24 @@ def _non_empty_str(value: Any) -> bool:
     return isinstance(value, str) and bool(value.strip())
 
 
+# Tools that take no arguments are directly callable with {}; every other tool
+# must carry concrete arguments for the next step to be executable.
+_NO_ARG_TOOLS = frozenset({"get_server_capabilities", "get_gnomad_diagnostics", "get_clinvar_meta"})
+
+
 def _valid_next_commands(next_commands: Any) -> bool:
     if not isinstance(next_commands, list) or not next_commands:
         return False
     for cmd in next_commands:
         if not isinstance(cmd, dict):
             return False
-        if not _non_empty_str(cmd.get("tool")):
+        tool = cmd.get("tool")
+        if not _non_empty_str(tool):
             return False
         args = cmd.get("arguments")
-        if not isinstance(args, dict) or not args:
+        if not isinstance(args, dict):
+            return False
+        if not args and tool not in _NO_ARG_TOOLS:
             return False
     return True
 
@@ -165,7 +173,7 @@ def score_envelope_conformance(payload: dict[str, Any], tool: str, scenario: Sce
       (b) _meta.gnomad_release present / non-empty
       (c) if tool in dataset_scoped_tools: _meta.dataset and _meta.reference_genome present
       (d) _meta.next_commands is a non-empty list of dicts each with a non-empty
-          tool and a non-empty arguments dict
+          tool and concrete arguments (no-arg discovery tools may have {})
       (e) if tool in headline_tools: top-level headline present and non-empty
 
     This does NOT hard-assert -- Phase 3 raises envelope conformance to 100%.
