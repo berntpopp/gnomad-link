@@ -314,3 +314,35 @@ async def test_tool_has_read_only_open_world_annotations_and_tag() -> None:
     assert tool.annotations.readOnlyHint is True
     assert tool.annotations.openWorldHint is True
     assert tool.output_schema is not None
+
+
+@pytest.mark.asyncio
+async def test_compare_r2_1_uses_grch37_source_not_input_coordinate() -> None:
+    """Regression: the r2_1 leg must use the GRCh37 `source` id, not the GRCh38 input."""
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    stub = _StubService(
+        freq_by_dataset={
+            "gnomad_r4": _freq("6-26092913-G-A", "gnomad_r4"),
+            "gnomad_r2_1": _freq("6-26093141-G-A", "gnomad_r2_1"),
+        },
+        liftover_result=[
+            {
+                "source": {"variant_id": "6-26093141-G-A", "reference_genome": "GRCh37"},
+                "liftover": {"variant_id": "6-26092913-G-A", "reference_genome": "GRCh38"},
+                "datasets": ["gnomad_r2_1", "gnomad_r4"],
+            }
+        ],
+    )
+    mcp = create_gnomad_mcp(service_factory=lambda: stub)
+
+    result = await mcp.call_tool(
+        "compare_variant_across_datasets",
+        {"variant_id": "6-26092913-G-A", "datasets": ["gnomad_r4", "gnomad_r2_1"], "auto_liftover": True},
+    )
+    payload = _structured(result)
+
+    assert payload["datasets"]["gnomad_r2_1"]["present"] is True
+    assert ("6-26093141-G-A", "gnomad_r2_1") in stub.freq_calls
+    assert ("6-26092913-G-A", "gnomad_r2_1") not in stub.freq_calls
+    assert any("6-26093141-G-A" in note for note in payload["build_notes"])
