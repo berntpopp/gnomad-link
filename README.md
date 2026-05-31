@@ -17,8 +17,9 @@ largest public database of human genetic variants. Enables:
 
 - **MCP-First Architecture**: Hand-authored FastMCP facade over the gnomAD
   service layer
-- **15 MCP Tools**: Variants, genes, transcripts, ClinVar, structural variants,
-  mitochondrial variants, liftover, region, search, and capabilities
+- **22 MCP Tools**: Variants, genes, transcripts, ClinVar, structural variants,
+  mitochondrial variants, liftover, region, coverage, carrier frequency,
+  cross-dataset comparison, diagnostics, and capabilities
 - **Transport Modes**: Streamable HTTP (recommended) and STDIO fallback
 - **Comprehensive Data**: Allele frequencies across 8 global populations
 - **High Performance**: Async operations with intelligent caching
@@ -140,21 +141,28 @@ Use stdio only for local desktop workflows that cannot connect to HTTP MCP:
 
 | Tool | Purpose |
 |------|---------|
+| `get_server_capabilities` | Server capabilities and tool metadata |
 | `get_variant_frequencies` | Allele counts and frequencies for a variant |
 | `get_variant_details` | Full variant annotation |
-| `get_gene_details` | Gene constraint metrics |
+| `compare_variant_across_datasets` | Compare one variant's AF across gnomAD releases (r4/r3/r2_1) |
+| `get_gene_details` | Gene constraint metrics (pLI/oe_lof) |
 | `get_gene_variants` | Variants in a gene with filtering |
-| `get_transcript_details` | Transcript-level annotation |
-| `search_genes` | Search by symbol or Ensembl ID |
-| `resolve_variant_id` | Resolve variant IDs and rsIDs |
-| `search_variants` | Deprecated alias for `resolve_variant_id` |
+| `get_gene_summary` | Gene-level constraint + variant/ClinVar summary |
 | `get_clinvar_variant_details` | ClinVar clinical significance |
-| `get_clinvar_meta` | ClinVar release metadata |
-| `get_structural_variant` | Structural variant records |
-| `get_mitochondrial_variant` | Mitochondrial variant records |
-| `get_region` | Genomic region query |
+| `get_clinvar_meta` | ClinVar release metadata (deprecated; use `get_server_capabilities`) |
 | `liftover_variant` | Coordinate conversion GRCh37 <-> GRCh38 |
-| `get_server_capabilities` | Server capabilities and tool metadata |
+| `get_structural_variant` | Structural variant record |
+| `search_structural_variants` | Find structural variants by gene or region |
+| `get_mitochondrial_variant` | Mitochondrial variant record |
+| `get_region` | Genes and ClinVar variants in a genomic region |
+| `get_coverage` | Coverage statistics over a region |
+| `get_transcript_details` | Transcript-level annotation with optional GTEx expression |
+| `search_genes` | Search genes by symbol or Ensembl ID |
+| `resolve_variant_id` | Resolve rsIDs or loose text to canonical variant IDs |
+| `search_variants` | Deprecated alias for `resolve_variant_id` |
+| `compute_carrier_frequency` | Single-variant carrier frequency (AR/XL) |
+| `compute_gene_carrier_frequency` | Gene-level recessive carrier rate |
+| `get_gnomad_diagnostics` | Recent errors, schema drift, and health status |
 
 ## Architecture
 
