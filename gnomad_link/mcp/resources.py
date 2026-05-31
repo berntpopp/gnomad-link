@@ -224,9 +224,12 @@ def get_capabilities_resource() -> dict[str, Any]:
                 "compact mode and full bibliographic prose with response_mode='full'"
             ),
             "next_commands": (
-                "_meta.next_commands is a ready-to-call list of {tool, arguments} steps on "
-                "both success and error envelopes; execute the first entry to advance the "
-                "workflow without guessing the next tool"
+                "_meta.next_commands is a structured, ready-to-call list of {tool, arguments} "
+                "steps present on every data tool's success and error envelope (discovery tools "
+                "such as get_server_capabilities are exempt); execute the first entry to advance "
+                "the workflow without guessing the next tool. The older prose "
+                "next_steps array (resolve_variant_id/search_variants) is deprecated in favor "
+                "of next_commands."
             ),
             "af_source": (
                 "overall_af_source / af_source labels which source supplied a preferred "
