@@ -338,7 +338,11 @@ async def test_compare_r2_1_uses_grch37_source_not_input_coordinate() -> None:
 
     result = await mcp.call_tool(
         "compare_variant_across_datasets",
-        {"variant_id": "6-26092913-G-A", "datasets": ["gnomad_r4", "gnomad_r2_1"], "auto_liftover": True},
+        {
+            "variant_id": "6-26092913-G-A",
+            "datasets": ["gnomad_r4", "gnomad_r2_1"],
+            "auto_liftover": True,
+        },
     )
     payload = _structured(result)
 
