@@ -274,7 +274,7 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
         return await run_mcp_tool(
             "resolve_variant_id",
             call,
-            context=McpErrorContext(tool_name="resolve_variant_id"),
+            context=McpErrorContext(tool_name="resolve_variant_id", query=query),
         )
 
     @mcp.tool(
@@ -352,5 +352,5 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
         return await run_mcp_tool(
             "search_variants",
             call,
-            context=McpErrorContext(tool_name="search_variants"),
+            context=McpErrorContext(tool_name="search_variants", query=query),
         )

@@ -60,6 +60,7 @@ class McpErrorContext:
     gene_symbol: str | None = None
     region: str | None = None
     dataset: str | None = None
+    query: str | None = None
     extra: dict[str, Any] = field(default_factory=dict)
 
 
@@ -144,7 +145,7 @@ def _fallback_for(context: McpErrorContext) -> tuple[str, dict[str, Any] | None]
     # A failing variant resolver almost always received a gene symbol / free
     # text; point it at gene search rather than circularly back at itself.
     if context.tool_name in {"resolve_variant_id", "search_variants"}:
-        return "search_genes", None
+        return "search_genes", ({"query": context.query} if context.query else None)
     # Structural-variant ids (DEL_chr1_..., BND_chr12_...) are NOT resolvable by
     # resolve_variant_id (SNV/indel only); steer to SV discovery instead.
     if context.tool_name == "get_structural_variant":
