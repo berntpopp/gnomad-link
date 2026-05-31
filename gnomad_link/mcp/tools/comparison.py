@@ -16,6 +16,7 @@ from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
 from gnomad_link.mcp.headline import comparison_headline
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.shaping import shape_variant_frequencies
+from gnomad_link.mcp.tools.coordinates import select_build_variant_id
 from gnomad_link.services import FrequencyService
 
 # Reuse the autosomal grammar from the headline frequency tool. Mitochondrial
@@ -68,7 +69,7 @@ async def _resolve_r2_1_id(
         )
     results = await service.liftover_variant(variant_id, "GRCh38")
     for item in results:
-        lifted = (item.get("liftover") or {}).get("variant_id")
+        lifted = select_build_variant_id(item, "GRCh37")
         if lifted:
             return lifted, (
                 f"gnomad_r2_1 (GRCh37) used lifted id {lifted} from GRCh38 {variant_id}."

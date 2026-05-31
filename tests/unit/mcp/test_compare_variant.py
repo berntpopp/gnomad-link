@@ -218,8 +218,8 @@ async def test_auto_liftover_converts_grch38_id_for_r2_1() -> None:
         },
         liftover_result=[
             {
-                "source": {"variant_id": "17-7673803-G-A", "reference_genome": "GRCh38"},
-                "liftover": {"variant_id": "17-7577121-G-A", "reference_genome": "GRCh37"},
+                "source": {"variant_id": "17-7577121-G-A", "reference_genome": "GRCh37"},
+                "liftover": {"variant_id": "17-7673803-G-A", "reference_genome": "GRCh38"},
                 "datasets": ["gnomad_r2_1", "gnomad_r4"],
             }
         ],
