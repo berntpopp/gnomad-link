@@ -16,6 +16,7 @@ from pydantic import Field
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, ToolInputError, run_mcp_tool
 from gnomad_link.mcp.gene_carrier_shaping import shape_gene_carrier
+from gnomad_link.mcp.minimal_shaping import project_gene_carrier_frequency_minimal
 from gnomad_link.mcp.patterns import GENE_ID_PATTERN, GENE_SYMBOL_PATTERN
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.services import FrequencyService
@@ -123,8 +124,12 @@ def register_gene_carrier_tools(
             bool, Field(description="Drop genome-only variants.")
         ] = False,
         response_mode: Annotated[
-            Literal["compact", "full"],
-            Field(description="compact caps the contributing-variant list; full returns all."),
+            Literal["compact", "full", "minimal"],
+            Field(
+                description="compact caps the contributing-variant list; full returns all; "
+                "minimal returns the headline + global block + contributing-variant COUNT + _meta "
+                "(drops per-population rows and the contributing-variant list)."
+            ),
         ] = "compact",
         top_variants_limit: Annotated[
             int, Field(ge=1, le=200, description="Cap on contributing variants in compact mode.")
@@ -178,6 +183,8 @@ def register_gene_carrier_tools(
                     },
                 ]
             }
+            if response_mode == "minimal":
+                return project_gene_carrier_frequency_minimal(result)
             return result
 
         return await run_mcp_tool(

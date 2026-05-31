@@ -11,6 +11,7 @@ from pydantic import Field
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, ToolInputError, run_mcp_tool
 from gnomad_link.mcp.headline import gene_details_headline
+from gnomad_link.mcp.minimal_shaping import project_gene_details_minimal
 from gnomad_link.mcp.next_commands import cmd
 from gnomad_link.mcp.patterns import GENE_ID_PATTERN, GENE_SYMBOL_PATTERN
 from gnomad_link.mcp.schema_relax import relax_output_schema
@@ -49,11 +50,12 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
             Field(description="Lookup build for gene coordinates and constraint. GRCh38 default."),
         ] = "GRCh38",
         response_mode: Annotated[
-            Literal["compact", "full"],
+            Literal["compact", "full", "minimal"],
             Field(
                 description=(
                     "compact drops heavy arrays (transcripts, exons, alt_transcripts) and "
-                    "emits a truncated block; full passes through everything."
+                    "emits a truncated block; full passes through everything; minimal returns the "
+                    "headline + symbol/gene_id + pLI/oe_lof + coordinates + _meta only."
                 )
             ),
         ] = "compact",
@@ -72,7 +74,7 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
             result: dict[str, Any] = (
                 gene_obj.model_dump() if hasattr(gene_obj, "model_dump") else dict(gene_obj)
             )
-            if response_mode == "compact":
+            if response_mode in ("compact", "minimal"):
                 result = shape_gene_details_compact(result)
             # Lead with the plain-English headline so an LLM can answer fast.
             result = {
@@ -92,6 +94,8 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
                     **existing_meta,
                     "next_commands": [*existing_next, variants_cmd],
                 }
+            if response_mode == "minimal":
+                return project_gene_details_minimal(result)
             return result
 
         return await run_mcp_tool(

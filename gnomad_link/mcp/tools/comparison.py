@@ -14,6 +14,7 @@ from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.comparison_shaping import build_comparison
 from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
 from gnomad_link.mcp.headline import comparison_headline
+from gnomad_link.mcp.minimal_shaping import project_compare_variant_minimal
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.shaping import shape_variant_frequencies
 from gnomad_link.mcp.tools.coordinates import select_build_variant_id
@@ -119,11 +120,13 @@ def register_comparison_tools(
             ),
         ] = True,
         response_mode: Annotated[
-            Literal["compact", "full"],
+            Literal["compact", "full", "minimal"],
             Field(
                 description="compact (default) drops the duplicated per-dataset exome/genome "
                 "population arrays (~half the payload) since comparison.per_population_af_deltas "
-                "already carries every per-population AF; full keeps the raw ac/an rows.",
+                "already carries every per-population AF; full keeps the raw ac/an rows; minimal "
+                "returns the headline + per-dataset present flags + comparison.overall_af_by_dataset "
+                "+ _meta only (drops the raw per-dataset rows and per_population_af_deltas).",
             ),
         ] = "compact",
     ) -> dict[str, Any]:
@@ -186,7 +189,7 @@ def register_comparison_tools(
             # compact mode) drop those arrays: per_population_af_deltas already
             # carries every per-population AF, so keeping them is pure duplication.
             comparison = build_comparison(per_dataset)
-            if response_mode == "compact":
+            if response_mode != "full":
                 for entry in per_dataset.values():
                     for src_key in ("exome", "genome"):
                         src = entry.get(src_key)
@@ -202,7 +205,7 @@ def register_comparison_tools(
                 "comparison": comparison,
                 "build_notes": build_notes,
             }
-            if response_mode == "compact":
+            if response_mode != "full":
                 payload["populations_note"] = (
                     "Per-dataset population arrays omitted (response_mode=compact); "
                     "per-population AFs are in comparison.per_population_af_deltas. "
@@ -226,6 +229,8 @@ def register_comparison_tools(
                     },
                 ]
             }
+            if response_mode == "minimal":
+                return project_compare_variant_minimal(payload)
             return payload
 
         return await run_mcp_tool(

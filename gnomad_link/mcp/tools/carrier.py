@@ -13,6 +13,7 @@ from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.build_check import detect_variant_id_mismatch
 from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, run_mcp_tool
 from gnomad_link.mcp.headline import variant_carrier_headline
+from gnomad_link.mcp.minimal_shaping import project_carrier_frequency_minimal
 from gnomad_link.mcp.provenance import provenance_block
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.models import PopulationFrequency, VariantDataSource, VariantFrequencyResponse
@@ -352,11 +353,12 @@ def register_carrier_tools(
             ),
         ] = "hwe",
         response_mode: Annotated[
-            Literal["compact", "full"],
+            Literal["compact", "full", "minimal"],
             Field(
                 description="compact (default) returns short citations + a citations_ref pointer "
                 "to gnomad://citations; full inlines the complete bibliographic citations and "
-                "assumptions prose."
+                "assumptions prose; minimal returns the headline + global `overall` block + _meta "
+                "(drops the per-population rows and full citations)."
             ),
         ] = "compact",
     ) -> dict[str, Any]:
@@ -415,6 +417,8 @@ def register_carrier_tools(
                     },
                 ]
             }
+            if response_mode == "minimal":
+                return project_carrier_frequency_minimal(result)
             return result
 
         return await run_mcp_tool(

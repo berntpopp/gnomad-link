@@ -1,11 +1,17 @@
 {
   "envelope_conformance": 10.0,
   "measured_bytes": {
+    "compare_variant_across_datasets_minimal": [
+      934
+    ],
     "compare_variant_across_datasets_r4_r2_1": [
       2221
     ],
     "gene_carrier_frequency_hfe": [
       2049
+    ],
+    "gene_carrier_frequency_hfe_minimal": [
+      1076
     ],
     "gene_variants_stop_gained": [
       1707

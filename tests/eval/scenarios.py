@@ -142,6 +142,41 @@ def _check_resolve_carrier(payloads: list[dict[str, Any]]) -> None:
     assert _is_fraction(by_pop["nfe"]["female_carrier_frequency"]), by_pop["nfe"]
 
 
+def _check_gene_carrier_minimal(payloads: list[dict[str, Any]]) -> None:
+    (p,) = payloads
+    assert p.get("error_code") is None, p
+    # Minimal keeps the global block + a contributing-variant COUNT.
+    assert p["gene"]["symbol"] == "HFE", p
+    g_one_in = p["global"]["carrier_one_in"]
+    assert isinstance(g_one_in, int) and g_one_in > 0, p["global"]
+    assert _is_fraction(p["global"]["carrier_frequency"]), p["global"]
+    assert p["contributing_variants"]["count"] == 523, p["contributing_variants"]
+    # The per-population rows and the contributing list are dropped.
+    assert "populations" not in p, p
+    assert "top" not in p["contributing_variants"], p["contributing_variants"]
+    # truncated block names what was dropped and how to restore it.
+    assert p["truncated"]["kind"] == "minimal_mode", p["truncated"]
+    assert p["truncated"]["to_restore"] == "response_mode='compact'", p["truncated"]
+
+
+def _check_compare_minimal(payloads: list[dict[str, Any]]) -> None:
+    (p,) = payloads
+    assert p.get("success") is not False, p
+    assert p["variant_id"] == "6-26092913-G-A", p
+    # Minimal keeps per-dataset present flags + the global AF per dataset.
+    assert p["datasets"]["gnomad_r4"]["present"] is True, p["datasets"]
+    assert p["datasets"]["gnomad_r2_1"]["present"] is True, p["datasets"]
+    overall = p["comparison"]["overall_af_by_dataset"]
+    assert set(overall) == {"gnomad_r4", "gnomad_r2_1"}, overall
+    for af in overall.values():
+        assert _is_fraction(af), overall
+    # The per-population deltas and raw per-dataset rows are dropped.
+    assert "per_population_af_deltas" not in p["comparison"], p["comparison"]
+    assert "exome" not in p["datasets"]["gnomad_r4"], p["datasets"]["gnomad_r4"]
+    assert p["truncated"]["kind"] == "minimal_mode", p["truncated"]
+    assert p["truncated"]["to_restore"] == "response_mode='compact'", p["truncated"]
+
+
 def _check_gene_variants(payloads: list[dict[str, Any]]) -> None:
     (p,) = payloads
     assert p.get("error_code") is None, p
@@ -240,5 +275,40 @@ SCENARIOS: list[Scenario] = [
         headline_tools=frozenset(),
         dataset_scoped_tools=frozenset({"get_gene_variants"}),
         correctness=_check_gene_variants,
+    ),
+    Scenario(
+        name="gene_carrier_frequency_hfe_minimal",
+        service_factory=build_gene_carrier_stub,
+        calls=[
+            (
+                "compute_gene_carrier_frequency",
+                {"gene_symbol": "HFE", "response_mode": "minimal"},
+            )
+        ],
+        expected_tools=("compute_gene_carrier_frequency",),
+        trajectory_mode=TrajectoryMode.EXACT,
+        headline_tools=frozenset({"compute_gene_carrier_frequency"}),
+        dataset_scoped_tools=frozenset({"compute_gene_carrier_frequency"}),
+        correctness=_check_gene_carrier_minimal,
+    ),
+    Scenario(
+        name="compare_variant_across_datasets_minimal",
+        service_factory=build_compare_stub,
+        calls=[
+            (
+                "compare_variant_across_datasets",
+                {
+                    "variant_id": "6-26092913-G-A",
+                    "datasets": ["gnomad_r4", "gnomad_r2_1"],
+                    "auto_liftover": True,
+                    "response_mode": "minimal",
+                },
+            )
+        ],
+        expected_tools=("compare_variant_across_datasets",),
+        trajectory_mode=TrajectoryMode.EXACT,
+        headline_tools=frozenset({"compare_variant_across_datasets"}),
+        dataset_scoped_tools=frozenset(),
+        correctness=_check_compare_minimal,
     ),
 ]

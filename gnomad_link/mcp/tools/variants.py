@@ -12,6 +12,7 @@ from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.build_check import detect_variant_id_mismatch
 from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, run_mcp_tool
 from gnomad_link.mcp.headline import variant_frequencies_headline
+from gnomad_link.mcp.minimal_shaping import project_variant_frequencies_minimal
 from gnomad_link.mcp.next_commands import for_variant
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.shaping import (
@@ -89,8 +90,21 @@ def register_variant_tools(
             bool,
             Field(description="Drop populations with allele_count == 0."),
         ] = True,
+        response_mode: Annotated[
+            Literal["compact", "full", "minimal"],
+            Field(
+                description=(
+                    "compact (default) = today's behavior, honoring the "
+                    "include_subcohorts/include_sex_split/exclude_zero_populations toggles. "
+                    "full = most-inclusive population detail (subcohorts + sex-split + zero-AC "
+                    "rows). minimal = headline + overall/max-pop summary + _meta only (drops the "
+                    "exome/genome per-population arrays). response_mode='full' and "
+                    "response_mode='minimal' take PRECEDENCE over the explicit toggles above."
+                )
+            ),
+        ] = "compact",
     ) -> dict[str, Any]:
-        """Use this when a caller has a fully-resolved CHROM-POS-REF-ALT id and needs allele counts/frequencies per population. Pair with get_clinvar_variant_details for clinical context. Compact defaults trim subcohort and zero-AC rows; toggle the boolean flags to expand. Returns a `truncated` block when filters drop rows so the LLM can re-call with explicit overrides. Returns ~2-4kB."""
+        """Use this when a caller has a fully-resolved CHROM-POS-REF-ALT id and needs allele counts/frequencies per population. Pair with get_clinvar_variant_details for clinical context. Compact defaults trim subcohort and zero-AC rows; toggle the boolean flags to expand, or use response_mode='full' for the most-inclusive breakdown or response_mode='minimal' for just the headline + overall/max-pop summary. Returns a `truncated` block when filters drop rows so the LLM can re-call with explicit overrides. Returns ~2-4kB (minimal ~0.6kB)."""
 
         async def call() -> dict[str, Any]:
             inferred = detect_variant_id_mismatch(variant_id, dataset)
@@ -100,12 +114,20 @@ def register_variant_tools(
                 )
             service = service_factory()
             response = await service.get_variant_frequencies(variant_id, dataset)
+            # response_mode='full' takes precedence over the explicit toggles and
+            # asks for the most-inclusive breakdown; compact/minimal honor them.
+            if response_mode == "full":
+                eff_subcohorts, eff_sex_split, eff_exclude_zero = True, True, False
+            else:
+                eff_subcohorts = include_subcohorts
+                eff_sex_split = include_sex_split
+                eff_exclude_zero = exclude_zero_populations
             shaped = shape_variant_frequencies(
                 response,
                 populations=populations,
-                include_subcohorts=include_subcohorts,
-                include_sex_split=include_sex_split,
-                exclude_zero_populations=exclude_zero_populations,
+                include_subcohorts=eff_subcohorts,
+                include_sex_split=eff_sex_split,
+                exclude_zero_populations=eff_exclude_zero,
             )
             # Lead with the plain-English headline so an LLM can answer fast.
             shaped = {"headline": variant_frequencies_headline(shaped), **shaped}
@@ -123,6 +145,8 @@ def register_variant_tools(
                 **existing_meta,
                 "next_commands": [*existing_next, clinvar_cmd],
             }
+            if response_mode == "minimal":
+                return project_variant_frequencies_minimal(shaped)
             return shaped
 
         return await run_mcp_tool(

@@ -12,6 +12,7 @@ from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, ToolInputError, run_mcp_tool
 from gnomad_link.mcp.gene_summary_shaping import rank_pathogenic_clinvar
 from gnomad_link.mcp.headline import gene_summary_headline
+from gnomad_link.mcp.minimal_shaping import project_gene_summary_minimal
 from gnomad_link.mcp.patterns import GENE_ID_PATTERN, GENE_SYMBOL_PATTERN
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.services import FrequencyService
@@ -94,11 +95,13 @@ def register_gene_summary_tools(
             Field(description="Include the gnomAD constraint block (pLI/oe_lof)."),
         ] = True,
         response_mode: Annotated[
-            Literal["compact", "full"],
+            Literal["compact", "full", "minimal"],
             Field(
                 description=(
                     "compact ranks pathogenic ClinVar into clinvar_summary; full returns the raw "
-                    "clinvar_variants list. Both honor include_clinvar/include_constraint."
+                    "clinvar_variants list; minimal returns the headline + top-line constraint + "
+                    "ClinVar pathogenic COUNT + _meta only. All honor "
+                    "include_clinvar/include_constraint."
                 )
             ),
         ] = "compact",
@@ -122,7 +125,7 @@ def register_gene_summary_tools(
             if not include_constraint:
                 result.pop("constraint", None)
             if include_clinvar:
-                if response_mode == "compact":
+                if response_mode in ("compact", "minimal"):
                     raw_clinvar = result.pop("clinvar_variants", None) or []
                     result["clinvar_summary"] = rank_pathogenic_clinvar(
                         raw_clinvar, clinvar_limit=clinvar_limit
@@ -155,7 +158,10 @@ def register_gene_summary_tools(
                 seen.add(tool_name)
                 deduped.append(cmd)
             result["_meta"] = {**existing_meta, "next_commands": deduped[:3]}
-            return {"headline": gene_summary_headline(result, dataset=dataset), **result}
+            shaped = {"headline": gene_summary_headline(result, dataset=dataset), **result}
+            if response_mode == "minimal":
+                return project_gene_summary_minimal(shaped)
+            return shaped
 
         return await run_mcp_tool(
             "get_gene_summary",

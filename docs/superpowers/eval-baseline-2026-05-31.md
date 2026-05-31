@@ -56,6 +56,21 @@ get_gene_variants) are the added structured next_commands JSON. This is an
 intended, reviewed token cost that pays for full groundability: every tool
 now carries a ready-to-call next step so the consuming LLM never has to guess.
 
+### Phase 4a (response_mode='minimal' scenarios)
+
+Two minimal-mode scenarios were added; they reuse the existing gene_carrier
+and compare stubs and prove the projection's measured reduction. All existing
+budgets are unchanged and all dimensions stay 10.0 (minimal keeps headline +
+_meta + non-empty next_commands, so envelope conformance is preserved).
+
+| Scenario                                     | Tool call(s)                                              | Measured bytes      |
+|----------------------------------------------|-----------------------------------------------------------|---------------------|
+| gene_carrier_frequency_hfe_minimal           | compute_gene_carrier_frequency (minimal)                  | 1076 (compact 2049) |
+| compare_variant_across_datasets_minimal      | compare_variant_across_datasets (minimal)                 | 934  (compact 2221) |
+
+Each minimal scenario's byte budget is smaller than its compact counterpart:
+gene carrier 1076 vs 2049 (-47.5%), compare 934 vs 2221 (-57.9%).
+
 ## Phase 3 Result
 
 Phase 3 added structured `_meta.next_commands` ({tool, arguments} entries) to
