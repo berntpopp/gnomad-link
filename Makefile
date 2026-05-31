@@ -1,4 +1,4 @@
-.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc typecheck typecheck-fast typecheck-stop typecheck-fresh test test-fast test-unit test-cov test-all check ci-local precommit clean dev mcp-serve mcp-serve-http run-dev run-prod run-mcp docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config
+.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc typecheck typecheck-fast typecheck-stop typecheck-fresh test test-fast test-unit test-cov test-all check ci-local precommit clean dev mcp-serve mcp-serve-http run-dev run-prod run-mcp docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config eval-ci eval-live
 
 .DEFAULT_GOAL := help
 
@@ -85,9 +85,15 @@ test-cov: ## Run unit tests with coverage
 
 test-all: test-cov ## Alias for full test run with coverage
 
+eval-ci: ## Run deterministic MCP eval harness (no network)
+	uv run pytest tests/eval -m "not integration" -q
+
+eval-live: ## Run agentic/live eval against real gnomAD (manual)
+	uv run pytest tests/eval -m integration -q
+
 check: format lint ## Format and lint
 
-ci-local: format-check lint-ci lint-loc typecheck-fast test-fast ## Run fast local CI-equivalent checks
+ci-local: format-check lint-ci lint-loc typecheck-fast test-fast eval-ci ## Run fast local CI-equivalent checks
 
 precommit: ci-local ## Run checks expected before commit
 
