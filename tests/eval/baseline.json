@@ -1,0 +1,25 @@
+{
+  "envelope_conformance": 9.266667,
+  "measured_bytes": {
+    "compare_variant_across_datasets_r4_r2_1": [
+      2221
+    ],
+    "gene_carrier_frequency_hfe": [
+      2049
+    ],
+    "gene_variants_stop_gained": [
+      1531
+    ],
+    "resolve_then_xl_carrier_frequency": [
+      413,
+      1351
+    ],
+    "variant_clinical_evidence": [
+      715,
+      1524
+    ]
+  },
+  "token_cost": 10.0,
+  "total": 9.755556,
+  "trajectory": 10.0
+}
