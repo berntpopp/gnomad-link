@@ -23,6 +23,20 @@ _REGION_PATTERN = r"^(chr)?([1-9]|1[0-9]|2[0-2]|X|Y|M|MT)-\d+-\d+$"
 _LIFTOVER_VARIANT_ID_PATTERN = r"^([1-9]|1\d|2[0-2]|X|Y|MT?)-\d+-[ACGT]+-[ACGT]+$"
 
 
+def select_build_variant_id(record: dict[str, Any], target_build: str) -> str | None:
+    """Return the liftover entry's variant id whose reference_genome == target_build.
+
+    gnomAD liftover records carry BOTH a GRCh37 ``source`` and a GRCh38
+    ``liftover`` entry (see LiftoverResult); pick the one matching the requested
+    build regardless of query direction. Returns None when neither entry matches.
+    """
+    for key in ("source", "liftover"):
+        entry = record.get(key) or {}
+        if entry.get("reference_genome") == target_build:
+            return entry.get("variant_id") or None
+    return None
+
+
 def register_coordinate_tools(
     mcp: FastMCP, *, service_factory: Callable[[], FrequencyService]
 ) -> None:
@@ -73,10 +87,7 @@ def register_coordinate_tools(
             # `liftover` coordinate; surface the one in the target build directly
             # so the LLM does not have to know which field to read per direction.
             for record in results:
-                for key in ("source", "liftover"):
-                    entry = record.get(key) or {}
-                    if entry.get("reference_genome") == target:
-                        record["target_variant_id"] = entry.get("variant_id")
+                record["target_variant_id"] = select_build_variant_id(record, target)
             payload: dict[str, Any] = {
                 "results": results,
                 "source_variant_id": source_variant_id,
