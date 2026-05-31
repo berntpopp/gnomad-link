@@ -126,3 +126,24 @@ async def test_get_gene_variants_population_projection_live(mcp_with_live_servic
         for src in ("exome", "genome"):
             if isinstance(v.get(src), dict):
                 assert "populations" not in v[src]
+
+
+@pytest.mark.asyncio
+async def test_compare_finds_hfe_c282y_in_r2_1_live(mcp_with_live_service) -> None:
+    """Phase-1 regression (live): HFE C282Y must resolve in gnomad_r2_1 via auto-liftover.
+
+    GRCh38 6-26092913-G-A lifts to GRCh37 6-26093141-G-A; the compare tool must
+    report the r2_1 leg present (was a false present:false before the fix).
+    """
+    result = await mcp_with_live_service.call_tool(
+        "compare_variant_across_datasets",
+        {
+            "variant_id": "6-26092913-G-A",
+            "datasets": ["gnomad_r4", "gnomad_r2_1"],
+            "auto_liftover": True,
+        },
+    )
+    payload = result.structured_content or {}
+    r2 = payload["datasets"]["gnomad_r2_1"]
+    assert r2["present"] is True
+    assert r2.get("lifted_variant_id") == "6-26093141-G-A"
