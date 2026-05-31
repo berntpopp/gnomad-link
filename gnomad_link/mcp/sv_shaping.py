@@ -12,6 +12,7 @@ from __future__ import annotations
 from typing import Any
 
 from gnomad_link.mcp.errors import ToolInputError
+from gnomad_link.mcp.population_shaping import is_sex_split
 
 # Heavy per-variant histograms the compact single-variant view drops; callers
 # recover them with response_mode='full'. cpx_intervals/copy_numbers stay (small
@@ -26,9 +27,11 @@ def shape_structural_variant(
 
     Drops the heavy age/genotype-quality histograms and the duplicated flat
     top-level ``genes`` list (the same symbols are grouped, with their
-    consequence, under ``consequences[].genes``). Emits a self-describing
-    ``truncated`` block so the LLM can recover the full payload with
-    ``response_mode='full'``. ``full`` returns the payload unchanged.
+    consequence, under ``consequences[].genes``). Also trims zero-AC and
+    ``_XX``/``_XY`` sex-split population rows; kept rows are preserved verbatim
+    (including ``homozygote_count``/``hemizygote_count``). Emits a
+    self-describing ``truncated`` block so the LLM can recover the full payload
+    with ``response_mode='full'``. ``full`` returns the payload unchanged.
     """
     if response_mode == "full":
         return payload
@@ -42,6 +45,22 @@ def shape_structural_variant(
     if out.get("genes") and out.get("consequences"):
         dropped["genes"] = len(out["genes"])
         out.pop("genes", None)
+    # Trim zero-AC and sex-split population rows. Kept rows are passed through
+    # as-is so homozygote_count/hemizygote_count survive untouched.
+    populations = out.get("populations")
+    if isinstance(populations, list):
+        kept = [
+            row
+            for row in populations
+            if not (
+                (isinstance(row, dict) and (row.get("ac") or 0) == 0)
+                or (isinstance(row, dict) and is_sex_split(row.get("id") or ""))
+            )
+        ]
+        n_dropped = len(populations) - len(kept)
+        if n_dropped > 0:
+            out["populations"] = kept
+            dropped["populations"] = n_dropped
     if dropped:
         out["truncated"] = {
             "kind": "structural_variant",

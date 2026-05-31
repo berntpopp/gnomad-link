@@ -60,6 +60,93 @@ def test_full_returns_payload_unchanged() -> None:
     assert result["genes"] == ["GENEA", "GENEB"]
 
 
+def _populated_sv_payload() -> dict[str, Any]:
+    """SV payload with a zero-AC row, a sex-split row, and a real hom/hemi row."""
+    return {
+        "variant_id": "DEL_chr1_42",
+        "reference_genome": "GRCh38",
+        "chrom": "1",
+        "type": "DEL",
+        "pos": 1000,
+        "end": 2000,
+        "af": 0.01,
+        "ac": 50,
+        "an": 5000,
+        "consequences": [{"consequence": "lof", "genes": ["GENEA"]}],
+        "genes": ["GENEA"],
+        "populations": [
+            # Real row with hom/hemi counts that MUST survive intact.
+            {
+                "id": "nfe",
+                "ac": 40,
+                "an": 4000,
+                "homozygote_count": 3,
+                "hemizygote_count": 2,
+            },
+            # Zero-AC row -> dropped.
+            {"id": "afr", "ac": 0, "an": 1000, "homozygote_count": 0},
+            # Sex-split row (nonzero AC) -> dropped on sex-split rule.
+            {
+                "id": "nfe_XX",
+                "ac": 20,
+                "an": 2000,
+                "homozygote_count": 1,
+                "hemizygote_count": 0,
+            },
+        ],
+    }
+
+
+def test_compact_trims_zero_ac_and_sex_split_populations() -> None:
+    result = shape_structural_variant(_populated_sv_payload(), response_mode="compact")
+
+    pops = result["populations"]
+    ids = {p["id"] for p in pops}
+    assert ids == {"nfe"}, pops
+    # The surviving real row keeps its hom/hemi counts intact.
+    kept = pops[0]
+    assert kept["homozygote_count"] == 3
+    assert kept["hemizygote_count"] == 2
+    assert kept["ac"] == 40 and kept["an"] == 4000
+    # truncated reports the two dropped population rows.
+    trunc = result["truncated"]
+    assert trunc["kind"] == "structural_variant"
+    assert trunc["dropped"]["populations"] == 2
+    assert trunc["to_restore"] == "response_mode='full'"
+
+
+def test_full_keeps_all_sv_population_rows() -> None:
+    payload = _populated_sv_payload()
+    result = shape_structural_variant(payload, response_mode="full")
+    assert result is payload
+    assert {p["id"] for p in result["populations"]} == {"nfe", "afr", "nfe_XX"}
+
+
+def test_compact_emits_truncated_when_only_populations_trimmed() -> None:
+    """No heavy fields / no flat-gene drop, but a zero-AC pop row trims."""
+    payload = {
+        "variant_id": "DEL_chr1_7",
+        "type": "DEL",
+        "populations": [
+            {"id": "nfe", "ac": 5, "an": 100},
+            {"id": "afr", "ac": 0, "an": 100},
+        ],
+    }
+    result = shape_structural_variant(payload, response_mode="compact")
+    assert {p["id"] for p in result["populations"]} == {"nfe"}
+    trunc = result["truncated"]
+    assert trunc["kind"] == "structural_variant"
+    assert trunc["dropped"]["populations"] == 1
+    assert trunc["to_restore"] == "response_mode='full'"
+
+
+def test_compact_leaves_missing_or_empty_populations_alone() -> None:
+    payload = {"variant_id": "DEL_chr1_8", "type": "DEL", "populations": []}
+    result = shape_structural_variant(payload, response_mode="compact")
+    assert result["populations"] == []
+    assert "truncated" not in result
+
+
 def test_flat_genes_kept_when_no_consequences() -> None:
     payload = {"variant_id": "DEL_chr1_9", "genes": ["X"], "consequences": []}
     result = shape_structural_variant(payload, response_mode="compact")
@@ -88,6 +175,45 @@ async def _invoke(mcp_instance: Any, tool: str, arguments: dict[str, Any]) -> di
         if isinstance(text, str):
             return json.loads(text)
     return {}
+
+
+def test_compact_population_trim_reduces_serialized_bytes() -> None:
+    """Many zero-AC and sex-split rows in compact mode must produce a materially
+    smaller JSON serialization than full mode, and the surviving real row keeps
+    its hom/hemi counts intact.
+    """
+    pops = []
+    for anc in ["afr", "amr", "asj", "eas", "fin", "nfe", "sas", "mid", "ami"]:
+        pops.append({"id": anc, "ac": 0, "an": 1000, "homozygote_count": 0, "hemizygote_count": 0})
+        pops.append(
+            {"id": f"{anc}_XX", "ac": 5, "an": 500, "homozygote_count": 0, "hemizygote_count": 0}
+        )
+        pops.append(
+            {"id": f"{anc}_XY", "ac": 4, "an": 500, "homozygote_count": 0, "hemizygote_count": 0}
+        )
+    # Duplicate the "nfe" row with real allele counts; the zero-AC one above is
+    # dropped; this one survives (nonzero AC, not sex-split).
+    pops.append({"id": "nfe", "ac": 40, "an": 4000, "homozygote_count": 3, "hemizygote_count": 2})
+    payload: dict[str, Any] = {
+        "variant_id": "DEL_chr1_x",
+        "type": "DEL",
+        "chrom": "1",
+        "pos": 1,
+        "end": 100,
+        "populations": pops,
+    }
+    full = shape_structural_variant(dict(payload), response_mode="full")
+    compact = shape_structural_variant(dict(payload), response_mode="compact")
+    full_bytes = len(json.dumps(full))
+    compact_bytes = len(json.dumps(compact))
+    assert compact_bytes < full_bytes, (
+        f"compact ({compact_bytes} B) must be smaller than full ({full_bytes} B)"
+    )
+    # The one real autosomal row survives with hom/hemi intact.
+    kept = [p for p in compact["populations"] if p["id"] == "nfe" and p.get("ac", 0) > 0]
+    assert kept, "expected the real nfe row to survive trimming"
+    assert kept[0]["homozygote_count"] == 3
+    assert kept[0]["hemizygote_count"] == 2
 
 
 @pytest.mark.asyncio

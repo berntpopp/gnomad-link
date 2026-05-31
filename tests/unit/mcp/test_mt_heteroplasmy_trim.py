@@ -11,6 +11,8 @@ total count and the restoration knob.
 
 from __future__ import annotations
 
+import copy
+import json
 from typing import Any
 
 import pytest
@@ -175,7 +177,7 @@ async def test_get_mitochondrial_variant_trims_zeros_by_default() -> None:
     truncated = payload.get("truncated")
     assert isinstance(truncated, dict)
     assert truncated["kind"] == "heteroplasmy_zeros"
-    assert truncated["dropped"] == 7
+    assert truncated["dropped"]["heteroplasmy_bins"] == 7
     assert truncated["to_restore"] == "include_heteroplasmy_zeros=True"
 
 
@@ -248,7 +250,7 @@ async def test_per_population_heteroplasmy_also_trimmed() -> None:
     assert isinstance(truncated, dict)
     assert truncated["kind"] == "heteroplasmy_zeros"
     # 1 (variant) + 3 (pop a) + 2 (pop b) = 6 dropped bins total.
-    assert truncated["dropped"] == 6
+    assert truncated["dropped"]["heteroplasmy_bins"] == 6
 
 
 @pytest.mark.asyncio
@@ -269,4 +271,123 @@ async def test_drops_heteroplasmy_when_all_bins_zero() -> None:
     truncated = payload.get("truncated")
     assert isinstance(truncated, dict)
     assert truncated["kind"] == "heteroplasmy_zeros"
-    assert truncated["dropped"] == 3
+    assert truncated["dropped"]["heteroplasmy_bins"] == 3
+
+
+def _row_trim_payload() -> dict[str, Any]:
+    """Mito payload exercising population + haplogroup zero/sex-split trimming."""
+    return {
+        "variant_id": "M-3243-A-G",
+        "pos": 3243,
+        "ref": "A",
+        "alt": "G",
+        "ac_het": 5,
+        "ac_hom": 0,
+        "an": 100,
+        "populations": [
+            # Real row (ac_het>0) -> survives.
+            {"id": "afr", "an": 100, "ac_het": 5, "ac_hom": 0},
+            # All-zero row -> dropped.
+            {"id": "eas", "an": 100, "ac_het": 0, "ac_hom": 0},
+            # Sex-split row (nonzero) -> dropped on sex-split rule.
+            {"id": "nfe_XX", "an": 50, "ac_het": 2, "ac_hom": 0},
+        ],
+        "haplogroups": [
+            # All-zero haplogroup -> dropped.
+            {"id": "L0", "an": 100, "ac_het": 0, "ac_hom": 0},
+            # Nonzero (ac_hom>0) haplogroup -> survives.
+            {"id": "H", "an": 100, "ac_het": 0, "ac_hom": 4},
+        ],
+    }
+
+
+@pytest.mark.asyncio
+async def test_mito_trims_zero_and_sex_split_population_and_haplogroup_rows() -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    spy = _SpyMitoService(_row_trim_payload())
+    mcp = create_gnomad_mcp(service_factory=lambda: spy)
+
+    result = await mcp.call_tool(
+        "get_mitochondrial_variant",
+        {"variant_id": "M-3243-A-G", "dataset": "gnomad_r4"},
+    )
+    payload = result.structured_content or {}
+
+    assert payload.get("error_code") != "validation_failed", payload
+    pops = payload.get("populations") or []
+    assert {p["id"] for p in pops} == {"afr"}, pops
+    survivor = pops[0]
+    assert survivor["ac_het"] == 5 and survivor["ac_hom"] == 0 and survivor["an"] == 100
+
+    haplos = payload.get("haplogroups") or []
+    assert {h["id"] for h in haplos} == {"H"}, haplos
+    assert haplos[0]["ac_hom"] == 4
+
+    truncated = payload.get("truncated")
+    assert isinstance(truncated, dict)
+    assert truncated["kind"] == "heteroplasmy_zeros"
+    dropped = truncated["dropped"]
+    assert dropped["populations"] == 2
+    assert dropped["haplogroups"] == 1
+    assert truncated["to_restore"] == "include_heteroplasmy_zeros=True"
+
+
+@pytest.mark.asyncio
+async def test_mito_include_zeros_keeps_all_population_and_haplogroup_rows() -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    spy = _SpyMitoService(_row_trim_payload())
+    mcp = create_gnomad_mcp(service_factory=lambda: spy)
+
+    result = await mcp.call_tool(
+        "get_mitochondrial_variant",
+        {
+            "variant_id": "M-3243-A-G",
+            "dataset": "gnomad_r4",
+            "include_heteroplasmy_zeros": True,
+        },
+    )
+    payload = result.structured_content or {}
+
+    assert payload.get("error_code") != "validation_failed", payload
+    assert {p["id"] for p in payload["populations"]} == {"afr", "eas", "nfe_XX"}
+    assert {h["id"] for h in payload["haplogroups"]} == {"L0", "H"}
+
+
+def test_population_haplogroup_trim_reduces_serialized_bytes() -> None:
+    """Many empty populations, sex-split rows, and all-zero haplogroups must yield
+    a materially smaller serialization when include_heteroplasmy_zeros=False.
+    """
+    from gnomad_link.mcp.shaping import shape_mitochondrial_variant
+
+    pops: list[dict[str, Any]] = []
+    for anc in ["afr", "amr", "asj", "eas", "fin", "nfe", "sas", "mid", "ami"]:
+        pops.append({"id": anc, "an": 1000, "ac_het": 0, "ac_hom": 0})
+        pops.append({"id": f"{anc}_XX", "an": 500, "ac_het": 1, "ac_hom": 0})
+    # Real row: nonzero allele counts, not sex-split, survives trimming.
+    pops.append({"id": "afr", "an": 1000, "ac_het": 5, "ac_hom": 2})
+    haplos: list[dict[str, Any]] = []
+    for hg in ["H", "HV", "J", "K", "L0", "L1", "L2", "T", "U", "V"]:
+        haplos.append({"id": hg, "an": 1000, "ac_het": 0, "ac_hom": 0})
+    # Real haplogroup: nonzero ac_hom survives.
+    haplos.append({"id": "H", "an": 1000, "ac_het": 0, "ac_hom": 4})
+    payload: dict[str, Any] = {
+        "variant_id": "M-3243-A-G",
+        "pos": 3243,
+        "ref": "A",
+        "alt": "G",
+        "an": 56000,
+        "ac_het": 7,
+        "ac_hom": 2,
+        "populations": pops,
+        "haplogroups": haplos,
+    }
+    # deep-copy so that the two calls receive fully independent nested structures.
+    full = shape_mitochondrial_variant(copy.deepcopy(payload), include_heteroplasmy_zeros=True)
+    compact = shape_mitochondrial_variant(copy.deepcopy(payload), include_heteroplasmy_zeros=False)
+    full_bytes = len(json.dumps(full))
+    compact_bytes = len(json.dumps(compact))
+    assert compact_bytes < full_bytes, (
+        f"compact ({compact_bytes} B) must be smaller than full ({full_bytes} B)"
+    )

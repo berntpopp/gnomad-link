@@ -12,6 +12,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from gnomad_link.mcp.population_shaping import is_sex_split
+
 
 def trim_heteroplasmy_distribution(
     dist: dict[str, Any] | None,
@@ -63,36 +65,70 @@ def _apply_het_trim(holder: dict[str, Any]) -> int:
     return dropped
 
 
+def _is_zero_mito_row(row: dict[str, Any]) -> bool:
+    """A mito population/haplogroup row carries no allele evidence."""
+
+    return (row.get("ac_het") or 0) == 0 and (row.get("ac_hom") or 0) == 0
+
+
 def shape_mitochondrial_variant(
     payload: dict[str, Any], *, include_heteroplasmy_zeros: bool
 ) -> dict[str, Any]:
-    """Trim zero-count heteroplasmy bins at variant + per-population scope.
+    """Trim zero-signal heteroplasmy bins and population/haplogroup rows.
 
     When ``include_heteroplasmy_zeros`` is True the payload is returned
-    unchanged. Otherwise zero-count bins are dropped from the variant-level
-    and per-population histograms, and a ``truncated.kind="heteroplasmy_zeros"``
-    block reports the total dropped count and how to restore the full payload.
+    unchanged (full-detail escape hatch). Otherwise, in addition to dropping
+    zero-count heteroplasmy bins (variant-level and per-population), the compact
+    view also trims:
+
+    * ``populations`` rows that carry no signal (``ac_het == 0 and ac_hom == 0``)
+      or that are ``_XX``/``_XY`` sex splits;
+    * ``haplogroups`` rows that carry no signal (haplogroups are not sex-split).
+
+    Kept rows are passed through verbatim. A single
+    ``truncated.kind="heteroplasmy_zeros"`` block reports all drops together via
+    a ``dropped`` mapping (``heteroplasmy_bins``/``populations``/``haplogroups``,
+    nonzero keys only) and the one knob that restores everything.
     """
 
     if include_heteroplasmy_zeros:
         return payload
     out = dict(payload)
-    total = _apply_het_trim(out)
+    bins_dropped = _apply_het_trim(out)
     populations = out.get("populations")
+    pops_dropped = 0
     if isinstance(populations, list):
         new_pops: list[Any] = []
         for pop in populations:
             if isinstance(pop, dict):
+                if _is_zero_mito_row(pop) or is_sex_split(pop.get("id") or ""):
+                    pops_dropped += 1
+                    continue
                 pop_copy = dict(pop)
-                total += _apply_het_trim(pop_copy)
+                bins_dropped += _apply_het_trim(pop_copy)
                 new_pops.append(pop_copy)
             else:
                 new_pops.append(pop)
         out["populations"] = new_pops
+    haplogroups = out.get("haplogroups")
+    haplos_dropped = 0
+    if isinstance(haplogroups, list):
+        new_haplos = [h for h in haplogroups if not (isinstance(h, dict) and _is_zero_mito_row(h))]
+        haplos_dropped = len(haplogroups) - len(new_haplos)
+        if haplos_dropped > 0:
+            out["haplogroups"] = new_haplos
+    total = bins_dropped + pops_dropped + haplos_dropped
     if total > 0:
+        dropped: dict[str, int] = {}
+        if bins_dropped:
+            dropped["heteroplasmy_bins"] = bins_dropped
+        if pops_dropped:
+            dropped["populations"] = pops_dropped
+        if haplos_dropped:
+            dropped["haplogroups"] = haplos_dropped
         out["truncated"] = {
             "kind": "heteroplasmy_zeros",
-            "dropped": total,
+            "dropped": dropped,
             "to_disable": "set include_heteroplasmy_zeros=True for the full histogram",
             "to_restore": "include_heteroplasmy_zeros=True",
         }
