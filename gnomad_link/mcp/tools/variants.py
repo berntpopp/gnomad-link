@@ -12,6 +12,7 @@ from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.build_check import detect_variant_id_mismatch
 from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, run_mcp_tool
 from gnomad_link.mcp.headline import variant_frequencies_headline
+from gnomad_link.mcp.next_commands import for_variant
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.shaping import (
     shape_variant_details_compact,
@@ -213,7 +214,7 @@ def register_variant_tools(
 
                 raise VariantNotFoundError(f"Variant {variant_id} not found in {dataset}")
             if response_mode == "compact":
-                return shape_variant_details_compact(
+                result = shape_variant_details_compact(
                     variant,
                     max_transcripts=max_transcripts,
                     populations=populations,
@@ -221,7 +222,13 @@ def register_variant_tools(
                     include_sex_split=include_sex_split,
                     exclude_zero_populations=exclude_zero_populations,
                 )
-            return variant
+            else:
+                result = variant
+            # Standard follow-ups: per-population frequencies, then ClinVar.
+            result.setdefault("_meta", {}).setdefault(
+                "next_commands", for_variant(variant_id, dataset)
+            )
+            return result
 
         return await run_mcp_tool(
             "get_variant_details",

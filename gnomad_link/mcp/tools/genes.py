@@ -11,6 +11,7 @@ from pydantic import Field
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, ToolInputError, run_mcp_tool
 from gnomad_link.mcp.headline import gene_details_headline
+from gnomad_link.mcp.next_commands import cmd
 from gnomad_link.mcp.patterns import GENE_ID_PATTERN, GENE_SYMBOL_PATTERN
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.shaping import shape_gene_details_compact, shape_gene_variants
@@ -184,7 +185,7 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
         async def call() -> dict[str, Any]:
             service = service_factory()
             raw = await service.get_gene_variants(gene_id, dataset)
-            return shape_gene_variants(
+            result = shape_gene_variants(
                 raw,
                 limit=limit,
                 consequence=consequence,
@@ -195,6 +196,15 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
                 include_sex_split=include_sex_split,
                 exclude_zero_populations=exclude_zero_populations,
             )
+            # Follow up with gene-level context, and ClinVar for the first row.
+            variants = result.get("variants") or []
+            cmds = [cmd("get_gene_details", gene_id=gene_id)]
+            if variants and variants[0].get("variant_id"):
+                cmds.append(
+                    cmd("get_clinvar_variant_details", variant_id=variants[0]["variant_id"])
+                )
+            result.setdefault("_meta", {})["next_commands"] = cmds
+            return result
 
         return await run_mcp_tool(
             "get_gene_variants",

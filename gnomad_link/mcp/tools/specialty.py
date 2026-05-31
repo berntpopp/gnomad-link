@@ -15,6 +15,7 @@ from gnomad_link.mcp.headline import (
     mitochondrial_variant_headline,
     structural_variant_headline,
 )
+from gnomad_link.mcp.next_commands import cmd
 from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.shaping import shape_mitochondrial_variant
 from gnomad_link.mcp.sv_shaping import shape_structural_variant
@@ -36,6 +37,42 @@ def _normalize_mito_variant_id(variant_id: str) -> str:
     """Normalize chrM/MT/chrMT prefixes to canonical M-."""
 
     return _MITO_PREFIX_RE.sub("M-", variant_id, count=1)
+
+
+def _sv_next_commands(shaped: dict[str, Any]) -> list[dict[str, Any]]:
+    """Region-based follow-ups for a structural variant.
+
+    Builds a CHROM-START-STOP region from the shaped SV payload's ``chrom``,
+    ``pos`` (and ``end`` when usable, else a 1bp window). Returns an empty list
+    when no valid chrom/pos is present so callers can omit next_commands rather
+    than emit a malformed region.
+    """
+
+    chrom = shaped.get("chrom")
+    pos = shaped.get("pos")
+    if not chrom or not isinstance(pos, int):
+        return []
+    end = shaped.get("end")
+    start = pos
+    stop = end if isinstance(end, int) and end > pos else pos + 1
+    region = f"{chrom}-{start}-{stop}"
+    return [
+        cmd("search_structural_variants", region=region),
+        cmd("get_region", region=region),
+    ]
+
+
+def _mito_fallback_next_commands(shaped: dict[str, Any]) -> list[dict[str, Any]]:
+    """Fallback follow-ups for a mitochondrial variant with no gene symbol.
+
+    Prefers a position-anchored get_region on the mito contig when a numeric
+    ``pos`` is present; otherwise falls back to server-capability discovery.
+    """
+
+    pos = shaped.get("pos")
+    if isinstance(pos, int):
+        return [cmd("get_region", region=f"M-{pos}-{pos + 1}", dataset="gnomad_r4")]
+    return [cmd("get_server_capabilities")]
 
 
 def register_specialty_tools(
@@ -80,7 +117,11 @@ def register_specialty_tools(
             raw = await service.get_structural_variant(variant_id, dataset)
             payload = cast(dict[str, Any], raw.get("structural_variant", raw))
             shaped = shape_structural_variant(payload, response_mode=response_mode)
-            return {"headline": structural_variant_headline(shaped, dataset=dataset), **shaped}
+            out = {"headline": structural_variant_headline(shaped, dataset=dataset), **shaped}
+            next_cmds = _sv_next_commands(shaped)
+            if next_cmds:
+                out.setdefault("_meta", {})["next_commands"] = next_cmds
+            return out
 
         return await run_mcp_tool(
             "get_structural_variant",
@@ -139,8 +180,12 @@ def register_specialty_tools(
             gene_symbol = shaped.get("gene_symbol")
             if gene_symbol:
                 shaped.setdefault("_meta", {})["next_commands"] = [
-                    {"tool": "get_gene_details", "arguments": {"gene_symbol": gene_symbol}}
+                    cmd("get_gene_details", gene_symbol=gene_symbol)
                 ]
+            else:
+                shaped.setdefault("_meta", {})["next_commands"] = _mito_fallback_next_commands(
+                    shaped
+                )
             return {
                 "headline": mitochondrial_variant_headline(shaped, dataset=dataset),
                 **shaped,
@@ -199,8 +244,10 @@ def register_specialty_tools(
             gene_id = result.get("gene_id") if isinstance(result, dict) else None
             if gene_id:
                 result.setdefault("_meta", {})["next_commands"] = [
-                    {"tool": "get_gene_summary", "arguments": {"gene_id": gene_id}}
+                    cmd("get_gene_summary", gene_id=gene_id)
                 ]
+            else:
+                result.setdefault("_meta", {})["next_commands"] = [cmd("get_server_capabilities")]
             return result
 
         return await run_mcp_tool(

@@ -1,5 +1,5 @@
 {
-  "envelope_conformance": 9.6,
+  "envelope_conformance": 10.0,
   "measured_bytes": {
     "compare_variant_across_datasets_r4_r2_1": [
       2221
@@ -8,7 +8,7 @@
       2049
     ],
     "gene_variants_stop_gained": [
-      1531
+      1707
     ],
     "resolve_then_xl_carrier_frequency": [
       630,
@@ -20,6 +20,6 @@
     ]
   },
   "token_cost": 10.0,
-  "total": 9.866667,
+  "total": 10.0,
   "trajectory": 10.0
 }
