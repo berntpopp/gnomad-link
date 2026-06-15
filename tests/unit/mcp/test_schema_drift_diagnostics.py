@@ -3,7 +3,7 @@
 The general recent_errors ring records every error code; output-schema drift
 is rare but symptomatic (upstream payload shape no longer matches our declared
 output_schema). A separate bounded ring lets an LLM hitting
-``output_validation_failed`` call ``get_gnomad_diagnostics`` and self-diagnose
+``output_validation_failed`` call ``get_diagnostics`` and self-diagnose
 without scraping free text or escalating to a human.
 """
 
@@ -87,7 +87,7 @@ def test_actionable_output_validation_error_records_schema_drift() -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_gnomad_diagnostics_includes_recent_schema_drift() -> None:
+async def test_get_diagnostics_includes_recent_schema_drift() -> None:
     from gnomad_link.mcp.errors import clear_recent_schema_drift, record_schema_drift
     from gnomad_link.mcp.facade import create_gnomad_mcp
 
@@ -100,7 +100,7 @@ async def test_get_gnomad_diagnostics_includes_recent_schema_drift() -> None:
 
     service = AsyncMock()
     mcp = create_gnomad_mcp(service_factory=lambda: service)
-    result = await mcp.call_tool("get_gnomad_diagnostics", {})
+    result = await mcp.call_tool("get_diagnostics", {})
     payload = result.structured_content or {}
 
     assert "recent_schema_drift" in payload
@@ -113,7 +113,7 @@ async def test_get_gnomad_diagnostics_includes_recent_schema_drift() -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_gnomad_diagnostics_recent_schema_drift_is_empty_by_default() -> None:
+async def test_get_diagnostics_recent_schema_drift_is_empty_by_default() -> None:
     from gnomad_link.mcp.errors import clear_recent_schema_drift
     from gnomad_link.mcp.facade import create_gnomad_mcp
 
@@ -121,7 +121,7 @@ async def test_get_gnomad_diagnostics_recent_schema_drift_is_empty_by_default() 
 
     service = AsyncMock()
     mcp = create_gnomad_mcp(service_factory=lambda: service)
-    result = await mcp.call_tool("get_gnomad_diagnostics", {})
+    result = await mcp.call_tool("get_diagnostics", {})
     payload = result.structured_content or {}
 
     assert payload["recent_schema_drift"] == []

@@ -153,7 +153,7 @@ async def test_get_coverage_region_build_mismatch_against_r4() -> None:
     payload = result.structured_content or {}
 
     assert payload["error_code"] == "build_mismatch"
-    assert payload["fallback_tool"] == "liftover_variant"
+    assert payload["fallback_tool"] == "compute_variant_liftover"
     assert service.calls == []
 
 

@@ -1,4 +1,4 @@
-"""L-1: liftover_variant must explain an empty mapping instead of bare results:[]."""
+"""L-1: compute_variant_liftover must explain an empty mapping instead of bare results:[]."""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ async def test_empty_liftover_emits_build_note() -> None:
 
     mcp = create_gnomad_mcp(service_factory=lambda: _LiftoverStub(results=[]))
     result = await mcp.call_tool(
-        "liftover_variant",
+        "compute_variant_liftover",
         {"source_variant_id": "1-55051215-G-GA", "source_genome": "GRCh37"},
     )
     payload = result.structured_content or {}
@@ -47,7 +47,7 @@ async def test_non_empty_liftover_has_no_build_note() -> None:
     ]
     mcp = create_gnomad_mcp(service_factory=lambda: _LiftoverStub(results=mapping))
     result = await mcp.call_tool(
-        "liftover_variant",
+        "compute_variant_liftover",
         {"source_variant_id": "1-55051215-G-GA", "source_genome": "GRCh37"},
     )
     payload = result.structured_content or {}
@@ -75,7 +75,7 @@ async def test_reverse_direction_exposes_grch37_target() -> None:
     ]
     mcp = create_gnomad_mcp(service_factory=lambda: _LiftoverStub(results=mapping))
     result = await mcp.call_tool(
-        "liftover_variant",
+        "compute_variant_liftover",
         {"source_variant_id": "1-55051215-G-GA", "source_genome": "GRCh38"},
     )
     payload = result.structured_content or {}

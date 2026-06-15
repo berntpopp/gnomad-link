@@ -2,7 +2,7 @@
 LLM can advance the workflow without re-forming the next call.
 
 Covers the open chain points from the deep audit (disc-2/-3/-4/-6):
-search_genes -> get_gene_details, liftover_variant -> get_variant_frequencies,
+search_genes -> get_gene_details, compute_variant_liftover -> get_variant_frequencies,
 get_region -> get_gene_variants/get_clinvar_variant_details, and
 get_transcript_details -> get_gene_summary.
 """
@@ -52,7 +52,7 @@ class _LiftoverStub:
 async def test_liftover_chains_to_get_variant_frequencies_on_target() -> None:
     mcp = create_gnomad_mcp(service_factory=lambda: _LiftoverStub())
     result = await mcp.call_tool(
-        "liftover_variant",
+        "compute_variant_liftover",
         {"source_variant_id": "1-55051215-G-GA", "source_genome": "GRCh37"},
     )
     payload = result.structured_content or {}

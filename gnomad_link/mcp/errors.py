@@ -46,8 +46,8 @@ _BASE_META = {
 }
 
 # Fallback tool used in validation and output-validation error envelopes.
-# Points to get_gnomad_diagnostics for rich health context on error recovery.
-_FALLBACK_TOOL = "get_gnomad_diagnostics"
+# Points to get_diagnostics for rich health context on error recovery.
+_FALLBACK_TOOL = "get_diagnostics"
 
 
 @dataclass
@@ -186,11 +186,9 @@ def _classify(
         return (
             "build_mismatch",
             False,
-            "liftover_variant",
+            "compute_variant_liftover",
             {
                 "source_variant_id": exc.variant_id,
-                # source_genome is the preferred param; reference_genome is the
-                # deprecated alias, so steer the ready-to-call recovery onto it.
                 "source_genome": exc.inferred_build,
             },
         )
@@ -200,14 +198,14 @@ def _classify(
         tool, args = _fallback_for(context)
         return "invalid_input", False, tool, args
     if isinstance(exc, RateLimitedError):
-        return "rate_limited", True, "get_gnomad_diagnostics", {}
+        return "rate_limited", True, "get_diagnostics", {}
     if isinstance(exc, ValueError):
         return "validation_failed", False, "get_server_capabilities", None
     if isinstance(exc, GnomadApiError):
-        return "upstream_unavailable", True, "get_gnomad_diagnostics", {}
+        return "upstream_unavailable", True, "get_diagnostics", {}
     if isinstance(exc, TimeoutError):
-        return "upstream_unavailable", True, "get_gnomad_diagnostics", {}
-    return "internal_error", False, "get_gnomad_diagnostics", {}
+        return "upstream_unavailable", True, "get_diagnostics", {}
+    return "internal_error", False, "get_diagnostics", {}
 
 
 def _recovery_action(error_code: str, retryable: bool) -> str:
@@ -268,7 +266,7 @@ def _recovery_text(error_code: str, fallback_tool: str | None, tool_name: str | 
     if error_code == "build_mismatch":
         return (
             "Variant coordinates appear to use a different reference build than "
-            "the requested dataset. Run liftover_variant to convert, or switch dataset."
+            "the requested dataset. Run compute_variant_liftover to convert, or switch dataset."
         )
     if error_code == "upstream_unavailable":
         return (
@@ -443,7 +441,7 @@ def clear_recent_errors() -> None:
 def record_schema_drift(*, tool_name: str, error_field: str | None, message: str) -> None:
     """Append an output-schema-drift event to the bounded ring.
 
-    Separate from record_mcp_error so an LLM (via get_gnomad_diagnostics) can
+    Separate from record_mcp_error so an LLM (via get_diagnostics) can
     distinguish business errors (not_found, upstream_unavailable,
     validation_failed) from infrastructure events (the upstream payload no
     longer matches our declared output_schema, which usually means we need to

@@ -358,13 +358,13 @@ async def test_get_variant_frequencies_accepts_valid_id() -> None:
 
 
 @pytest.mark.asyncio
-async def test_liftover_variant_accepts_mitochondrial_id() -> None:
+async def test_compute_variant_liftover_accepts_mitochondrial_id() -> None:
     from gnomad_link.mcp.facade import create_gnomad_mcp
 
     mcp = create_gnomad_mcp(service_factory=lambda: _FreqStubService())
     result = await mcp.call_tool(
-        "liftover_variant",
-        {"source_variant_id": "MT-7497-G-A", "reference_genome": "GRCh37"},
+        "compute_variant_liftover",
+        {"source_variant_id": "MT-7497-G-A", "source_genome": "GRCh37"},
     )
     payload = result.structured_content or {}
 

@@ -85,7 +85,7 @@ endpoints:
 - `search_variants` (deprecated alias for `resolve_variant_id`)
 - `get_clinvar_variant_details`, `get_clinvar_meta`
 - `get_structural_variant`, `get_mitochondrial_variant`
-- `get_region`, `liftover_variant`
+- `get_region`, `compute_variant_liftover`
 - `get_server_capabilities`
 
 Treat gnomAD results as research data. Do not use this server for diagnosis,

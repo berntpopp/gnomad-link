@@ -145,7 +145,7 @@ def _non_empty_str(value: Any) -> bool:
 
 # Tools that take no arguments are directly callable with {}; every other tool
 # must carry concrete arguments for the next step to be executable.
-_NO_ARG_TOOLS = frozenset({"get_server_capabilities", "get_gnomad_diagnostics", "get_clinvar_meta"})
+_NO_ARG_TOOLS = frozenset({"get_server_capabilities", "get_diagnostics", "get_clinvar_meta"})
 
 
 def _valid_next_commands(next_commands: Any) -> bool:

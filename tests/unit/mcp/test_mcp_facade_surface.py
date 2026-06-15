@@ -16,7 +16,7 @@ EXPECTED_TOOLS = {
     "get_gene_summary",
     "get_clinvar_variant_details",
     "get_clinvar_meta",
-    "liftover_variant",
+    "compute_variant_liftover",
     "get_structural_variant",
     "get_mitochondrial_variant",
     "get_region",
@@ -26,13 +26,13 @@ EXPECTED_TOOLS = {
     "search_variants",  # deprecated alias retained for one release
     "compute_carrier_frequency",
     "compute_gene_carrier_frequency",
-    "get_gnomad_diagnostics",
+    "get_diagnostics",
     "compare_variant_across_datasets",
     "search_structural_variants",
     "get_coverage",
 }
 
-EXPECTED_DATA_TOOLS = EXPECTED_TOOLS - {"get_server_capabilities", "get_gnomad_diagnostics"}
+EXPECTED_DATA_TOOLS = EXPECTED_TOOLS - {"get_server_capabilities", "get_diagnostics"}
 
 EXPECTED_RESOURCE_URIS = {
     "gnomad://capabilities",
@@ -162,15 +162,15 @@ async def test_json_resources_advertise_application_json(fake_service_factory) -
 
 
 @pytest.mark.asyncio
-async def test_get_gnomad_diagnostics_returns_health_and_recent_errors(
+async def test_get_diagnostics_returns_health_and_recent_errors(
     fake_service_factory,
 ) -> None:
     from gnomad_link.mcp.facade import create_gnomad_mcp
 
     mcp = create_gnomad_mcp(service_factory=fake_service_factory)
     tools_by_name = {tool.name: tool for tool in await mcp.list_tools()}
-    assert "get_gnomad_diagnostics" in tools_by_name
-    tool = tools_by_name["get_gnomad_diagnostics"]
+    assert "get_diagnostics" in tools_by_name
+    tool = tools_by_name["get_diagnostics"]
     # Must be closed-world (local health data, no upstream call)
     assert tool.annotations is not None
     assert tool.annotations.openWorldHint is False
@@ -182,7 +182,7 @@ async def test_diagnostics_tool_is_closed_world(fake_service_factory) -> None:
 
     mcp = create_gnomad_mcp(service_factory=fake_service_factory)
     tools_by_name = {tool.name: tool for tool in await mcp.list_tools()}
-    ann = tools_by_name["get_gnomad_diagnostics"].annotations
+    ann = tools_by_name["get_diagnostics"].annotations
     assert ann is not None
     assert ann.openWorldHint is False
     assert ann.readOnlyHint is True
@@ -274,8 +274,8 @@ async def test_data_tools_have_category_tags(fake_service_factory) -> None:
     assert tools_by_name["get_variant_frequencies"].tags == {"variant"}
     assert tools_by_name["get_gene_details"].tags == {"gene"}
     assert tools_by_name["get_clinvar_variant_details"].tags == {"clinical"}
-    assert tools_by_name["liftover_variant"].tags == {"coordinates"}
-    assert tools_by_name["get_gnomad_diagnostics"].tags == {"metadata", "diagnostics"}
+    assert tools_by_name["compute_variant_liftover"].tags == {"coordinates"}
+    assert tools_by_name["get_diagnostics"].tags == {"metadata", "diagnostics"}
 
 
 def test_capabilities_resource_lists_token_cost_hints() -> None:

@@ -64,7 +64,7 @@ def get_capabilities_resource() -> dict[str, Any]:
             "gene symbol -> search_genes -> get_gene_details",
             "gene symbol -> compute_gene_carrier_frequency (gene-level recessive carrier rate)",
             "clinical annotation -> get_clinvar_variant_details + get_variant_frequencies",
-            "build conversion -> liftover_variant",
+            "build conversion -> compute_variant_liftover",
             "region scan -> get_region (cap span at 100kb; use include_clinvar/include_genes)",
         ],
         "prompts": {
@@ -83,7 +83,7 @@ def get_capabilities_resource() -> dict[str, Any]:
             "get_gene_summary",
             "get_clinvar_variant_details",
             "get_clinvar_meta",
-            "liftover_variant",
+            "compute_variant_liftover",
             "get_structural_variant",
             "search_structural_variants",
             "get_mitochondrial_variant",
@@ -95,7 +95,7 @@ def get_capabilities_resource() -> dict[str, Any]:
             "search_variants",
             "compute_carrier_frequency",
             "compute_gene_carrier_frequency",
-            "get_gnomad_diagnostics",
+            "get_diagnostics",
         ],
         "deprecated_tools": {
             "search_variants": "Use resolve_variant_id; this alias is retained for one release.",
@@ -111,7 +111,7 @@ def get_capabilities_resource() -> dict[str, Any]:
             "get_gene_summary": "compact ~3-8kB (ClinVar-dependent), full up to ~40kB",
             "get_clinvar_variant_details": "~3-15kB (submissions_limit dependent)",
             "get_clinvar_meta": "<1kB",
-            "liftover_variant": "<1kB",
+            "compute_variant_liftover": "<1kB",
             "get_structural_variant": "compact ~1-4kB (zero-AC/sex-split pops trimmed), full ~10-20kB",
             "search_structural_variants": "~3-30kB (limit-dependent)",
             "get_mitochondrial_variant": "compact ~1-3kB (zero/sex-split rows trimmed), full larger",
@@ -123,7 +123,7 @@ def get_capabilities_resource() -> dict[str, Any]:
             "search_variants": "~1-5kB (deprecated alias)",
             "compute_carrier_frequency": "~2-4kB (per-population dependent)",
             "compute_gene_carrier_frequency": "~4-30kB (gene/limit dependent)",
-            "get_gnomad_diagnostics": "<1kB",
+            "get_diagnostics": "<1kB",
         },
         "limitations": [
             "Default local CI avoids live gnomAD calls.",
@@ -162,7 +162,7 @@ def get_capabilities_resource() -> dict[str, Any]:
                 "search_genes",
                 "get_gene_details",
                 "get_clinvar_variant_details",
-                "liftover_variant",
+                "compute_variant_liftover",
             ],
         },
         "output_cheatsheet": {
@@ -262,7 +262,7 @@ def get_capabilities_resource() -> dict[str, Any]:
             ],
             "clinical": ["get_clinvar_variant_details", "get_clinvar_meta"],
             "coordinates": [
-                "liftover_variant",
+                "compute_variant_liftover",
                 "get_region",
                 "get_transcript_details",
                 "get_coverage",
@@ -273,7 +273,7 @@ def get_capabilities_resource() -> dict[str, Any]:
                 "search_variants",
                 "search_structural_variants",
             ],
-            "metadata": ["get_server_capabilities", "get_gnomad_diagnostics"],
+            "metadata": ["get_server_capabilities", "get_diagnostics"],
         },
     }
 
@@ -313,7 +313,7 @@ def get_reference_resource() -> dict[str, Any]:
                 },
                 "build_mismatch": {
                     "retryable": False,
-                    "when": "coordinate build != dataset build; liftover_variant first",
+                    "when": "coordinate build != dataset build; compute_variant_liftover first",
                 },
                 "rate_limited": {
                     "retryable": True,

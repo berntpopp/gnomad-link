@@ -189,7 +189,7 @@ async def test_build_mismatch_envelope_survives_output_schema() -> None:
 
     assert _is_envelope(payload, "build_mismatch"), payload
     assert payload.get("error_code") != "output_validation_failed"
-    assert payload.get("fallback_tool") == "liftover_variant"
+    assert payload.get("fallback_tool") == "compute_variant_liftover"
 
 
 @pytest.mark.asyncio

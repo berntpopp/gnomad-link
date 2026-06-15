@@ -126,7 +126,7 @@ curl -sS http://127.0.0.1:8000/mcp \
 curl -sS http://127.0.0.1:8000/mcp \
   -H 'Accept: application/json, text/event-stream' \
   -H 'Content-Type: application/json' \
-  -d '{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"liftover_variant","arguments":{"source_variant_id":"17-7577121-G-A","reference_genome":"GRCh37"}}}'
+  -d '{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"compute_variant_liftover","arguments":{"source_variant_id":"17-7577121-G-A","source_genome":"GRCh37"}}}'
 ```
 
 ## Health Check

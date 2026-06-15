@@ -106,11 +106,11 @@ mcpServers:
       - search_genes
       - get_gene_details
       - get_clinvar_variant_details
-      - liftover_variant
+      - compute_variant_liftover
       - compare_variant_across_datasets
       - compute_gene_carrier_frequency
       - get_region
-      - get_gnomad_diagnostics
+      - get_diagnostics
 ```
 
 The 22 tools fall into these categories:
@@ -120,10 +120,10 @@ The 22 tools fall into these categories:
 | variant | `get_variant_frequencies`, `get_variant_details`, `compare_variant_across_datasets`, `get_mitochondrial_variant`, `get_structural_variant`, `search_structural_variants`, `compute_carrier_frequency` |
 | gene | `get_gene_details`, `get_gene_variants`, `get_gene_summary`, `compute_gene_carrier_frequency`, `search_genes` |
 | clinvar | `get_clinvar_variant_details`, `get_clinvar_meta` |
-| coordinates | `liftover_variant`, `get_region`, `get_transcript_details`, `get_coverage` |
+| coordinates | `compute_variant_liftover`, `get_region`, `get_transcript_details`, `get_coverage` |
 | carrier | `compute_carrier_frequency`, `compute_gene_carrier_frequency` |
 | search | `search_genes`, `resolve_variant_id`, `search_variants`, `search_structural_variants` |
-| metadata | `get_server_capabilities`, `get_gnomad_diagnostics` |
+| metadata | `get_server_capabilities`, `get_diagnostics` |
 
 If the Gemini client cannot restrict tools at connection time, clients that
 support deferred tool loading or client-side tool search can load only the
@@ -164,7 +164,7 @@ endpoints:
 | `get_gene_summary` | Gene-level constraint + variant/ClinVar summary |
 | `get_clinvar_variant_details` | ClinVar clinical significance for a variant |
 | `get_clinvar_meta` | ClinVar release metadata (deprecated; use `get_server_capabilities`) |
-| `liftover_variant` | Coordinate conversion GRCh37 <-> GRCh38 |
+| `compute_variant_liftover` | Coordinate conversion GRCh37 <-> GRCh38 |
 | `get_structural_variant` | Structural variant record |
 | `search_structural_variants` | Find structural variants by gene or region |
 | `get_mitochondrial_variant` | Mitochondrial variant record |
@@ -176,7 +176,7 @@ endpoints:
 | `search_variants` | Deprecated alias for `resolve_variant_id`; will be removed in one release |
 | `compute_carrier_frequency` | Single-variant carrier frequency (AR/XL) |
 | `compute_gene_carrier_frequency` | Gene-level recessive carrier rate |
-| `get_gnomad_diagnostics` | Recent errors, schema drift, and health status |
+| `get_diagnostics` | Recent errors, schema drift, and health status |
 
 Note: `search_variants` and `get_clinvar_meta` are deprecated. Use
 `resolve_variant_id` and `get_server_capabilities` for new work.
