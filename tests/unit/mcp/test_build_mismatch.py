@@ -3,7 +3,7 @@
 When a caller passes a CHROM-POS-REF-ALT id whose position is unambiguously
 beyond one build's chromosome length but within the other's, the MCP facade
 short-circuits the upstream call with a structured `build_mismatch` envelope
-that points to `liftover_variant`. Ambiguous positions (within both builds)
+that points to `compute_variant_liftover`. Ambiguous positions (within both builds)
 fall through to the upstream service unchanged.
 """
 
@@ -72,7 +72,7 @@ async def test_get_variant_frequencies_detects_grch37_only_position_against_r4()
 
     assert _is_build_mismatch(payload), payload
     assert payload.get("retryable") is False
-    assert payload.get("fallback_tool") == "liftover_variant"
+    assert payload.get("fallback_tool") == "compute_variant_liftover"
     assert payload.get("fallback_args") == {
         "source_variant_id": "1-249100000-A-T",
         "source_genome": "GRCh37",
@@ -149,7 +149,7 @@ async def test_get_variant_frequencies_detects_grch38_only_position_against_r2_1
 
 @pytest.mark.asyncio
 async def test_no_build_check_on_mitochondrial() -> None:
-    """liftover_variant on mito coords must not produce a build_mismatch."""
+    """compute_variant_liftover on mito coords must not produce a build_mismatch."""
 
     from gnomad_link.mcp.facade import create_gnomad_mcp
 
@@ -157,8 +157,8 @@ async def test_no_build_check_on_mitochondrial() -> None:
     mcp = create_gnomad_mcp(service_factory=lambda: spy)
 
     result = await mcp.call_tool(
-        "liftover_variant",
-        {"source_variant_id": "MT-7497-G-A", "reference_genome": "GRCh37"},
+        "compute_variant_liftover",
+        {"source_variant_id": "MT-7497-G-A", "source_genome": "GRCh37"},
     )
     payload = result.structured_content or {}
 
@@ -186,5 +186,5 @@ async def test_build_check_on_get_region() -> None:
     payload = result.structured_content or {}
 
     assert _is_build_mismatch(payload), payload
-    assert payload.get("fallback_tool") == "liftover_variant"
+    assert payload.get("fallback_tool") == "compute_variant_liftover"
     assert spy.last_region is None

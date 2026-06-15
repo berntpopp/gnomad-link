@@ -16,7 +16,7 @@ def test_normal_tool_with_args_is_valid() -> None:
 
 
 def test_no_arg_tool_diagnostics_empty_args_is_valid() -> None:
-    result = _valid_next_commands([{"tool": "get_gnomad_diagnostics", "arguments": {}}])
+    result = _valid_next_commands([{"tool": "get_diagnostics", "arguments": {}}])
     assert result is True
 
 

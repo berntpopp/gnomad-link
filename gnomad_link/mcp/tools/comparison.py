@@ -66,7 +66,7 @@ async def _resolve_r2_1_id(
     if not auto_liftover:
         return None, (
             "gnomad_r2_1 is GRCh37; auto_liftover=False so the GRCh38 id was not "
-            "converted and r2_1 was skipped. Call liftover_variant to compare it."
+            "converted and r2_1 was skipped. Call compute_variant_liftover to compare it."
         )
     results = await service.liftover_variant(variant_id, "GRCh38")
     for item in results:

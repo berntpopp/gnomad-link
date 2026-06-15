@@ -41,13 +41,13 @@ def register_coordinate_tools(
     mcp: FastMCP, *, service_factory: Callable[[], FrequencyService]
 ) -> None:
     @mcp.tool(
-        name="liftover_variant",
+        name="compute_variant_liftover",
         title="Liftover Variant Between GRCh37 and GRCh38",
         annotations=READ_ONLY_OPEN_WORLD,
         output_schema=relax_output_schema(LiftoverResponse.model_json_schema()),
         tags={"coordinates"},
     )
-    async def liftover_variant(
+    async def compute_variant_liftover(
         source_variant_id: Annotated[
             str,
             Field(
@@ -61,24 +61,17 @@ def register_coordinate_tools(
         source_genome: Annotated[
             Literal["GRCh37", "GRCh38"] | None,
             Field(
-                description="Reference build of source_variant_id. Preferred name.",
-            ),
-        ] = None,
-        reference_genome: Annotated[
-            Literal["GRCh37", "GRCh38"] | None,
-            Field(
-                description="Deprecated alias for source_genome; will be removed in the next release.",
+                description="Reference build of source_variant_id.",
             ),
         ] = None,
     ) -> dict[str, Any]:
-        """Use this when a caller has a variant id in one reference build and needs the equivalent id in the other. Works BOTH directions (GRCh37<->GRCh38); the converted coordinate is in each result's `target_variant_id` (and `target_reference_genome` names the build). Use this BEFORE calling frequency tools if the dataset and coordinate build do not match. Prefer source_genome; reference_genome is a deprecated alias. Returns <1kB."""
+        """Use this when a caller has a variant id in one reference build and needs the equivalent id in the other. Works BOTH directions (GRCh37<->GRCh38); the converted coordinate is in each result's `target_variant_id` (and `target_reference_genome` names the build). Use this BEFORE calling frequency tools if the dataset and coordinate build do not match. Returns <1kB."""
 
         async def call() -> dict[str, Any]:
-            build = source_genome or reference_genome
+            build = source_genome
             if build is None:
                 raise ToolInputError(
-                    "Provide source_genome (or legacy reference_genome) to indicate "
-                    "the build of source_variant_id."
+                    "Provide source_genome to indicate the build of source_variant_id."
                 )
             service = service_factory()
             results = await service.liftover_variant(source_variant_id, build)
@@ -106,12 +99,6 @@ def register_coordinate_tools(
                     "from the liftover tables. Confirm the id with resolve_variant_id."
                 )
             meta: dict[str, Any] = {}
-            if source_genome is None and reference_genome is not None:
-                meta["deprecated_params"] = {
-                    "reference_genome": (
-                        "Use source_genome; reference_genome will be removed in the next release."
-                    )
-                }
             # Close the build-conversion loop: chain the converted coordinate
             # straight into a frequency lookup against the build-correct dataset.
             target_id = next(
@@ -131,9 +118,11 @@ def register_coordinate_tools(
             return payload
 
         return await run_mcp_tool(
-            "liftover_variant",
+            "compute_variant_liftover",
             call,
-            context=McpErrorContext(tool_name="liftover_variant", variant_id=source_variant_id),
+            context=McpErrorContext(
+                tool_name="compute_variant_liftover", variant_id=source_variant_id
+            ),
         )
 
     @mcp.tool(

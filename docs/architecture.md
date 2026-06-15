@@ -49,7 +49,7 @@ gnomad_link/mcp/
     variants.py   - get_variant_frequencies, get_variant_details
     genes.py      - get_gene_details, get_gene_variants
     clinvar.py    - get_clinvar_variant_details, get_clinvar_meta
-    coordinates.py - liftover_variant, get_region
+    coordinates.py - compute_variant_liftover, get_region
     specialty.py  - get_structural_variant, get_mitochondrial_variant,
                     get_transcript_details
     search.py     - search_genes, resolve_variant_id, search_variants

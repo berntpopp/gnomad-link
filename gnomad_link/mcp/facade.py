@@ -20,7 +20,7 @@ _INSTRUCTIONS = (
     "- Clinical annotation: pair get_clinvar_variant_details with "
     "get_variant_frequencies.\n"
     "- Gene constraint: search_genes then get_gene_details.\n"
-    "- Coordinates: liftover_variant converts between GRCh37 and GRCh38.\n"
+    "- Coordinates: compute_variant_liftover converts between GRCh37 and GRCh38.\n"
     "- Special variants: get_structural_variant for SVs; "
     "get_mitochondrial_variant for M-POS-REF-ALT.\n"
     "- Region scans: get_region with include_clinvar/include_genes; "

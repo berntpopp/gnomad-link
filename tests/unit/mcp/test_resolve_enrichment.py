@@ -8,9 +8,9 @@ Task B4 of the MCP Facade Polish plan:
    capped at the first 5 results and tolerates per-variant failures via
    _meta.enrichment_partial. Pass enrich=False to opt out entirely.
 
-2. liftover_variant's misleading reference_genome parameter is renamed to
-   source_genome. reference_genome remains accepted for one release and the
-   response surfaces _meta.deprecated_params when it is used.
+2. compute_variant_liftover takes the canonical source_genome parameter. The
+   legacy reference_genome alias was dropped under the Tool-Naming Standard v1
+   major release (no deprecation shim).
 """
 
 from __future__ import annotations
@@ -212,19 +212,19 @@ async def test_search_variants_alias_also_enriches() -> None:
 
 
 # ---------------------------------------------------------------------------
-# liftover_variant: source_genome rename + deprecation
+# compute_variant_liftover: canonical source_genome parameter
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
-async def test_liftover_variant_accepts_source_genome_alias() -> None:
+async def test_compute_variant_liftover_accepts_source_genome() -> None:
     from gnomad_link.mcp.facade import create_gnomad_mcp
 
     stub = _StubService()
     mcp = create_gnomad_mcp(service_factory=lambda: stub)
 
     result = await mcp.call_tool(
-        "liftover_variant",
+        "compute_variant_liftover",
         {"source_variant_id": "1-55051215-G-GA", "source_genome": "GRCh37"},
     )
     payload = _structured(result)
@@ -238,37 +238,34 @@ async def test_liftover_variant_accepts_source_genome_alias() -> None:
 
 
 @pytest.mark.asyncio
-async def test_liftover_variant_emits_deprecation_meta_for_reference_genome() -> None:
+async def test_compute_variant_liftover_rejects_legacy_reference_genome() -> None:
     from gnomad_link.mcp.facade import create_gnomad_mcp
 
     stub = _StubService()
     mcp = create_gnomad_mcp(service_factory=lambda: stub)
 
+    # The legacy reference_genome alias was dropped (no shim). Passing it as an
+    # unknown argument must not silently behave like source_genome.
     result = await mcp.call_tool(
-        "liftover_variant",
+        "compute_variant_liftover",
         {"source_variant_id": "1-55051215-G-GA", "reference_genome": "GRCh37"},
     )
     payload = _structured(result)
 
-    assert payload.get("error_code") != "validation_failed", payload
-    assert payload.get("success") is not False, payload
-    assert payload["source_reference_genome"] == "GRCh37"
-    assert stub.liftover_calls == [("1-55051215-G-GA", "GRCh37")]
-    meta = payload.get("_meta") or {}
-    deprecated = meta.get("deprecated_params") or {}
-    assert "reference_genome" in deprecated
-    assert "source_genome" in deprecated["reference_genome"]
+    assert payload.get("success") is False, payload
+    # source_genome was never supplied, so the build cannot be determined.
+    assert stub.liftover_calls == []
 
 
 @pytest.mark.asyncio
-async def test_liftover_variant_rejects_when_both_missing() -> None:
+async def test_compute_variant_liftover_rejects_when_source_genome_missing() -> None:
     from gnomad_link.mcp.facade import create_gnomad_mcp
 
     stub = _StubService()
     mcp = create_gnomad_mcp(service_factory=lambda: stub)
 
     result = await mcp.call_tool(
-        "liftover_variant",
+        "compute_variant_liftover",
         {"source_variant_id": "1-55051215-G-GA"},
     )
     payload = _structured(result)

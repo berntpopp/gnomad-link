@@ -58,7 +58,7 @@ def actionable_output_validation_error(
     )
     # Also surface the event on the dedicated schema-drift ring so an LLM
     # hitting the output_validation_failed envelope can call
-    # get_gnomad_diagnostics and inspect which fields/tools are drifting.
+    # get_diagnostics and inspect which fields/tools are drifting.
     record_schema_drift(
         tool_name=tool_name,
         error_field=error_field,

@@ -154,9 +154,9 @@ def test_error_next_commands_prepends_classified_fallback() -> None:
     )
     cmds = payload["_meta"]["next_commands"]
     # The task-advancing resolver leads; diagnostics stays as the secondary entry.
-    assert cmds[0]["tool"] == "liftover_variant"
+    assert cmds[0]["tool"] == "compute_variant_liftover"
     assert cmds[0]["arguments"]["source_genome"] == "GRCh37"
-    assert cmds[-1]["tool"] == "get_gnomad_diagnostics"
+    assert cmds[-1]["tool"] == "get_diagnostics"
 
 
 def test_retryable_error_next_commands_is_diagnostics_only() -> None:
@@ -166,7 +166,7 @@ def test_retryable_error_next_commands_is_diagnostics_only() -> None:
     )
     cmds = payload["_meta"]["next_commands"]
     # Retry, not switch: fallback_tool is already diagnostics, so no duplicate prepend.
-    assert [c["tool"] for c in cmds] == ["get_gnomad_diagnostics"]
+    assert [c["tool"] for c in cmds] == ["get_diagnostics"]
 
 
 def test_error_meta_echoes_dataset_and_build() -> None:

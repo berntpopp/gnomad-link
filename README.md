@@ -150,7 +150,7 @@ Use stdio only for local desktop workflows that cannot connect to HTTP MCP:
 | `get_gene_summary` | Gene-level constraint + variant/ClinVar summary |
 | `get_clinvar_variant_details` | ClinVar clinical significance |
 | `get_clinvar_meta` | ClinVar release metadata (deprecated; use `get_server_capabilities`) |
-| `liftover_variant` | Coordinate conversion GRCh37 <-> GRCh38 |
+| `compute_variant_liftover` | Coordinate conversion GRCh37 <-> GRCh38 |
 | `get_structural_variant` | Structural variant record |
 | `search_structural_variants` | Find structural variants by gene or region |
 | `get_mitochondrial_variant` | Mitochondrial variant record |
@@ -162,7 +162,13 @@ Use stdio only for local desktop workflows that cannot connect to HTTP MCP:
 | `search_variants` | Deprecated alias for `resolve_variant_id` |
 | `compute_carrier_frequency` | Single-variant carrier frequency (AR/XL) |
 | `compute_gene_carrier_frequency` | Gene-level recessive carrier rate |
-| `get_gnomad_diagnostics` | Recent errors, schema drift, and health status |
+| `get_diagnostics` | Recent errors, schema drift, and health status |
+
+**Federation:** leaf tool names are intentionally unprefixed per the GeneFoundry
+Tool-Naming Standard v1. The canonical gateway **namespace token** is `gnomad`;
+when federated behind `genefoundry-router`, tools surface as `gnomad_<tool>`
+(e.g. `gnomad_get_variant_frequencies`, `gnomad_get_diagnostics`). The MCP server
+identity (`serverInfo.name`) is `gnomad-link`.
 
 ## Architecture
 

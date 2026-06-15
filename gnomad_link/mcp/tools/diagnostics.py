@@ -20,7 +20,7 @@ def register_diagnostics_tools(
     service_factory: Callable[[], FrequencyService],
 ) -> None:
     @mcp.tool(
-        name="get_gnomad_diagnostics",
+        name="get_diagnostics",
         title="Get gnomAD Link Diagnostics",
         annotations=READ_ONLY_CLOSED_WORLD,
         tags={"metadata", "diagnostics"},
@@ -47,7 +47,7 @@ def register_diagnostics_tools(
             }
         ),
     )
-    async def get_gnomad_diagnostics() -> dict[str, Any]:
+    async def get_diagnostics() -> dict[str, Any]:
         """Use this when an LLM hits repeated errors or needs server health information; returns recent error history, server version, upstream availability flag, and recent_schema_drift entries so an LLM that hit output_validation_failed can self-diagnose. Returns <1kB."""
 
         async def call() -> dict[str, Any]:
@@ -67,4 +67,4 @@ def register_diagnostics_tools(
                 },
             }
 
-        return await run_mcp_tool("get_gnomad_diagnostics", call)
+        return await run_mcp_tool("get_diagnostics", call)
