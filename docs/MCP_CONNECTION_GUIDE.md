@@ -7,7 +7,6 @@ liftover data.
 | Mode | Endpoint | Status | Use Case |
 |------|----------|--------|----------|
 | Streamable HTTP | `/mcp` | Recommended | Claude HTTP, ChatGPT developer mode, hosted remote MCP clients |
-| stdio | `gnomad-link-mcp` | Local fallback | Local desktop-only workflows |
 
 The tools expose public gnomAD research data and must not be used for diagnosis,
 treatment, triage, patient management, or clinical decision support.
@@ -15,7 +14,7 @@ treatment, triage, patient management, or clinical decision support.
 ## Start The Server
 
 ```bash
-make mcp-serve-http
+make dev
 ```
 
 The server provides:
@@ -130,25 +129,6 @@ support deferred tool loading or client-side tool search can load only the
 tools relevant to the current task, keeping the effective active set within
 the 10-20 recommendation.
 
-## stdio Fallback
-
-Use stdio only for local desktop workflows that cannot connect to HTTP MCP
-endpoints:
-
-```json
-{
-  "mcpServers": {
-    "gnomad-link-stdio": {
-      "command": "gnomad-link-mcp",
-      "env": {
-        "PYTHONUNBUFFERED": "1",
-        "LOG_LEVEL": "WARNING"
-      }
-    }
-  }
-}
-```
-
 ## Available Tools
 
 22 tools across seven categories.
@@ -183,9 +163,8 @@ Note: `search_variants` and `get_clinvar_meta` are deprecated. Use
 
 ## Troubleshooting
 
-- Confirm the server is running with `make mcp-serve-http`.
+- Confirm the server is running with `make dev`.
 - Confirm the MCP endpoint is reachable: `curl http://127.0.0.1:8000/health`.
 - Confirm the MCP endpoint is `http://127.0.0.1:8000/mcp`.
-- If a client cannot use HTTP MCP, use the stdio fallback command.
 - If tools are missing after an update, refresh the client's MCP/tool cache and
   reconnect.

@@ -7,7 +7,7 @@ support, ChatGPT developer mode, and hosted MCP clients.
 ## Start The Server
 
 ```bash
-make mcp-serve-http
+make dev
 ```
 
 The server provides:
@@ -56,25 +56,6 @@ https://your-domain.example/mcp
 
 Use no authentication only for local or private deployments. Public deployments
 should be protected by OAuth or an authenticated reverse proxy.
-
-## stdio Fallback
-
-Use stdio only for local desktop workflows that cannot connect to HTTP MCP
-endpoints:
-
-```json
-{
-  "mcpServers": {
-    "gnomad-link-stdio": {
-      "command": "gnomad-link-mcp",
-      "env": {
-        "PYTHONUNBUFFERED": "1",
-        "LOG_LEVEL": "WARNING"
-      }
-    }
-  }
-}
-```
 
 ## Available Tools
 

@@ -75,12 +75,10 @@ class UnifiedServerManager:
         """Create FastAPI app with /health and mounted MCP."""
 
     async def start_unified_server(self, config: ServerConfig): ...
-    async def start_stdio_server(self, config: ServerConfig): ...
 ```
 
 In unified HTTP mode, REST and MCP share one `FrequencyService` instance,
-cache, and GraphQL client. In stdio mode, the manager constructs one
-`FrequencyService` directly.
+cache, and GraphQL client.
 
 ### 4. Business Logic Layer
 
@@ -112,23 +110,13 @@ cache, and GraphQL client. In stdio mode, the manager constructs one
 ### Unified (Recommended)
 
 ```bash
-make mcp-serve-http
+make dev
 # or
-uv run python server.py --transport unified --host 127.0.0.1 --port 8000
+uv run gnomad-link serve --transport unified --host 127.0.0.1 --port 8000
 ```
 
 Single process. FastAPI host at root with MCP at `/mcp`. Health check at
 `/health`.
-
-### stdio Fallback
-
-```bash
-make mcp-serve
-# or
-uv run python mcp_server.py
-```
-
-Use only for local clients that cannot connect to HTTP MCP endpoints.
 
 ## Configuration
 
@@ -137,7 +125,7 @@ Use only for local clients that cannot connect to HTTP MCP endpoints.
 ```python
 @dataclass
 class ServerConfig:
-    transport: Literal["unified", "http", "stdio"] = "unified"
+    transport: Literal["unified", "http"] = "unified"
     host: str = "127.0.0.1"
     port: int = 8000
     mcp_path: str = "/mcp"
@@ -153,7 +141,7 @@ MCP_PORT=8000
 MCP_PATH=/mcp
 
 LOG_LEVEL=INFO
-STDIO_LOG_LEVEL=WARNING
+LOG_FORMAT=json
 
 GNOMAD_API_URL=https://gnomad.broadinstitute.org/api
 CACHE_SIZE=1024
@@ -173,8 +161,6 @@ MCP tools return structured error envelopes:
   }
 }
 ```
-
-STDIO transport writes errors to stderr only (protocol compatibility).
 
 ## Security
 

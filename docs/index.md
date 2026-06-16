@@ -52,7 +52,7 @@ Welcome to the documentation for gnomAD-link, an MCP server that bridges the gno
 ### Key Features ✨
 - **MCP-First Architecture**: Hand-authored FastMCP facade; FastAPI is `/health` only
 - **15 MCP Tools**: Variants, genes, ClinVar, structural, mitochondrial, liftover, search
-- **Transport Modes**: Streamable HTTP (recommended) and stdio fallback
+- **Transport**: Streamable HTTP only (unified FastAPI host + mounted MCP)
 - **AI Assistant Integration**: Native MCP support for Claude Code, Claude Desktop, ChatGPT
 - **Production Ready**: Docker Compose, health checks, structured error envelopes
 
@@ -68,7 +68,7 @@ uv sync --group dev
 ### Basic Usage
 ```bash
 # Start MCP HTTP server
-make mcp-serve-http
+make dev
 
 # MCP interface available at
 # http://127.0.0.1:8000/mcp
@@ -81,7 +81,7 @@ make mcp-serve-http
 Start the server:
 
 ```bash
-make mcp-serve-http
+make dev
 ```
 
 Register the HTTP MCP endpoint:
@@ -108,7 +108,6 @@ Claude Desktop HTTP config:
 ### MCP Interface
 - **AI Assistant Tools**: Native integration with Claude and MCP clients
 - **Streamable HTTP**: Modern MCP transport for web deployments
-- **STDIO Transport**: Local fallback for clients without HTTP MCP support
 - **Tool-Based Interface**: Structured data access for AI applications
 
 ### Data Sources

@@ -1,4 +1,19 @@
+import asyncio
+
+import pytest
+
+from gnomad_link.config import ServerConfig
+from gnomad_link.exceptions import ConfigurationError
 from gnomad_link.server_manager import UnifiedServerManager
+
+
+def test_start_server_rejects_unknown_transport() -> None:
+    """start_server raises ConfigurationError for any non-HTTP transport (no stdio)."""
+    config = ServerConfig(transport="unified")
+    object.__setattr__(config, "transport", "stdio")  # simulate a stale stdio value
+    manager = UnifiedServerManager()
+    with pytest.raises(ConfigurationError):
+        asyncio.run(manager.start_server(config))
 
 
 def test_server_manager_uses_facade(monkeypatch) -> None:

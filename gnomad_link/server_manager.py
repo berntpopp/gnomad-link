@@ -8,15 +8,18 @@ from collections.abc import Callable
 from contextlib import asynccontextmanager
 from typing import Any, cast
 
+import structlog
 import uvicorn
+from asgi_correlation_id import CorrelationIdMiddleware
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastmcp import FastMCP
 
+from gnomad_link import __version__
 from gnomad_link.api.client import UnifiedGnomadClient
 from gnomad_link.config import ServerConfig, settings
 from gnomad_link.exceptions import ConfigurationError, MCPIntegrationError, StartupError
-from gnomad_link.logging_config import configure_logging, get_server_logger
+from gnomad_link.logging_config import configure_logging
 from gnomad_link.mcp.facade import create_gnomad_mcp
 from gnomad_link.services.frequency_service import FrequencyService
 
@@ -61,12 +64,13 @@ class UnifiedServerManager:
         app = FastAPI(
             title="gnomAD Link MCP Host",
             description="Thin FastAPI host that exposes /health and mounts the MCP HTTP app at /mcp.",
-            version="5.0.0",
+            version=__version__,
             lifespan=lifespan,
             docs_url=None,
             redoc_url=None,
             openapi_url=None,
         )
+        app.add_middleware(CorrelationIdMiddleware)
         app.add_middleware(
             CORSMiddleware,
             allow_origins=settings.cors_origins_list,
@@ -116,11 +120,12 @@ class UnifiedServerManager:
 
     # ---------------- entry points ----------------
 
-    async def start_unified_server(self, config: ServerConfig) -> None:
+    async def start_unified_server(self, config: ServerConfig, *, dev: bool = False) -> None:
         try:
             self._current_transport = "unified"
-            configure_logging("unified", config.log_level)
-            self.logger = get_server_logger("unified")
+            log_format = "console" if dev else settings.LOG_FORMAT
+            configure_logging(config.log_level, log_format)
+            self.logger = structlog.get_logger("gnomad_link")
 
             self.app = await self._create_fastapi_app(config)
 
@@ -150,22 +155,8 @@ class UnifiedServerManager:
         except Exception as e:
             raise StartupError(f"Failed to start unified server: {e}", "unified") from e
 
-    async def start_stdio_server(self, config: ServerConfig) -> None:
-        try:
-            self._current_transport = "stdio"
-            configure_logging("stdio", config.log_level)
-            self.logger = get_server_logger("stdio")
-
-            service = self._create_frequency_service()
-            self.mcp = self._create_mcp_server(lambda: service)
-            await self.mcp.run_async(transport="stdio")
-        except Exception as e:
-            raise StartupError(f"Failed to start STDIO server: {e}", "stdio") from e
-
-    async def start_server(self, config: ServerConfig) -> None:
+    async def start_server(self, config: ServerConfig, *, dev: bool = False) -> None:
         if config.transport in {"unified", "http"}:
-            await self.start_unified_server(config)
-        elif config.transport == "stdio":
-            await self.start_stdio_server(config)
+            await self.start_unified_server(config, dev=dev)
         else:
             raise ConfigurationError(f"Unknown transport: {config.transport}")

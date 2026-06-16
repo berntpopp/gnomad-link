@@ -77,8 +77,7 @@ Useful focused commands:
 - `make test-cov`
 - `make precommit`
 - `make dev`
-- `make mcp-serve`
-- `make mcp-serve-http`
+- `make run-prod`
 - `make docker-build`
 - `make docker-up`
 - `make docker-down`
@@ -117,9 +116,8 @@ Useful focused commands:
 
 ## File Size Discipline
 
-Hard cap: **600 lines per Python module** in `gnomad_link/`, `server.py`, and
-`mcp_server.py`. Enforced by `make lint-loc` (wired into `ci-local` and
-pre-commit). Tests are exempt.
+Hard cap: **600 lines per Python module** in `gnomad_link/`. Enforced by
+`make lint-loc` (wired into `ci-local` and pre-commit). Tests are exempt.
 
 Why: large modules concentrate complexity, slow mypy and import cost, and
 degrade LLM-assisted refactors. When a file approaches 500 lines, plan its
