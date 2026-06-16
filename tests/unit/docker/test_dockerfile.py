@@ -21,7 +21,7 @@ def test_dockerfile_runs_as_non_root_with_runtime_dirs() -> None:
 
 
 def test_dockerfile_serves_unified_http_mcp_by_default() -> None:
-    assert 'CMD ["gnomad-link", "--transport", "unified"' in DOCKERFILE
+    assert 'CMD ["gnomad-link", "serve", "--transport", "unified"' in DOCKERFILE
     assert '"--host", "0.0.0.0"' in DOCKERFILE
     assert "MCP_PATH=/mcp" in DOCKERFILE
 

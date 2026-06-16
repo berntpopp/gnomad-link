@@ -22,7 +22,7 @@ repos:
     hooks:
       - id: mypy
         name: mypy
-        entry: uv run mypy gnomad_link server.py mcp_server.py
+        entry: uv run mypy gnomad_link
         language: system
         pass_filenames: false
 
@@ -31,4 +31,4 @@ repos:
         entry: uv run python scripts/check_file_size.py
         language: system
         pass_filenames: false
-        files: ^(gnomad_link/|server\.py$|mcp_server\.py$|\.loc-allowlist$)
+        files: ^(gnomad_link/|\.loc-allowlist$)

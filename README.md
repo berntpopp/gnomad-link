@@ -20,7 +20,7 @@ largest public database of human genetic variants. Enables:
 - **22 MCP Tools**: Variants, genes, transcripts, ClinVar, structural variants,
   mitochondrial variants, liftover, region, coverage, carrier frequency,
   cross-dataset comparison, diagnostics, and capabilities
-- **Transport Modes**: Streamable HTTP (recommended) and STDIO fallback
+- **Transport**: Streamable HTTP only (unified FastAPI host + mounted MCP)
 - **Comprehensive Data**: Allele frequencies across 8 global populations
 - **High Performance**: Async operations with intelligent caching
 - **Type Safety**: Full Pydantic v2 validation
@@ -39,14 +39,14 @@ uv sync --group dev
 ### Start The Server
 
 ```bash
-make mcp-serve-http
+make dev
 ```
 
 The server listens on `http://127.0.0.1:8020/mcp` (Docker default port).
 For local dev without Docker:
 
 ```bash
-uv run python server.py --transport unified --host 127.0.0.1 --port 8000
+uv run gnomad-link serve --transport unified --host 127.0.0.1 --port 8000
 ```
 
 ### Connect Claude Code
@@ -85,7 +85,7 @@ CACHE_SIZE=1024
 CACHE_TTL_MINUTES=60
 
 LOG_LEVEL=INFO
-STDIO_LOG_LEVEL=WARNING
+LOG_FORMAT=json   # json (prod) or console (dev)
 ```
 
 Copy `.env.example` to `.env` for local overrides.
@@ -96,7 +96,7 @@ Copy `.env.docker.example` to `.env.docker` for Docker overrides.
 ### Claude Code (HTTP)
 
 ```bash
-make mcp-serve-http
+make dev
 claude mcp add --transport http gnomad-link http://127.0.0.1:8000/mcp
 ```
 
@@ -114,24 +114,6 @@ claude mcp add --transport http gnomad-link http://127.0.0.1:8020/mcp
     "gnomad-link": {
       "type": "http",
       "url": "http://127.0.0.1:8000/mcp"
-    }
-  }
-}
-```
-
-### stdio Fallback
-
-Use stdio only for local desktop workflows that cannot connect to HTTP MCP:
-
-```json
-{
-  "mcpServers": {
-    "gnomad-link-stdio": {
-      "command": "gnomad-link-mcp",
-      "env": {
-        "PYTHONUNBUFFERED": "1",
-        "LOG_LEVEL": "WARNING"
-      }
     }
   }
 }
@@ -225,9 +207,8 @@ make ci-local      # Full local CI gate
 ```
 
 ```bash
-make dev           # Start dev server
-make mcp-serve     # STDIO MCP server
-make mcp-serve-http  # HTTP MCP server
+make dev           # Start dev server (console logs)
+make run-prod      # Start production server (JSON logs)
 ```
 
 ## Docker Deployment

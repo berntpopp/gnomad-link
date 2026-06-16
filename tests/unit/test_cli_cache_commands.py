@@ -1,17 +1,26 @@
-"""Tests for CLI cache management subcommands."""
+"""Tests for the typer cache management subcommands (Standard v1)."""
 
 from __future__ import annotations
 
-from argparse import Namespace
 from unittest.mock import MagicMock, patch
 
-import pytest
+from typer.testing import CliRunner
 
-from gnomad_link.cli import handle_cache_clear_command, handle_cache_stats_command
+from gnomad_link.cli import app
+
+runner = CliRunner()
 
 
-def test_cache_stats_prints_table(capsys: pytest.CaptureFixture[str]) -> None:
-    """cache stats command prints cache size information."""
+def test_cache_group_no_args_shows_help() -> None:
+    """`cache` with no subcommand shows help listing stats/clear."""
+    result = runner.invoke(app, ["cache"])
+    assert result.exit_code != 0  # no_args_is_help exits non-zero
+    assert "stats" in result.output
+    assert "clear" in result.output
+
+
+def test_cache_stats_prints_sizes() -> None:
+    """`cache stats` prints cache size information."""
     mock_service = MagicMock()
     mock_service.get_cache_stats.return_value = {
         "hits": 10,
@@ -24,23 +33,24 @@ def test_cache_stats_prints_table(capsys: pytest.CaptureFixture[str]) -> None:
         },
     }
 
-    with patch("gnomad_link.cli.UnifiedServerManager") as mock_manager_cls:
+    with patch("gnomad_link.server_manager.UnifiedServerManager") as mock_manager_cls:
         mock_manager_cls.return_value._create_frequency_service.return_value = mock_service
-        handle_cache_stats_command(Namespace())
+        result = runner.invoke(app, ["cache", "stats"])
 
-    output = capsys.readouterr().out
-    assert "cache_size" in output.lower() or "size" in output.lower()
+    assert result.exit_code == 0
+    assert "cache_size" in result.output.lower() or "size" in result.output.lower()
+    mock_service.get_cache_stats.assert_called_once()
 
 
-def test_cache_clear_succeeds(capsys: pytest.CaptureFixture[str]) -> None:
-    """cache clear command clears the cache and prints confirmation."""
+def test_cache_clear_succeeds() -> None:
+    """`cache clear` clears the cache and prints confirmation."""
     mock_service = MagicMock()
     mock_service.clear_cache.return_value = None
 
-    with patch("gnomad_link.cli.UnifiedServerManager") as mock_manager_cls:
+    with patch("gnomad_link.server_manager.UnifiedServerManager") as mock_manager_cls:
         mock_manager_cls.return_value._create_frequency_service.return_value = mock_service
-        handle_cache_clear_command(Namespace())
+        result = runner.invoke(app, ["cache", "clear"])
 
+    assert result.exit_code == 0
     mock_service.clear_cache.assert_called_once()
-    output = capsys.readouterr().out
-    assert "cleared" in output.lower()
+    assert "cleared" in result.output.lower()
