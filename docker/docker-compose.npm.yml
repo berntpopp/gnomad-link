@@ -14,4 +14,7 @@ networks:
   default:
   npm-network:
     external: true
-    name: ${NPM_NETWORK_NAME:-npm_network}
+    # Default matches the NPM container's network on the GeneFoundry VPS so the
+    # reverse proxy can reach this container out of the box; override via
+    # NPM_NETWORK_NAME in .env.docker if your proxy network differs.
+    name: ${NPM_NETWORK_NAME:-npm_default}
