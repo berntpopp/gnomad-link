@@ -161,6 +161,27 @@ gnomad_link/
 └── server_manager.py       # Unified FastAPI+MCP lifecycle management
 ```
 
+## Versioning and Releases
+
+Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/)
+(`feat:`, `fix:`, `refactor:`, `perf:`, `docs:`, `test:`, `build:`, `chore:`;
+append `!` or a `BREAKING CHANGE:` footer for breaking changes). The PR template
+asks contributors to pick the matching type.
+
+Versioning is intentional and tag-driven (no auto-bump on merge). The version is
+single-sourced in `gnomad_link/__init__.py` (`__version__`); `pyproject.toml`
+reads it via `[tool.hatch.version]`, and `server_manager.py` imports it for the
+FastAPI host. To cut a release:
+
+1. Bump `__version__` in `gnomad_link/__init__.py` (semantic versioning).
+2. Update `CHANGELOG.md` for the new version.
+3. `make ci-local` must pass.
+4. Commit, then tag: `git tag -a vX.Y.Z -m "vX.Y.Z"` and push the tag.
+
+Pushing a `v*` tag triggers `.github/workflows/release.yml`, which **fails the
+release if the tag does not match `__version__`**, then re-runs `ci-local`,
+validates the Compose configs, and builds the release Docker image.
+
 ## Agentic Work
 
 - Follow `AGENTS.md`.
