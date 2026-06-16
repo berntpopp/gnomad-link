@@ -13,6 +13,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastmcp import FastMCP
 
+from gnomad_link import __version__
 from gnomad_link.api.client import UnifiedGnomadClient
 from gnomad_link.config import ServerConfig, settings
 from gnomad_link.exceptions import ConfigurationError, MCPIntegrationError, StartupError
@@ -61,7 +62,7 @@ class UnifiedServerManager:
         app = FastAPI(
             title="gnomAD Link MCP Host",
             description="Thin FastAPI host that exposes /health and mounts the MCP HTTP app at /mcp.",
-            version="5.0.0",
+            version=__version__,
             lifespan=lifespan,
             docs_url=None,
             redoc_url=None,
