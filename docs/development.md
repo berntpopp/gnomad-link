@@ -58,7 +58,7 @@ requests.
 - Use modern Python typing such as `list[str]`, `dict[str, int]`, and
   `str | None`.
 - Keep production Python files under 600 lines. `make lint-loc` enforces this
-  for `gnomad_link/`, `server.py`, and `mcp_server.py`.
+  for `gnomad_link/`.
 - Keep deterministic tests in `tests/unit/` and live upstream tests in
   `tests/integration/`.
 - Keep Docker config tests deterministic; do not require Docker Engine for
@@ -69,16 +69,14 @@ requests.
 ## Running Servers
 
 ```bash
-make dev             # MCP HTTP server on 127.0.0.1:8000
-make mcp-serve-http  # same hosted MCP endpoint
-make mcp-serve       # stdio fallback for local clients
+make dev             # console logs, MCP HTTP server on 127.0.0.1:8000
+make run-prod        # JSON logs, MCP HTTP server on 0.0.0.0:8000
 ```
 
-Manual equivalents:
+Manual equivalent:
 
 ```bash
-uv run python server.py --transport unified --host 127.0.0.1 --port 8000
-uv run python mcp_server.py
+uv run gnomad-link serve --transport unified --host 127.0.0.1 --port 8000
 ```
 
 ## MCP Development
@@ -86,14 +84,8 @@ uv run python mcp_server.py
 Streamable HTTP at `/mcp` is the primary MCP transport.
 
 ```bash
-make mcp-serve-http
+make dev
 claude mcp add --transport http gnomad-link http://127.0.0.1:8000/mcp
-```
-
-Use stdio only as a fallback for local clients that cannot connect to HTTP MCP:
-
-```bash
-make mcp-serve
 ```
 
 Public MCP tools must remain research-use scoped and must not expose destructive
@@ -157,7 +149,7 @@ CI.
 
 ```text
 gnomad_link/
-├── api/                    # GraphQL client (routes removed; /health only in server.py)
+├── api/                    # GraphQL client (routes removed; /health only in gnomad_link/server_manager.py)
 ├── graphql/                # Query loader, builder, and query documents
 ├── mcp/                    # Hand-authored MCP facade (tools, resources, errors)
 ├── models/                 # Pydantic response models and enums

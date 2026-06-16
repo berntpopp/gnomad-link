@@ -14,8 +14,6 @@ services:
 
     volumes:
       - ../gnomad_link:/home/app/web/gnomad_link:delegated
-      - ../server.py:/home/app/web/server.py:ro
-      - ../mcp_server.py:/home/app/web/mcp_server.py:ro
       - ../pyproject.toml:/home/app/web/pyproject.toml:ro
       - ../README.md:/home/app/web/README.md:ro
 
@@ -23,7 +21,7 @@ services:
       sh -c "
         cd /home/app/web &&
         pip install -e . &&
-        gnomad-link --transport unified --host 0.0.0.0 --port 8000
+        gnomad-link serve --transport unified --host 0.0.0.0 --port 8000 --dev
       "
 
     user: root

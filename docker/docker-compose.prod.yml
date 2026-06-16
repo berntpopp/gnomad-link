@@ -22,7 +22,7 @@ services:
     pids_limit: 256
     init: true
 
-    command: ["gnomad-link", "--transport", "unified", "--host", "0.0.0.0", "--port", "8000"]
+    command: ["gnomad-link", "serve", "--transport", "unified", "--host", "0.0.0.0", "--port", "8000"]
 
     deploy:
       resources:

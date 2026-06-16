@@ -6,7 +6,7 @@
 git clone <repository-url>
 cd gnomad-link
 uv sync --group dev
-make mcp-serve-http
+make dev
 ```
 
 The server exposes:
@@ -21,21 +21,13 @@ The server exposes:
 Single process; FastAPI `/health` host with FastMCP at `/mcp`.
 
 ```bash
-make mcp-serve-http
+make dev
 ```
 
 Manual equivalent:
 
 ```bash
-uv run python server.py --transport unified --host 127.0.0.1 --port 8000
-```
-
-### stdio Fallback
-
-Use only for local clients that cannot connect to HTTP MCP endpoints.
-
-```bash
-make mcp-serve
+uv run gnomad-link serve --transport unified --host 127.0.0.1 --port 8000
 ```
 
 ## MCP Clients
@@ -43,7 +35,7 @@ make mcp-serve
 ### Claude Code HTTP
 
 ```bash
-make mcp-serve-http
+make dev
 claude mcp add --transport http gnomad-link http://127.0.0.1:8000/mcp
 ```
 
@@ -61,22 +53,6 @@ claude mcp add --transport http gnomad-link http://127.0.0.1:8020/mcp
     "gnomad-link": {
       "type": "http",
       "url": "http://127.0.0.1:8000/mcp"
-    }
-  }
-}
-```
-
-### stdio Fallback Config
-
-```json
-{
-  "mcpServers": {
-    "gnomad-link-stdio": {
-      "command": "gnomad-link-mcp",
-      "env": {
-        "PYTHONUNBUFFERED": "1",
-        "LOG_LEVEL": "WARNING"
-      }
     }
   }
 }

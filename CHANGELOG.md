@@ -2,6 +2,40 @@
 
 All notable changes to gnomad-link are documented here.
 
+## [6.0.0] - 2026-06-16
+
+Adopt the **GeneFoundry Logging & CLI Standard v1**: a `typer` CLI, `structlog`
+structured logging, and Streamable-HTTP-only transport.
+
+### Changed (BREAKING)
+
+- **CLI is now a `typer` app** (`gnomad_link.cli:app`). Server start is always
+  `gnomad-link serve …` — the previous bare `gnomad-link --transport …`
+  invocation is gone. Commands: `serve` (`--transport {unified,http}` default
+  `unified`, `--host`, `--port`, `--mcp-path`, `--log-level`, `--disable-docs`,
+  `--dev`), `config [--validate]`, `health [--url]`, `cache stats|clear`,
+  `version`.
+- **Single console script** `gnomad-link = "gnomad_link.cli:app"`. The
+  `gnomad-link-mcp` script and the root `server.py` / `mcp_server.py` entry
+  points are deleted.
+- **stdio transport removed.** The fleet is Streamable-HTTP-only: `stdio` is
+  dropped from `ServerConfig.transport` / `Settings.MCP_TRANSPORT`, the
+  `start_stdio_server` path and stdio logging branch are deleted, and the dead
+  `gnomad_link/transports/` package is removed.
+- **Logging migrated from stdlib to `structlog`** (`gnomad_link/logging_config.py`):
+  canonical processor chain (`merge_contextvars → add_log_level →
+  TimeStamper(iso) → StackInfoRenderer → format_exc_info → static fields`),
+  JSON in production and `ConsoleRenderer` in development (selected by
+  `LOG_FORMAT`, default `json`), with `asgi-correlation-id` bound into every
+  event. The `TransportAwareFormatter` and `get_*_logger` helpers are removed;
+  call sites use `structlog.get_logger(__name__)`. `STDIO_LOG_LEVEL` /
+  `MCP_LOG_LEVEL` settings are replaced by `LOG_FORMAT`.
+
+### Added
+
+- CLI tests via `typer.testing.CliRunner` and `tests/unit/test_logging_config.py`
+  asserting the canonical JSON event shape and bound `correlation_id`.
+
 ## [5.0.0] - 2026-06-15
 
 Adopt the **GeneFoundry Tool-Naming Standard v1** so the server composes cleanly

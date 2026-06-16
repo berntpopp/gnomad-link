@@ -11,7 +11,7 @@ from pydantic_settings import BaseSettings
 class ServerConfig:
     """Server configuration with transport selection."""
 
-    transport: Literal["unified", "http", "stdio"] = "unified"
+    transport: Literal["unified", "http"] = "unified"
     host: str = "127.0.0.1"
     port: int = 8000
     mcp_path: str = "/mcp"
@@ -55,15 +55,15 @@ class Settings(BaseSettings):
     CACHE_TTL_MINUTES: int = 60  # Cache time-to-live in minutes
 
     # Transport Configuration
-    MCP_TRANSPORT: Literal["unified", "http", "stdio"] = "unified"
+    MCP_TRANSPORT: Literal["unified", "http"] = "unified"
     MCP_HOST: str = "127.0.0.1"
     MCP_PORT: int = 8000
     MCP_PATH: str = "/mcp"
 
     # Logging Configuration
     LOG_LEVEL: str = "INFO"
-    MCP_LOG_LEVEL: str = "INFO"
-    STDIO_LOG_LEVEL: str = "WARNING"  # Reduced for STDIO compatibility
+    # Renderer selection for structlog: "json" in production, "console" in dev.
+    LOG_FORMAT: str = "json"
 
     # Server Configuration
     CORS_ORIGINS: str = "*"  # Comma-separated list of allowed origins

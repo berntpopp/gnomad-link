@@ -56,8 +56,7 @@ dev = [
 ]
 
 [project.scripts]
-gnomad-link = "server:main"
-gnomad-link-mcp = "mcp_server:main"
+gnomad-link = "gnomad_link.cli:app"
 
 [project.urls]
 Homepage = "https://github.com/berntpopp/gnomad-link"
@@ -72,10 +71,6 @@ path = "gnomad_link/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["gnomad_link"]
-include = [
-    "server.py",
-    "mcp_server.py",
-]
 
 [tool.ruff]
 line-length = 100

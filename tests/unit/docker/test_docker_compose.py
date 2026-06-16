@@ -17,7 +17,7 @@ def test_base_compose_runs_unified_http_mcp_service() -> None:
     assert "MCP_TRANSPORT: unified" in BASE
     assert "MCP_PATH: /mcp" in BASE
     assert "${GNOMAD_LINK_HOST_PORT:-8020}:8000" in BASE
-    assert '["gnomad-link", "--transport", "unified"' in BASE
+    assert '["gnomad-link", "serve", "--transport", "unified"' in BASE
     assert "http://localhost:8000/health" in BASE
 
 
