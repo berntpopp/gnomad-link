@@ -8,8 +8,9 @@ DOCKERFILE = Path("docker/Dockerfile").read_text(encoding="utf-8")
 
 
 def test_dockerfile_uses_modern_python_and_uv_lock() -> None:
-    assert "FROM python:3.14-slim AS builder" in DOCKERFILE
-    assert "FROM python:3.14-slim AS production" in DOCKERFILE
+    digest = "python:3.14-slim@sha256:b877e50bd90de10af8d82c57a022fc2e0dc731c5320d762a27986facfc3355c1"
+    assert f"FROM {digest} AS builder" in DOCKERFILE
+    assert f"FROM {digest} AS production" in DOCKERFILE
     assert "COPY uv.lock pyproject.toml README.md ./" in DOCKERFILE
     assert "uv sync --frozen --no-dev --active --no-install-project" in DOCKERFILE
 

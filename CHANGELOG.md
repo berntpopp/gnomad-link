@@ -2,6 +2,12 @@
 
 All notable changes to gnomad-link are documented here.
 
+## [6.0.1] - 2026-06-29
+
+Adopt the **GeneFoundry Container & Deployment Hardening Standard v1** (closes #19):
+pin the base image by digest (`python:3.14-slim@sha256:b877e50…`) and never send
+CORS credentials with a wildcard origin.
+
 ## [6.0.0] - 2026-06-16
 
 Adopt the **GeneFoundry Logging & CLI Standard v1**: a `typer` CLI, `structlog`
