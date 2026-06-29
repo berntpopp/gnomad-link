@@ -140,9 +140,15 @@ class UnifiedServerManager:
                 return cast(FrequencyService, self.app.state.frequency_service)
 
             self.mcp = self._create_mcp_server(service_factory)
-            mcp_http_app = self.mcp.http_app(path="/", stateless_http=True, json_response=True)
+            # Bake the MCP path into the ASGI sub-app and mount it at the host
+            # root so `POST /mcp` is served directly (no 307 redirect from a
+            # trailing-slash mount). FastAPI's own routes (/health, /api/...)
+            # are registered before this mount and therefore take precedence.
+            mcp_http_app = self.mcp.http_app(
+                path=config.mcp_path, stateless_http=True, json_response=True
+            )
             self._compose_lifespan(self.app, mcp_http_app)
-            self.app.mount(config.mcp_path, mcp_http_app)
+            self.app.mount("/", mcp_http_app)
 
             self.logger.info(f"MCP HTTP at http://{config.host}:{config.port}{config.mcp_path}")
             self.logger.info(f"Health at http://{config.host}:{config.port}/health")
