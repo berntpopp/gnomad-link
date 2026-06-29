@@ -46,7 +46,7 @@ def test_npm_overlay_uses_external_proxy_network_without_host_ports() -> None:
     assert "ports: !reset []" in NPM
     assert "npm-network:" in NPM
     assert "external: true" in NPM
-    assert "${NPM_NETWORK_NAME:-npm_network}" in NPM
+    assert "${NPM_NETWORK_NAME:-npm_default}" in NPM
 
 
 def test_docker_env_template_matches_compose_contract() -> None:
@@ -54,4 +54,4 @@ def test_docker_env_template_matches_compose_contract() -> None:
     assert "MCP_TRANSPORT=unified" in DOCKER_ENV
     assert "MCP_HOST=0.0.0.0" in DOCKER_ENV
     assert "MCP_PATH=/mcp" in DOCKER_ENV
-    assert "NPM_NETWORK_NAME=npm_network" in DOCKER_ENV
+    assert "NPM_NETWORK_NAME=npm_default" in DOCKER_ENV
