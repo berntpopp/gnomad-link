@@ -1,6 +1,6 @@
 """gnomAD MCP Server - Unified server for gnomAD data access."""
 
-__version__ = "6.0.0"
+__version__ = "6.0.1"
 __author__ = "gnomAD MCP Team"
 
 from .api import DataNotFoundError, GnomadApiError, UnifiedGnomadClient
