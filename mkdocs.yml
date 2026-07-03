@@ -1,0 +1,32 @@
+site_name: gnomAD-Link
+site_description: MCP server bridging the gnomAD database to AI applications.
+repo_url: https://github.com/berntpopp/gnomad-link
+docs_dir: docs
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - content.code.copy
+    - search.suggest
+
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+
+nav:
+  - Home: index.md
+  - Usage: usage.md
+  - Architecture: architecture.md
+  - MCP connection: MCP_CONNECTION_GUIDE.md
+  - Development: development.md
+  - API reference: api-reference.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences
+
+# Research use only; not for clinical decision support, diagnosis, treatment,
+# or patient management.
