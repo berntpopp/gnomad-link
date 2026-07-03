@@ -6,6 +6,7 @@ from collections.abc import Callable
 
 from fastmcp import FastMCP
 
+from gnomad_link import __version__
 from gnomad_link.mcp.errors import install_validation_error_handler
 from gnomad_link.mcp.output_validation import install_output_validation_error_handler
 from gnomad_link.mcp.prompts import register_workflow_prompts
@@ -52,6 +53,7 @@ def create_gnomad_mcp(
 
     mcp = FastMCP(
         name="gnomad-link",
+        version=__version__,
         instructions=_INSTRUCTIONS,
         mask_error_details=True,
     )

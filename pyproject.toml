@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "gnomad-link"
-dynamic = ["version"]
+version = "6.0.2"
 description = "A unified server providing REST API and MCP interfaces for gnomAD allele frequency data."
 readme = "README.md"
 authors = [{ name = "Bernt Popp" }]
@@ -67,12 +67,10 @@ Homepage = "https://github.com/berntpopp/gnomad-link"
 Repository = "https://github.com/berntpopp/gnomad-link"
 Issues = "https://github.com/berntpopp/gnomad-link/issues"
 
-# Single source of truth for the version: gnomad_link/__init__.py (__version__).
-# Keep this in sync with the git release tag; .github/workflows/release.yml
+# Single source of truth for the version: [project].version above.
+# gnomad_link.__version__ is derived from the installed metadata; keep
+# [project].version in sync with the git release tag — .github/workflows/release.yml
 # fails the release if the tag and this version diverge.
-[tool.hatch.version]
-path = "gnomad_link/__init__.py"
-
 [tool.hatch.build.targets.wheel]
 packages = ["gnomad_link"]
 
