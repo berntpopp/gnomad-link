@@ -2,6 +2,22 @@
 
 All notable changes to gnomad-link are documented here.
 
+## [6.0.2] - 2026-07-03
+
+Advertise the gnomAD Link **package version** in the MCP `initialize`
+handshake, and standardize version single-sourcing. The `FastMCP(...)`
+constructor was built without a `version=` argument, so `serverInfo.version`
+reported the FastMCP framework version (e.g. `3.4.2`) instead of the real
+package version. The facade now passes `version=__version__`, so
+`serverInfo.version` matches `/health` and the installed distribution metadata.
+
+The version is now single-sourced from `pyproject.toml` (`[project].version`):
+`gnomad_link.__version__` is derived from the installed distribution metadata
+via `importlib.metadata.version("gnomad-link")` (previously a hardcoded literal
+in `gnomad_link/__init__.py` with hatch reading it back as a dynamic version).
+Future bumps only edit `pyproject.toml`. A regression test locks the contract
+(pyproject -> metadata -> `__version__` -> `serverInfo.version`).
+
 ## [6.0.1] - 2026-06-29
 
 Adopt the **GeneFoundry Container & Deployment Hardening Standard v1** (closes #19):

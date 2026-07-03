@@ -1,6 +1,12 @@
 """gnomAD MCP Server - Unified server for gnomAD data access."""
 
-__version__ = "6.0.1"
+from importlib.metadata import PackageNotFoundError, version
+
+try:
+    __version__ = version("gnomad-link")
+except PackageNotFoundError:  # pragma: no cover - source checkout without install
+    __version__ = "0.0.0"
+
 __author__ = "gnomAD MCP Team"
 
 from .api import DataNotFoundError, GnomadApiError, UnifiedGnomadClient
@@ -17,6 +23,8 @@ from .models import (
 from .services import FrequencyService
 
 __all__ = [
+    # Version
+    "__version__",
     # Models
     "PopulationFrequency",
     "VariantDataSource",
