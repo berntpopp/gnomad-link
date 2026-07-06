@@ -50,19 +50,23 @@ def actionable_output_validation_error(
             **_provenance_meta(),
         },
     }
+    # Record only non-PII fields into the caller-facing rings (finding M4): the
+    # raw SDK `message` can embed the upstream payload / caller input, and
+    # get_diagnostics returns these rings to any caller. `exc_type` is a constant
+    # for this boundary (the SDK raises no distinct exception class here).
     record_mcp_error(
         tool_name=tool_name,
         error_code="output_validation_failed",
-        message=payload["message"],
-        raw_message=message,
+        exc_type="OutputSchemaValidationError",
     )
     # Also surface the event on the dedicated schema-drift ring so an LLM
     # hitting the output_validation_failed envelope can call
-    # get_diagnostics and inspect which fields/tools are drifting.
+    # get_diagnostics and inspect which fields/tools are drifting. Only the
+    # parsed `error_field` (a property name from our own output schema) crosses
+    # the boundary -- never the raw message.
     record_schema_drift(
         tool_name=tool_name,
         error_field=error_field,
-        message=message,
     )
     return payload
 

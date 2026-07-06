@@ -379,8 +379,7 @@ def install_validation_error_handler(mcp_server: Any) -> None:
                 record_mcp_error(
                     tool_name=str(getattr(_tool, "name", "unknown")),
                     error_code="validation_failed",
-                    message=envelope["message"],
-                    raw_message=str(exc),
+                    exc_type=type(exc).__name__,
                 )
                 convert_result = getattr(_tool, "convert_result", None)
                 if callable(convert_result):
@@ -419,13 +418,21 @@ def mcp_tool_error(exc: BaseException, context: McpErrorContext) -> McpToolError
     return McpToolError(payload)
 
 
-def record_mcp_error(*, tool_name: str, error_code: str, message: str, raw_message: str) -> None:
+def record_mcp_error(*, tool_name: str, error_code: str, exc_type: str) -> None:
+    """Append a non-PII error record to the process-global ring (finding M4).
+
+    The ring is returned verbatim by ``get_diagnostics`` to any caller, so it must
+    NOT retain raw exception text (``message`` / ``raw_message``): a not_found or
+    upstream error embeds the caller's processed variables (variant coordinates,
+    rejected input) and would leak cross-session. Only the tool name, classified
+    error code, and exception CLASS name are non-identifying; the raw text still
+    reaches operators via the structured log line, not the caller-facing ring.
+    """
     _RECENT_ERRORS.append(
         {
             "tool_name": tool_name,
             "error_code": error_code,
-            "message": message,
-            "raw_message": raw_message[:500],
+            "exc_type": exc_type,
         }
     )
 
@@ -438,20 +445,25 @@ def clear_recent_errors() -> None:
     _RECENT_ERRORS.clear()
 
 
-def record_schema_drift(*, tool_name: str, error_field: str | None, message: str) -> None:
-    """Append an output-schema-drift event to the bounded ring.
+def record_schema_drift(*, tool_name: str, error_field: str | None) -> None:
+    """Append a non-PII output-schema-drift event to the bounded ring.
 
     Separate from record_mcp_error so an LLM (via get_diagnostics) can
     distinguish business errors (not_found, upstream_unavailable,
     validation_failed) from infrastructure events (the upstream payload no
     longer matches our declared output_schema, which usually means we need to
     widen a model).
+
+    The raw SDK validation ``message`` is deliberately NOT stored (finding M4):
+    get_diagnostics returns this ring to any caller, and the raw text can embed
+    the upstream payload / caller input. Only the tool name and the parsed
+    ``error_field`` (a property name from OUR declared output schema, never
+    caller input) are non-identifying.
     """
     _RECENT_SCHEMA_DRIFT.append(
         {
             "tool_name": tool_name,
             "error_field": error_field,
-            "message": message[:300],
         }
     )
 
@@ -493,8 +505,7 @@ async def run_mcp_tool(
         record_mcp_error(
             tool_name=tool_name,
             error_code=exc.payload.get("error_code", "internal_error"),
-            message=exc.payload.get("message", ""),
-            raw_message=str(exc),
+            exc_type=type(exc).__name__,
         )
         return exc.payload
     except Exception as exc:  # broad catch is the error-boundary contract
@@ -508,7 +519,6 @@ async def run_mcp_tool(
         record_mcp_error(
             tool_name=tool_name,
             error_code=wrapped.payload["error_code"],
-            message=wrapped.payload["message"],
-            raw_message=str(exc),
+            exc_type=type(exc).__name__,
         )
         return wrapped.payload

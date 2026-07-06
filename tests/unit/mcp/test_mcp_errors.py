@@ -143,16 +143,17 @@ async def test_run_mcp_tool_passes_through_success_payload() -> None:
 def test_recent_error_ring_is_bounded() -> None:
     from gnomad_link.mcp.errors import RECENT_MCP_ERROR_LIMIT, get_recent_errors, record_mcp_error
 
-    for i in range(RECENT_MCP_ERROR_LIMIT + 10):
+    for _ in range(RECENT_MCP_ERROR_LIMIT + 10):
         record_mcp_error(
             tool_name="get_variant_frequencies",
             error_code="internal_error",
-            message=f"err {i}",
-            raw_message=f"err {i}",
+            exc_type="ValueError",
         )
 
     history = get_recent_errors()
     assert len(history) == RECENT_MCP_ERROR_LIMIT
+    # The ring must carry only non-PII fields (finding M4): no raw error text.
+    assert set(history[0]) == {"tool_name", "error_code", "exc_type"}
 
 
 def test_mcp_tool_error_has_structured_next_commands() -> None:
