@@ -2,6 +2,25 @@
 
 All notable changes to gnomad-link are documented here.
 
+## [6.0.3] - 2026-07-07
+
+Security remediation (fleet audit 2026-07-06).
+
+- **No PII in the caller-facing diagnostics rings (finding M4).** `get_diagnostics`
+  returns two process-global rings to any caller, so one caller's variant
+  coordinates / rejected input could leak cross-session. The error and
+  schema-drift recorders no longer retain raw exception text (`message` /
+  `raw_message`) or raw upstream drift text; each record reduces to non-PII
+  fields only (`tool_name` + `error_code` + `exc_type`; `tool_name` +
+  `error_field`). A regression test asserts a sentinel never survives into the
+  diagnostics output.
+- **Loopback-bind the base compose host port.** The base
+  `docker/docker-compose.yml` now publishes on `127.0.0.1` so copying it to a
+  server never exposes the unauthenticated backend on the public IP (Docker
+  otherwise binds `0.0.0.0` and bypasses the host firewall). Production still
+  fronts the container via the reverse-proxy overlays (`ports: !reset []`). A
+  guard test enforces the loopback bind.
+
 ## [6.0.2] - 2026-07-03
 
 Advertise the gnomAD Link **package version** in the MCP `initialize`
