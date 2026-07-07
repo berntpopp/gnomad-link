@@ -42,7 +42,7 @@ def test_base_compose_binds_published_ports_to_loopback() -> None:
         )
         assert mapping.startswith("127.0.0.1:"), (
             f"{name} publishes {mapping!r} on all interfaces; bind the "
-            "unauthenticated backend to loopback (127.0.0.1) — Docker otherwise "
+            "unauthenticated backend to loopback (127.0.0.1) - Docker otherwise "
             "binds 0.0.0.0 and bypasses the host firewall. Production reaches it "
             "only via the router/reverse proxy."
         )
