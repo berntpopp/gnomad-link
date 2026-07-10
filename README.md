@@ -79,6 +79,8 @@ MCP_TRANSPORT=unified
 MCP_HOST=127.0.0.1
 MCP_PORT=8000
 MCP_PATH=/mcp
+MCP_ALLOWED_HOSTS='["localhost","127.0.0.1","::1"]'
+MCP_ALLOWED_ORIGINS='[]'
 
 GNOMAD_API_URL=https://gnomad.broadinstitute.org/api
 CACHE_SIZE=1024

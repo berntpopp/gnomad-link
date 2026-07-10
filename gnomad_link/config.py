@@ -1,6 +1,6 @@
 """Configuration settings for the gnomAD unified server."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal
 
 from pydantic import field_validator
@@ -15,6 +15,8 @@ class ServerConfig:
     host: str = "127.0.0.1"
     port: int = 8000
     mcp_path: str = "/mcp"
+    allowed_hosts: list[str] = field(default_factory=lambda: ["localhost", "127.0.0.1", "::1"])
+    allowed_origins: list[str] = field(default_factory=list)
     enable_docs: bool = True
     log_level: str = "INFO"
 
@@ -26,6 +28,8 @@ class ServerConfig:
             host=settings.MCP_HOST,
             port=settings.MCP_PORT,
             mcp_path=settings.MCP_PATH,
+            allowed_hosts=settings.MCP_ALLOWED_HOSTS,
+            allowed_origins=settings.MCP_ALLOWED_ORIGINS,
             enable_docs=settings.ENABLE_SWAGGER,
             log_level=settings.LOG_LEVEL,
         )
@@ -59,6 +63,8 @@ class Settings(BaseSettings):
     MCP_HOST: str = "127.0.0.1"
     MCP_PORT: int = 8000
     MCP_PATH: str = "/mcp"
+    MCP_ALLOWED_HOSTS: list[str] = ["localhost", "127.0.0.1", "::1"]
+    MCP_ALLOWED_ORIGINS: list[str] = []
 
     # Logging Configuration
     LOG_LEVEL: str = "INFO"
@@ -92,6 +98,14 @@ class Settings(BaseSettings):
         """Ensure MCP path starts with /."""
         if not v.startswith("/"):
             return f"/{v}"
+        return v
+
+    @field_validator("MCP_ALLOWED_HOSTS")
+    @classmethod
+    def reject_wildcard_hosts(cls, v: list[str]) -> list[str]:
+        """Production Host allowlists must contain exact values, never globs."""
+        if any(any(marker in host for marker in "*?[]") for host in v):
+            raise ValueError("wildcard patterns are not allowed in MCP_ALLOWED_HOSTS")
         return v
 
     @property
