@@ -1,9 +1,37 @@
 from __future__ import annotations
 
 import json
+from types import SimpleNamespace
 
 import pytest
 from pydantic import BaseModel, ValidationError
+
+
+@pytest.mark.parametrize("cause", [None, RuntimeError("unrelated")])
+@pytest.mark.asyncio
+async def test_validation_handler_propagates_non_pydantic_fastmcp_errors(
+    cause: BaseException | None,
+) -> None:
+    from fastmcp.exceptions import ValidationError as FastMCPValidationError
+
+    from gnomad_link.mcp.errors import install_validation_error_handler
+
+    class FakeTool:
+        name = "fake_tool"
+
+        async def run(self, arguments: dict[str, object]) -> object:
+            error = FastMCPValidationError("framework validation failed")
+            if cause is not None:
+                raise error from cause
+            raise error
+
+    tool = FakeTool()
+    server = SimpleNamespace(_local_provider=SimpleNamespace(_components={"fake": tool}))
+    install_validation_error_handler(server)
+    assert getattr(tool, "_gnomad_validation_wrapped", False) is True
+
+    with pytest.raises(FastMCPValidationError, match="framework validation failed"):
+        await tool.run({})
 
 
 def test_mcp_tool_error_envelope_contains_required_fields() -> None:
@@ -186,6 +214,32 @@ def _make_pydantic_validation_error() -> ValidationError:
     except ValidationError as exc:
         return exc
     raise AssertionError("Expected ValidationError was not raised")  # pragma: no cover
+
+
+@pytest.mark.asyncio
+async def test_validation_handler_unwraps_pydantic_fastmcp_cause() -> None:
+    from fastmcp.exceptions import ValidationError as FastMCPValidationError
+
+    from gnomad_link.mcp.errors import install_validation_error_handler
+
+    class FakeTool:
+        name = "fake_tool"
+
+        async def run(self, arguments: dict[str, object]) -> object:
+            try:
+                raise _make_pydantic_validation_error()
+            except ValidationError as cause:
+                raise FastMCPValidationError("invalid arguments") from cause
+
+    tool = FakeTool()
+    server = SimpleNamespace(_local_provider=SimpleNamespace(_components={"fake": tool}))
+    install_validation_error_handler(server)
+    assert getattr(tool, "_gnomad_validation_wrapped", False) is True
+
+    result = await tool.run({})
+    assert isinstance(result, dict)
+    assert result["error_code"] == "validation_failed"
+    assert result["field_errors"]
 
 
 def test_validation_handler_emits_field_errors() -> None:

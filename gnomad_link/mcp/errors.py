@@ -14,6 +14,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import Any
 
+from fastmcp.exceptions import ValidationError as FastMCPValidationError
 from pydantic import ValidationError as PydanticValidationError
 
 from gnomad_link.api import (
@@ -340,6 +341,21 @@ def mcp_validation_tool_error(
     return McpToolError(payload)
 
 
+def _validation_result(tool: Any, exc: PydanticValidationError) -> Any:
+    """Convert a tool argument failure to the public validation envelope."""
+    tool_name = str(getattr(tool, "name", "unknown"))
+    envelope = mcp_validation_tool_error(tool_name=tool_name, exc=exc).payload
+    record_mcp_error(
+        tool_name=tool_name,
+        error_code="validation_failed",
+        exc_type=type(exc).__name__,
+    )
+    convert_result = getattr(tool, "convert_result", None)
+    if callable(convert_result):
+        return convert_result(envelope)
+    return envelope
+
+
 def install_validation_error_handler(mcp_server: Any) -> None:
     """Wrap registered tools so FastMCP argument validation returns our envelope.
 
@@ -371,20 +387,15 @@ def install_validation_error_handler(mcp_server: Any) -> None:
         ) -> Any:
             try:
                 return await _original_run(arguments)
+            except FastMCPValidationError as exc:
+                # FastMCP 3.4.4 wraps pre-body TypeAdapter argument failures this
+                # way; Pydantic errors raised by the tool body use _ToolBodyError.
+                cause = exc.__cause__
+                if not isinstance(cause, PydanticValidationError):
+                    raise
+                return _validation_result(_tool, cause)
             except PydanticValidationError as exc:
-                envelope = mcp_validation_tool_error(
-                    tool_name=str(getattr(_tool, "name", "unknown")),
-                    exc=exc,
-                ).payload
-                record_mcp_error(
-                    tool_name=str(getattr(_tool, "name", "unknown")),
-                    error_code="validation_failed",
-                    exc_type=type(exc).__name__,
-                )
-                convert_result = getattr(_tool, "convert_result", None)
-                if callable(convert_result):
-                    return convert_result(envelope)
-                return envelope
+                return _validation_result(_tool, exc)
 
         object.__setattr__(tool, "run", wrapped_run)
         object.__setattr__(tool, "_gnomad_validation_wrapped", True)
