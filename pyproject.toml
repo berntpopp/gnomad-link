@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "gnomad-link"
-version = "6.0.3"
+version = "6.0.4"
 description = "A unified server providing REST API and MCP interfaces for gnomAD allele frequency data."
 readme = "README.md"
 authors = [{ name = "Bernt Popp" }]

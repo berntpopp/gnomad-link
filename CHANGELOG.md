@@ -2,6 +2,20 @@
 
 All notable changes to gnomad-link are documented here.
 
+## [6.0.4] - 2026-07-10
+
+### Fixed
+
+- Preserve sanitized `validation_failed` MCP envelopes with FastMCP 3.4.4 by unwrapping only
+  framework validation errors caused by pre-body Pydantic argument validation. Framework errors
+  without that cause continue to propagate and are not mislabeled as caller input failures.
+
+### Build
+
+- Upgrade FastAPI to 0.139.0, Uvicorn to 0.51.0, FastMCP to 3.4.4, Ruff to 0.15.21,
+  mypy to 2.2.0, mkdocstrings to 1.0.5, and `astral-sh/setup-uv` to the immutable v8.3.2
+  commit. Dependency PR #32 supersedes the automatically closed #29.
+
 ## [6.0.3] - 2026-07-07
 
 Security remediation (fleet audit 2026-07-06).
