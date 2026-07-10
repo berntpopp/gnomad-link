@@ -2,6 +2,23 @@
 
 All notable changes to gnomad-link are documented here.
 
+## [7.0.0] - 2026-07-10
+
+### Security
+
+- Replace the disabled FastMCP Host/Origin protection with strict validation on
+  the outer ASGI application and the native MCP transport. Untrusted Host values
+  are rejected on health and MCP routes; browser Origin values must be
+  same-origin or explicitly approved.
+- Reject wildcard Host patterns and declare the production proxy hostname and
+  loopback health-check Host explicitly in the supplied Compose profiles.
+
+### Changed (BREAKING)
+
+- Custom reverse-proxy deployments must add their exact public hostname to
+  `MCP_ALLOWED_HOSTS`. JSON lists are accepted; the safe default permits only
+  localhost and loopback addresses.
+
 ## [6.0.4] - 2026-07-10
 
 ### Fixed
