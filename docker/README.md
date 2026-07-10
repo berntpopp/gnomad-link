@@ -63,6 +63,9 @@ Notable variables:
 - `GNOMAD_LINK_HOST_PORT` - host port for the base Compose stack, default `8020`.
 - `MCP_PORT` - internal application port, default `8000`.
 - `MCP_PATH` - hosted MCP path, default `/mcp`.
+- `MCP_ALLOWED_HOSTS` - JSON list of exact request Host values; production must include
+  `gnomad-link.genefoundry.org`.
+- `MCP_ALLOWED_ORIGINS` - JSON list of browser origins accepted by the request guard.
 - `CORS_ORIGINS` - comma-separated allowed origins or `*`.
 - `CACHE_SIZE` and `CACHE_TTL_MINUTES` - in-memory cache controls.
 - `NPM_NETWORK_NAME` - external Docker network used by Nginx Proxy Manager.
