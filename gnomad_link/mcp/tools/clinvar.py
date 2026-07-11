@@ -12,7 +12,7 @@ from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.clinvar_fencing import MCPClinVarVariant, fence_clinvar_variant
 from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
 from gnomad_link.mcp.schema_relax import relax_output_schema
-from gnomad_link.mcp.shaping import shape_clinvar_submissions, summarize_clinvar_submissions
+from gnomad_link.mcp.shaping import summarize_clinvar_submissions
 from gnomad_link.services import FrequencyService
 
 # ClinVar is keyed on CHROM-POS-REF-ALT (autosomes, X, Y, and M/MT). The old
@@ -57,16 +57,21 @@ def register_clinvar_tools(
         async def call() -> dict[str, Any]:
             service = service_factory()
             result = await service.get_clinvar_variant(variant_id, reference_genome)
-            # v1.1 untrusted-content fencing: conditions[*].name and
-            # submitter_name are ClinVar submitter-authored free text,
-            # surfaced verbatim -- fence_clinvar_variant types both as
-            # `untrusted_text` before anything downstream touches them.
-            payload = fence_clinvar_variant(result)
             # Summary is computed from the FULL submissions list BEFORE truncation
-            # so the aggregate is accurate even when the response is capped.
-            all_submissions = payload.get("submissions") or []
-            payload["summary"] = summarize_clinvar_submissions(all_submissions)
-            payload = shape_clinvar_submissions(payload, submissions_limit=submissions_limit)
+            # so the aggregate is accurate even when the response is capped. It
+            # reads only clinical_significance (never a fenced field), so it runs
+            # on the raw model dump, not the fenced payload.
+            all_submissions = [s.model_dump() for s in result.submissions]
+            summary = summarize_clinvar_submissions(all_submissions)
+            # v1.1 untrusted-content fencing: conditions[*].name and
+            # submitter_name are ClinVar submitter-authored free text, surfaced
+            # verbatim. fence_clinvar_variant types both as `untrusted_text`,
+            # truncates to submissions_limit, and enforces the v1.1 object/byte
+            # ceilings over the EMITTED (capped) submissions only -- so a large
+            # upstream record never trips the ceiling when the response it
+            # actually returns is small.
+            payload = fence_clinvar_variant(result, submissions_limit=submissions_limit)
+            payload["summary"] = summary
             # Suggest pairing with frequency data using the same variant_id.
             existing_meta: dict[str, Any] = payload.get("_meta") or {}
             existing_next: list[Any] = existing_meta.get("next_commands", [])

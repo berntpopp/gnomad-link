@@ -445,20 +445,39 @@ def summarize_clinvar_submissions(submissions: list[dict[str, Any]]) -> dict[str
     }
 
 
+def build_submissions_truncation_block(
+    total: int, *, submissions_limit: int
+) -> dict[str, Any] | None:
+    """Build the self-describing truncated block for a capped submissions list.
+
+    Single source of truth for the block shape, shared by
+    ``shape_clinvar_submissions`` (dict-level truncation) and
+    ``gnomad_link.mcp.clinvar_fencing.fence_clinvar_variant`` (which truncates
+    at the model level before fencing). Returns ``None`` when nothing was
+    dropped (``total <= submissions_limit``).
+    """
+    if total <= submissions_limit:
+        return None
+    return {
+        "kind": "submissions",
+        "dropped": total - submissions_limit,
+        "filter": {"submissions_limit": submissions_limit},
+        "to_disable": "raise submissions_limit (max 200)",
+        "to_restore": f"submissions_limit={min(total, 200)}",
+    }
+
+
 def shape_clinvar_submissions(payload: dict[str, Any], *, submissions_limit: int) -> dict[str, Any]:
     """Cap submissions[] and emit truncated metadata. Returns a copy of payload."""
     submissions = payload.get("submissions") or []
-    if len(submissions) <= submissions_limit:
+    block = build_submissions_truncation_block(
+        len(submissions), submissions_limit=submissions_limit
+    )
+    if block is None:
         return payload
     capped = dict(payload)
     capped["submissions"] = submissions[:submissions_limit]
-    capped["truncated"] = {
-        "kind": "submissions",
-        "dropped": len(submissions) - submissions_limit,
-        "filter": {"submissions_limit": submissions_limit},
-        "to_disable": "raise submissions_limit (max 200)",
-        "to_restore": f"submissions_limit={min(len(submissions), 200)}",
-    }
+    capped["truncated"] = block
     return capped
 
 

@@ -22,6 +22,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from gnomad_link.mcp.shaping import build_submissions_truncation_block
 from gnomad_link.mcp.untrusted_content import (
     UntrustedText,
     enforce_untrusted_text_limits,
@@ -85,19 +86,24 @@ class MCPClinVarVariant(BaseModel):
     )
 
 
-def fence_clinvar_variant(variant: ClinVarVariant) -> dict[str, Any]:
+def fence_clinvar_variant(variant: ClinVarVariant, *, submissions_limit: int) -> dict[str, Any]:
     """Return `variant`'s MCP payload with condition names/submitter names fenced.
 
-    Every submission's `conditions[].name` and `submitter_name` are fenced --
-    not just the (possibly truncated) slice the tool ultimately returns -- so
-    each `record_id` stays keyed to the full upstream submission/condition
-    index, independent of the caller's `submissions_limit`. Truncation for
-    return happens afterward, at the dict level, in
-    `gnomad_link.mcp.shaping.shape_clinvar_submissions`.
+    Fencing and limit enforcement run over the EMITTED submissions only -- the
+    first `submissions_limit` (truncation is always head-of-list), which is
+    exactly the set the response returns. Enforcing over the full upstream set
+    would raise on a large ClinVar record even when the capped response it
+    actually emits is small; the v1.1 ceilings must bound the emitted payload,
+    not the upstream fetch. `record_id` keys off the emitted index (0..N-1),
+    which equals the upstream index for the retained head slice. The truncated
+    block is built from the shared `build_submissions_truncation_block` helper
+    so its shape stays identical to `shape_clinvar_submissions`.
     """
+    total = len(variant.submissions)
+    emitted = variant.submissions[:submissions_limit]
     fenced_objects: list[UntrustedText] = []
     fenced_submissions: list[MCPClinVarSubmission] = []
-    for i, submission in enumerate(variant.submissions):
+    for i, submission in enumerate(emitted):
         fenced_conditions: list[MCPClinVarCondition] = []
         for j, condition in enumerate(submission.conditions):
             fenced_name = fence_untrusted_text(
@@ -131,4 +137,8 @@ def fence_clinvar_variant(variant: ClinVarVariant) -> dict[str, Any]:
         **variant.model_dump(exclude={"submissions"}),
         submissions=fenced_submissions,
     )
-    return fenced_variant.model_dump(mode="json")
+    payload = fenced_variant.model_dump(mode="json")
+    block = build_submissions_truncation_block(total, submissions_limit=submissions_limit)
+    if block is not None:
+        payload["truncated"] = block
+    return payload

@@ -26,6 +26,7 @@ from gnomad_link.api import (
 from gnomad_link.config import settings
 from gnomad_link.mcp.clinvar_date_cache import get_cached_clinvar_release_date
 from gnomad_link.mcp.resources import GNOMAD_DATA_RELEASE
+from gnomad_link.mcp.untrusted_content import UntrustedTextLimitError
 
 logger = logging.getLogger(__name__)
 
@@ -200,6 +201,13 @@ def _classify(
         return "invalid_input", False, tool, args
     if isinstance(exc, RateLimitedError):
         return "rate_limited", True, "get_diagnostics", {}
+    # UntrustedTextLimitError subclasses ValueError, so it MUST be checked before
+    # the generic ValueError branch or a fenced-response ceiling breach would be
+    # mislabeled as caller input validation. It is a response-side limit
+    # (Response-Envelope v1.1 object/byte ceiling), not bad caller input: the
+    # caller recovers by shrinking the response (e.g. a smaller submissions_limit).
+    if isinstance(exc, UntrustedTextLimitError):
+        return "response_limit_exceeded", False, None, None
     if isinstance(exc, ValueError):
         return "validation_failed", False, "get_server_capabilities", None
     if isinstance(exc, GnomadApiError):
@@ -217,7 +225,7 @@ def _recovery_action(error_code: str, retryable: bool) -> str:
     """
     if retryable:
         return "retry_backoff"
-    if error_code in {"invalid_input", "validation_failed"}:
+    if error_code in {"invalid_input", "validation_failed", "response_limit_exceeded"}:
         return "reformulate_input"
     return "switch_tool"
 
@@ -263,6 +271,13 @@ def _recovery_text(error_code: str, fallback_tool: str | None, tool_name: str | 
         return (
             "Inputs failed validation. Check the tool schema and call "
             "get_server_capabilities for accepted dataset and population codes."
+        )
+    if error_code == "response_limit_exceeded":
+        return (
+            "The response's fenced untrusted-text objects exceeded a Response-Envelope "
+            "v1.1 ceiling (object count or total bytes). This is a reformulate, not a "
+            "retry: request fewer records (e.g. a smaller submissions_limit) so the "
+            "emitted payload stays under the limit."
         )
     if error_code == "build_mismatch":
         return (

@@ -17,7 +17,18 @@ All notable changes to gnomad-link are documented here.
   treat retrieved ClinVar prose as data, never instructions. This is a
   breaking reshape (not an additive dual-field); callers reading either field
   as a plain string must update to read `.text`. Frequency/constraint output
-  elsewhere in this server is numeric and unaffected.
+  elsewhere in this server is numeric and unaffected. The v1.1 object/byte
+  ceilings are enforced over the EMITTED (post-`submissions_limit`) submissions
+  only, so a large upstream ClinVar record never trips the limit when the
+  capped response it returns is small.
+
+### Added
+
+- New error envelope `error_code: "response_limit_exceeded"`
+  (`recovery_action: "reformulate_input"`, non-retryable) returned when a
+  fenced response would exceed a Response-Envelope v1.1 object-count/byte
+  ceiling. Distinct from `validation_failed` (caller input) and
+  `internal_error`; recover by requesting fewer records.
 
 ## [7.0.0] - 2026-07-10
 
