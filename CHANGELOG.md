@@ -2,6 +2,15 @@
 
 All notable changes to gnomad-link are documented here.
 
+## [8.0.1] - 2026-07-11
+
+### Security (defense in depth)
+
+- Caller-visible error messages are sanitized of control/zero-width/bidi/NUL
+  code points; the upstream gnomAD GraphQL error text (including
+  transport-exception bodies) is no longer echoed into MCP messages; the gql
+  transport DEBUG body-logging is pinned off. Research use only.
+
 ## [8.0.0] - 2026-07-11
 
 ### Changed (BREAKING)
