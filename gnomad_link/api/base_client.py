@@ -255,16 +255,34 @@ class BaseGnomadClient:
             return await self._execute_with_retry(query_doc, variables)
         except TransportQueryError as e:
             if e.errors:
-                error_msg = "; ".join([err.get("message", str(err)) for err in e.errors])
-                lowered = error_msg.lower()
+                # The upstream ``errors[].message`` values are inspected ONLY to
+                # classify the fault; their TEXT is NEVER interpolated into the
+                # caller-visible exception. A caller-influenced query can make
+                # gnomAD reflect hostile prose and control/zero-width/bidi/NUL
+                # code points into ``errors[].message``, so echoing that body
+                # would smuggle attacker-controlled text into a caller-visible
+                # error message. Fixed, body-free messages are raised instead
+                # (the error COUNT is a bounded, non-attacker-controlled scalar);
+                # the raw upstream text is deliberately neither surfaced nor
+                # logged, preserving the no-PII-in-logs invariant.
+                count = len(e.errors)
+                messages = [str(err.get("message", "")).lower() for err in e.errors]
                 # "not found" -> absent entity; deterministic validation phrasing ->
                 # non-retryable input fault; everything else -> genuine server fault.
-                if any("not found" in err.get("message", "").lower() for err in e.errors):
-                    raise DataNotFoundError(error_msg) from e
-                if any(signal in lowered for signal in _INPUT_ERROR_SIGNALS):
-                    raise UpstreamInputError(error_msg) from e
-                raise GnomadApiError(f"GraphQL error: {error_msg}") from e
-            raise GnomadApiError(f"Query error: {e!s}") from e
+                if any("not found" in msg for msg in messages):
+                    raise DataNotFoundError(
+                        f"The gnomAD GraphQL API reported the record as not found "
+                        f"({count} error(s))."
+                    ) from e
+                if any(signal in msg for msg in messages for signal in _INPUT_ERROR_SIGNALS):
+                    raise UpstreamInputError(
+                        f"The gnomAD GraphQL API rejected the request as invalid "
+                        f"({count} error(s))."
+                    ) from e
+                raise GnomadApiError(
+                    f"The gnomAD GraphQL API returned an error ({count} error(s))."
+                ) from e
+            raise GnomadApiError("The gnomAD GraphQL API returned a query error.") from e
         except TransportServerError as e:
             # A 429 that survived the retry layer is a persistent rate limit.
             if e.code == 429:

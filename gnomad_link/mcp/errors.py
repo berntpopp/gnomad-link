@@ -26,7 +26,7 @@ from gnomad_link.api import (
 from gnomad_link.config import settings
 from gnomad_link.mcp.clinvar_date_cache import get_cached_clinvar_release_date
 from gnomad_link.mcp.resources import GNOMAD_DATA_RELEASE
-from gnomad_link.mcp.untrusted_content import UntrustedTextLimitError
+from gnomad_link.mcp.untrusted_content import UntrustedTextLimitError, sanitize_message
 
 logger = logging.getLogger(__name__)
 
@@ -133,8 +133,13 @@ def _provenance_meta(context: McpErrorContext | None = None) -> dict[str, Any]:
 
 def _safe_message(exc: BaseException) -> str:
     text = str(exc) or exc.__class__.__name__
-    # gnomAD errors are user-input shaped; trim long tracebacks/identifiers.
-    return text[:240]
+    # Strip the fence's forbidden control/zero-width/bidi/NUL code points and cap
+    # length (240): a caller-visible message must never carry code points a
+    # hostile upstream (or a caller-influenced 4xx/5xx body) could smuggle in.
+    # Upstream response bodies are additionally severed at the GraphQL client, so
+    # this closes the residual code-point surface for every message path that
+    # returns a raw exception string.
+    return sanitize_message(text)
 
 
 def _fallback_for(context: McpErrorContext) -> tuple[str, dict[str, Any] | None]:
@@ -324,7 +329,10 @@ def _extract_field_errors(errors: list[Any]) -> list[dict[str, str]]:
         loc = err.get("loc", ())
         field_name = ".".join(str(x) for x in loc) if loc else "unknown"
         reason = err.get("msg", str(err.get("type", "invalid")))
-        result.append({"field": field_name, "reason": reason})
+        # A pydantic ``msg`` is framework-authored, but a custom "Value error, ..."
+        # can embed developer/validator text; sanitize the caller-visible reason
+        # so no forbidden code point can reach the arg-validation frame.
+        result.append({"field": field_name, "reason": sanitize_message(reason)})
     return result
 
 
