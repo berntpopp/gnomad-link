@@ -2,6 +2,23 @@
 
 All notable changes to gnomad-link are documented here.
 
+## [8.0.0] - 2026-07-11
+
+### Changed (BREAKING)
+
+- **ClinVar submitter/condition prose is now fenced as a Response-Envelope
+  Standard v1.1 `untrusted_text` typed object.** `get_clinvar_variant_details`
+  surfaces two ClinVar submitter-authored free-text fields verbatim through
+  gnomAD's `clinvar_variant` GraphQL passthrough:
+  `submissions[*].conditions[*].name` and `submissions[*].submitter_name`.
+  Both fields changed from a bare JSON string to
+  `{kind: "untrusted_text", text, provenance: {source, record_id,
+  retrieved_at}, raw_sha256}` -- defense in depth so the router and any host
+  treat retrieved ClinVar prose as data, never instructions. This is a
+  breaking reshape (not an additive dual-field); callers reading either field
+  as a plain string must update to read `.text`. Frequency/constraint output
+  elsewhere in this server is numeric and unaffected.
+
 ## [7.0.0] - 2026-07-10
 
 ### Security
