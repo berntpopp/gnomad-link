@@ -223,11 +223,17 @@ class BaseGnomadClient:
             return result
 
         except FileNotFoundError as e:
-            raise GnomadApiError(f"Query not found: {e!s}") from e
+            # Fixed message: the missing file path is an internal detail and str(e)
+            # is never surfaced to the caller.
+            raise GnomadApiError("The requested gnomAD query is not available.") from e
         except Exception as e:
             if isinstance(e, GnomadApiError):
                 raise
-            raise GnomadApiError(f"Unexpected error: {e!s}") from e
+            # Body-free: str(e) of an unexpected fault can embed upstream/parse
+            # detail; the original stays chained (``from e``) for operator logs.
+            raise GnomadApiError(
+                "An unexpected error occurred while querying the gnomAD GraphQL API."
+            ) from e
 
     async def execute_raw_query(
         self, query_string: str, variables: dict[str, Any] | None = None
@@ -243,7 +249,11 @@ class BaseGnomadClient:
         except Exception as e:
             if isinstance(e, GnomadApiError):
                 raise
-            raise GnomadApiError(f"Unexpected error: {e!s}") from e
+            # Body-free: str(e) of an unexpected fault can embed upstream/parse
+            # detail; the original stays chained (``from e``) for operator logs.
+            raise GnomadApiError(
+                "An unexpected error occurred while querying the gnomAD GraphQL API."
+            ) from e
 
     async def _execute_doc(self, query_doc: Any, variables: dict[str, Any]) -> dict[str, Any]:
         """Run a parsed document through the retry layer and classify faults.
@@ -284,12 +294,28 @@ class BaseGnomadClient:
                 ) from e
             raise GnomadApiError("The gnomAD GraphQL API returned a query error.") from e
         except TransportServerError as e:
-            # A 429 that survived the retry layer is a persistent rate limit.
+            # NEVER interpolate str(e): for a malformed / non-GraphQL upstream
+            # response the gql aiohttp transport embeds the raw response.text in
+            # the exception message, which a caller-influenced query could fill
+            # with hostile prose + control code points. Raise a fixed, body-free
+            # message keyed on the HTTP status (a bounded, non-attacker-controlled
+            # scalar). The original exception stays chained (``from e``) for
+            # operator tracebacks; it is never surfaced to the caller.
             if e.code == 429:
-                raise RateLimitedError(f"Rate limited by upstream API (HTTP 429): {e!s}") from e
-            raise GnomadApiError(f"API request failed: {e!s}") from e
+                # A 429 that survived the retry layer is a persistent rate limit.
+                raise RateLimitedError(
+                    "The gnomAD GraphQL API rate-limited the request (HTTP 429)."
+                ) from e
+            raise GnomadApiError(
+                f"The gnomAD GraphQL API returned a server error (HTTP {e.code})."
+            ) from e
         except TransportError as e:
-            raise GnomadApiError(f"API request failed: {e!s}") from e
+            # Covers TransportProtocolError (whose message embeds the raw
+            # response.text for a non-GraphQL body), TransportClosed, and generic
+            # transport faults. Body-free fixed message; str(e) is never echoed.
+            raise GnomadApiError(
+                "The gnomAD GraphQL API was unreachable or returned a malformed response."
+            ) from e
 
     async def close(self) -> None:
         """Close the client connection (idempotent)."""

@@ -53,6 +53,15 @@ def _configure_stdlib_logging(level: str) -> None:
         "uvicorn.error": "INFO",
         "fastmcp": "INFO" if is_debug else "WARNING",
         "mcp": "INFO" if is_debug else "WARNING",
+        # The gql aiohttp transport logs COMPLETE upstream request/response
+        # bodies at DEBUG (``>>> payload`` / ``<<< result_text``). A
+        # caller-influenced query can make gnomAD reflect hostile prose + control
+        # code points into a response body, so that DEBUG sink would be a raw-body
+        # PII leak under the dev DEBUG profile. Pin these loggers to WARNING
+        # unconditionally so the body log is never emitted, whatever the app level.
+        "gql": "WARNING",
+        "gql.transport": "WARNING",
+        "gql.transport.aiohttp": "WARNING",
     }.items():
         logging.getLogger(name).setLevel(getattr(logging, noisy_level))
 
