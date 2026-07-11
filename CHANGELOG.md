@@ -2,6 +2,23 @@
 
 All notable changes to gnomad-link are documented here.
 
+## [8.0.2] - 2026-07-11
+
+### Security (defense in depth)
+
+- Guard the FastMCP-core not-found reflection surface. FastMCP core echoed the
+  caller's own requested tool name / resource URI / prompt name (with any
+  control/zero-width/bidi/NUL code points) back to the caller and to logs before
+  backend middleware ran. A new `NotFoundGuard` middleware preflights the tool
+  name (unknown -> fixed name-free `not_found` envelope) and fixes the
+  `on_read_resource` boundary; a protocol-handler backstop replaces the
+  unknown-tool return path and the unknown-prompt / malformed-resource dispatch
+  errors with fixed input-free messages; and a validation-log scrub filter
+  neutralizes the FastMCP/MCP-SDK records that reflected the raw name/URI. The
+  requested name is never fed into the cross-session `get_diagnostics` error
+  rings. Caller self-reflection surface (low-medium); no success or error
+  envelope schema changed. Research use only.
+
 ## [8.0.1] - 2026-07-11
 
 ### Security (defense in depth)
