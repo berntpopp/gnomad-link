@@ -34,3 +34,12 @@ def test_dockerfile_has_no_image_level_healthcheck() -> None:
         stripped = line.strip()
         if stripped and not stripped.startswith("#"):
             assert not stripped.upper().startswith("HEALTHCHECK")
+
+
+def test_dockerfile_pins_uv_and_has_no_floating_pip_upgrade() -> None:
+    text = Path("docker/Dockerfile").read_text(encoding="utf-8")
+    assert "pip install --upgrade" not in text, "floating pip/uv upgrade must be removed"
+    assert (
+        "ghcr.io/astral-sh/uv:0.8.7@sha256:"
+        "1e26f9a868360eeb32500a35e05787ffff3402f01a8dc8168ef6aee44aef0aab" in text
+    )
