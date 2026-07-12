@@ -117,3 +117,32 @@ def test_console_script_entry_point_resolves() -> None:
     import typer
 
     assert isinstance(target, typer.Typer)
+
+
+def test_serve_carries_configured_host_allowlist_into_server_config() -> None:
+    """serve must hand the env-configured Host allowlist to the server manager.
+
+    Regression: serve built ServerConfig(...) without allowed_hosts/allowed_origins, so
+    the dataclass default (loopback only) silently overrode MCP_ALLOWED_HOSTS. Behind a
+    reverse proxy the container then answered every proxied request -- and the
+    genefoundry-router federating /mcp -- with HTTP 421, while `config --validate` still
+    displayed the correct allowlist because it reads from_env(). Only `config` read the
+    environment; the code path that actually serves did not.
+    """
+    public = "gnomad-link.genefoundry.org"
+
+    with (
+        patch("gnomad_link.config.settings.MCP_ALLOWED_HOSTS", ["localhost", public]),
+        patch("gnomad_link.config.settings.MCP_ALLOWED_ORIGINS", [f"https://{public}"]),
+        patch("gnomad_link.server_manager.UnifiedServerManager") as mock_mgr,
+        patch("gnomad_link.cli.asyncio.run") as mock_run,
+    ):
+        result = runner.invoke(app, ["serve", "--transport", "unified"])
+
+    assert result.exit_code == 0
+    mock_run.assert_called_once()
+    cfg = mock_mgr.return_value.start_server.call_args.args[0]
+    assert public in cfg.allowed_hosts, (
+        f"serve dropped the configured Host allowlist: {cfg.allowed_hosts}"
+    )
+    assert f"https://{public}" in cfg.allowed_origins
