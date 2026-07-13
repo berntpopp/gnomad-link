@@ -2,6 +2,17 @@
 
 All notable changes to gnomad-link are documented here.
 
+## [8.0.4] - 2026-07-13
+
+### Fixed
+
+- Re-pin the reusable container CI and container release workflows to the
+  corrected GeneFoundry container release standard revision
+  (`58d011d9c72efe90337244342fdec703f2b5b4b9`). The previously pinned revision
+  carried latent release-pipeline defects that were fixed centrally, including
+  GHCR authentication before the version alias push. Research use only; not for
+  clinical decision support.
+
 ## [8.0.3] - 2026-07-13
 
 ### Build
