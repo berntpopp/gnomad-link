@@ -3,50 +3,53 @@
 
 services:
   gnomad-link:
+    build: !reset null
+    image: ${GNOMAD_LINK_IMAGE:?set a verified digest-addressed image}
+    pull_policy: missing
+    container_name: !reset null
+    env_file: !reset []
     environment:
       LOG_LEVEL: INFO
       MCP_TRANSPORT: unified
       MCP_ALLOWED_HOSTS: '["localhost","127.0.0.1","::1","gnomad-link.genefoundry.org"]'
+      GF_HEALTHCHECK_HOST: localhost
 
-    volumes: []
+    volumes: !override []
     ports: !reset []
+    expose:
+      - "8000"
 
     read_only: true
-    tmpfs:
-      - /tmp/gnomad-link:rw,noexec,nosuid,size=64m,mode=1777
+    tmpfs: !override
+      - /tmp:rw,noexec,nosuid,size=64m,mode=1777
 
-    security_opt:
+    security_opt: !override
       - no-new-privileges:true
-    cap_drop:
+    cap_drop: !override
       - ALL
 
-    pids_limit: 256
     init: true
 
-    command: ["gnomad-link", "serve", "--transport", "unified", "--host", "0.0.0.0", "--port", "8000"]
+    command: !reset null
 
-    deploy:
+    deploy: !override
       resources:
         limits:
           memory: 1G
           cpus: "1.0"
           pids: 256
-        reservations:
-          memory: 256M
-          cpus: "0.25"
-
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 3
-        window: 120s
+    restart: on-failure
 
     healthcheck:
-      test: ["CMD", "curl", "-f", "-H", "Host: localhost", "http://localhost:8000/health"]
-      interval: 20s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+      test:
+        - CMD
+        - sh
+        - -c
+        - 'curl -f -H "Host: $${GF_HEALTHCHECK_HOST}" http://localhost:8000/health'
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
     logging:
       driver: "json-file"
