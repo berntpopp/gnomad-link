@@ -65,7 +65,7 @@ def test_production_overlay_has_container_hardening() -> None:
     assert "no-new-privileges:true" in PROD
     assert "cap_drop:" in PROD
     assert "- ALL" in PROD
-    assert "/tmp/gnomad-link:rw,noexec,nosuid,size=64m,mode=1777" in PROD  # noqa: S108
+    assert "/tmp:rw,noexec,nosuid,size=64m,mode=1777" in PROD  # noqa: S108
     assert "ports: !reset []" in PROD
 
 

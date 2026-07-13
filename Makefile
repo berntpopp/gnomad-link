@@ -120,8 +120,16 @@ docker-down: ## Stop Docker development stack
 docker-logs: ## Follow Docker logs
 	$(DOCKER_COMPOSE) -f docker/docker-compose.yml logs -f
 
+# The production overlay is digest-pinned (container release standard): it
+# requires GNOMAD_LINK_IMAGE and refuses to render without it. Rendering the
+# config is a syntax/policy check, not a deploy, so default the variable to a
+# zeroed placeholder digest. Real deploys export the verified digest.
+PLACEHOLDER_IMAGE := ghcr.io/berntpopp/gnomad-link@sha256:0000000000000000000000000000000000000000000000000000000000000000
+
 docker-prod-config: ## Render production Compose configuration
-	$(DOCKER_COMPOSE) -f docker/docker-compose.yml -f docker/docker-compose.prod.yml config
+	GNOMAD_LINK_IMAGE=$${GNOMAD_LINK_IMAGE:-$(PLACEHOLDER_IMAGE)} \
+		$(DOCKER_COMPOSE) -f docker/docker-compose.yml -f docker/docker-compose.prod.yml config
 
 docker-npm-config: ## Render NPM Compose configuration
-	$(DOCKER_COMPOSE) --env-file .env.docker.example -f docker/docker-compose.yml -f docker/docker-compose.prod.yml -f docker/docker-compose.npm.yml config
+	GNOMAD_LINK_IMAGE=$${GNOMAD_LINK_IMAGE:-$(PLACEHOLDER_IMAGE)} \
+		$(DOCKER_COMPOSE) --env-file .env.docker.example -f docker/docker-compose.yml -f docker/docker-compose.prod.yml -f docker/docker-compose.npm.yml config
