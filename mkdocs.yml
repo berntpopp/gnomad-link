@@ -18,6 +18,8 @@ plugins:
 nav:
   - Home: index.md
   - Usage: usage.md
+  - Configuration: configuration.md
+  - Data & provenance: data.md
   - Architecture: architecture.md
   - MCP connection: MCP_CONNECTION_GUIDE.md
   - Development: development.md

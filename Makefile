@@ -1,4 +1,4 @@
-.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc typecheck typecheck-fast typecheck-stop typecheck-fresh test test-fast test-unit test-cov test-all check ci-local precommit clean dev run-dev run-prod docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config eval-ci eval-live
+.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc lint-readme typecheck typecheck-fast typecheck-stop typecheck-fresh test test-fast test-unit test-cov test-all check ci-local precommit clean dev run-dev run-prod docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config eval-ci eval-live
 
 .DEFAULT_GOAL := help
 
@@ -35,6 +35,9 @@ lint-fix: ## Lint and apply safe fixes
 
 lint-loc: ## Enforce per-file line budget (see AGENTS.md "File Size Discipline")
 	uv run python scripts/check_file_size.py
+
+lint-readme: ## Enforce the GeneFoundry README Standard v1
+	uv run python scripts/check_readme.py
 
 typecheck: ## Type check package
 	uv run mypy gnomad_link
@@ -93,7 +96,7 @@ eval-live: ## Run agentic/live eval against real gnomAD (manual)
 
 check: format lint ## Format and lint
 
-ci-local: format-check lint-ci lint-loc typecheck-fast test-fast eval-ci ## Run fast local CI-equivalent checks
+ci-local: format-check lint-ci lint-loc lint-readme typecheck-fast test-fast eval-ci ## Run fast local CI-equivalent checks
 
 precommit: ci-local ## Run checks expected before commit
 
