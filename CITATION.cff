@@ -1,0 +1,34 @@
+# CITATION.cff — GENERATED. Do not edit.
+# Source: genefoundry-router/fleet-metadata.yaml + this repo's pyproject.toml.
+# Regenerate: `make citation-write` in genefoundry-router.
+# See genefoundry-router/docs/REPO-METADATA-STANDARD-v1.md.
+cff-version: 1.2.0
+message: If you use this software, please cite it as below.
+title: gnomad-link
+abstract: 'MCP server for gnomAD (Genome Aggregation Database): variant allele frequencies, gene constraint,
+  coverage, structural and mitochondrial variants, and liftover — as typed tools for LLM agents.'
+type: software
+authors:
+- family-names: Popp
+  given-names: Bernt
+  email: bernt.popp@charite.de
+  affiliation: Charité – Universitätsmedizin Berlin
+version: 8.0.5
+license: MIT
+repository-code: https://github.com/berntpopp/gnomad-link
+url: https://genefoundry.org
+keywords:
+- allele-frequency
+- bioinformatics
+- claude
+- fastmcp
+- genefoundry
+- genomics
+- gnomad
+- llm-tools
+- mcp
+- mcp-server
+- model-context-protocol
+- population-genetics
+- variant-interpretation
+date-released: '2026-07-14'
