@@ -3,6 +3,17 @@
 
 services:
   gnomad-link:
+    # `docker-compose.prod.yml` sets `container_name: !reset null`, which is right for the
+    # standalone production stack it targets. The NPM topology cannot tolerate it: Nginx
+    # Proxy Manager routes by forwarding to a HOSTNAME on the shared npm network, and that
+    # hostname is the CONTAINER NAME — the live proxy host emits
+    # `proxy_pass http://gnomad_link_server:8000;`. With the name reset, Compose would name
+    # the container `gnomad-link-gnomad-link-1`, NPM could not resolve `gnomad_link_server`,
+    # and gnomad-link.genefoundry.org would 502. The management tooling
+    # (config/projects.yaml -> `containers:`) also addresses this container by name.
+    # So the NPM overlay must UNDO prod.yml's reset.
+    container_name: gnomad_link_server
+
     ports: !reset []
     expose:
       - "8000"

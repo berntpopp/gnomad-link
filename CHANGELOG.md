@@ -2,6 +2,26 @@
 
 All notable changes to gnomad-link are documented here.
 
+## [8.0.5] - 2026-07-14
+
+### Fixed
+
+- **The NPM deployment would have lost its public hostname on the next deploy.**
+  `docker-compose.prod.yml` sets `container_name: !reset null`, which is right for the
+  standalone production stack it targets. But the deployed chain is
+  `docker-compose.yml -f docker-compose.prod.yml -f docker-compose.npm.yml`, and Nginx
+  Proxy Manager forwards to a **container name** on the shared network — the live proxy
+  host emits `proxy_pass http://gnomad_link_server:8000;`. With the name reset and nothing
+  restoring it, Compose would have named the container `gnomad-link-gnomad-link-1`, NPM
+  could not have resolved it, and `gnomad-link.genefoundry.org` would have started
+  returning 502 the moment the server pulled this compose. `docker-compose.npm.yml` now
+  restores `container_name: gnomad_link_server`. `docker-compose.prod.yml` is untouched.
+
+### Added
+
+- `GNOMAD_LINK_IMAGE` in `.env.docker.example`. The prod overlay has always required it
+  (it fails closed without it), but it was documented nowhere an operator would copy.
+
 ## [8.0.4] - 2026-07-13
 
 ### Fixed
