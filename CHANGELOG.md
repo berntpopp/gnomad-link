@@ -4,12 +4,6 @@ All notable changes to gnomad-link are documented here.
 
 ## [Unreleased]
 
-### Changed
-
-- Re-vendored the behaviour conformance gate from genefoundry-router `56db958`
-  (`docs/conformance/behaviour.py` blob `c69801687`) so live MCP contract checks
-  treat not-found example probes as inconclusive and keep empty auxiliary objects from hiding counted rows.
-
 ## [9.0.0] - 2026-07-15
 
 MCP contract hardening: honest error envelopes, honest pagination, and a tool
@@ -82,6 +76,17 @@ surface an agent can trust. Research use only; not for clinical decision support
 - **`get_gene_summary` compact mode no longer drops `pext.regions` silently**: it
   emits a `truncated_pext` marker with a `response_mode='full'` restore hint, and
   the mode is documented.
+- Re-vendored the behaviour conformance gate from genefoundry-router `56db958`
+  (`docs/conformance/behaviour.py` blob `c69801687`) so live MCP contract checks
+  treat not-found example probes as inconclusive and keep empty auxiliary objects from hiding counted rows.
+
+### Build
+
+- Re-pinned the reusable container CI and release workflows to the current
+  GeneFoundry container standard revision.
+- Refreshed the Python base-image digest, updated development dependencies, and
+  made the Dockerfile digest-pinning regression test resilient to future
+  digest-only Dependabot bumps.
 
 ## [8.0.5] - 2026-07-14
 
