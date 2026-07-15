@@ -93,3 +93,17 @@ async def test_collapsed_gene_tools_expose_single_required_identifier() -> None:
     # get_gene_variants still constrains its single-form gene_id.
     gv = tools["get_gene_variants"].parameters["properties"]
     assert _string_pattern(gv["gene_id"]) == GENE_ID_PATTERN
+
+
+@pytest.mark.asyncio
+async def test_structural_variant_search_rejects_mitochondrial_region() -> None:
+    """A region-SHAPED but invalid target (MT is not an SV contig) must be
+    rejected as invalid_input, never silently reinterpreted as a gene symbol and
+    returned as an empty success (restored regression: the target collapse
+    briefly re-introduced this silently-empty filter)."""
+    mcp = create_gnomad_mcp(service_factory=_noop_service_factory)
+    result = await mcp.call_tool(
+        "search_structural_variants",
+        {"target": "MT-1-200", "sv_dataset": "gnomad_sv_r4"},
+    )
+    assert _is_invalid_input(_structured(result))

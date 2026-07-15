@@ -34,6 +34,7 @@ def register_metadata_tools(
         name="get_server_capabilities",
         title="Get gnomAD Link Capabilities",
         annotations=READ_ONLY_OPEN_WORLD,
+        output_schema=None,
         tags={"metadata"},
     )
     async def get_server_capabilities() -> dict[str, Any]:

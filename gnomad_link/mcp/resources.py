@@ -373,6 +373,7 @@ def get_reference_resource() -> dict[str, Any]:
                 "gene_variants",
                 "heteroplasmy_zeros",
                 "pathogenic_clinvar",
+                "pext_regions",
                 "populations",
                 "region_payload",
                 "region_span",

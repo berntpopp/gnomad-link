@@ -54,13 +54,17 @@ async def _resolve_and_enrich(
     dataset: str,
     limit: int,
     enrich: bool,
-) -> tuple[list[dict[str, Any]], int]:
+) -> tuple[list[dict[str, Any]], int, int]:
     """Resolve `query` to variant IDs and optionally enrich the top hits.
 
-    Returns the result list and the count of enrichment failures so the caller
-    can attach ``_meta.enrichment_partial`` when relevant.
+    Returns the result list, the count of enrichment failures (so the caller can
+    attach ``_meta.enrichment_partial``), and the TOTAL number of candidates the
+    upstream returned before the ``limit`` slice -- so the caller can report an
+    honest ``total_count`` / ``has_more`` instead of making 5 candidates at
+    ``limit=1`` look like 1.
     """
     raw = await service.search_variants(query, dataset)
+    total_available = len(raw)
     ids = raw[:limit]
     enrichment_failures = 0
     results: list[dict[str, Any]] = []
@@ -73,7 +77,7 @@ async def _resolve_and_enrich(
             else:
                 enrichment_failures += 1
         results.append(item)
-    return results, enrichment_failures
+    return results, enrichment_failures, total_available
 
 
 def _classify_gene_match(hit: GeneSearchResult, query_upper: str) -> str:
@@ -141,7 +145,14 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
             total = len(sorted_hits)
             items = sorted_hits[:limit]
             results = [r.model_dump() for r in items]
-            payload: dict[str, Any] = {"results": results, "returned": len(results)}
+            payload: dict[str, Any] = {
+                "results": results,
+                "returned": len(results),
+                # Honest pagination: total_count is the full match count (invariant
+                # under limit), has_more says the page did not exhaust it.
+                "total_count": total,
+                "has_more": total > len(results),
+            }
             if total > len(results):
                 payload["truncated"] = {
                     "kind": "search_results",
@@ -219,7 +230,7 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
 
         async def call() -> dict[str, Any]:
             service = service_factory()
-            results, enrichment_failures = await _resolve_and_enrich(
+            results, enrichment_failures, total_available = await _resolve_and_enrich(
                 service,
                 query=query,
                 dataset=dataset,
@@ -229,11 +240,22 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
             payload: dict[str, Any] = {
                 "results": results,
                 "returned": len(results),
+                # total_count is the FULL candidate count (invariant under limit);
+                # has_more says the page did not exhaust it, so 5 candidates at
+                # limit=1 never look like 1 (honest pagination).
+                "total_count": total_available,
+                "has_more": total_available > len(results),
                 "next_steps": [
                     "Pick one variant_id and call get_variant_frequencies(variant_id, dataset).",
                     "Or call get_variant_details(variant_id, dataset) for annotations.",
                 ],
             }
+            if total_available > len(results):
+                payload["truncated"] = {
+                    "kind": "search_results",
+                    "total_seen": total_available,
+                    "to_disable": "raise limit (max 25) or refine the query",
+                }
             meta: dict[str, Any] = {}
             if results:
                 meta["next_commands"] = for_variant(results[0]["variant_id"], dataset)
@@ -291,7 +313,7 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
 
         async def call() -> dict[str, Any]:
             service = service_factory()
-            results, enrichment_failures = await _resolve_and_enrich(
+            results, enrichment_failures, total_available = await _resolve_and_enrich(
                 service,
                 query=query,
                 dataset=dataset,
@@ -307,14 +329,23 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
                 meta["enrichment_failures"] = enrichment_failures
             if results:
                 meta["next_commands"] = for_variant(results[0]["variant_id"], dataset)
-            return {
+            payload: dict[str, Any] = {
                 "results": results,
                 "returned": len(results),
+                "total_count": total_available,
+                "has_more": total_available > len(results),
                 "next_steps": [
                     "Pick one variant_id and call get_variant_frequencies(variant_id, dataset).",
                 ],
                 "_meta": meta,
             }
+            if total_available > len(results):
+                payload["truncated"] = {
+                    "kind": "search_results",
+                    "total_seen": total_available,
+                    "to_disable": "raise limit (max 25) or refine the query",
+                }
+            return payload
 
         return await run_mcp_tool(
             "search_variants",

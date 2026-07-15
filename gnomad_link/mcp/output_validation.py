@@ -101,6 +101,10 @@ def install_output_validation_error_handler(mcp_server: Any) -> None:
                         text=json.dumps(payload, separators=(",", ":"), sort_keys=True),
                     )
                 ],
+                # Carry the structured envelope too: an isError result that nulls
+                # structuredContent loses the machine-readable error frame a client
+                # branches on (same contract as the ToolResult chokepoint).
+                structuredContent=payload,
                 isError=True,
             )
         )

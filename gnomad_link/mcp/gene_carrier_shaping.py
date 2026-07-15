@@ -19,21 +19,50 @@ def _one_in(value: float | None) -> int | None:
     return round(1.0 / value)
 
 
-# A ClinVar significance that is NOT one of these clean Pathogenic/Likely-pathogenic
-# strings (e.g. "Pathogenic/Likely pathogenic; other", "; drug response",
-# "conflicting ...") flags a variant as reduced/variable penetrance — the CFTR-RD
-# alleles (5T, R117H) that make the ClinVar-P/LP gene-level estimate overstate CF
-# carrier frequency (defect #45-1).
+# The clean Pathogenic/Likely-pathogenic classifications — a variant carrying one
+# of these has no penetrance caveat.
 _CLEAN_PLP = {"pathogenic", "likely pathogenic", "pathogenic/likely pathogenic"}
+
+# Qualifiers that, appended to a P/LP call, mark a REDUCED or VARIABLE penetrance
+# allele — the CFTR-RD alleles (5T, R117H = "…; other") that make the ClinVar-P/LP
+# gene-level estimate overstate CF carrier frequency (defect #45-1). These are NOT
+# the same as a non-P/LP classification: Benign, Likely benign, Uncertain
+# significance, and Conflicting classifications are simply NOT reduced-penetrance
+# P/LP variants and must never be flagged as such (a Benign-annotated pLoF was
+# being falsely flagged).
+_REDUCED_PENETRANCE_QUALIFIERS = (
+    "other",
+    "risk factor",
+    "association",
+    "drug response",
+    "protective",
+    "affects",
+    "low penetrance",
+    "reduced penetrance",
+)
 
 
 def _penetrance_flag(clinvar_significance: str | None) -> str | None:
-    """Return "reduced_or_variable" for a present-but-not-clean-P/LP significance."""
+    """Flag ONLY a Pathogenic/Likely-pathogenic call carrying a reduced/variable-
+    penetrance qualifier (e.g. "Pathogenic/Likely pathogenic; other").
+
+    Returns None for a clean P/LP, and None for anything whose primary call is not
+    P/LP (Benign / Likely benign / Uncertain significance / Conflicting …) — those
+    are not reduced-penetrance P/LP variants, so flagging them would be a false
+    positive.
+    """
     if not clinvar_significance:
         return None
-    if clinvar_significance.strip().lower() in _CLEAN_PLP:
+    sig = clinvar_significance.strip().lower()
+    if sig in _CLEAN_PLP:
         return None
-    return "reduced_or_variable"
+    # Primary call must be Pathogenic / Likely pathogenic (not "conflicting …",
+    # which merely contains the substring "pathogenicity", and not benign/VUS).
+    if not (sig.startswith("pathogenic") or sig.startswith("likely pathogenic")):
+        return None
+    if any(qualifier in sig for qualifier in _REDUCED_PENETRANCE_QUALIFIERS):
+        return "reduced_or_variable"
+    return None
 
 
 def _round(value: Any, digits: int) -> Any:

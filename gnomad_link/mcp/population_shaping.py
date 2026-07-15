@@ -56,6 +56,58 @@ _TO_RESTORE_MAPPING = {
 }
 
 
+def _base_population(pop_id: str) -> str:
+    """Strip a known subcohort prefix and/or an _XX/_XY sex suffix to the base ancestry."""
+    base = pop_id
+    for prefix in SUBCOHORT_PREFIXES:
+        if base.startswith(prefix):
+            base = base[len(prefix) :]
+            break
+    for suffix in ("_XX", "_XY"):
+        if base.endswith(suffix):
+            base = base[: -len(suffix)]
+            break
+    return base
+
+
+def validate_population_codes(populations: list[str] | None) -> None:
+    """Reject an unrecognised population code instead of silently matching nothing.
+
+    The ``populations`` filter is a CLOSED vocabulary (the gnomAD ancestry groups,
+    optionally carrying a subcohort prefix and/or an _XX/_XY sex suffix). Left
+    unvalidated, ``populations=['__bogus__']`` matches no row and returns
+    ``success:true`` with an empty breakdown -- indistinguishable from "this
+    variant has no data for that ancestry" (the silently-empty filter forbidden by
+    Response-Envelope v1.1). Shared by every variant-bearing tool so the closed set
+    and the rejection are identical across the surface.
+
+    Declared as a runtime guard rather than a per-tool ``Literal`` so the ~10-value
+    ancestry enum (times its subcohort/sex variants) is not multiplied across four
+    tool schemas -- the message names the parameter and the valid set. Raises
+    ``ToolInputError`` (-> ``invalid_input``) naming ``populations`` and the valid
+    codes; never echoes the caller's value.
+    """
+    if not populations:
+        return
+    from gnomad_link.mcp.errors import ToolInputError
+
+    for code in populations:
+        if not isinstance(code, str):
+            raise ToolInputError(
+                "Each entry in 'populations' must be a population code string; valid "
+                f"ancestry codes are {sorted(BASE_POPULATION_CODES)} (optionally with an "
+                "_XX/_XY sex suffix or a subcohort prefix such as non_topmed_)."
+            )
+        if code in {"XX", "XY"}:
+            continue
+        if _base_population(code) not in BASE_POPULATION_CODES:
+            raise ToolInputError(
+                "Unrecognised value in 'populations'. Valid ancestry codes are "
+                f"{sorted(BASE_POPULATION_CODES)} (optionally with an _XX/_XY sex suffix "
+                "or a subcohort prefix such as non_topmed_/1kg_/hgdp_)."
+            )
+
+
 def is_subcohort(pop_id: str) -> bool:
     return pop_id.startswith(SUBCOHORT_PREFIXES)
 

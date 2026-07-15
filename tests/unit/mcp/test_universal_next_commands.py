@@ -210,7 +210,9 @@ async def test_structural_variant_emits_region_chain() -> None:
     assert "get_region" in tools
     region = "1-1000-2000"
     for c in cmds:
-        assert c["arguments"].get("region") == region, c
+        # search_structural_variants takes the collapsed `target`; get_region keeps `region`.
+        key = "target" if c["tool"] == "search_structural_variants" else "region"
+        assert c["arguments"].get(key) == region, c
 
 
 # --- D) get_mitochondrial_variant without gene_symbol ----------------------

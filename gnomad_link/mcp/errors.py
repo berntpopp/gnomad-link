@@ -55,10 +55,8 @@ _FALLBACK_TOOL = "get_diagnostics"
 
 # Response-Envelope Standard v1: `error_code` is a CLOSED enum of exactly six
 # values. gnomAD's internal classification is richer (it drives the distinct
-# recovery text/action per situation), so the internal code is mapped to the
-# wire enum at envelope-construction time. Every value emitted on the wire MUST
-# be one of these six; anything else is a contract violation the behaviour gate
-# catches (`error_code is in the closed enum`).
+# recovery text/action), so the internal code is mapped to the wire enum at
+# envelope-construction time. Every value emitted on the wire MUST be one of six.
 _WIRE_ERROR_CODE = {
     "not_found": "not_found",
     "invalid_input": "invalid_input",
@@ -169,14 +167,20 @@ def _fallback_for(context: McpErrorContext) -> tuple[str, dict[str, Any] | None]
     if context.tool_name in {"resolve_variant_id", "search_variants"}:
         return "search_genes", ({"query": context.query} if context.query else None)
     # Structural-variant ids (DEL_chr1_..., BND_chr12_...) are NOT resolvable by
-    # resolve_variant_id (SNV/indel only); steer to SV discovery instead.
+    # resolve_variant_id (SNV/indel only). search_structural_variants needs a
+    # required `target` we do not have here, so a bare call would be uncallable;
+    # steer to capabilities (always callable) and let the recovery prose name the
+    # SV-search path.
     if context.tool_name == "get_structural_variant":
-        return "search_structural_variants", None
+        return "get_server_capabilities", None
     if context.tool_name == "search_structural_variants":
-        # SV search needs a valid gene/region; help locate one.
-        if context.gene_symbol or context.gene_id:
-            return "search_genes", {"query": context.gene_symbol or context.gene_id}
-        return "search_genes", None
+        # SV search needs a valid gene/region; help locate one via gene search.
+        # fallback_args must be directly callable: search_genes requires `query`,
+        # so only emit it when we actually have a query to seed it with.
+        seed = context.query or context.gene_symbol or context.gene_id
+        if seed:
+            return "search_genes", {"query": seed}
+        return "get_server_capabilities", None
     # M-POS-REF-ALT ids are NOT resolvable by resolve_variant_id (SNV/indel
     # only), so a mito not_found must not route there; point at capabilities for
     # the valid mitochondrial datasets instead.

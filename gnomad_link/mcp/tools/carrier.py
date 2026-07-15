@@ -14,6 +14,7 @@ from gnomad_link.mcp.build_check import detect_variant_id_mismatch
 from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, run_mcp_tool
 from gnomad_link.mcp.headline import variant_carrier_headline
 from gnomad_link.mcp.minimal_shaping import project_carrier_frequency_minimal
+from gnomad_link.mcp.population_shaping import validate_population_codes
 from gnomad_link.mcp.provenance import provenance_block
 from gnomad_link.models import PopulationFrequency, VariantDataSource, VariantFrequencyResponse
 from gnomad_link.services import FrequencyService
@@ -345,6 +346,7 @@ def register_carrier_tools(
         """Use this when a caller needs an estimated carrier/affected frequency derived from a single gnomAD allele frequency under Hardy-Weinberg assumptions for AR, AD, or X-linked inheritance. Pure local math on top of get_variant_frequencies; returns a one-line `headline`, Wilson 95% CIs, per-population breakdown, and provenance (short citations + a gnomad://citations pointer in compact mode; full citations with response_mode='full'). Estimates are research-use only, never clinical decision support. Returns ~2-4kB."""
 
         async def call() -> dict[str, Any]:
+            validate_population_codes(populations)
             inferred = detect_variant_id_mismatch(variant_id, dataset)
             if inferred is not None:
                 raise BuildMismatchError(

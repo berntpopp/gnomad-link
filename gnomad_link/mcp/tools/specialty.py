@@ -55,7 +55,7 @@ def _sv_next_commands(shaped: dict[str, Any]) -> list[dict[str, Any]]:
     stop = end if isinstance(end, int) and end > pos else pos + 1
     region = f"{chrom}-{start}-{stop}"
     return [
-        cmd("search_structural_variants", region=region),
+        cmd("search_structural_variants", target=region),
         cmd("get_region", region=region),
     ]
 

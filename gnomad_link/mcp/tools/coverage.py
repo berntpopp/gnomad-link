@@ -24,6 +24,12 @@ _AUTOSOMAL_VARIANT_ID_PATTERN = r"^([1-9]|1\d|2[0-2]|X|Y)-\d+-[ACGT]+-[ACGT]+$"
 _REGION_PATTERN = r"^(chr)?([1-9]|1[0-9]|2[0-2]|X|Y)-\d+-\d+$"
 _VARIANT_RE = re.compile(_AUTOSOMAL_VARIANT_ID_PATTERN)
 _REGION_RE = re.compile(_REGION_PATTERN)
+# Loose SHAPE detectors (any chrom token): a coordinate-shaped target that fails
+# the strict grammar above is a malformed coordinate and must error, never fall
+# through to a gene-symbol lookup (the silently-empty filter). A real hyphenated
+# gene symbol (HLA-A, MT-TL1) does not match either shape.
+_VARIANT_SHAPE_RE = re.compile(r"^(chr)?[0-9A-Za-z]+-\d+-[A-Za-z]+-[A-Za-z]+$")
+_REGION_SHAPE_RE = re.compile(r"^(chr)?[0-9A-Za-z]+-\d+-\d+$")
 
 
 def _classify_coverage_target(
@@ -32,12 +38,29 @@ def _classify_coverage_target(
     """Auto-detect (gene_symbol, gene_id, region, variant_id) from one target string.
 
     variant (CHROM-POS-REF-ALT) and region (chr-start-stop) are matched by grammar;
-    an ENSG-shaped token is a gene_id; anything else is a gene symbol.
+    an ENSG-shaped token is a gene_id; anything else is a gene symbol -- EXCEPT a
+    variant-shaped or region-shaped string that fails the strict grammar (e.g.
+    MT-1-200, a mitochondrial region), which is a malformed coordinate and must
+    error, never be silently reinterpreted as a gene symbol (the silently-empty
+    filter).
     """
     if _VARIANT_RE.fullmatch(target):
         return None, None, None, target
     if _REGION_RE.fullmatch(target):
         return None, None, target, None
+    if _VARIANT_SHAPE_RE.fullmatch(target):
+        raise ToolInputError(
+            "target is variant-shaped but not a valid CHROM-POS-REF-ALT (autosomes, "
+            "X, Y; alleles A/C/G/T). Provide a gene symbol, an Ensembl gene id "
+            "(ENSG...), a valid region, or a valid variant id."
+        )
+    if _REGION_SHAPE_RE.fullmatch(target):
+        raise ToolInputError(
+            "target is region-shaped but not a valid CHROM-START-STOP (coverage "
+            "regions cover chromosomes 1-22, X, and Y; mitochondrial M/MT is not "
+            "supported here). Provide a gene symbol, an Ensembl gene id (ENSG...), a "
+            "valid region, or a valid variant id."
+        )
     if target.upper().startswith("ENSG"):
         return None, target, None, None
     return target, None, None, None
@@ -87,9 +110,11 @@ def register_coverage_tools(
     ) -> dict[str, Any]:
         """Use this when a caller needs gnomAD read-depth coverage for a gene, region, or single variant. Pass ONE target — a gene symbol, Ensembl gene ID, region (chr-start-stop), or variant (CHROM-POS-REF-ALT) — and the scope is auto-detected. Gene/region return per-position bins plus a {mean_coverage, fraction_over_20} summary; variant returns scalar coverage. Compact mode trims each bin and caps bin count. Returns ~3-40kB compact (bin-count dependent), larger with response_mode='full'."""
 
-        gene_symbol, gene_id, region, variant_id = _classify_coverage_target(target)
-
         async def call() -> dict[str, Any]:
+            # Classify INSIDE call() so a coordinate-shaped-but-invalid target
+            # raises ToolInputError through the run_mcp_tool chokepoint
+            # (-> invalid_input), never a silently-empty gene lookup.
+            gene_symbol, gene_id, region, variant_id = _classify_coverage_target(target)
             service = service_factory()
 
             if region is not None:
@@ -143,7 +168,7 @@ def register_coverage_tools(
                 next_commands = [
                     {
                         "tool": "get_gene_details",
-                        "arguments": {"gene": gene_id or gene_symbol, "dataset": dataset},
+                        "arguments": {"gene": gene_id or gene_symbol},
                     },
                 ]
 
@@ -167,10 +192,7 @@ def register_coverage_tools(
             call,
             context=McpErrorContext(
                 tool_name="get_coverage",
-                gene_id=gene_id,
-                gene_symbol=gene_symbol,
-                region=region,
-                variant_id=variant_id,
+                query=target,
                 dataset=dataset,
             ),
         )

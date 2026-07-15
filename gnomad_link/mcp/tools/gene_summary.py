@@ -69,8 +69,10 @@ def register_gene_summary_tools(
             Field(
                 description=(
                     "compact ranks pathogenic ClinVar into clinvar_summary; full returns the raw "
-                    "clinvar_variants list; minimal returns the headline + top-line constraint + "
-                    "ClinVar pathogenic COUNT + _meta only. All honor "
+                    "clinvar_variants list AND the per-base pext regions; minimal returns the "
+                    "headline + top-line constraint + ClinVar pathogenic COUNT + _meta only. "
+                    "compact/minimal drop expression.pext regions (a truncated_pext marker with "
+                    "expression.mean_pext preserved); full retains them. All honor "
                     "include_clinvar/include_constraint."
                 )
             ),
@@ -92,9 +94,24 @@ def register_gene_summary_tools(
             result: dict[str, Any] = dict(summary)
             # The raw `pext` block is a {"regions":[...]} dict-of-lists redundant with
             # the `expression.mean_pext` summary; drop it outside full mode. Keeping it
-            # also made this single-gene RECORD read as a multi-row collection.
+            # also made this single-gene RECORD read as a multi-row collection. Dropping
+            # a collection silently is forbidden (Response-Envelope v1.1), so emit a
+            # self-describing truncated marker with a restore hint whenever regions are
+            # actually dropped.
             if response_mode != "full":
-                result.pop("pext", None)
+                dropped_pext = result.pop("pext", None)
+                regions = dropped_pext.get("regions") if isinstance(dropped_pext, dict) else None
+                if regions:
+                    result["truncated_pext"] = {
+                        "kind": "pext_regions",
+                        "dropped": len(regions),
+                        "to_disable": "response_mode='full'",
+                        "to_restore": "response_mode='full'",
+                        "note": (
+                            "per-base pext regions omitted; expression.mean_pext retains the "
+                            "gene-level aggregate"
+                        ),
+                    }
             if not include_expression:
                 result.pop("expression", None)
             if not include_constraint:

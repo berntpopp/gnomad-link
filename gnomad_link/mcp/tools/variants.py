@@ -14,6 +14,7 @@ from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, run_mcp_
 from gnomad_link.mcp.headline import variant_frequencies_headline
 from gnomad_link.mcp.minimal_shaping import project_variant_frequencies_minimal
 from gnomad_link.mcp.next_commands import for_variant
+from gnomad_link.mcp.population_shaping import validate_population_codes
 from gnomad_link.mcp.shaping import (
     shape_variant_details_compact,
     shape_variant_frequencies,
@@ -90,6 +91,7 @@ def register_variant_tools(
         """Use this when a caller has a fully-resolved CHROM-POS-REF-ALT id and needs allele counts/frequencies per population. Pair with get_clinvar_variant_details for clinical context. Compact defaults trim subcohort and zero-AC rows; toggle the boolean flags to expand, or use response_mode='full' for the most-inclusive breakdown or response_mode='minimal' for just the headline + overall/max-pop summary. Returns a `truncated` block when filters drop rows so the LLM can re-call with explicit overrides. Returns ~2-4kB (minimal ~0.6kB)."""
 
         async def call() -> dict[str, Any]:
+            validate_population_codes(populations)
             inferred = detect_variant_id_mismatch(variant_id, dataset)
             if inferred is not None:
                 raise BuildMismatchError(
@@ -204,6 +206,7 @@ def register_variant_tools(
         """Use this when a caller needs transcript consequences or in-silico predictors for a single variant id. This tool does NOT return ClinVar clinical significance — for that call get_clinvar_variant_details. Prefer get_variant_frequencies if only allele counts are needed; this tool returns the larger annotation payload. Compact trims the exome/genome population breakdown (drops subcohort, sex-split, and zero-AC rows; toggle the booleans to expand) and emits a `truncated` block per source. Returns compact ~3-6kB, full up to ~50kB."""
 
         async def call() -> dict[str, Any]:
+            validate_population_codes(populations)
             inferred = detect_variant_id_mismatch(variant_id, dataset)
             if inferred is not None:
                 raise BuildMismatchError(

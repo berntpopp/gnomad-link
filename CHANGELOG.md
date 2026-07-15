@@ -30,10 +30,18 @@ surface an agent can trust. Research use only; not for clinical decision support
 
 - **`isError: true` is now set on every error envelope**, per the MCP contract,
   so hosts and the router can detect a failed call without parsing the payload.
-- **Honest pagination.** `get_gene_variants` exposes `total_count` and `has_more`
-  that are invariant under `limit`; `get_region` reports true headline totals
-  with the cap made explicit and sets `has_more` / `truncated` when the response
-  is capped.
+- **Honest pagination.** `get_gene_variants`, `search_genes`, `resolve_variant_id`
+  and `search_variants` expose `total_count` and `has_more` that are invariant
+  under `limit`; `get_region` reports true headline totals with the cap made
+  explicit and sets `has_more` / `truncated` when the response is capped.
+- **The `populations` filter is validated against the closed gnomAD ancestry
+  vocabulary** at a shared layer (`get_variant_frequencies`, `get_variant_details`,
+  `compute_carrier_frequency`, `compare_variant_across_datasets`): an unrecognised
+  code is rejected as `invalid_input` naming the parameter, never a silently-empty
+  breakdown.
+- **A coordinate-shaped but invalid `target`** (e.g. a mitochondrial `MT-1-200`
+  region) on `get_coverage` / `search_structural_variants` is rejected as
+  `invalid_input` rather than silently reinterpreted as a gene symbol.
 - **`compute_gene_carrier_frequency` now flags reduced- and variable-penetrance
   contributing variants** and carries a permanent caveat that gene-level
   ClinVar-P/LP estimates overestimate carrier frequency for genes with common
@@ -47,11 +55,25 @@ surface an agent can trust. Research use only; not for clinical decision support
 ### Fixed
 
 - **Tool surface reduced from ~20.3k to under 10k tokens**: `outputSchema` is
-  suppressed on all tools and `dereference_schemas=False`.
+  suppressed on every tool (including `get_server_capabilities`) and
+  `dereference_schemas=False`.
 - `get_variant_details`'s description no longer promises ClinVar annotation; it
   points to `get_clinvar_variant_details` instead.
 - `get_gene_summary`'s `next_commands` entry for `get_clinvar_variant_details`
   now carries a real `variant_id` (or is omitted) rather than a placeholder.
+- **Reduced-penetrance flagging is derived from real ClinVar semantics**: only a
+  Pathogenic/Likely-pathogenic call carrying a penetrance qualifier is flagged;
+  Benign, Uncertain-significance and Conflicting classifications are no longer
+  false-positives.
+- **Recovery `next_commands` are callable under the collapsed identifiers**:
+  emitters that pointed at `search_structural_variants(region=…)`,
+  `get_gene_details(dataset=…)`, or `search_structural_variants({})` now use the
+  required `target` / `gene` surface or a callable discovery fallback.
+- **The output-schema-validation error envelope keeps its `structuredContent`**
+  (it previously nulled it on the `isError` result).
+- **`get_gene_summary` compact mode no longer drops `pext.regions` silently**: it
+  emits a `truncated_pext` marker with a `response_mode='full'` restore hint, and
+  the mode is documented.
 
 ## [8.0.5] - 2026-07-14
 

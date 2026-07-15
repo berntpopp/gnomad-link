@@ -383,10 +383,11 @@ def test_reference_resource_has_taxonomy_truncation_glossary() -> None:
         "rate_limited",
         "internal",
     }
-    # All 14 truncation kinds enumerated, including both SV singular/plural.
+    # All truncation kinds enumerated, including both SV singular/plural and the
+    # pext_regions marker (gene_summary compact drops per-base pext regions).
     kinds = set(ref["truncation_contract"]["kinds"])
-    assert {"structural_variant", "structural_variants"} <= kinds
-    assert len(kinds) == 14
+    assert {"structural_variant", "structural_variants", "pext_regions"} <= kinds
+    assert len(kinds) == 15
     # Field glossary states units/scale for the load-bearing fields.
     assert "ac / an" in ref["field_glossary"]["af"]
 

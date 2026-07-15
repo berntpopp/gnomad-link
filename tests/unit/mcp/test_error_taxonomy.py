@@ -60,15 +60,19 @@ def test_not_found_on_variant_tool_falls_back_to_resolver() -> None:
     assert payload["recovery_action"] == "switch_tool"
 
 
-def test_not_found_on_sv_tool_falls_back_to_sv_search_not_resolver() -> None:
-    # SV ids are NOT resolvable by resolve_variant_id (SNV-only); route to SV search.
+def test_not_found_on_sv_tool_falls_back_to_a_callable_tool_not_resolver() -> None:
+    # SV ids are NOT resolvable by resolve_variant_id (SNV-only). search_structural_variants
+    # now requires a `target` we do not have from an SV-id lookup, so a bare call would be
+    # uncallable; the callable fallback is capabilities (the recovery prose names SV search).
     payload = _payload(
         DataNotFoundError("DEL_chr1_1 not found"),
         McpErrorContext(tool_name="get_structural_variant", variant_id="DEL_chr1_1"),
     )
     assert payload["error_code"] == "not_found"
-    assert payload["fallback_tool"] == "search_structural_variants"
+    assert payload["fallback_tool"] == "get_server_capabilities"
     assert payload["fallback_tool"] != "resolve_variant_id"
+    # The advertised next_command must be directly callable (no required args missing).
+    assert payload["fallback_args"] in (None, {})
 
 
 def test_sv_search_not_found_steers_to_gene_search() -> None:
