@@ -109,7 +109,7 @@ def get_capabilities_resource() -> dict[str, Any]:
             "get_gene_details": "compact ~2kB, full up to ~30kB",
             "get_gene_variants": "~5-45kB at limit=100 (include_populations=False ~30% leaner)",
             "get_gene_summary": "compact ~3-8kB (ClinVar-dependent), full up to ~40kB",
-            "get_clinvar_variant_details": "~3-15kB (submissions_limit dependent)",
+            "get_clinvar_variant_details": "compact ~2-8kB (submissions_limit dep; drops provenance); full larger",
             "get_clinvar_meta": "<1kB",
             "compute_variant_liftover": "<1kB",
             "get_structural_variant": "compact ~1-4kB (zero-AC/sex-split pops trimmed), full ~10-20kB",
@@ -175,15 +175,28 @@ def get_capabilities_resource() -> dict[str, Any]:
             "next_commands_field": "_meta.next_commands",
         },
         "error_codes": [
-            "not_found",
             "invalid_input",
-            "build_mismatch",
-            "rate_limited",
-            "validation_failed",
+            "not_found",
+            "ambiguous_query",
             "upstream_unavailable",
-            "output_validation_failed",
-            "internal_error",
+            "rate_limited",
+            "internal",
         ],
+        "error_subtypes": {
+            "note": (
+                "error_code is the closed Response-Envelope enum above. When a more "
+                "specific classification applies it is echoed in error_subtype (the "
+                "wire error_code stays in the closed enum)."
+            ),
+            "build_mismatch": (
+                "invalid_input: coordinate build != dataset build; the recovery routes "
+                "to compute_variant_liftover"
+            ),
+            "response_limit_exceeded": (
+                "invalid_input: the response exceeded a v1.1 fenced-object/byte ceiling; "
+                "request fewer records"
+            ),
+        },
         "parameter_conventions": {
             "dataset": (
                 "SNV/indel datasets: gnomad_r4 (GRCh38, default), gnomad_r3 (GRCh38), "
@@ -197,8 +210,14 @@ def get_capabilities_resource() -> dict[str, Any]:
                 "gnomad_sv_r2_1 (GRCh37)."
             ),
             "liftover": (
-                "source_genome is the build of source_variant_id; liftover converts to the "
-                "other build. reference_genome is a deprecated alias for source_genome."
+                "source_genome (REQUIRED) is the build of source_variant_id; liftover "
+                "converts to the other build."
+            ),
+            "gene": (
+                "get_gene_details / get_gene_summary / compute_gene_carrier_frequency take a "
+                "single required `gene` (symbol or ENSG id). get_coverage and "
+                "search_structural_variants take a single required `target` (auto-detecting "
+                "gene / region / variant scope)."
             ),
         },
         "contracts": {
@@ -303,35 +322,33 @@ def get_reference_resource() -> dict[str, Any]:
                 "switch_tool": "call fallback_tool with fallback_args, then retry",
             },
             "codes": {
+                "invalid_input": {
+                    "retryable": False,
+                    "when": (
+                        "arguments failed schema/local-guard validation, the upstream "
+                        "rejected the id/query shape, a coordinate build != dataset build "
+                        "(error_subtype=build_mismatch; run compute_variant_liftover), or a "
+                        "response exceeded a fenced-object ceiling "
+                        "(error_subtype=response_limit_exceeded; request fewer records)"
+                    ),
+                },
                 "not_found": {
                     "retryable": False,
                     "when": "identifier well-formed but absent in the requested dataset",
                 },
-                "invalid_input": {
+                "ambiguous_query": {
                     "retryable": False,
-                    "when": "upstream rejected the id/query shape for this tool",
+                    "when": "the query matched more than one candidate; disambiguate",
                 },
-                "build_mismatch": {
-                    "retryable": False,
-                    "when": "coordinate build != dataset build; compute_variant_liftover first",
+                "upstream_unavailable": {
+                    "retryable": True,
+                    "when": "transient gnomAD/network fault or output-schema drift",
                 },
                 "rate_limited": {
                     "retryable": True,
                     "when": "HTTP 429 or local concurrency saturation",
                 },
-                "validation_failed": {
-                    "retryable": False,
-                    "when": "arguments failed schema or local guard validation",
-                },
-                "upstream_unavailable": {
-                    "retryable": True,
-                    "when": "transient gnomAD/network fault",
-                },
-                "output_validation_failed": {
-                    "retryable": False,
-                    "when": "response failed our output schema (upstream drift)",
-                },
-                "internal_error": {"retryable": False, "when": "unexpected server fault"},
+                "internal": {"retryable": False, "when": "unexpected server fault"},
             },
         },
         "truncation_contract": {
@@ -356,6 +373,7 @@ def get_reference_resource() -> dict[str, Any]:
                 "gene_variants",
                 "heteroplasmy_zeros",
                 "pathogenic_clinvar",
+                "pext_regions",
                 "populations",
                 "region_payload",
                 "region_span",

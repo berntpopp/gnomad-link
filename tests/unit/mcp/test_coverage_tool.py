@@ -71,7 +71,7 @@ async def test_get_coverage_gene_scope_by_symbol() -> None:
     service = _StubCoverageService()
     mcp = create_gnomad_mcp(service_factory=lambda: service)
 
-    result = await mcp.call_tool("get_coverage", {"gene_symbol": "PCSK9"})
+    result = await mcp.call_tool("get_coverage", {"target": "PCSK9"})
     payload = result.structured_content or {}
 
     assert payload["scope"] == "gene"
@@ -87,7 +87,7 @@ async def test_get_coverage_variant_scope_is_scalar_and_links_to_frequencies() -
     mcp = create_gnomad_mcp(service_factory=lambda: service)
 
     result = await mcp.call_tool(
-        "get_coverage", {"variant_id": "1-55039447-A-G", "dataset": "gnomad_r4"}
+        "get_coverage", {"target": "1-55039447-A-G", "dataset": "gnomad_r4"}
     )
     payload = result.structured_content or {}
 
@@ -104,7 +104,7 @@ async def test_get_coverage_region_scope_caps_span_at_100kb() -> None:
     mcp = create_gnomad_mcp(service_factory=lambda: service)
 
     # 500kb span exceeds the 100kb cap.
-    result = await mcp.call_tool("get_coverage", {"region": "1-55000000-55500000"})
+    result = await mcp.call_tool("get_coverage", {"target": "1-55000000-55500000"})
     payload = result.structured_content or {}
 
     assert payload["scope"] == "region"
@@ -113,29 +113,17 @@ async def test_get_coverage_region_scope_caps_span_at_100kb() -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_coverage_requires_exactly_one_scope_arg() -> None:
+async def test_get_coverage_requires_target() -> None:
     service = _StubCoverageService()
     mcp = create_gnomad_mcp(service_factory=lambda: service)
 
+    # `target` is a single required scope arg: a missing target is invalid_input
+    # (never the off-enum validation_failed, never not_found).
     result = await mcp.call_tool("get_coverage", {})
     payload = result.structured_content or {}
 
     assert payload["success"] is False
-    assert payload["error_code"] == "validation_failed"
-    assert service.calls == []
-
-
-@pytest.mark.asyncio
-async def test_get_coverage_rejects_two_scope_args() -> None:
-    service = _StubCoverageService()
-    mcp = create_gnomad_mcp(service_factory=lambda: service)
-
-    result = await mcp.call_tool(
-        "get_coverage", {"gene_symbol": "PCSK9", "variant_id": "1-55039447-A-G"}
-    )
-    payload = result.structured_content or {}
-
-    assert payload["error_code"] == "validation_failed"
+    assert payload["error_code"] == "invalid_input"
     assert service.calls == []
 
 
@@ -146,13 +134,17 @@ async def test_get_coverage_region_build_mismatch_against_r4() -> None:
 
     # chr1 is longer on GRCh37 (249,250,621 bp) than GRCh38 (248,956,422 bp),
     # so pos ~248.99Mb is valid only on GRCh37 and infers a GRCh37 build.
-    # Querying it against gnomad_r4 (GRCh38) must raise build_mismatch.
+    # Querying it against gnomad_r4 (GRCh38) must raise a build mismatch. The
+    # wire error_code is the closed-enum invalid_input; the specific
+    # classification is preserved in error_subtype=build_mismatch and the
+    # recovery routes to compute_variant_liftover.
     result = await mcp.call_tool(
-        "get_coverage", {"region": "1-248990000-248990100", "dataset": "gnomad_r4"}
+        "get_coverage", {"target": "1-248990000-248990100", "dataset": "gnomad_r4"}
     )
     payload = result.structured_content or {}
 
-    assert payload["error_code"] == "build_mismatch"
+    assert payload["error_code"] == "invalid_input"
+    assert payload.get("error_subtype") == "build_mismatch"
     assert payload["fallback_tool"] == "compute_variant_liftover"
     assert service.calls == []
 

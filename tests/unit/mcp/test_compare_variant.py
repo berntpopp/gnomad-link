@@ -313,7 +313,8 @@ async def test_tool_has_read_only_open_world_annotations_and_tag() -> None:
     assert tool.annotations is not None
     assert tool.annotations.readOnlyHint is True
     assert tool.annotations.openWorldHint is True
-    assert tool.output_schema is not None
+    # Tool-Surface-Budget v1: outputSchema is suppressed (no model reads it).
+    assert tool.output_schema is None
 
 
 @pytest.mark.asyncio

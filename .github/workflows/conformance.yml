@@ -31,6 +31,10 @@ jobs:
         env:
           CONFORMANCE_MCP_URL: http://127.0.0.1:${{ env.MCP_PORT }}
         run: uv run pytest tests/conformance/test_transport_v1.py -v
+      - name: Run behaviour probe
+        env:
+          CONFORMANCE_MCP_URL: http://127.0.0.1:${{ env.MCP_PORT }}
+        run: uv run pytest tests/conformance/test_behaviour_v1.py -v
       - name: Logs on failure
         if: failure()
         run: make docker-logs || docker compose -f docker/docker-compose.yml logs

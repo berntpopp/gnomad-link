@@ -39,7 +39,7 @@ def actionable_output_validation_error(
     )
     payload: dict[str, Any] = {
         "success": False,
-        "error_code": "output_validation_failed",
+        "error_code": "internal",
         "message": "The tool response did not match its declared MCP output schema.",
         "error_field": error_field,
         "suggested_action": suggested_action,
@@ -101,6 +101,10 @@ def install_output_validation_error_handler(mcp_server: Any) -> None:
                         text=json.dumps(payload, separators=(",", ":"), sort_keys=True),
                     )
                 ],
+                # Carry the structured envelope too: an isError result that nulls
+                # structuredContent loses the machine-readable error frame a client
+                # branches on (same contract as the ToolResult chokepoint).
+                structuredContent=payload,
                 isError=True,
             )
         )

@@ -48,10 +48,13 @@ class _Spy:
 
 
 def _is_build_mismatch(payload: dict[str, object]) -> bool:
+    # build_mismatch maps to the closed-enum wire code `invalid_input`; the
+    # specific classification is preserved in error_subtype.
     return (
         isinstance(payload, dict)
         and payload.get("success") is False
-        and payload.get("error_code") == "build_mismatch"
+        and payload.get("error_code") == "invalid_input"
+        and payload.get("error_subtype") == "build_mismatch"
     )
 
 

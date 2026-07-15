@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from typing import Annotated, Any, Literal
 
@@ -16,26 +17,53 @@ from gnomad_link.mcp.build_check import (
 from gnomad_link.mcp.coverage_shaping import shape_coverage_payload
 from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, ToolInputError, run_mcp_tool
 from gnomad_link.mcp.headline import coverage_headline
-from gnomad_link.mcp.patterns import GENE_ID_PATTERN, GENE_SYMBOL_PATTERN
-from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.shaping import cap_region_span
 from gnomad_link.services import FrequencyService
 
 _AUTOSOMAL_VARIANT_ID_PATTERN = r"^([1-9]|1\d|2[0-2]|X|Y)-\d+-[ACGT]+-[ACGT]+$"
 _REGION_PATTERN = r"^(chr)?([1-9]|1[0-9]|2[0-2]|X|Y)-\d+-\d+$"
+_VARIANT_RE = re.compile(_AUTOSOMAL_VARIANT_ID_PATTERN)
+_REGION_RE = re.compile(_REGION_PATTERN)
+# Loose SHAPE detectors (any chrom token): a coordinate-shaped target that fails
+# the strict grammar above is a malformed coordinate and must error, never fall
+# through to a gene-symbol lookup (the silently-empty filter). A real hyphenated
+# gene symbol (HLA-A, MT-TL1) does not match either shape.
+_VARIANT_SHAPE_RE = re.compile(r"^(chr)?[0-9A-Za-z]+-\d+-[A-Za-z]+-[A-Za-z]+$")
+_REGION_SHAPE_RE = re.compile(r"^(chr)?[0-9A-Za-z]+-\d+-\d+$")
 
-_COVERAGE_OUTPUT_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "scope": {"type": "string"},
-        "identity": {"type": "object"},
-        "dataset": {"type": "string"},
-        "exome": {"type": ["object", "null"]},
-        "genome": {"type": ["object", "null"]},
-    },
-    "required": ["scope", "dataset"],
-    "additionalProperties": True,
-}
+
+def _classify_coverage_target(
+    target: str,
+) -> tuple[str | None, str | None, str | None, str | None]:
+    """Auto-detect (gene_symbol, gene_id, region, variant_id) from one target string.
+
+    variant (CHROM-POS-REF-ALT) and region (chr-start-stop) are matched by grammar;
+    an ENSG-shaped token is a gene_id; anything else is a gene symbol -- EXCEPT a
+    variant-shaped or region-shaped string that fails the strict grammar (e.g.
+    MT-1-200, a mitochondrial region), which is a malformed coordinate and must
+    error, never be silently reinterpreted as a gene symbol (the silently-empty
+    filter).
+    """
+    if _VARIANT_RE.fullmatch(target):
+        return None, None, None, target
+    if _REGION_RE.fullmatch(target):
+        return None, None, target, None
+    if _VARIANT_SHAPE_RE.fullmatch(target):
+        raise ToolInputError(
+            "target is variant-shaped but not a valid CHROM-POS-REF-ALT (autosomes, "
+            "X, Y; alleles A/C/G/T). Provide a gene symbol, an Ensembl gene id "
+            "(ENSG...), a valid region, or a valid variant id."
+        )
+    if _REGION_SHAPE_RE.fullmatch(target):
+        raise ToolInputError(
+            "target is region-shaped but not a valid CHROM-START-STOP (coverage "
+            "regions cover chromosomes 1-22, X, and Y; mitochondrial M/MT is not "
+            "supported here). Provide a gene symbol, an Ensembl gene id (ENSG...), a "
+            "valid region, or a valid variant id."
+        )
+    if target.upper().startswith("ENSG"):
+        return None, target, None, None
+    return target, None, None, None
 
 
 def register_coverage_tools(
@@ -45,46 +73,19 @@ def register_coverage_tools(
         name="get_coverage",
         title="Get Read-Depth Coverage",
         annotations=READ_ONLY_OPEN_WORLD,
-        output_schema=relax_output_schema(_COVERAGE_OUTPUT_SCHEMA),
+        output_schema=None,
         tags={"coordinates"},
     )
     async def get_coverage(
-        gene_symbol: Annotated[
-            str | None,
+        target: Annotated[
+            str,
             Field(
-                default=None,
-                description="HGNC gene symbol (e.g. PCSK9). One scope arg only.",
-                pattern=GENE_SYMBOL_PATTERN,
+                description="Gene symbol, Ensembl gene ID (ENSG...), region "
+                "(chr-start-stop, span capped at 100kb), or variant (CHROM-POS-REF-ALT) "
+                "for scalar per-variant coverage. The scope is auto-detected.",
                 examples=["PCSK9"],
             ),
-        ] = None,
-        gene_id: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="Ensembl gene ID (ENSG...). One scope arg only.",
-                pattern=GENE_ID_PATTERN,
-                examples=["ENSG00000169174"],
-            ),
-        ] = None,
-        region: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="chr-start-stop (e.g. 1-55039447-55064852). Span capped at 100kb. One scope arg only.",
-                pattern=_REGION_PATTERN,
-                examples=["1-55039447-55064852"],
-            ),
-        ] = None,
-        variant_id: Annotated[
-            str | None,
-            Field(
-                default=None,
-                description="CHROM-POS-REF-ALT for scalar per-variant coverage. One scope arg only.",
-                pattern=_AUTOSOMAL_VARIANT_ID_PATTERN,
-                examples=["1-55039447-A-G"],
-            ),
-        ] = None,
+        ],
         dataset: Annotated[
             Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"],
             Field(
@@ -107,22 +108,13 @@ def register_coverage_tools(
             ),
         ] = 2_000,
     ) -> dict[str, Any]:
-        """Use this when a caller needs gnomAD read-depth coverage for a gene, region, or single variant. Provide exactly ONE of gene_symbol, gene_id, region, or variant_id. Gene/region return per-position bins plus a {mean_coverage, fraction_over_20} summary; variant returns scalar coverage. Compact mode trims each bin and caps bin count. Returns ~3-40kB compact (bin-count dependent), larger with response_mode='full'."""
-
-        provided = [
-            ("gene_symbol", gene_symbol),
-            ("gene_id", gene_id),
-            ("region", region),
-            ("variant_id", variant_id),
-        ]
-        set_args = [name for name, value in provided if value]
+        """Use this when a caller needs gnomAD read-depth coverage for a gene, region, or single variant. Pass ONE target — a gene symbol, Ensembl gene ID, region (chr-start-stop), or variant (CHROM-POS-REF-ALT) — and the scope is auto-detected. Gene/region return per-position bins plus a {mean_coverage, fraction_over_20} summary; variant returns scalar coverage. Compact mode trims each bin and caps bin count. Returns ~3-40kB compact (bin-count dependent), larger with response_mode='full'."""
 
         async def call() -> dict[str, Any]:
-            if len(set_args) != 1:
-                raise ToolInputError(
-                    "Provide exactly one of gene_symbol, gene_id, region, or variant_id "
-                    f"(got {len(set_args)}: {set_args})."
-                )
+            # Classify INSIDE call() so a coordinate-shaped-but-invalid target
+            # raises ToolInputError through the run_mcp_tool chokepoint
+            # (-> invalid_input), never a silently-empty gene lookup.
+            gene_symbol, gene_id, region, variant_id = _classify_coverage_target(target)
             service = service_factory()
 
             if region is not None:
@@ -173,13 +165,11 @@ def register_coverage_tools(
                     gene_symbol=gene_symbol,
                 )
                 scope = "gene"
-                gene_args: dict[str, Any] = {"dataset": dataset}
-                if gene_symbol:
-                    gene_args["gene_symbol"] = gene_symbol
-                if gene_id:
-                    gene_args["gene_id"] = gene_id
                 next_commands = [
-                    {"tool": "get_gene_details", "arguments": gene_args},
+                    {
+                        "tool": "get_gene_details",
+                        "arguments": {"gene": gene_id or gene_symbol},
+                    },
                 ]
 
             shaped = shape_coverage_payload(
@@ -202,10 +192,7 @@ def register_coverage_tools(
             call,
             context=McpErrorContext(
                 tool_name="get_coverage",
-                gene_id=gene_id,
-                gene_symbol=gene_symbol,
-                region=region,
-                variant_id=variant_id,
+                query=target,
                 dataset=dataset,
             ),
         )

@@ -117,7 +117,8 @@ def test_build_mismatch_error_classifies_per_dataset(dataset: str, build: str) -
     payload = mcp_tool_error(exc, context).payload
 
     assert payload["success"] is False
-    assert payload["error_code"] == "build_mismatch"
+    assert payload["error_code"] == "invalid_input"
+    assert payload["error_subtype"] == "build_mismatch"
     assert payload["retryable"] is False
     assert payload["recovery_action"] == "switch_tool"
     assert payload["fallback_tool"] == "compute_variant_liftover"

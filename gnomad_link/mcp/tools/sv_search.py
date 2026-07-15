@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from typing import Annotated, Any, Literal
 
@@ -10,27 +11,39 @@ from pydantic import Field
 
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, ToolInputError, run_mcp_tool
-from gnomad_link.mcp.patterns import GENE_ID_PATTERN, GENE_SYMBOL_PATTERN
-from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.sv_shaping import shape_sv_search
 from gnomad_link.services import FrequencyService
 
 # Cap how many returned ids become next_commands (no self-reference; <=3).
 _NEXT_COMMAND_CAP = 3
 _SV_REGION_PATTERN = r"^(chr)?([1-9]|1[0-9]|2[0-2]|X|Y)-\d+-\d+$"
+_SV_REGION_RE = re.compile(_SV_REGION_PATTERN)
+# A CHROM-START-STOP *shape* (any chrom token). Used to catch a region-shaped but
+# INVALID target (e.g. MT-1-200) so it is rejected as invalid_input rather than
+# silently reinterpreted as a gene symbol and returned as an empty success.
+_REGION_SHAPE_RE = re.compile(r"^(chr)?[0-9A-Za-z]+-\d+-\d+$")
 
-_SV_SEARCH_OUTPUT_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "query": {"type": "object"},
-        "returned": {"type": "integer"},
-        "total_seen": {"type": "integer"},
-        "structural_variants": {"type": "array", "items": {"type": "object"}},
-        "truncated": {"type": ["object", "null"]},
-    },
-    "required": ["query", "returned", "total_seen", "structural_variants"],
-    "additionalProperties": True,
-}
+
+def _classify_sv_target(target: str) -> tuple[str | None, str | None, str | None]:
+    """Auto-detect (gene_symbol, gene_id, region) from one target string.
+
+    A valid CHROM-START-STOP is a region; an ENSG-shaped token is a gene_id;
+    anything else is a gene symbol -- EXCEPT a region-shaped string whose chrom is
+    not a supported SV contig, which is a malformed region and must error, never be
+    silently reinterpreted as a gene symbol (the silently-empty filter).
+    """
+    if _SV_REGION_RE.fullmatch(target):
+        return None, None, target
+    if _REGION_SHAPE_RE.fullmatch(target):
+        raise ToolInputError(
+            "target is region-shaped but not a valid CHROM-START-STOP for structural "
+            "variants (SV regions cover chromosomes 1-22, X, and Y; mitochondrial "
+            "M/MT regions are not supported). Provide a gene symbol, an Ensembl gene "
+            "id (ENSG...), or a valid region."
+        )
+    if target.upper().startswith("ENSG"):
+        return None, target, None
+    return target, None, None
 
 
 def register_sv_search_tools(
@@ -40,34 +53,18 @@ def register_sv_search_tools(
         name="search_structural_variants",
         title="Search Structural Variants in a Gene or Region",
         annotations=READ_ONLY_OPEN_WORLD,
-        output_schema=relax_output_schema(_SV_SEARCH_OUTPUT_SCHEMA),
+        output_schema=None,
         tags={"variant", "search"},
     )
     async def search_structural_variants(
-        gene_symbol: Annotated[
-            str | None,
+        target: Annotated[
+            str,
             Field(
-                description="HGNC gene symbol. Provide exactly one of gene_symbol, gene_id, or region.",
-                pattern=GENE_SYMBOL_PATTERN,
+                description="Gene symbol, Ensembl gene ID (ENSG...), or region "
+                "(CHROM-START-STOP, e.g. 19-11089000-11200000). The scope is auto-detected.",
                 examples=["SMARCA4"],
             ),
-        ] = None,
-        gene_id: Annotated[
-            str | None,
-            Field(
-                description="Ensembl gene ID (preferred over symbol).",
-                pattern=GENE_ID_PATTERN,
-                examples=["ENSG00000127616"],
-            ),
-        ] = None,
-        region: Annotated[
-            str | None,
-            Field(
-                description="Region in CHROM-START-STOP format (e.g. 19-11089000-11200000).",
-                pattern=_SV_REGION_PATTERN,
-                examples=["19-11089000-11200000"],
-            ),
-        ] = None,
+        ],
         sv_dataset: Annotated[
             Literal["gnomad_sv_r4", "gnomad_sv_r2_1"],
             Field(
@@ -79,10 +76,10 @@ def register_sv_search_tools(
             ),
         ] = "gnomad_sv_r4",
         sv_type: Annotated[
-            str | None,
+            Literal["DEL", "DUP", "INS", "INV", "BND", "CPX", "CTX", "MCNV"] | None,
             Field(
-                description="Filter by SV class (case-insensitive). One of "
-                "DEL, DUP, INS, INV, BND, CPX, CTX, MCNV.",
+                description="Filter by SV class (uppercase enum). An unrecognised "
+                "value is rejected as invalid_input.",
                 examples=["DEL"],
             ),
         ] = None,
@@ -103,12 +100,12 @@ def register_sv_search_tools(
             Field(description="compact projects each row to a fixed key-set; full is reserved."),
         ] = "compact",
     ) -> dict[str, Any]:
-        """Use this when a caller wants the list of structural variants overlapping a gene or region. Provide exactly one of gene_symbol, gene_id, or region. SV variant_id values are OPAQUE (e.g. DEL_19_1), NOT CHROM-POS-REF-ALT, so no SNV id grammar is applied; fetch a single SV by id with get_structural_variant. sv_dataset is the DISTINCT structural-variant dataset enum (gnomad_sv_r4=GRCh38 default, gnomad_sv_r2_1=GRCh37), not the SNV dataset. Type/length filters are applied client-side. An empty match is a success with returned=0, not an error. Returns ~3-30kB (limit-dependent)."""
+        """Use this when a caller wants the list of structural variants overlapping a gene or region. Pass ONE target — a gene symbol, Ensembl gene ID, or region (CHROM-START-STOP) — and the scope is auto-detected. SV variant_id values are OPAQUE (e.g. DEL_19_1), NOT CHROM-POS-REF-ALT, so no SNV id grammar is applied; fetch a single SV by id with get_structural_variant. sv_dataset is the DISTINCT structural-variant dataset enum (gnomad_sv_r4=GRCh38 default, gnomad_sv_r2_1=GRCh37), not the SNV dataset. Type/length filters are applied client-side. An empty match is a success with returned=0, not an error. Returns ~3-30kB (limit-dependent)."""
 
         async def call() -> dict[str, Any]:
-            provided = [v for v in (gene_symbol, gene_id, region) if v]
-            if len(provided) != 1:
-                raise ToolInputError("Provide exactly one of gene_symbol, gene_id, or region.")
+            # Classify INSIDE call() so a region-shaped-but-invalid target raises
+            # ToolInputError through the run_mcp_tool chokepoint (-> invalid_input).
+            gene_symbol, gene_id, region = _classify_sv_target(target)
             service = service_factory()
             raw = await service.search_structural_variants(
                 gene_symbol=gene_symbol,
@@ -153,9 +150,7 @@ def register_sv_search_tools(
             call,
             context=McpErrorContext(
                 tool_name="search_structural_variants",
-                gene_id=gene_id,
-                gene_symbol=gene_symbol,
-                region=region,
+                query=target,
                 dataset=sv_dataset,
             ),
         )

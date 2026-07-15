@@ -44,7 +44,10 @@ def test_mcp_tool_error_envelope_contains_required_fields() -> None:
     payload = json.loads(str(err))
 
     assert payload["success"] is False
-    assert payload["error_code"] == "validation_failed"
+    # Wire error_code is the closed enum; the specific classification is preserved
+    # in error_subtype (validation_failed -> invalid_input on the wire).
+    assert payload["error_code"] == "invalid_input"
+    assert payload["error_subtype"] == "validation_failed"
     assert payload["retryable"] is False
     assert "abc" not in payload["message"] or payload["message"].startswith("Invalid")
     assert payload["fallback_tool"] in {"get_server_capabilities", None}
@@ -62,7 +65,8 @@ def test_tool_input_error_message_is_surfaced() -> None:
     )
     payload = json.loads(str(err))
 
-    assert payload["error_code"] == "validation_failed"
+    assert payload["error_code"] == "invalid_input"
+    assert payload["error_subtype"] == "validation_failed"
     assert "Provide exactly one of" in payload["message"]
 
 
@@ -76,7 +80,8 @@ def test_bare_value_error_stays_redacted() -> None:
     )
     payload = json.loads(str(err))
 
-    assert payload["error_code"] == "validation_failed"
+    assert payload["error_code"] == "invalid_input"
+    assert payload["error_subtype"] == "validation_failed"
     assert "abc123" not in payload["message"]
     assert payload["message"].startswith("Invalid input:")
 
@@ -149,7 +154,8 @@ async def test_run_mcp_tool_returns_envelope_on_exception() -> None:
     result = await run_mcp_tool("test_tool", boom)
 
     assert result["success"] is False
-    assert result["error_code"] == "internal_error"
+    assert result["error_code"] == "internal"
+    assert result["error_subtype"] == "internal_error"
     assert "SECRET" not in result["message"]
 
 
@@ -238,7 +244,7 @@ async def test_validation_handler_unwraps_pydantic_fastmcp_cause() -> None:
 
     result = await tool.run({})
     assert isinstance(result, dict)
-    assert result["error_code"] == "validation_failed"
+    assert result["error_code"] == "invalid_input"
     assert result["field_errors"]
 
 
@@ -250,7 +256,7 @@ def test_validation_handler_emits_field_errors() -> None:
     payload = json.loads(str(err))
 
     assert payload["success"] is False
-    assert payload["error_code"] == "validation_failed"
+    assert payload["error_code"] == "invalid_input"
     assert "field_errors" in payload
     field_errors = payload["field_errors"]
     assert isinstance(field_errors, list)
@@ -306,7 +312,9 @@ def test_output_validation_handler_returns_envelope() -> None:
     )
 
     assert payload["success"] is False
-    assert payload["error_code"] == "output_validation_failed"
+    # output_validation_failed is an internal classification; it maps to the
+    # closed-enum wire code `internal` (the ring still records the specific code).
+    assert payload["error_code"] == "internal"
     assert payload["error_field"] == "variant_id"
     assert payload["_meta"]["unsafe_for_clinical_use"] is True
     next_commands = payload["_meta"]["next_commands"]
@@ -356,10 +364,11 @@ class _FreqStubService:
 
 
 def _is_validation_failed(payload: dict[str, object]) -> bool:
+    # Arg-validation now emits the closed-enum wire code `invalid_input`.
     return (
         isinstance(payload, dict)
         and payload.get("success") is False
-        and payload.get("error_code") == "validation_failed"
+        and payload.get("error_code") == "invalid_input"
     )
 
 

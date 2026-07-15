@@ -69,11 +69,11 @@ async def test_search_by_gene_symbol_returns_rows() -> None:
 
     result = await mcp.call_tool(
         "search_structural_variants",
-        {"gene_symbol": "SMARCA4", "sv_dataset": "gnomad_sv_r4"},
+        {"target": "SMARCA4", "sv_dataset": "gnomad_sv_r4"},
     )
     payload = result.structured_content or {}
 
-    assert payload.get("error_code") != "validation_failed", payload
+    assert payload.get("error_code") != "invalid_input", payload
     assert payload["query"] == {"gene_symbol": "SMARCA4", "sv_dataset": "gnomad_sv_r4"}
     assert payload["returned"] == 2
     assert payload["total_seen"] == 2
@@ -87,10 +87,10 @@ async def test_distinct_sv_dataset_default_is_r4() -> None:
     spy = _SpySvService()
     mcp = create_gnomad_mcp(service_factory=lambda: spy)
 
-    result = await mcp.call_tool("search_structural_variants", {"gene_symbol": "SMARCA4"})
+    result = await mcp.call_tool("search_structural_variants", {"target": "SMARCA4"})
     payload = result.structured_content or {}
 
-    assert payload.get("error_code") != "validation_failed", payload
+    assert payload.get("error_code") != "invalid_input", payload
     assert spy.last_kwargs["sv_dataset"] == "gnomad_sv_r4"
 
 
@@ -104,32 +104,27 @@ async def test_invalid_sv_dataset_rejected_by_schema() -> None:
     # gnomad_r4 is the SNV DatasetId, NOT a StructuralVariantDatasetId.
     result = await mcp.call_tool(
         "search_structural_variants",
-        {"gene_symbol": "SMARCA4", "sv_dataset": "gnomad_r4"},
+        {"target": "SMARCA4", "sv_dataset": "gnomad_r4"},
     )
     payload = result.structured_content or {}
 
     assert payload.get("success") is False
-    assert payload.get("error_code") == "validation_failed"
+    assert payload.get("error_code") == "invalid_input"
     assert spy.last_kwargs is None
 
 
 @pytest.mark.asyncio
-async def test_requires_exactly_one_entry_arg() -> None:
+async def test_missing_target_is_rejected() -> None:
     from gnomad_link.mcp.facade import create_gnomad_mcp
 
     spy = _SpySvService()
     mcp = create_gnomad_mcp(service_factory=lambda: spy)
 
+    # A single required `target` replaces the old one-of-three entry args: a
+    # missing target is an invalid_input (never validation_failed / not_found).
     none_result = await mcp.call_tool("search_structural_variants", {})
     none_payload = none_result.structured_content or {}
-    assert none_payload.get("error_code") == "validation_failed"
-
-    both_result = await mcp.call_tool(
-        "search_structural_variants",
-        {"gene_symbol": "SMARCA4", "region": "19-11089000-11200000"},
-    )
-    both_payload = both_result.structured_content or {}
-    assert both_payload.get("error_code") == "validation_failed"
+    assert none_payload.get("error_code") == "invalid_input"
 
 
 @pytest.mark.asyncio
@@ -141,7 +136,7 @@ async def test_sv_type_filter_applied() -> None:
 
     result = await mcp.call_tool(
         "search_structural_variants",
-        {"gene_symbol": "SMARCA4", "sv_type": "DEL"},
+        {"target": "SMARCA4", "sv_type": "DEL"},
     )
     payload = result.structured_content or {}
 
@@ -157,7 +152,7 @@ async def test_empty_result_is_success_not_error() -> None:
     spy = _SpySvService(rows=[])
     mcp = create_gnomad_mcp(service_factory=lambda: spy)
 
-    result = await mcp.call_tool("search_structural_variants", {"gene_symbol": "NONEXISTENT"})
+    result = await mcp.call_tool("search_structural_variants", {"target": "NONEXISTENT"})
     payload = result.structured_content or {}
 
     assert payload.get("success") is not False
@@ -173,7 +168,7 @@ async def test_next_commands_link_to_get_structural_variant() -> None:
     spy = _SpySvService()
     mcp = create_gnomad_mcp(service_factory=lambda: spy)
 
-    result = await mcp.call_tool("search_structural_variants", {"gene_symbol": "SMARCA4"})
+    result = await mcp.call_tool("search_structural_variants", {"target": "SMARCA4"})
     payload = result.structured_content or {}
     next_commands = payload["_meta"]["next_commands"]
 
@@ -193,11 +188,11 @@ async def test_region_dispatch_forwards_region() -> None:
 
     result = await mcp.call_tool(
         "search_structural_variants",
-        {"region": "19-11089000-11200000", "sv_dataset": "gnomad_sv_r2_1"},
+        {"target": "19-11089000-11200000", "sv_dataset": "gnomad_sv_r2_1"},
     )
     payload = result.structured_content or {}
 
-    assert payload.get("error_code") != "validation_failed", payload
+    assert payload.get("error_code") != "invalid_input", payload
     assert spy.last_kwargs["region"] == "19-11089000-11200000"
     assert spy.last_kwargs["sv_dataset"] == "gnomad_sv_r2_1"
     assert payload["query"]["region"] == "19-11089000-11200000"

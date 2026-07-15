@@ -15,7 +15,7 @@ from gnomad_link.mcp.comparison_shaping import build_comparison
 from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
 from gnomad_link.mcp.headline import comparison_headline
 from gnomad_link.mcp.minimal_shaping import project_compare_variant_minimal
-from gnomad_link.mcp.schema_relax import relax_output_schema
+from gnomad_link.mcp.population_shaping import validate_population_codes
 from gnomad_link.mcp.shaping import shape_variant_frequencies
 from gnomad_link.mcp.tools.coordinates import select_build_variant_id
 from gnomad_link.services import FrequencyService
@@ -28,24 +28,6 @@ _DEFAULT_DATASETS = ["gnomad_r4", "gnomad_r3", "gnomad_r2_1"]
 
 # Datasets and their reference build. Only gnomad_r2_1 is GRCh37.
 _GRCH37_DATASETS = {"gnomad_r2_1"}
-
-_COMPARE_OUTPUT_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "variant_id": {"type": "string"},
-        "datasets": {"type": "object"},
-        "comparison": {
-            "type": "object",
-            "properties": {
-                "overall_af_by_dataset": {"type": "object"},
-                "per_population_af_deltas": {"type": "array", "items": {"type": "object"}},
-            },
-        },
-        "build_notes": {"type": "array", "items": {"type": "string"}},
-    },
-    "required": ["variant_id", "datasets", "comparison"],
-    "additionalProperties": True,
-}
 
 # gnomAD does not return upstream errors for a build-mismatched coordinate; it
 # simply 404s. We treat these as "absent in that dataset" rather than failures.
@@ -85,7 +67,7 @@ def register_comparison_tools(
         name="compare_variant_across_datasets",
         title="Compare One Variant Across gnomAD Datasets",
         annotations=READ_ONLY_OPEN_WORLD,
-        output_schema=relax_output_schema(_COMPARE_OUTPUT_SCHEMA),
+        output_schema=None,
         tags={"variant"},
     )
     async def compare_variant_across_datasets(
@@ -133,6 +115,7 @@ def register_comparison_tools(
         """Use this when a caller wants to see how one variant's allele frequencies shift across gnomAD releases (r4 vs r3 vs r2_1) and which populations diverge most. Datasets that lack the variant are marked present=false (partial success); the GRCh37 gnomad_r2_1 leg is auto-lifted from the GRCh38 id. Pair with get_clinvar_variant_details for clinical context. Compact (default) drops the per-dataset population arrays (comparison.per_population_af_deltas keeps the per-pop AFs); response_mode='full' returns the raw rows. Returns ~2-4kB compact, ~3-8kB full."""
 
         async def call() -> dict[str, Any]:
+            validate_population_codes(populations)
             selected = datasets if datasets is not None else list(_DEFAULT_DATASETS)
             service = service_factory()
             per_dataset: dict[str, dict[str, Any]] = {}

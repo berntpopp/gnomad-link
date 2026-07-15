@@ -156,7 +156,7 @@ async def test_gene_variants_chains_to_gene_details_and_clinvar() -> None:
     cmds = _next_commands(payload)
     _assert_well_formed(cmds)
     assert cmds[0]["tool"] == "get_gene_details"
-    assert cmds[0]["arguments"] == {"gene_id": "ENSG00000169174"}
+    assert cmds[0]["arguments"] == {"gene": "ENSG00000169174"}
     clinvar = [c for c in cmds if c["tool"] == "get_clinvar_variant_details"]
     assert clinvar, cmds
     assert clinvar[0]["arguments"] == {"variant_id": "12-1-A-T"}
@@ -210,7 +210,9 @@ async def test_structural_variant_emits_region_chain() -> None:
     assert "get_region" in tools
     region = "1-1000-2000"
     for c in cmds:
-        assert c["arguments"].get("region") == region, c
+        # search_structural_variants takes the collapsed `target`; get_region keeps `region`.
+        key = "target" if c["tool"] == "search_structural_variants" else "region"
+        assert c["arguments"].get(key) == region, c
 
 
 # --- D) get_mitochondrial_variant without gene_symbol ----------------------
@@ -240,7 +242,7 @@ async def test_mitochondrial_variant_without_gene_still_emits() -> None:
         "get_mitochondrial_variant",
         {"variant_id": "M-3243-A-G", "dataset": "gnomad_r4"},
     )
-    assert payload.get("error_code") != "validation_failed", payload
+    assert payload.get("error_code") != "invalid_input", payload
     cmds = _next_commands(payload)
     _assert_well_formed(cmds)
     # Position-based fallback prefers a get_region anchor.

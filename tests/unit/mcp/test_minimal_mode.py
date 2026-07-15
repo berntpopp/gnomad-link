@@ -352,7 +352,7 @@ async def test_carrier_frequency_full_unchanged() -> None:
 @pytest.mark.asyncio
 async def test_gene_carrier_frequency_minimal() -> None:
     mcp = create_gnomad_mcp(service_factory=lambda: _GeneCarrierStub())
-    args = {"gene_symbol": "CFTR"}
+    args = {"gene": "CFTR"}
     compact = _structured(await mcp.call_tool("compute_gene_carrier_frequency", args))
     minimal = _structured(
         await mcp.call_tool("compute_gene_carrier_frequency", {**args, "response_mode": "minimal"})
@@ -375,7 +375,7 @@ async def test_gene_carrier_frequency_full_unchanged() -> None:
     mcp = create_gnomad_mcp(service_factory=lambda: _GeneCarrierStub())
     full = _structured(
         await mcp.call_tool(
-            "compute_gene_carrier_frequency", {"gene_symbol": "CFTR", "response_mode": "full"}
+            "compute_gene_carrier_frequency", {"gene": "CFTR", "response_mode": "full"}
         )
     )
     # full returns the complete contributing-variant list (2 in the canned data).
@@ -391,7 +391,7 @@ async def test_gene_carrier_frequency_full_unchanged() -> None:
 @pytest.mark.asyncio
 async def test_gene_details_minimal() -> None:
     mcp = create_gnomad_mcp(service_factory=lambda: _GeneStub())
-    args = {"gene_symbol": "PCSK9"}
+    args = {"gene": "PCSK9"}
     compact = _structured(await mcp.call_tool("get_gene_details", args))
     minimal = _structured(
         await mcp.call_tool("get_gene_details", {**args, "response_mode": "minimal"})
@@ -416,7 +416,7 @@ async def test_gene_details_minimal() -> None:
 async def test_gene_details_full_unchanged() -> None:
     mcp = create_gnomad_mcp(service_factory=lambda: _GeneStub())
     full = _structured(
-        await mcp.call_tool("get_gene_details", {"gene_symbol": "PCSK9", "response_mode": "full"})
+        await mcp.call_tool("get_gene_details", {"gene": "PCSK9", "response_mode": "full"})
     )
     # full passes through the heavy arrays.
     assert full["transcripts"]
@@ -431,7 +431,7 @@ async def test_gene_details_full_unchanged() -> None:
 @pytest.mark.asyncio
 async def test_gene_summary_minimal() -> None:
     mcp = create_gnomad_mcp(service_factory=lambda: _GeneSummaryStub())
-    args = {"gene_symbol": "PCSK9"}
+    args = {"gene": "PCSK9"}
     compact = _structured(await mcp.call_tool("get_gene_summary", args))
     minimal = _structured(
         await mcp.call_tool("get_gene_summary", {**args, "response_mode": "minimal"})
@@ -453,7 +453,7 @@ async def test_gene_summary_minimal() -> None:
 async def test_gene_summary_full_unchanged() -> None:
     mcp = create_gnomad_mcp(service_factory=lambda: _GeneSummaryStub())
     full = _structured(
-        await mcp.call_tool("get_gene_summary", {"gene_symbol": "PCSK9", "response_mode": "full"})
+        await mcp.call_tool("get_gene_summary", {"gene": "PCSK9", "response_mode": "full"})
     )
     # full returns the raw clinvar_variants list (not the ranked summary).
     assert isinstance(full["clinvar_variants"], list) and len(full["clinvar_variants"]) == 3

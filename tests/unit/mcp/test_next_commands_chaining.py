@@ -33,7 +33,7 @@ async def test_search_genes_chains_to_get_gene_details() -> None:
 
     cmds = _next_commands(payload)
     assert cmds and cmds[0]["tool"] == "get_gene_details"
-    assert cmds[0]["arguments"] == {"gene_id": "ENSG00000001626"}
+    assert cmds[0]["arguments"] == {"gene": "ENSG00000001626"}
 
 
 class _LiftoverStub:
@@ -113,4 +113,4 @@ async def test_transcript_chains_to_get_gene_summary() -> None:
 
     cmds = _next_commands(payload)
     assert cmds and cmds[0]["tool"] == "get_gene_summary"
-    assert cmds[0]["arguments"] == {"gene_id": "ENSG00000141510"}
+    assert cmds[0]["arguments"] == {"gene": "ENSG00000141510"}

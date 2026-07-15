@@ -10,7 +10,6 @@ from fastmcp import FastMCP
 from gnomad_link.mcp.annotations import READ_ONLY_CLOSED_WORLD
 from gnomad_link.mcp.errors import get_recent_errors, get_recent_schema_drift, run_mcp_tool
 from gnomad_link.mcp.resources import MCP_PROTOCOL_VERSION, _server_version
-from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.services import FrequencyService
 
 
@@ -24,28 +23,7 @@ def register_diagnostics_tools(
         title="Get gnomAD Link Diagnostics",
         annotations=READ_ONLY_CLOSED_WORLD,
         tags={"metadata", "diagnostics"},
-        output_schema=relax_output_schema(
-            {
-                "type": "object",
-                "properties": {
-                    "server_version": {"type": "string"},
-                    "mcp_protocol_version": {"type": "string"},
-                    "recent_errors": {"type": "array", "items": {"type": "object"}},
-                    "recent_error_count": {"type": "integer"},
-                    "recent_schema_drift": {"type": "array", "items": {"type": "object"}},
-                    "recent_schema_drift_count": {"type": "integer"},
-                    "upstream_reachable": {"type": "boolean"},
-                    "_meta": {"type": "object"},
-                },
-                "required": [
-                    "server_version",
-                    "mcp_protocol_version",
-                    "recent_errors",
-                    "recent_error_count",
-                    "upstream_reachable",
-                ],
-            }
-        ),
+        output_schema=None,
     )
     async def get_diagnostics() -> dict[str, Any]:
         """Use this when an LLM hits repeated errors or needs server health information; returns recent error history, server version, upstream availability flag, and recent_schema_drift entries so an LLM that hit output_validation_failed can self-diagnose. Returns <1kB."""

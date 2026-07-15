@@ -75,7 +75,7 @@ async def test_get_gene_summary_compact_shapes_clinvar_and_meta() -> None:
     stub = _StubGeneSummaryService()
     mcp = create_gnomad_mcp(service_factory=lambda: stub)
 
-    result = await mcp.call_tool("get_gene_summary", {"gene_symbol": "PCSK9"})
+    result = await mcp.call_tool("get_gene_summary", {"gene": "PCSK9"})
     payload = result.structured_content or {}
 
     assert payload["symbol"] == "PCSK9"
@@ -100,9 +100,7 @@ async def test_get_gene_summary_full_returns_raw_clinvar_variants() -> None:
     stub = _StubGeneSummaryService()
     mcp = create_gnomad_mcp(service_factory=lambda: stub)
 
-    result = await mcp.call_tool(
-        "get_gene_summary", {"gene_symbol": "PCSK9", "response_mode": "full"}
-    )
+    result = await mcp.call_tool("get_gene_summary", {"gene": "PCSK9", "response_mode": "full"})
     payload = result.structured_content or {}
 
     assert isinstance(payload["clinvar_variants"], list)
@@ -115,9 +113,7 @@ async def test_include_clinvar_false_drops_clinvar_block() -> None:
     stub = _StubGeneSummaryService()
     mcp = create_gnomad_mcp(service_factory=lambda: stub)
 
-    result = await mcp.call_tool(
-        "get_gene_summary", {"gene_symbol": "PCSK9", "include_clinvar": False}
-    )
+    result = await mcp.call_tool("get_gene_summary", {"gene": "PCSK9", "include_clinvar": False})
     payload = result.structured_content or {}
 
     assert "clinvar_summary" not in payload
@@ -133,7 +129,7 @@ async def test_expression_only_projection() -> None:
 
     result = await mcp.call_tool(
         "get_gene_summary",
-        {"gene_symbol": "PCSK9", "include_clinvar": False, "include_constraint": False},
+        {"gene": "PCSK9", "include_clinvar": False, "include_constraint": False},
     )
     payload = result.structured_content or {}
 
@@ -148,9 +144,7 @@ async def test_include_expression_false_skips_service_fetch() -> None:
     stub = _StubGeneSummaryService()
     mcp = create_gnomad_mcp(service_factory=lambda: stub)
 
-    result = await mcp.call_tool(
-        "get_gene_summary", {"gene_symbol": "PCSK9", "include_expression": False}
-    )
+    result = await mcp.call_tool("get_gene_summary", {"gene": "PCSK9", "include_expression": False})
     payload = result.structured_content or {}
 
     assert "expression" not in payload
@@ -159,20 +153,15 @@ async def test_include_expression_false_skips_service_fetch() -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_gene_summary_requires_exactly_one_identifier() -> None:
+async def test_get_gene_summary_requires_identifier() -> None:
     stub = _StubGeneSummaryService()
     mcp = create_gnomad_mcp(service_factory=lambda: stub)
 
+    # The single required `gene` param (symbol OR Ensembl id) replaces the old
+    # one-of-two identifiers: a missing gene is invalid_input, never the
+    # off-enum validation_failed and never not_found.
     none_given = (await mcp.call_tool("get_gene_summary", {})).structured_content or {}
-    assert none_given["error_code"] == "validation_failed"
-
-    both_given = (
-        await mcp.call_tool(
-            "get_gene_summary",
-            {"gene_symbol": "PCSK9", "gene_id": "ENSG00000169174"},
-        )
-    ).structured_content or {}
-    assert both_given["error_code"] == "validation_failed"
+    assert none_given["error_code"] == "invalid_input"
     # Service is never invoked when identifier validation fails.
     assert stub.calls == []
 

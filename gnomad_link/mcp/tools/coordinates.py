@@ -12,9 +12,7 @@ from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.build_check import detect_region_mismatch
 from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, ToolInputError, run_mcp_tool
 from gnomad_link.mcp.headline import region_headline
-from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.shaping import cap_region_span, shape_region_payload
-from gnomad_link.models import LiftoverResponse, Region
 from gnomad_link.services import FrequencyService
 
 _REGION_PATTERN = r"^(chr)?([1-9]|1[0-9]|2[0-2]|X|Y|M|MT)-\d+-\d+$"
@@ -44,7 +42,7 @@ def register_coordinate_tools(
         name="compute_variant_liftover",
         title="Liftover Variant Between GRCh37 and GRCh38",
         annotations=READ_ONLY_OPEN_WORLD,
-        output_schema=relax_output_schema(LiftoverResponse.model_json_schema()),
+        output_schema=None,
         tags={"coordinates"},
     )
     async def compute_variant_liftover(
@@ -59,20 +57,17 @@ def register_coordinate_tools(
             ),
         ],
         source_genome: Annotated[
-            Literal["GRCh37", "GRCh38"] | None,
+            Literal["GRCh37", "GRCh38"],
             Field(
                 description="Reference build of source_variant_id.",
+                examples=["GRCh37"],
             ),
-        ] = None,
+        ],
     ) -> dict[str, Any]:
         """Use this when a caller has a variant id in one reference build and needs the equivalent id in the other. Works BOTH directions (GRCh37<->GRCh38); the converted coordinate is in each result's `target_variant_id` (and `target_reference_genome` names the build). Use this BEFORE calling frequency tools if the dataset and coordinate build do not match. Returns <1kB."""
 
         async def call() -> dict[str, Any]:
             build = source_genome
-            if build is None:
-                raise ToolInputError(
-                    "Provide source_genome to indicate the build of source_variant_id."
-                )
             service = service_factory()
             results = await service.liftover_variant(source_variant_id, build)
             target = "GRCh38" if build == "GRCh37" else "GRCh37"
@@ -129,7 +124,7 @@ def register_coordinate_tools(
         name="get_region",
         title="Get Variants and Genes in a Region",
         annotations=READ_ONLY_OPEN_WORLD,
-        output_schema=relax_output_schema(Region.model_json_schema()),
+        output_schema=None,
         tags={"coordinates"},
     )
     async def get_region(
@@ -138,6 +133,7 @@ def register_coordinate_tools(
             Field(
                 description="Region in chr-start-stop format (e.g. 17-7674232-7674252).",
                 pattern=_REGION_PATTERN,
+                examples=["17-7674232-7674252"],
             ),
         ],
         dataset: Annotated[

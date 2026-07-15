@@ -127,8 +127,29 @@ def unknown_tool_result() -> ToolResult:
     )
 
 
+def _promote_error_result(result: Any) -> Any:
+    """Set ``isError:true`` on a ToolResult whose envelope is a domain error.
+
+    ``run_mcp_tool`` and the arg-validation handler return error envelopes as a
+    plain dict (``success:false`` / ``error_code``), which FastMCP serialises into
+    a ToolResult with ``isError:false``. A client that branches on ``isError``
+    would read that as a SUCCESSFUL call (Response-Envelope v1: "isError:true is
+    REQUIRED so clients surface the error to the model for self-correction").
+    Promote any such envelope here -- the single chokepoint covering BOTH the
+    raised-exception path (run_mcp_tool) and the returned-dict validation path.
+    """
+    if not isinstance(result, ToolResult) or result.is_error:
+        return result
+    structured = result.structured_content
+    if isinstance(structured, dict) and (
+        structured.get("success") is False or structured.get("error_code")
+    ):
+        result.is_error = True
+    return result
+
+
 class NotFoundGuard(Middleware):
-    """Layer 1 (tool preflight) + Layer 2 (resource boundary)."""
+    """Layer 1 (tool preflight) + Layer 2 (resource boundary) + isError promotion."""
 
     async def on_call_tool(
         self,
@@ -141,7 +162,9 @@ class NotFoundGuard(Middleware):
         disabled tool, so an unknown name is answered here with a fixed, name-free
         envelope. The requested name is NOT written to the diagnostics ring (only
         a fixed marker is logged), keeping caller input out of the cross-session
-        ``get_diagnostics`` surface.
+        ``get_diagnostics`` surface. On the success path, a returned error envelope
+        is promoted to ``isError:true`` (this is the OUTERMOST middleware, so it
+        sees the final ToolResult from every tool/validation path).
         """
         fctx = getattr(context, "fastmcp_context", None)
         name = getattr(getattr(context, "message", None), "name", None)
@@ -153,7 +176,7 @@ class NotFoundGuard(Middleware):
             if tool is None:
                 logger.warning("mcp_unknown_tool")
                 return unknown_tool_result()
-        return await call_next(context)
+        return _promote_error_result(await call_next(context))
 
     async def on_read_resource(
         self,

@@ -62,7 +62,7 @@ async def test_validation_error_carries_gnomad_release() -> None:
     payload = result.structured_content or {}
 
     assert payload.get("success") is False
-    assert payload.get("error_code") == "validation_failed"
+    assert payload.get("error_code") == "invalid_input"
     meta = payload.get("_meta") or {}
     assert meta.get("gnomad_release") == GNOMAD_DATA_RELEASE
     assert meta.get("gnomad_release") == "4.1.0"
@@ -84,7 +84,8 @@ async def test_build_mismatch_error_carries_gnomad_release() -> None:
     payload = result.structured_content or {}
 
     assert payload.get("success") is False
-    assert payload.get("error_code") == "build_mismatch", payload
+    assert payload.get("error_code") == "invalid_input", payload
+    assert payload.get("error_subtype") == "build_mismatch", payload
     meta = payload.get("_meta") or {}
     assert meta.get("gnomad_release") == GNOMAD_DATA_RELEASE
     assert meta.get("gnomad_release") == "4.1.0"

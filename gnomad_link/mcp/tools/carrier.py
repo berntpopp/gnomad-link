@@ -14,8 +14,8 @@ from gnomad_link.mcp.build_check import detect_variant_id_mismatch
 from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, run_mcp_tool
 from gnomad_link.mcp.headline import variant_carrier_headline
 from gnomad_link.mcp.minimal_shaping import project_carrier_frequency_minimal
+from gnomad_link.mcp.population_shaping import validate_population_codes
 from gnomad_link.mcp.provenance import provenance_block
-from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.models import PopulationFrequency, VariantDataSource, VariantFrequencyResponse
 from gnomad_link.services import FrequencyService
 from gnomad_link.services.carrier_math import (
@@ -31,25 +31,6 @@ from gnomad_link.services.carrier_math import (
 
 # Shared with get_variant_frequencies: autosomal CHROM-POS-REF-ALT grammar.
 _AUTOSOMAL_VARIANT_ID_PATTERN = r"^([1-9]|1\d|2[0-2]|X|Y)-\d+-[ACGT]+-[ACGT]+$"
-
-_CARRIER_OUTPUT_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "headline": {"type": "string"},
-        "variant_id": {"type": "string"},
-        "dataset": {"type": "string"},
-        "inheritance": {"type": "string"},
-        "method": {"type": "string"},
-        "overall": {"type": ["object", "null"]},
-        "per_population": {"type": "array", "items": {"type": "object"}},
-        "summary": {"type": ["object", "null"]},
-        "assumptions_note": {"type": "string"},
-        "citations": {"type": "array", "items": {"type": "string"}},
-        "citations_ref": {"type": "string"},
-    },
-    "required": ["variant_id", "dataset", "inheritance", "method"],
-    "additionalProperties": True,
-}
 
 
 def _preferred_source(
@@ -310,7 +291,7 @@ def register_carrier_tools(
         name="compute_carrier_frequency",
         title="Compute Carrier Frequency",
         annotations=READ_ONLY_OPEN_WORLD,
-        output_schema=relax_output_schema(_CARRIER_OUTPUT_SCHEMA),
+        output_schema=None,
         tags={"variant"},
     )
     async def compute_carrier_frequency(
@@ -365,6 +346,7 @@ def register_carrier_tools(
         """Use this when a caller needs an estimated carrier/affected frequency derived from a single gnomAD allele frequency under Hardy-Weinberg assumptions for AR, AD, or X-linked inheritance. Pure local math on top of get_variant_frequencies; returns a one-line `headline`, Wilson 95% CIs, per-population breakdown, and provenance (short citations + a gnomad://citations pointer in compact mode; full citations with response_mode='full'). Estimates are research-use only, never clinical decision support. Returns ~2-4kB."""
 
         async def call() -> dict[str, Any]:
+            validate_population_codes(populations)
             inferred = detect_variant_id_mismatch(variant_id, dataset)
             if inferred is not None:
                 raise BuildMismatchError(

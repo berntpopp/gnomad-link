@@ -229,7 +229,7 @@ async def test_compute_variant_liftover_accepts_source_genome() -> None:
     )
     payload = _structured(result)
 
-    assert payload.get("error_code") != "validation_failed", payload
+    assert payload.get("error_code") != "invalid_input", payload
     assert payload.get("success") is not False, payload
     assert payload["source_reference_genome"] == "GRCh37"
     assert stub.liftover_calls == [("1-55051215-G-GA", "GRCh37")]
@@ -272,6 +272,6 @@ async def test_compute_variant_liftover_rejects_when_source_genome_missing() -> 
 
     # Either a validation envelope or a structured value-error envelope is OK.
     assert payload.get("success") is False, payload
-    assert payload.get("error_code") in {"validation_failed", "internal_error"}, payload
+    assert payload.get("error_code") in {"invalid_input", "internal"}, payload
     # Service must not have been called.
     assert stub.liftover_calls == []

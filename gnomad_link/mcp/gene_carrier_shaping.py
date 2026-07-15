@@ -19,6 +19,52 @@ def _one_in(value: float | None) -> int | None:
     return round(1.0 / value)
 
 
+# The clean Pathogenic/Likely-pathogenic classifications — a variant carrying one
+# of these has no penetrance caveat.
+_CLEAN_PLP = {"pathogenic", "likely pathogenic", "pathogenic/likely pathogenic"}
+
+# Qualifiers that, appended to a P/LP call, mark a REDUCED or VARIABLE penetrance
+# allele — the CFTR-RD alleles (5T, R117H = "…; other") that make the ClinVar-P/LP
+# gene-level estimate overstate CF carrier frequency (defect #45-1). These are NOT
+# the same as a non-P/LP classification: Benign, Likely benign, Uncertain
+# significance, and Conflicting classifications are simply NOT reduced-penetrance
+# P/LP variants and must never be flagged as such (a Benign-annotated pLoF was
+# being falsely flagged).
+_REDUCED_PENETRANCE_QUALIFIERS = (
+    "other",
+    "risk factor",
+    "association",
+    "drug response",
+    "protective",
+    "affects",
+    "low penetrance",
+    "reduced penetrance",
+)
+
+
+def _penetrance_flag(clinvar_significance: str | None) -> str | None:
+    """Flag ONLY a Pathogenic/Likely-pathogenic call carrying a reduced/variable-
+    penetrance qualifier (e.g. "Pathogenic/Likely pathogenic; other").
+
+    Returns None for a clean P/LP, and None for anything whose primary call is not
+    P/LP (Benign / Likely benign / Uncertain significance / Conflicting …) — those
+    are not reduced-penetrance P/LP variants, so flagging them would be a false
+    positive.
+    """
+    if not clinvar_significance:
+        return None
+    sig = clinvar_significance.strip().lower()
+    if sig in _CLEAN_PLP:
+        return None
+    # Primary call must be Pathogenic / Likely pathogenic (not "conflicting …",
+    # which merely contains the substring "pathogenicity", and not benign/VUS).
+    if not (sig.startswith("pathogenic") or sig.startswith("likely pathogenic")):
+        return None
+    if any(qualifier in sig for qualifier in _REDUCED_PENETRANCE_QUALIFIERS):
+        return "reduced_or_variable"
+    return None
+
+
 def _round(value: Any, digits: int) -> Any:
     return round(value, digits) if isinstance(value, (int, float)) else value
 
@@ -58,9 +104,19 @@ def shape_gene_carrier(
         key=lambda v: v.get("global_af") or 0.0,
         reverse=True,
     )
+    # Flag each variant whose ClinVar significance is present but not a clean P/LP
+    # as reduced/variable penetrance, and count them across the FULL qualifying set
+    # so the caveat holds even when the contributing list is capped.
+    reduced_penetrance_variants = 0
+    for v in variants:
+        flag = _penetrance_flag(v.get("clinvar_significance"))
+        if flag is not None:
+            v["penetrance_flag"] = flag
+            reduced_penetrance_variants += 1
     cap = len(variants) if response_mode == "full" else top_variants_limit
     contributing: dict[str, Any] = {
         "count": result.get("qualifying_count", len(variants)),
+        "reduced_penetrance_variants": reduced_penetrance_variants,
         # `sources` is carried once at the top level of the shaped payload; do not
         # duplicate it inside contributing_variants.
         "top": variants[:cap],
