@@ -2,6 +2,14 @@
 
 All notable changes to gnomad-link are documented here.
 
+## [Unreleased]
+
+### Changed
+
+- Re-vendored the behaviour conformance gate from genefoundry-router `56db958`
+  (`docs/conformance/behaviour.py` blob `c69801687`) so live MCP contract checks
+  treat not-found example probes as inconclusive and keep empty auxiliary objects from hiding counted rows.
+
 ## [9.0.0] - 2026-07-15
 
 MCP contract hardening: honest error envelopes, honest pagination, and a tool
