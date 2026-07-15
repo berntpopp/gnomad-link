@@ -2,20 +2,23 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 DOCKERFILE = Path("docker/Dockerfile").read_text(encoding="utf-8")
+PINNED_PYTHON_IMAGE = r"python:3\.14-slim@sha256:[0-9a-f]{64}"
 
 
 def test_dockerfile_uses_modern_python_and_uv_lock() -> None:
-    digest = (
-        "python:3.14-slim@sha256:b877e50bd90de10af8d82c57a022fc2e0dc731c5320d762a27986facfc3355c1"
-    )
     # Every stage that pulls a real base image must use the pinned digest. The
     # production stage is `scratch` by design (see the layer-flattening test
     # below), so it inherits its filesystem from `prepared`, not a base image.
-    assert f"FROM {digest} AS builder" in DOCKERFILE
-    assert f"FROM {digest} AS prepared" in DOCKERFILE
+    matches = re.findall(
+        rf"^FROM ({PINNED_PYTHON_IMAGE}) AS (builder|prepared)$", DOCKERFILE, re.MULTILINE
+    )
+    stages = {stage: image for image, stage in matches}
+    assert set(stages) == {"builder", "prepared"}
+    assert stages["builder"] == stages["prepared"]
     assert "COPY uv.lock pyproject.toml README.md ./" in DOCKERFILE
     assert "uv sync --frozen --no-dev --active --no-install-project" in DOCKERFILE
 
