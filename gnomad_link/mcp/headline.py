@@ -227,10 +227,26 @@ def coverage_headline(payload: dict[str, Any]) -> str:
 
 
 def region_headline(payload: dict[str, Any], *, region: str, dataset: str) -> str:
-    """Headline for get_region (gene + ClinVar counts in the window)."""
-    n_genes = len(payload.get("genes") or [])
-    n_clinvar = len(payload.get("clinvar_variants") or [])
-    return f"{region} ({dataset}): {n_genes} genes, {n_clinvar} ClinVar variants."
+    """Headline for get_region (TRUE gene + ClinVar totals, cap made explicit).
+
+    Reads the ``counts`` block that ``shape_region_payload`` computes BEFORE
+    capping, so the headline reports the real region content ("4098 ClinVar
+    variants (showing 100)") rather than the post-cap page size (defect #45-2).
+    """
+    counts = payload.get("counts") or {}
+    shown_genes = len(payload.get("genes") or [])
+    shown_clinvar = len(payload.get("clinvar_variants") or [])
+    total_genes = counts.get("total_genes", shown_genes)
+    total_clinvar = counts.get("total_clinvar_variants", shown_clinvar)
+
+    def _clause(total: int, shown: int, noun: str) -> str:
+        if isinstance(total, int) and total > shown:
+            return f"{total} {noun} (showing {shown})"
+        return f"{total} {noun}"
+
+    genes_clause = _clause(total_genes, shown_genes, "genes")
+    clinvar_clause = _clause(total_clinvar, shown_clinvar, "ClinVar variants")
+    return f"{region} ({dataset}): {genes_clause}, {clinvar_clause}."
 
 
 def gene_details_headline(result: dict[str, Any], *, reference_genome: str) -> str:

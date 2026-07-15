@@ -9,15 +9,56 @@ from fastmcp import FastMCP
 from pydantic import Field
 
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
-from gnomad_link.mcp.errors import McpErrorContext, ToolInputError, run_mcp_tool
+from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
 from gnomad_link.mcp.headline import gene_details_headline
 from gnomad_link.mcp.minimal_shaping import project_gene_details_minimal
 from gnomad_link.mcp.next_commands import cmd
-from gnomad_link.mcp.patterns import GENE_ID_PATTERN, GENE_SYMBOL_PATTERN
-from gnomad_link.mcp.schema_relax import relax_output_schema
+from gnomad_link.mcp.patterns import GENE_ID_PATTERN, split_gene
 from gnomad_link.mcp.shaping import shape_gene_details_compact, shape_gene_variants
-from gnomad_link.models import Gene
 from gnomad_link.services import FrequencyService
+
+# gnomAD VEP major_consequence vocabulary (a superset is safe: the runtime accepts
+# any declared value; an out-of-vocab value is rejected as invalid_input by the
+# schema instead of silently returning zero rows). Declared as a Literal so the
+# behaviour gate's declared-enum probe covers this filter.
+GeneVariantConsequence = Literal[
+    "transcript_ablation",
+    "splice_acceptor_variant",
+    "splice_donor_variant",
+    "stop_gained",
+    "frameshift_variant",
+    "stop_lost",
+    "start_lost",
+    "transcript_amplification",
+    "inframe_insertion",
+    "inframe_deletion",
+    "missense_variant",
+    "protein_altering_variant",
+    "splice_region_variant",
+    "incomplete_terminal_codon_variant",
+    "start_retained_variant",
+    "stop_retained_variant",
+    "synonymous_variant",
+    "coding_sequence_variant",
+    "mature_miRNA_variant",
+    "5_prime_UTR_variant",
+    "3_prime_UTR_variant",
+    "non_coding_transcript_exon_variant",
+    "intron_variant",
+    "NMD_transcript_variant",
+    "non_coding_transcript_variant",
+    "upstream_gene_variant",
+    "downstream_gene_variant",
+    "TFBS_ablation",
+    "TFBS_amplification",
+    "TF_binding_site_variant",
+    "regulatory_region_ablation",
+    "regulatory_region_amplification",
+    "feature_elongation",
+    "regulatory_region_variant",
+    "feature_truncation",
+    "intergenic_variant",
+]
 
 
 def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], FrequencyService]) -> None:
@@ -25,26 +66,17 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
         name="get_gene_details",
         title="Get Gene Details",
         annotations=READ_ONLY_OPEN_WORLD,
-        output_schema=relax_output_schema(Gene.model_json_schema()),
+        output_schema=None,
         tags={"gene"},
     )
     async def get_gene_details(
-        gene_id: Annotated[
-            str | None,
+        gene: Annotated[
+            str,
             Field(
-                description="Ensembl gene ID (preferred over symbol).",
-                pattern=GENE_ID_PATTERN,
-                examples=["ENSG00000169174"],
-            ),
-        ] = None,
-        gene_symbol: Annotated[
-            str | None,
-            Field(
-                description="HGNC gene symbol, used if gene_id is absent.",
-                pattern=GENE_SYMBOL_PATTERN,
+                description="Gene symbol (e.g. PCSK9) or Ensembl gene ID (ENSG...).",
                 examples=["PCSK9"],
             ),
-        ] = None,
+        ],
         reference_genome: Annotated[
             Literal["GRCh37", "GRCh38"],
             Field(description="Lookup build for gene coordinates and constraint. GRCh38 default."),
@@ -62,9 +94,9 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
     ) -> dict[str, Any]:
         """Use this when a caller has a gene id or symbol and needs constraint scores (pLI/oe_lof), canonical transcript, and basic coordinates. Follow with get_gene_variants if they then need per-variant rows. Returns compact ~2kB, full up to ~30kB."""
 
+        gene_id, gene_symbol = split_gene(gene)
+
         async def call() -> dict[str, Any]:
-            if not gene_id and not gene_symbol:
-                raise ToolInputError("Provide gene_id or gene_symbol.")
             service = service_factory()
             gene_obj = await service.get_gene(
                 gene_id=gene_id,
@@ -113,19 +145,7 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
         title="Get Gene Variants",
         annotations=READ_ONLY_OPEN_WORLD,
         tags={"gene"},
-        output_schema=relax_output_schema(
-            {
-                "type": "object",
-                "properties": {
-                    "variants": {"type": "array", "items": {"type": "object"}},
-                    "returned": {"type": "integer"},
-                    "total_seen": {"type": "integer"},
-                    "truncated": {"type": ["object", "null"]},
-                },
-                "required": ["variants", "returned", "total_seen"],
-                "additionalProperties": True,
-            }
-        ),
+        output_schema=None,
     )
     async def get_gene_variants(
         gene_id: Annotated[
@@ -147,11 +167,11 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
             int, Field(ge=1, le=500, description="Max variants returned (hard cap 500).")
         ] = 100,
         consequence: Annotated[
-            str | None,
+            GeneVariantConsequence | None,
             Field(
-                description="Exact VEP major_consequence term to keep, case-sensitive "
-                "(e.g. 'missense_variant', 'frameshift_variant', 'stop_gained'). "
-                "Not a category like 'lof'/'plof'."
+                description="Exact VEP major_consequence term to keep (e.g. "
+                "'missense_variant', 'stop_gained'); not a category like 'lof'. "
+                "An unrecognised term is rejected as invalid_input, not zeroed."
             ),
         ] = None,
         max_af: Annotated[
@@ -202,7 +222,7 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
             )
             # Follow up with gene-level context, and ClinVar for the first row.
             variants = result.get("variants") or []
-            cmds = [cmd("get_gene_details", gene_id=gene_id)]
+            cmds = [cmd("get_gene_details", gene=gene_id)]
             if variants and variants[0].get("variant_id"):
                 cmds.append(
                     cmd("get_clinvar_variant_details", variant_id=variants[0]["variant_id"])

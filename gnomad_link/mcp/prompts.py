@@ -54,7 +54,7 @@ def register_workflow_prompts(mcp: FastMCP) -> None:
         return (
             f"Gene constraint workflow for {gene_symbol}:\n"
             "1. Call search_genes(query='{gene_symbol}') to resolve to an Ensembl gene_id.\n"
-            "2. Call get_gene_details(gene_id='<resolved_id>') for pLI/oe_lof scores, "
+            "2. Call get_gene_details(gene='<resolved_id>') for pLI/oe_lof scores, "
             "canonical transcript, and coordinates.\n"
             "3. Call get_gene_variants(gene_id='<resolved_id>', consequence='frameshift_variant') "
             "to review loss-of-function variants. Raise limit or relax filters as needed.\n"

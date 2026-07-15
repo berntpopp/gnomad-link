@@ -47,7 +47,7 @@ async def test_gene_carrier_by_symbol_returns_sorted_populations() -> None:
     stub = _StubGeneCarrierService()
     mcp = create_gnomad_mcp(service_factory=lambda: stub)
 
-    result = await mcp.call_tool("compute_gene_carrier_frequency", {"gene_symbol": "CFTR"})
+    result = await mcp.call_tool("compute_gene_carrier_frequency", {"gene": "CFTR"})
     payload = result.structured_content or {}
 
     assert payload["gene"]["symbol"] == "CFTR"
@@ -71,7 +71,7 @@ async def test_gene_carrier_forwards_toggles() -> None:
     await mcp.call_tool(
         "compute_gene_carrier_frequency",
         {
-            "gene_symbol": "CFTR",
+            "gene": "CFTR",
             "include_missense": False,
             "clinvar_star_threshold": 1,
             "method": "hwe",
@@ -88,17 +88,14 @@ async def test_gene_carrier_forwards_toggles() -> None:
 
 
 @pytest.mark.asyncio
-async def test_gene_carrier_requires_exactly_one_gene_arg() -> None:
+async def test_gene_carrier_requires_gene_arg() -> None:
     stub = _StubGeneCarrierService()
     mcp = create_gnomad_mcp(service_factory=lambda: stub)
 
+    # Single required `gene` param (symbol OR Ensembl id): a missing gene is
+    # invalid_input (closed enum), never the off-enum validation_failed.
     none = await mcp.call_tool("compute_gene_carrier_frequency", {})
-    assert (none.structured_content or {})["error_code"] == "validation_failed"
-
-    both = await mcp.call_tool(
-        "compute_gene_carrier_frequency", {"gene_symbol": "CFTR", "gene_id": "ENSG1"}
-    )
-    assert (both.structured_content or {})["error_code"] == "validation_failed"
+    assert (none.structured_content or {})["error_code"] == "invalid_input"
     assert stub.calls == []
 
 

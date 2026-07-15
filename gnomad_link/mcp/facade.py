@@ -61,6 +61,7 @@ def create_gnomad_mcp(
         version=__version__,
         instructions=_INSTRUCTIONS,
         mask_error_details=True,
+        dereference_schemas=False,
     )
     # Guard the FastMCP-core not-found reflection surface: core echoes the
     # caller's OWN requested tool name / resource URI / prompt name (with any

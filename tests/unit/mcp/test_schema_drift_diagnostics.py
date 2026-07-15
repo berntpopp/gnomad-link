@@ -79,7 +79,9 @@ def test_actionable_output_validation_error_records_schema_drift() -> None:
     )
 
     assert payload["success"] is False
-    assert payload["error_code"] == "output_validation_failed"
+    # The envelope emits the closed-enum wire code; the schema-drift ring still
+    # records the specific `output_validation_failed` classification.
+    assert payload["error_code"] == "internal"
 
     items = get_recent_schema_drift()
     assert len(items) == 1

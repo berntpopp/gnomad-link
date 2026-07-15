@@ -199,6 +199,9 @@ def shape_gene_variants(
         raise ToolInputError("limit must be in [1, 500]")
     filtered: list[dict[str, Any]] = []
     total_seen = 0
+    # `total_count` counts EVERY match (not stopping at limit) so it stays invariant
+    # under limit (Behaviour Conformance B4); a page-size total is a fabricated total.
+    total_count = 0
     dropped = {"by_consequence": 0, "by_max_af": 0, "by_min_ac": 0}
     for v in raw:
         total_seen += 1
@@ -215,21 +218,23 @@ def shape_gene_variants(
         if min_ac is not None and (v.get("ac") or 0) < min_ac:
             dropped["by_min_ac"] += 1
             continue
-        filtered.append(
-            _project_gene_variant(
-                v,
-                select=None,
-                include_subcohorts=include_subcohorts,
-                include_sex_split=include_sex_split,
-                exclude_zero=exclude_zero_populations,
-                include_populations=include_populations,
+        total_count += 1
+        if len(filtered) < limit:
+            filtered.append(
+                _project_gene_variant(
+                    v,
+                    select=None,
+                    include_subcohorts=include_subcohorts,
+                    include_sex_split=include_sex_split,
+                    exclude_zero=exclude_zero_populations,
+                    include_populations=include_populations,
+                )
             )
-        )
-        if len(filtered) >= limit:
-            break
     payload: dict[str, Any] = {
         "variants": filtered,
         "returned": len(filtered),
+        "total_count": total_count,
+        "has_more": total_count > len(filtered),
         "total_seen": total_seen,
     }
     # One payload-level note describing the per-variant population projection,
@@ -248,9 +253,9 @@ def shape_gene_variants(
             exclude_zero=exclude_zero_populations,
             include_populations=include_populations,
         )
-    limit_hit = len(filtered) >= limit and total_seen < len(raw)
+    limit_hit = total_count > len(filtered)
     any_dropped = sum(dropped.values()) > 0
-    if limit_hit or any_dropped or total_seen > len(filtered):
+    if limit_hit or any_dropped:
         # Find the most-dropped filter category to surface as to_restore.
         best_drop_key: str | None = None
         best_drop_count = 0
@@ -541,6 +546,9 @@ def shape_region_payload(
 
     out = dict(payload)
     dropped: dict[str, int] = {}
+    # True totals BEFORE capping (defect #45-2: the headline reported the page size).
+    total_clinvar = len(payload.get("clinvar_variants") or []) if include_clinvar else 0
+    total_genes = len(payload.get("genes") or []) if include_genes else 0
 
     if include_clinvar:
         rows = list(payload.get("clinvar_variants") or [])
@@ -563,6 +571,14 @@ def shape_region_payload(
         out["genes"] = rows
     else:
         out.pop("genes", None)
+
+    out["counts"] = {
+        "total_clinvar_variants": total_clinvar,
+        "total_genes": total_genes,
+        "returned_clinvar_variants": len(out.get("clinvar_variants") or []),
+        "returned_genes": len(out.get("genes") or []),
+    }
+    out["has_more"] = bool(dropped)
 
     if dropped:
         restore_clinvar = max_clinvar_variants + dropped.get("clinvar_variants", 0)

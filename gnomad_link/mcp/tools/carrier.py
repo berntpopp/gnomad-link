@@ -15,7 +15,6 @@ from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, run_mcp_
 from gnomad_link.mcp.headline import variant_carrier_headline
 from gnomad_link.mcp.minimal_shaping import project_carrier_frequency_minimal
 from gnomad_link.mcp.provenance import provenance_block
-from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.models import PopulationFrequency, VariantDataSource, VariantFrequencyResponse
 from gnomad_link.services import FrequencyService
 from gnomad_link.services.carrier_math import (
@@ -31,25 +30,6 @@ from gnomad_link.services.carrier_math import (
 
 # Shared with get_variant_frequencies: autosomal CHROM-POS-REF-ALT grammar.
 _AUTOSOMAL_VARIANT_ID_PATTERN = r"^([1-9]|1\d|2[0-2]|X|Y)-\d+-[ACGT]+-[ACGT]+$"
-
-_CARRIER_OUTPUT_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "headline": {"type": "string"},
-        "variant_id": {"type": "string"},
-        "dataset": {"type": "string"},
-        "inheritance": {"type": "string"},
-        "method": {"type": "string"},
-        "overall": {"type": ["object", "null"]},
-        "per_population": {"type": "array", "items": {"type": "object"}},
-        "summary": {"type": ["object", "null"]},
-        "assumptions_note": {"type": "string"},
-        "citations": {"type": "array", "items": {"type": "string"}},
-        "citations_ref": {"type": "string"},
-    },
-    "required": ["variant_id", "dataset", "inheritance", "method"],
-    "additionalProperties": True,
-}
 
 
 def _preferred_source(
@@ -310,7 +290,7 @@ def register_carrier_tools(
         name="compute_carrier_frequency",
         title="Compute Carrier Frequency",
         annotations=READ_ONLY_OPEN_WORLD,
-        output_schema=relax_output_schema(_CARRIER_OUTPUT_SCHEMA),
+        output_schema=None,
         tags={"variant"},
     )
     async def compute_carrier_frequency(

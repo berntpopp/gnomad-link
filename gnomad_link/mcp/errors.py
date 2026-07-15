@@ -25,6 +25,8 @@ from gnomad_link.api import (
 )
 from gnomad_link.config import settings
 from gnomad_link.mcp.clinvar_date_cache import get_cached_clinvar_release_date
+from gnomad_link.mcp.recovery import DATASET_BUILD as _DATASET_BUILD
+from gnomad_link.mcp.recovery import liftover_recovery_command
 from gnomad_link.mcp.resources import GNOMAD_DATA_RELEASE
 from gnomad_link.mcp.untrusted_content import UntrustedTextLimitError, sanitize_message
 
@@ -50,6 +52,30 @@ _BASE_META = {
 # Fallback tool used in validation and output-validation error envelopes.
 # Points to get_diagnostics for rich health context on error recovery.
 _FALLBACK_TOOL = "get_diagnostics"
+
+# Response-Envelope Standard v1: `error_code` is a CLOSED enum of exactly six
+# values. gnomAD's internal classification is richer (it drives the distinct
+# recovery text/action per situation), so the internal code is mapped to the
+# wire enum at envelope-construction time. Every value emitted on the wire MUST
+# be one of these six; anything else is a contract violation the behaviour gate
+# catches (`error_code is in the closed enum`).
+_WIRE_ERROR_CODE = {
+    "not_found": "not_found",
+    "invalid_input": "invalid_input",
+    "validation_failed": "invalid_input",
+    "build_mismatch": "invalid_input",
+    "response_limit_exceeded": "invalid_input",
+    "ambiguous_query": "ambiguous_query",
+    "rate_limited": "rate_limited",
+    "upstream_unavailable": "upstream_unavailable",
+    "internal_error": "internal",
+    "output_validation_failed": "internal",
+}
+
+
+def to_wire_error_code(internal_code: str) -> str:
+    """Map an internal classification code onto the closed wire enum (never off-enum)."""
+    return _WIRE_ERROR_CODE.get(internal_code, "internal")
 
 
 @dataclass
@@ -96,17 +122,6 @@ class ToolInputError(ValueError):
     message is safe to surface verbatim (capped by ``_safe_message``). It still
     classifies as ``validation_failed`` because it subclasses ``ValueError``.
     """
-
-
-# Maps each dataset to its reference build so error/success envelopes can echo a
-# self-contained provenance pointer (which release + which build the call hit).
-_DATASET_BUILD = {
-    "gnomad_r2_1": "GRCh37",
-    "gnomad_r3": "GRCh38",
-    "gnomad_r4": "GRCh38",
-    "gnomad_sv_r2_1": "GRCh37",
-    "gnomad_sv_r4": "GRCh38",
-}
 
 
 def _provenance_meta(context: McpErrorContext | None = None) -> dict[str, Any]:
@@ -345,7 +360,9 @@ def mcp_validation_tool_error(
     field_errors = _extract_field_errors(list(exc.errors()))
     payload: dict[str, Any] = {
         "success": False,
-        "error_code": "validation_failed",
+        # Closed-enum wire code. A malformed argument is `invalid_input`, never
+        # `not_found` (which would tell the model the TOOL does not exist).
+        "error_code": "invalid_input",
         "message": "Invalid MCP arguments.",
         "retryable": False,
         "recovery_action": "reformulate_input",
@@ -370,7 +387,7 @@ def _validation_result(tool: Any, exc: PydanticValidationError) -> Any:
     envelope = mcp_validation_tool_error(tool_name=tool_name, exc=exc).payload
     record_mcp_error(
         tool_name=tool_name,
-        error_code="validation_failed",
+        error_code="invalid_input",
         exc_type=type(exc).__name__,
     )
     convert_result = getattr(tool, "convert_result", None)
@@ -425,7 +442,12 @@ def install_validation_error_handler(mcp_server: Any) -> None:
 
 
 def mcp_tool_error(exc: BaseException, context: McpErrorContext) -> McpToolError:
-    error_code, retryable, fallback_tool, fallback_args = _classify(exc, context)
+    # `internal_code` is the rich internal classification (drives message +
+    # recovery text/action); `wire_code` is the closed-enum value emitted on the
+    # wire. A build_mismatch/validation_failed/response_limit still carries its
+    # specific, actionable recovery — only the wire `error_code` is normalised.
+    internal_code, retryable, fallback_tool, fallback_args = _classify(exc, context)
+    wire_code = to_wire_error_code(internal_code)
     # next_commands must agree with the classified fallback: prepend the
     # task-advancing resolver when there is one, keeping diagnostics as the
     # secondary entry. For retryable codes fallback_tool is already diagnostics,
@@ -433,22 +455,37 @@ def mcp_tool_error(exc: BaseException, context: McpErrorContext) -> McpToolError
     next_commands: list[dict[str, Any]] = []
     if fallback_tool and fallback_tool != _FALLBACK_TOOL:
         next_commands.append({"tool": fallback_tool, "arguments": fallback_args or {}})
+    liftover_cmd = liftover_recovery_command(
+        internal_code, fallback_tool, variant_id=context.variant_id, dataset=context.dataset
+    )
+    recovery = _recovery_text(internal_code, fallback_tool, context.tool_name)
+    if liftover_cmd is not None:
+        next_commands.append(liftover_cmd)
+        recovery += (
+            " If the coordinate may belong to the other reference build (the most "
+            "common cause), call compute_variant_liftover to convert it, then retry "
+            "the frequency lookup against the build-matched dataset."
+        )
     next_commands.append({"tool": _FALLBACK_TOOL, "arguments": {}})
     payload = {
         "success": False,
-        "error_code": error_code,
-        "message": _envelope_message(exc, error_code),
+        "error_code": wire_code,
+        "message": _envelope_message(exc, internal_code),
         "retryable": retryable,
-        "recovery_action": _recovery_action(error_code, retryable),
+        "recovery_action": _recovery_action(internal_code, retryable),
         "fallback_tool": fallback_tool,
         "fallback_args": fallback_args,
-        "recovery": _recovery_text(error_code, fallback_tool, context.tool_name),
+        "recovery": recovery,
         "_meta": {
             "tool": context.tool_name,
             "next_commands": next_commands,
             **_provenance_meta(context),
         },
     }
+    # Preserve the specific classification for callers/diagnostics without
+    # widening the wire enum (e.g. build_mismatch -> invalid_input on the wire).
+    if internal_code != wire_code:
+        payload["error_subtype"] = internal_code
     return McpToolError(payload)
 
 

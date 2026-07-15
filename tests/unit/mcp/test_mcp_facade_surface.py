@@ -99,7 +99,7 @@ async def test_capabilities_tool_is_open_world(fake_service_factory) -> None:
 
 
 @pytest.mark.asyncio
-async def test_every_data_tool_advertises_output_schema(fake_service_factory) -> None:
+async def test_every_data_tool_suppresses_output_schema(fake_service_factory) -> None:
     from gnomad_link.mcp.facade import create_gnomad_mcp
 
     mcp = create_gnomad_mcp(service_factory=fake_service_factory)
@@ -107,8 +107,7 @@ async def test_every_data_tool_advertises_output_schema(fake_service_factory) ->
 
     for name in EXPECTED_DATA_TOOLS:
         schema = tools_by_name[name].output_schema
-        assert schema is not None, f"{name} missing output_schema"
-        assert isinstance(schema, dict)
+        assert schema is None, f"{name} should not advertise output_schema"
 
 
 @pytest.mark.asyncio
@@ -347,15 +346,14 @@ def test_capabilities_lists_full_error_code_set() -> None:
     from gnomad_link.mcp.resources import get_capabilities_resource
 
     caps = get_capabilities_resource()
+    # Response-Envelope Standard v1 closed enum (exactly six values).
     assert set(caps["error_codes"]) == {
-        "not_found",
         "invalid_input",
-        "build_mismatch",
-        "rate_limited",
-        "validation_failed",
+        "not_found",
+        "ambiguous_query",
         "upstream_unavailable",
-        "output_validation_failed",
-        "internal_error",
+        "rate_limited",
+        "internal",
     }
 
 
@@ -376,16 +374,14 @@ def test_reference_resource_has_taxonomy_truncation_glossary() -> None:
     from gnomad_link.mcp.resources import get_reference_resource
 
     ref = get_reference_resource()
-    # All 8 error codes documented with retryable + when.
+    # The closed Response-Envelope enum (six codes) documented with retryable + when.
     assert set(ref["error_taxonomy"]["codes"]) == {
-        "not_found",
         "invalid_input",
-        "build_mismatch",
-        "rate_limited",
-        "validation_failed",
+        "not_found",
+        "ambiguous_query",
         "upstream_unavailable",
-        "output_validation_failed",
-        "internal_error",
+        "rate_limited",
+        "internal",
     }
     # All 14 truncation kinds enumerated, including both SV singular/plural.
     kinds = set(ref["truncation_contract"]["kinds"])

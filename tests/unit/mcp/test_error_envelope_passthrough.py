@@ -187,7 +187,8 @@ async def test_build_mismatch_envelope_survives_output_schema() -> None:
         {"variant_id": "1-249100000-A-T", "dataset": "gnomad_r4"},
     )
 
-    assert _is_envelope(payload, "build_mismatch"), payload
+    assert _is_envelope(payload, "invalid_input"), payload
+    assert payload.get("error_subtype") == "build_mismatch"
     assert payload.get("error_code") != "output_validation_failed"
     assert payload.get("fallback_tool") == "compute_variant_liftover"
 
@@ -234,7 +235,7 @@ async def test_validation_error_envelope_survives_output_schema() -> None:
         {"variant_id": "not-a-variant", "dataset": "gnomad_r4"},
     )
 
-    assert _is_envelope(payload, "validation_failed"), payload
+    assert _is_envelope(payload, "invalid_input"), payload
     assert payload.get("error_code") != "output_validation_failed"
     assert payload.get("field_errors")
 
@@ -257,7 +258,8 @@ async def test_internal_error_envelope_survives_output_schema() -> None:
         {"variant_id": "1-55051215-G-GA", "dataset": "gnomad_r4"},
     )
 
-    assert _is_envelope(payload, "internal_error"), payload
+    assert _is_envelope(payload, "internal"), payload
+    assert payload.get("error_subtype") == "internal_error"
     assert payload.get("error_code") != "output_validation_failed"
 
 

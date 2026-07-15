@@ -8,20 +8,20 @@
       2221
     ],
     "gene_carrier_frequency_hfe": [
-      2049
+      2230
     ],
     "gene_carrier_frequency_hfe_minimal": [
       1076
     ],
     "gene_variants_stop_gained": [
-      1707
+      1741
     ],
     "resolve_then_xl_carrier_frequency": [
       630,
       1351
     ],
     "variant_clinical_evidence": [
-      738,
+      731,
       1524
     ]
   },

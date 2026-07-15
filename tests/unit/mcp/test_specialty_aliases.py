@@ -29,7 +29,7 @@ def _is_validation_failed(payload: dict[str, object]) -> bool:
     return (
         isinstance(payload, dict)
         and payload.get("success") is False
-        and payload.get("error_code") == "validation_failed"
+        and payload.get("error_code") == "invalid_input"
     )
 
 
@@ -46,7 +46,7 @@ async def test_mitochondrial_accepts_chrM_alias() -> None:  # noqa: N802
     )
     payload = result.structured_content or {}
 
-    assert payload.get("error_code") != "validation_failed", payload
+    assert payload.get("error_code") != "invalid_input", payload
     assert spy.last_variant_id == "M-7497-G-A"
     assert spy.last_dataset == "gnomad_r4"
 
@@ -64,7 +64,7 @@ async def test_mitochondrial_accepts_MT_alias() -> None:  # noqa: N802
     )
     payload = result.structured_content or {}
 
-    assert payload.get("error_code") != "validation_failed", payload
+    assert payload.get("error_code") != "invalid_input", payload
     assert spy.last_variant_id == "M-7497-G-A"
 
 
@@ -81,7 +81,7 @@ async def test_mitochondrial_accepts_chrMT_alias() -> None:  # noqa: N802
     )
     payload = result.structured_content or {}
 
-    assert payload.get("error_code") != "validation_failed", payload
+    assert payload.get("error_code") != "invalid_input", payload
     assert spy.last_variant_id == "M-7497-G-A"
 
 
@@ -98,7 +98,7 @@ async def test_mitochondrial_accepts_canonical_form() -> None:
     )
     payload = result.structured_content or {}
 
-    assert payload.get("error_code") != "validation_failed", payload
+    assert payload.get("error_code") != "invalid_input", payload
     assert spy.last_variant_id == "M-7497-G-A"
 
 
@@ -151,5 +151,5 @@ async def test_mitochondrial_normalization_case_insensitive() -> None:
     )
     payload = result.structured_content or {}
 
-    assert payload.get("error_code") != "validation_failed", payload
+    assert payload.get("error_code") != "invalid_input", payload
     assert spy.last_variant_id == "M-7497-G-A"

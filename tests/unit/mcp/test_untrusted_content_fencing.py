@@ -80,7 +80,7 @@ def _hostile_variant() -> ClinVarVariant:
 
 def _assert_hostile_payload_is_fenced(payload: dict[str, Any]) -> None:
     """Shared assertions run against BOTH structured_content and the text mirror."""
-    assert payload.get("error_code") != "validation_failed", payload
+    assert payload.get("error_code") != "invalid_input", payload
 
     submission = payload["submissions"][0]
     condition = submission["conditions"][0]
@@ -90,8 +90,10 @@ def _assert_hostile_payload_is_fenced(payload: dict[str, Any]) -> None:
     for fenced in (condition_name, submitter_name):
         # 1. typed object with the schema literal.
         assert fenced["kind"] == "untrusted_text"
-        # 2. digest is over the exact raw bytes, pre-normalization.
-        assert fenced["raw_sha256"] == hashlib.sha256(HOSTILE.encode("utf-8")).hexdigest()
+        # 2. compact (default) drops the raw_sha256 integrity bookkeeping for
+        #    token efficiency (defect #45-6); response_mode='full' retains it
+        #    (see test_full_mode_retains_integrity_digest).
+        assert "raw_sha256" not in fenced
         # 3. control/zero-width/bidi removed, but the injection prose + bare
         #    tool-name survive verbatim as DATA (the fence neither rewrites nor
         #    executes an embedded tool reference).
@@ -141,6 +143,23 @@ async def test_clinvar_condition_and_submitter_are_fenced_typed_objects() -> Non
     assert "‮" not in text_blocks[0].text
     assert "﻿" not in text_blocks[0].text
     assert "‍" not in text_blocks[0].text
+
+
+@pytest.mark.asyncio
+async def test_full_mode_retains_integrity_digest() -> None:
+    """response_mode='full' keeps the raw_sha256 integrity bookkeeping that
+    compact drops for token efficiency (defect #45-6)."""
+    variant = _hostile_variant()
+    mcp = create_gnomad_mcp(service_factory=lambda: _ClinVarStubService(variant))
+
+    result = await mcp.call_tool(
+        "get_clinvar_variant_details",
+        {"variant_id": VARIANT_ID, "reference_genome": "GRCh38", "response_mode": "full"},
+    )
+    payload: dict[str, Any] = result.structured_content or {}
+    submitter_name = payload["submissions"][0]["submitter_name"]
+    assert submitter_name["kind"] == "untrusted_text"
+    assert submitter_name["raw_sha256"] == hashlib.sha256(HOSTILE.encode("utf-8")).hexdigest()
 
 
 def test_condition_name_is_fenced_when_submitter_name_absent() -> None:
@@ -244,7 +263,7 @@ async def test_many_submissions_via_full_tool_call_does_not_raise() -> None:
     )
     payload: dict[str, Any] = result.structured_content or {}
 
-    assert payload.get("error_code") != "validation_failed", payload
+    assert payload.get("error_code") != "invalid_input", payload
     assert payload.get("success", True) is not False
     assert len(payload["submissions"]) == 150
 
@@ -337,8 +356,10 @@ async def test_limit_breach_maps_to_typed_response_limit_error_not_validation_fa
         fencing_mod.CLINVAR_MAX_FENCED_OBJECTS = original
 
     payload: dict[str, Any] = result.structured_content or {}
-    assert payload.get("error_code") == "response_limit_exceeded", payload
-    assert payload.get("error_code") != "validation_failed"
-    assert payload.get("error_code") != "internal_error"
+    # The wire error_code is the closed-enum invalid_input; the specific
+    # response-limit classification is preserved in error_subtype (never the
+    # generic internal, and the caller-facing recovery is "request fewer records").
+    assert payload.get("error_code") == "invalid_input", payload
+    assert payload.get("error_subtype") == "response_limit_exceeded", payload
     assert payload.get("retryable") is False
     assert payload.get("recovery_action") == "reformulate_input"

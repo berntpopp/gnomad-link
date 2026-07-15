@@ -14,33 +14,16 @@ from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, run_mcp_
 from gnomad_link.mcp.headline import variant_frequencies_headline
 from gnomad_link.mcp.minimal_shaping import project_variant_frequencies_minimal
 from gnomad_link.mcp.next_commands import for_variant
-from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.shaping import (
     shape_variant_details_compact,
     shape_variant_frequencies,
 )
-from gnomad_link.models import VariantDetails
 from gnomad_link.services import FrequencyService
 
 # Autosomal CHROM-POS-REF-ALT grammar. Chromosomes 1-22, X, Y only; mito
 # variants must go through get_mitochondrial_variant. Allele letters are upper
 # case A/C/G/T (no N, no IUPAC ambiguity codes — gnomAD does not return those).
 _AUTOSOMAL_VARIANT_ID_PATTERN = r"^([1-9]|1\d|2[0-2]|X|Y)-\d+-[ACGT]+-[ACGT]+$"
-
-_FREQ_OUTPUT_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "variant_id": {"type": "string"},
-        "dataset": {"type": "string"},
-        "gene_symbol": {"type": ["string", "null"]},
-        "major_consequence": {"type": ["string", "null"]},
-        "exome": {"type": ["object", "null"]},
-        "genome": {"type": ["object", "null"]},
-        "summary": {"type": ["object", "null"]},
-    },
-    "required": ["variant_id", "dataset"],
-    "additionalProperties": True,
-}
 
 
 def register_variant_tools(
@@ -50,7 +33,7 @@ def register_variant_tools(
         name="get_variant_frequencies",
         title="Get Variant Frequencies",
         annotations=READ_ONLY_OPEN_WORLD,
-        output_schema=relax_output_schema(_FREQ_OUTPUT_SCHEMA),
+        output_schema=None,
         tags={"variant"},
     )
     async def get_variant_frequencies(
@@ -163,7 +146,7 @@ def register_variant_tools(
         name="get_variant_details",
         title="Get Variant Details",
         annotations=READ_ONLY_OPEN_WORLD,
-        output_schema=relax_output_schema(VariantDetails.model_json_schema()),
+        output_schema=None,
         tags={"variant"},
     )
     async def get_variant_details(
@@ -218,7 +201,7 @@ def register_variant_tools(
             Field(description="Drop populations with allele_count == 0 (compact mode)."),
         ] = True,
     ) -> dict[str, Any]:
-        """Use this when a caller needs transcript consequences, in-silico predictors, or ClinVar annotation for a single variant id. Prefer get_variant_frequencies if only allele counts are needed; this tool returns the larger annotation payload. Compact trims the exome/genome population breakdown (drops subcohort, sex-split, and zero-AC rows; toggle the booleans to expand) and emits a `truncated` block per source. Returns compact ~3-6kB, full up to ~50kB."""
+        """Use this when a caller needs transcript consequences or in-silico predictors for a single variant id. This tool does NOT return ClinVar clinical significance — for that call get_clinvar_variant_details. Prefer get_variant_frequencies if only allele counts are needed; this tool returns the larger annotation payload. Compact trims the exome/genome population breakdown (drops subcohort, sex-split, and zero-AC rows; toggle the booleans to expand) and emits a `truncated` block per source. Returns compact ~3-6kB, full up to ~50kB."""
 
         async def call() -> dict[str, Any]:
             inferred = detect_variant_id_mismatch(variant_id, dataset)

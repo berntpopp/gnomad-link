@@ -52,7 +52,11 @@ _GENE_CARRIER_ASSUMPTIONS_FULL = (
     "equilibrium (random mating, complete penetrance unless penetrance<1). Carrier "
     "frequency uses the selected method (hom_exclusion=GCR is the default). A minimum "
     "estimate bounded by gnomAD ascertainment and ClinVar completeness; not clinical "
-    "decision support."
+    "decision support. ClinVar-P/LP gene-level estimates OVERESTIMATE carrier frequency "
+    "for genes with common reduced-penetrance alleles (CFTR is the canonical example: "
+    "the 5T/R117H CFTR-RD alleles inflate the CF carrier rate); variants flagged "
+    "penetrance_flag=reduced_or_variable contribute at full weight and are the main "
+    "source of that inflation."
 )
 
 # --- Short, inline-by-default forms (groundable without dereferencing) -------
@@ -76,7 +80,9 @@ _GENE_CARRIER_CITATIONS_SHORT: tuple[str, ...] = (
 _GENE_CARRIER_ASSUMPTIONS_SHORT = (
     "Gene-level minimum estimate: sums qualifying pathogenic variants under "
     "Hardy-Weinberg equilibrium; bounded by gnomAD ascertainment and ClinVar "
-    "completeness. Research use only."
+    "completeness. ClinVar-P/LP gene-level estimates OVERESTIMATE carrier frequency "
+    "for genes with common reduced-penetrance alleles (CFTR is the canonical example). "
+    "Research use only."
 )
 
 _REGISTRY: dict[str, dict[str, Any]] = {

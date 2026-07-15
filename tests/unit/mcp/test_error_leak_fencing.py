@@ -230,7 +230,7 @@ async def test_arg_validation_envelope_clean_on_both_mirrors() -> None:
     structured: dict[str, Any] = result.structured_content or {}
     mirror, mirror_text = _mirror(result)
     for payload in (structured, mirror):
-        assert payload["error_code"] == "validation_failed", payload
+        assert payload["error_code"] == "invalid_input", payload
         for fe in payload.get("field_errors", []):
             _assert_no_code_points(fe.get("reason", ""))
     _assert_no_code_points(mirror_text)

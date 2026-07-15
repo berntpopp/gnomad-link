@@ -39,7 +39,7 @@ async def test_get_gene_details_leads_with_constraint_headline() -> None:
     mcp = create_gnomad_mcp(service_factory=lambda: _StubGeneService(_pcsk9()))
     result = await mcp.call_tool(
         "get_gene_details",
-        {"gene_symbol": "PCSK9", "reference_genome": "GRCh38"},
+        {"gene": "PCSK9", "reference_genome": "GRCh38"},
     )
     payload = result.structured_content or {}
 

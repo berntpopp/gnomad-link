@@ -16,10 +16,8 @@ from gnomad_link.mcp.headline import (
     structural_variant_headline,
 )
 from gnomad_link.mcp.next_commands import cmd
-from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.shaping import shape_mitochondrial_variant
 from gnomad_link.mcp.sv_shaping import shape_structural_variant
-from gnomad_link.models import MitochondrialVariant, StructuralVariant, Transcript
 from gnomad_link.services import FrequencyService
 
 # gnomAD SV IDs are <TYPE>_chr<CHROM>_<UID>. TYPE covers the documented SV
@@ -82,7 +80,7 @@ def register_specialty_tools(
         name="get_structural_variant",
         title="Get Structural Variant",
         annotations=READ_ONLY_OPEN_WORLD,
-        output_schema=relax_output_schema(StructuralVariant.model_json_schema()),
+        output_schema=None,
         tags={"variant"},
     )
     async def get_structural_variant(
@@ -100,7 +98,11 @@ def register_specialty_tools(
         ],
         dataset: Annotated[
             Literal["gnomad_sv_r2_1", "gnomad_sv_r4"],
-            Field(examples=["gnomad_sv_r4"]),
+            Field(
+                description="Structural-variant dataset: gnomad_sv_r4 (GRCh38, default) "
+                "or gnomad_sv_r2_1 (GRCh37).",
+                examples=["gnomad_sv_r4"],
+            ),
         ] = "gnomad_sv_r4",
         response_mode: Annotated[
             Literal["compact", "full"],
@@ -137,7 +139,7 @@ def register_specialty_tools(
         name="get_mitochondrial_variant",
         title="Get Mitochondrial Variant",
         annotations=READ_ONLY_OPEN_WORLD,
-        output_schema=relax_output_schema(MitochondrialVariant.model_json_schema()),
+        output_schema=None,
         tags={"variant"},
     )
     async def get_mitochondrial_variant(
@@ -180,7 +182,7 @@ def register_specialty_tools(
             gene_symbol = shaped.get("gene_symbol")
             if gene_symbol:
                 shaped.setdefault("_meta", {})["next_commands"] = [
-                    cmd("get_gene_details", gene_symbol=gene_symbol)
+                    cmd("get_gene_details", gene=gene_symbol)
                 ]
             else:
                 shaped.setdefault("_meta", {})["next_commands"] = _mito_fallback_next_commands(
@@ -205,7 +207,7 @@ def register_specialty_tools(
         name="get_transcript_details",
         title="Get Transcript Details",
         annotations=READ_ONLY_OPEN_WORLD,
-        output_schema=relax_output_schema(Transcript.model_json_schema()),
+        output_schema=None,
         tags={"coordinates"},
     )
     async def get_transcript_details(
@@ -244,7 +246,7 @@ def register_specialty_tools(
             gene_id = result.get("gene_id") if isinstance(result, dict) else None
             if gene_id:
                 result.setdefault("_meta", {})["next_commands"] = [
-                    cmd("get_gene_summary", gene_id=gene_id)
+                    cmd("get_gene_summary", gene=gene_id)
                 ]
             else:
                 result.setdefault("_meta", {})["next_commands"] = [cmd("get_server_capabilities")]

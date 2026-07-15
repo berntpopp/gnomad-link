@@ -199,7 +199,7 @@ SCENARIOS: list[Scenario] = [
     Scenario(
         name="gene_carrier_frequency_hfe",
         service_factory=build_gene_carrier_stub,
-        calls=[("compute_gene_carrier_frequency", {"gene_symbol": "HFE"})],
+        calls=[("compute_gene_carrier_frequency", {"gene": "HFE"})],
         expected_tools=("compute_gene_carrier_frequency",),
         trajectory_mode=TrajectoryMode.EXACT,
         headline_tools=frozenset({"compute_gene_carrier_frequency"}),
@@ -282,7 +282,7 @@ SCENARIOS: list[Scenario] = [
         calls=[
             (
                 "compute_gene_carrier_frequency",
-                {"gene_symbol": "HFE", "response_mode": "minimal"},
+                {"gene": "HFE", "response_mode": "minimal"},
             )
         ],
         expected_tools=("compute_gene_carrier_frequency",),

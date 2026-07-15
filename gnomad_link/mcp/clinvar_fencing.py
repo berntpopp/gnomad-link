@@ -86,7 +86,31 @@ class MCPClinVarVariant(BaseModel):
     )
 
 
-def fence_clinvar_variant(variant: ClinVarVariant, *, submissions_limit: int) -> dict[str, Any]:
+def _strip_untrusted_bookkeeping(node: Any) -> None:
+    """Drop per-object sha256/retrieved_at from every fenced untrusted_text in-place.
+
+    The fenced envelope carries a 64-char ``raw_sha256`` and an ISO ``retrieved_at``
+    per condition-name and submitter-name; on a ClinVar-dense variant that is the
+    bulk of the payload (defect #45-6). compact mode keeps the fenced ``text`` +
+    ``source``/``record_id`` (still self-describing) and drops the integrity
+    bookkeeping, which ``response_mode='full'`` retains.
+    """
+    if isinstance(node, dict):
+        if node.get("kind") == "untrusted_text":
+            node.pop("raw_sha256", None)
+            provenance = node.get("provenance")
+            if isinstance(provenance, dict):
+                provenance.pop("retrieved_at", None)
+        for value in node.values():
+            _strip_untrusted_bookkeeping(value)
+    elif isinstance(node, list):
+        for item in node:
+            _strip_untrusted_bookkeeping(item)
+
+
+def fence_clinvar_variant(
+    variant: ClinVarVariant, *, submissions_limit: int, response_mode: str = "compact"
+) -> dict[str, Any]:
     """Return `variant`'s MCP payload with condition names/submitter names fenced.
 
     Fencing and limit enforcement run over the EMITTED submissions only -- the
@@ -138,6 +162,8 @@ def fence_clinvar_variant(variant: ClinVarVariant, *, submissions_limit: int) ->
         submissions=fenced_submissions,
     )
     payload = fenced_variant.model_dump(mode="json")
+    if response_mode == "compact":
+        _strip_untrusted_bookkeeping(payload.get("submissions"))
     block = build_submissions_truncation_block(total, submissions_limit=submissions_limit)
     if block is not None:
         payload["truncated"] = block

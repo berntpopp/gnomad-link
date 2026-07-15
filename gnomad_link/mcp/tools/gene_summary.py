@@ -9,33 +9,12 @@ from fastmcp import FastMCP
 from pydantic import Field
 
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
-from gnomad_link.mcp.errors import McpErrorContext, ToolInputError, run_mcp_tool
+from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
 from gnomad_link.mcp.gene_summary_shaping import rank_pathogenic_clinvar
 from gnomad_link.mcp.headline import gene_summary_headline
 from gnomad_link.mcp.minimal_shaping import project_gene_summary_minimal
-from gnomad_link.mcp.patterns import GENE_ID_PATTERN, GENE_SYMBOL_PATTERN
-from gnomad_link.mcp.schema_relax import relax_output_schema
+from gnomad_link.mcp.patterns import split_gene
 from gnomad_link.services import FrequencyService
-
-_GENE_SUMMARY_OUTPUT_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "gene_id": {"type": ["string", "null"]},
-        "symbol": {"type": ["string", "null"]},
-        "name": {"type": ["string", "null"]},
-        "coords": {"type": ["object", "null"]},
-        "dataset": {"type": "string"},
-        "constraint": {"type": ["object", "null"]},
-        "canonical_transcript_id": {"type": ["string", "null"]},
-        "mane_select_transcript": {"type": ["object", "null"]},
-        "clinvar_summary": {"type": ["object", "null"]},
-        "clinvar_variants": {"type": ["array", "null"], "items": {"type": "object"}},
-        "expression": {"type": ["object", "null"]},
-        "partial": {"type": "boolean"},
-    },
-    "required": ["dataset"],
-    "additionalProperties": True,
-}
 
 
 def register_gene_summary_tools(
@@ -45,26 +24,17 @@ def register_gene_summary_tools(
         name="get_gene_summary",
         title="Get Gene Summary",
         annotations=READ_ONLY_OPEN_WORLD,
-        output_schema=relax_output_schema(_GENE_SUMMARY_OUTPUT_SCHEMA),
+        output_schema=None,
         tags={"gene"},
     )
     async def get_gene_summary(
-        gene_symbol: Annotated[
-            str | None,
+        gene: Annotated[
+            str,
             Field(
-                description="HGNC gene symbol; provide this OR gene_id.",
-                pattern=GENE_SYMBOL_PATTERN,
+                description="Gene symbol (e.g. PCSK9) or Ensembl gene ID (ENSG...).",
                 examples=["PCSK9"],
             ),
-        ] = None,
-        gene_id: Annotated[
-            str | None,
-            Field(
-                description="Ensembl gene ID; provide this OR gene_symbol.",
-                pattern=GENE_ID_PATTERN,
-                examples=["ENSG00000169174"],
-            ),
-        ] = None,
+        ],
         dataset: Annotated[
             Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"],
             Field(
@@ -106,11 +76,11 @@ def register_gene_summary_tools(
             ),
         ] = "compact",
     ) -> dict[str, Any]:
-        """Use this when a caller wants a one-shot gene dossier: constraint (pLI/oe_lof), canonical and MANE-Select transcripts, top pathogenic ClinVar variants, and expression (mean pext + top GTEx tissues). Provide exactly one of gene_symbol/gene_id. Use include_clinvar / include_constraint / include_expression to fetch only the sections you need (e.g. include_clinvar=false + include_constraint=false for expression-only). Follow with get_gene_variants for per-variant rows. Returns compact ~3-8kB (ClinVar-dependent); include_clinvar=false trims it most."""
+        """Use this when a caller wants a one-shot gene dossier: constraint (pLI/oe_lof), canonical and MANE-Select transcripts, top pathogenic ClinVar variants, and expression (mean pext + top GTEx tissues). Pass a gene symbol (e.g. PCSK9) or Ensembl gene ID (ENSG...). Use include_clinvar / include_constraint / include_expression to fetch only the sections you need (e.g. include_clinvar=false + include_constraint=false for expression-only). Follow with get_gene_variants for per-variant rows. Returns compact ~3-8kB (ClinVar-dependent); include_clinvar=false trims it most."""
+
+        gene_id, gene_symbol = split_gene(gene)
 
         async def call() -> dict[str, Any]:
-            if bool(gene_symbol) == bool(gene_id):
-                raise ToolInputError("Provide exactly one of gene_symbol or gene_id.")
             service = service_factory()
             summary = await service.get_gene_summary(
                 gene_id=gene_id,
@@ -120,6 +90,11 @@ def register_gene_summary_tools(
             )
 
             result: dict[str, Any] = dict(summary)
+            # The raw `pext` block is a {"regions":[...]} dict-of-lists redundant with
+            # the `expression.mean_pext` summary; drop it outside full mode. Keeping it
+            # also made this single-gene RECORD read as a multi-row collection.
+            if response_mode != "full":
+                result.pop("pext", None)
             if not include_expression:
                 result.pop("expression", None)
             if not include_constraint:
@@ -140,14 +115,28 @@ def register_gene_summary_tools(
             existing_next: list[Any] = existing_meta.get("next_commands", [])
             next_commands: list[dict[str, Any]] = [
                 {"tool": "get_gene_variants", "arguments": {"gene_id": resolved_id}},
-                {
-                    "tool": "get_clinvar_variant_details",
-                    "arguments": {
-                        "reference_genome": "GRCh37" if dataset == "gnomad_r2_1" else "GRCh38"
-                    },
-                },
-                {"tool": "get_coverage", "arguments": {"gene_id": resolved_id}},
             ]
+            # Defect #45-5: a get_clinvar_variant_details command MUST carry a real
+            # variant_id (its required parameter) — a ready-to-call command must be
+            # callable. Interpolate the top pathogenic variant; OMIT the entry when
+            # none is available rather than emit an uncallable command.
+            top_pathogenic = (result.get("clinvar_summary") or {}).get("top_pathogenic") or []
+            top_variant_id = top_pathogenic[0].get("variant_id") if top_pathogenic else None
+            if top_variant_id:
+                next_commands.append(
+                    {
+                        "tool": "get_clinvar_variant_details",
+                        "arguments": {
+                            "variant_id": top_variant_id,
+                            "reference_genome": (
+                                "GRCh37" if dataset == "gnomad_r2_1" else "GRCh38"
+                            ),
+                        },
+                    }
+                )
+            next_commands.append(
+                {"tool": "get_coverage", "arguments": {"target": resolved_id}},
+            )
             # Dedupe by tool name so a repeated command never fills a slot twice.
             deduped: list[dict[str, Any]] = []
             seen: set[str] = set()

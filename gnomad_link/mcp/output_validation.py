@@ -39,7 +39,7 @@ def actionable_output_validation_error(
     )
     payload: dict[str, Any] = {
         "success": False,
-        "error_code": "output_validation_failed",
+        "error_code": "internal",
         "message": "The tool response did not match its declared MCP output schema.",
         "error_field": error_field,
         "suggested_action": suggested_action,

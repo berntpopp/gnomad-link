@@ -12,8 +12,7 @@ from gnomad_link.mcp.af import preferred_overall_af
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
 from gnomad_link.mcp.next_commands import for_variant
-from gnomad_link.mcp.schema_relax import relax_output_schema
-from gnomad_link.models import GeneSearchResult, VariantSearchResult
+from gnomad_link.models import GeneSearchResult
 from gnomad_link.services import FrequencyService
 
 _RANK_ORDER = {
@@ -100,20 +99,7 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
         title="Search Genes",
         annotations=READ_ONLY_OPEN_WORLD,
         tags={"gene", "search"},
-        output_schema=relax_output_schema(
-            {
-                "type": "object",
-                "properties": {
-                    "results": {
-                        "type": "array",
-                        "items": GeneSearchResult.model_json_schema(),
-                    },
-                    "returned": {"type": "integer"},
-                    "truncated": {"type": ["object", "null"]},
-                },
-                "required": ["results", "returned"],
-            }
-        ),
+        output_schema=None,
     )
     async def search_genes(
         query: Annotated[
@@ -122,6 +108,7 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
                 min_length=2,
                 max_length=100,
                 description="Gene symbol, name fragment, or Ensembl ID.",
+                examples=["BRCA1"],
             ),
         ],
         reference_genome: Annotated[
@@ -176,14 +163,12 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
             # get_gene_details so the LLM does not have to re-form the call.
             if results:
                 top = results[0]
-                gene_args: dict[str, Any] = {}
-                if top.get("ensembl_id"):
-                    gene_args = {"gene_id": top["ensembl_id"]}
-                elif top.get("symbol"):
-                    gene_args = {"gene_symbol": top["symbol"]}
-                if gene_args:
+                gene_value = top.get("ensembl_id") or top.get("symbol")
+                if gene_value:
                     payload["_meta"] = {
-                        "next_commands": [{"tool": "get_gene_details", "arguments": gene_args}]
+                        "next_commands": [
+                            {"tool": "get_gene_details", "arguments": {"gene": gene_value}}
+                        ]
                     }
             return payload
 
@@ -198,20 +183,7 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
         title="Resolve Variant Identifier",
         annotations=READ_ONLY_OPEN_WORLD,
         tags={"search"},
-        output_schema=relax_output_schema(
-            {
-                "type": "object",
-                "properties": {
-                    "results": {
-                        "type": "array",
-                        "items": VariantSearchResult.model_json_schema(),
-                    },
-                    "returned": {"type": "integer"},
-                    "next_steps": {"type": "array", "items": {"type": "string"}},
-                },
-                "required": ["results", "returned", "next_steps"],
-            }
-        ),
+        output_schema=None,
     )
     async def resolve_variant_id(
         query: Annotated[
@@ -220,6 +192,7 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
                 min_length=3,
                 max_length=100,
                 description="rsID, CHROM-POS-REF-ALT, or 'CHROM:POS'.",
+                examples=["rs80357906"],
             ),
         ],
         dataset: Annotated[
@@ -282,24 +255,18 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
         title="Search Variants (deprecated alias)",
         annotations=READ_ONLY_OPEN_WORLD,
         tags={"search"},
-        output_schema=relax_output_schema(
-            {
-                "type": "object",
-                "properties": {
-                    "results": {
-                        "type": "array",
-                        "items": VariantSearchResult.model_json_schema(),
-                    },
-                    "returned": {"type": "integer"},
-                    "next_steps": {"type": "array", "items": {"type": "string"}},
-                    "_meta": {"type": "object"},
-                },
-                "required": ["results", "returned", "next_steps"],
-            }
-        ),
+        output_schema=None,
     )
     async def search_variants(
-        query: Annotated[str, Field(min_length=3, max_length=100)],
+        query: Annotated[
+            str,
+            Field(
+                min_length=3,
+                max_length=100,
+                description="rsID, CHROM-POS-REF-ALT, or 'CHROM:POS'.",
+                examples=["rs80357906"],
+            ),
+        ],
         dataset: Annotated[
             Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"],
             Field(

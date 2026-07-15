@@ -9,9 +9,8 @@ from fastmcp import FastMCP
 from pydantic import Field
 
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
-from gnomad_link.mcp.clinvar_fencing import MCPClinVarVariant, fence_clinvar_variant
+from gnomad_link.mcp.clinvar_fencing import fence_clinvar_variant
 from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
-from gnomad_link.mcp.schema_relax import relax_output_schema
 from gnomad_link.mcp.shaping import summarize_clinvar_submissions
 from gnomad_link.services import FrequencyService
 
@@ -28,19 +27,19 @@ def register_clinvar_tools(
         name="get_clinvar_variant_details",
         title="Get ClinVar Variant",
         annotations=READ_ONLY_OPEN_WORLD,
-        output_schema=relax_output_schema(MCPClinVarVariant.model_json_schema()),
+        output_schema=None,
         tags={"clinical"},
     )
     async def get_clinvar_variant_details(
         variant_id: Annotated[
             str,
             Field(
-                description="CHROM-POS-REF-ALT id (autosomes, X, Y, M/MT), e.g. 1-55051215-G-GA. "
+                description="CHROM-POS-REF-ALT id (autosomes, X, Y, M/MT), e.g. 7-117559590-ATCT-A. "
                 "Match the build to reference_genome (GRCh38 default).",
                 min_length=5,
                 max_length=200,
                 pattern=_CLINVAR_VARIANT_ID_PATTERN,
-                examples=["1-55051215-G-GA"],
+                examples=["7-117559590-ATCT-A"],
             ),
         ],
         reference_genome: Annotated[
@@ -51,8 +50,16 @@ def register_clinvar_tools(
             int,
             Field(ge=1, le=200, description="Cap on submissions[] returned. Default 25."),
         ] = 25,
+        response_mode: Annotated[
+            Literal["compact", "full"],
+            Field(
+                description="compact (default) drops the per-submission sha256/retrieved_at "
+                "integrity bookkeeping (keeps the fenced condition/submitter text); full "
+                "returns the complete fenced provenance."
+            ),
+        ] = "compact",
     ) -> dict[str, Any]:
-        """Use this when a caller needs ClinVar clinical significance, review status, gold stars, or submissions for a single variant id. Complementary to get_variant_frequencies for clinical workflows. Returns ~3-15kB (submissions_limit dependent)."""
+        """Use this when a caller needs ClinVar clinical significance, review status, gold stars, or submissions for a single variant id. Complementary to get_variant_frequencies for clinical workflows. compact (default) drops per-submission provenance bookkeeping; response_mode='full' keeps it. Returns ~2-8kB compact, larger with full or a high submissions_limit."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()
@@ -70,7 +77,9 @@ def register_clinvar_tools(
             # ceilings over the EMITTED (capped) submissions only -- so a large
             # upstream record never trips the ceiling when the response it
             # actually returns is small.
-            payload = fence_clinvar_variant(result, submissions_limit=submissions_limit)
+            payload = fence_clinvar_variant(
+                result, submissions_limit=submissions_limit, response_mode=response_mode
+            )
             payload["summary"] = summary
             # Suggest pairing with frequency data using the same variant_id.
             existing_meta: dict[str, Any] = payload.get("_meta") or {}
@@ -95,7 +104,7 @@ def register_clinvar_tools(
         name="get_clinvar_meta",
         title="Get ClinVar Metadata",
         annotations=READ_ONLY_OPEN_WORLD,
-        output_schema=relax_output_schema({"type": "object", "additionalProperties": True}),
+        output_schema=None,
         tags={"clinical"},
     )
     async def get_clinvar_meta() -> dict[str, Any]:
