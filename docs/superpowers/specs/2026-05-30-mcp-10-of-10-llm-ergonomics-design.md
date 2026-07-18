@@ -1,5 +1,7 @@
 # MCP 10/10 LLM-Ergonomics Hardening — Design
 
+> Historical record
+
 Status: draft
 Date: 2026-05-30
 Owner: gnomAD Link MCP

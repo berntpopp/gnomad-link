@@ -1,5 +1,7 @@
 # gnomAD Link MCP -> 9.5/10: Correctness, Contract Consistency, and an Eval Harness — Design
 
+> Historical record
+
 Status: draft
 Date: 2026-05-31
 Owner: gnomAD Link MCP

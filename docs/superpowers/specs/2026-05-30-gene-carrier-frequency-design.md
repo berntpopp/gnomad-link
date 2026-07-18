@@ -1,5 +1,7 @@
 # Gene-Level Carrier Frequency — Design Spec
 
+> Historical record
+
 Status: approved (full parity), 2026-05-30
 Pairs with plan: `docs/superpowers/plans/2026-05-30-gene-carrier-frequency.md`
 

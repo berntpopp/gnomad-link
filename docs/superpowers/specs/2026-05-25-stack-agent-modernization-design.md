@@ -1,5 +1,7 @@
 # gnomAD Link Stack And Agent Modernization Design
 
+> Historical record
+
 ## Context
 
 `gnomad-link` is a Python FastAPI and MCP server for gnomAD GraphQL data. The

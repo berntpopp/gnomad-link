@@ -1,5 +1,7 @@
 # Phase C — Five New MCP Tools Implementation Plan
 
+> Historical record
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add the five tools deferred from the LLM-consumer review / facade-polish "Out of Scope" list — `get_coverage`, `compare_variant_across_datasets`, `compute_carrier_frequency`, `get_gene_summary`, `search_structural_variants` — taking the hand-authored MCP facade from 16 to 21 tools without breaking any existing invariant.

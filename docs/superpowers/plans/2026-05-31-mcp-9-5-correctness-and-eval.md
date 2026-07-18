@@ -1,5 +1,7 @@
 # gnomAD Link MCP 9.5/10 — Implementation Plan
 
+> Historical record
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Take the gnomAD Link MCP from ~8.1-8.9 to a measured >=9.4/10 by fixing the one HIGH correctness bug, building the eval harness that gates the rest, and closing residual contract/token gaps — all additive, non-breaking.

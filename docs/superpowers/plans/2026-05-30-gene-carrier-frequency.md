@@ -1,5 +1,7 @@
 # Gene-Level Carrier Frequency — Implementation Plan
 
+> Historical record
+
 Spec: `docs/superpowers/specs/2026-05-30-gene-carrier-frequency-design.md`
 Reference impl: `../gnomad-carrier-frequency` (CLI ground truth: `gnomad-cf query CFTR` → global ≈ 1:18).
 

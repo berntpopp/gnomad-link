@@ -1,5 +1,7 @@
 # MCP Facade Migration Implementation Plan
 
+> Historical record
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace `FastMCP.from_fastapi()` auto-derivation with a hand-authored MCP-first facade modelled on `pubtator-link`. MCP becomes the primary interface; REST is reduced to a minimal `/health` shim for Docker. The migration fixes the silent population truncation bug, adds structured error envelopes, output schemas, tool annotations, response shaping, and a unified `run_mcp_tool` wrapper.
