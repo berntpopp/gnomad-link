@@ -1,0 +1,4363 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="MCP server bridging the gnomAD database to AI applications.">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>gnomAD Type Reference - gnomAD-Link</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#gnomad-type-reference" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="gnomAD-Link" class="md-header__button md-logo" aria-label="gnomAD-Link" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            gnomAD-Link
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              gnomAD Type Reference
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/berntpopp/gnomad-link" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="gnomAD-Link" class="md-nav__button md-logo" aria-label="gnomAD-Link" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    gnomAD-Link
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/berntpopp/gnomad-link" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data & provenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../MCP_CONNECTION_GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP connection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table of Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-variant-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Variant Types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core Variant Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#variant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Variant
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variantdetails" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VariantDetails
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variantsequencingtypedata" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VariantSequencingTypeData
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variantjointsequencingtypedata" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VariantJointSequencingTypeData
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variantqualitymetrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VariantQualityMetrics
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#specialized-variant-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Specialized Variant Types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Specialized Variant Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mitochondrialvariant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MitochondrialVariant
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mitochondrialvariantdetails" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MitochondrialVariantDetails
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#structuralvariant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        StructuralVariant
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#structuralvariantdetails" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        StructuralVariantDetails
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#copynumbervariant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CopyNumberVariant
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#copynumbervariantdetails" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CopyNumberVariantDetails
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multinucleotidevariantdetails" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MultiNucleotideVariantDetails
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#population-frequency-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Population &amp; Frequency Data
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Population &amp; Frequency Data">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#variantpopulation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VariantPopulation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variantfilteringallelefrequency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VariantFilteringAlleleFrequency
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variantlocalancestrypopulation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VariantLocalAncestryPopulation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mitochondrialvariantpopulation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MitochondrialVariantPopulation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#structuralvariantpopulation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        StructuralVariantPopulation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#copynumbervariantpopulation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CopyNumberVariantPopulation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fafmax" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fafmax
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vagrpmaxfaf95" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VAGrpMaxFAF95
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gene-transcript-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gene &amp; Transcript Types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Gene &amp; Transcript Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#gene" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gene
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#transcript" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transcript
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exon" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exon
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genetranscript" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GeneTranscript
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#transcriptgene" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TranscriptGene
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#regiongene" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RegionGene
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#regiongenetranscript" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RegionGeneTranscript
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#maneselecttranscript" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ManeSelectTranscript
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#functional-annotation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Functional Annotation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Functional Annotation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#transcriptconsequence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TranscriptConsequence
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variantinsilicopredictor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VariantInSilicoPredictor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lofcuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LoFCuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lofcurationingene" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LoFCurationInGene
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multinucleotidevariantconsequence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MultiNucleotideVariantConsequence
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#structuralvariantconsequence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        StructuralVariantConsequence
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#clinical-disease-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Clinical &amp; Disease Data
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Clinical &amp; Disease Data">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#clinvarvariant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ClinVarVariant
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clinvarvariantdetails" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ClinVarVariantDetails
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clinvarcondition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ClinVarCondition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clinvarsubmission" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ClinVarSubmission
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clinvarvariantgnomaddata" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ClinVarVariantGnomadData
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#constraint-conservation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Constraint &amp; Conservation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Constraint &amp; Conservation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#gnomadconstraint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GnomadConstraint
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exacconstraint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ExacConstraint
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gnomadv2regionalmissenseconstraint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GnomadV2RegionalMissenseConstraint
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gnomadv2regionalmissenseconstraintregion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GnomadV2RegionalMissenseConstraintRegion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mitochondrialregionconstraint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MitochondrialRegionConstraint
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#noncodingconstraintregion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NonCodingConstraintRegion
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quality-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quality Metrics
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quality Metrics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#variantsitequalitymetric" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VariantSiteQualityMetric
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variantgenotypequality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VariantGenotypeQuality
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variantgenotypedepth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VariantGenotypeDepth
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variantallelebalance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VariantAlleleBalance
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mitochondrialvariantgenotypequalitymetric" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MitochondrialVariantGenotypeQualityMetric
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mitochondrialvariantsitequalitymetric" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MitochondrialVariantSiteQualityMetric
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#coverage-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Coverage Data
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Coverage Data">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#coverage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Coverage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variantcoverage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VariantCoverage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#coveragebin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CoverageBin
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#featurecoverage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FeatureCoverage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#regioncoverage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RegionCoverage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mitochondrialcoveragebin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MitochondrialCoverageBin
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cnvtrackcallablecoveragebin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CNVTrackCallableCoverageBin
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#expression-tissue-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Expression &amp; Tissue Data
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Expression &amp; Tissue Data">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#gtextissue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GtexTissue
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pextregion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PextRegion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pextregiontissue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PextRegionTissue
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pext" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pext
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#search-utility-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Search &amp; Utility Types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Search &amp; Utility Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#variantsearchresult" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VariantSearchResult
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genesearchresult" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GeneSearchResult
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#liftovervariant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LiftoverVariant
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#liftoverresult" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LiftoverResult
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#region" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Region
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#browsermetadata" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        BrowserMetadata
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#statistical-analysis-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Statistical &amp; Analysis Types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Statistical &amp; Analysis Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#variantcooccurrence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VariantCooccurrence
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variantcooccurrenceinpopulation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VariantCooccurrenceInPopulation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#heterozygousvariantcooccurrencecounts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HeterozygousVariantCooccurrenceCounts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#homozygousvariantcooccurrencecounts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HomozygousVariantCooccurrenceCounts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#contingencytabletest" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ContingencyTableTest
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cochranmantelhaenszeltest" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CochranMantelHaenszelTest
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#variant-alliance-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Variant Alliance Types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Variant Alliance Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vaallele" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VAAllele
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vacohort" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VACohort
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vacohortallelefrequency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VACohortAlleleFrequency
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vasequencelocation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VASequenceLocation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vaqualitymeasures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VAQualityMeasures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vaancillaryresults" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VAAncillaryResults
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#short-tandem-repeats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Short Tandem Repeats
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Short Tandem Repeats">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#shorttandemrepeat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ShortTandemRepeat
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shorttandemrepeatdetails" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ShortTandemRepeatDetails
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shorttandemrepeatgene" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ShortTandemRepeatGene
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shorttandemrepeatassociateddisease" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ShortTandemRepeatAssociatedDisease
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shorttandemrepeatreferenceregion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ShortTandemRepeatReferenceRegion
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#histogram-distribution-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Histogram &amp; Distribution Types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Histogram &amp; Distribution Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#histogram" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Histogram
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variantagedistribution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VariantAgeDistribution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mitochondrialvariantagedistribution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MitochondrialVariantAgeDistribution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#structuralvariantagedistribution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        StructuralVariantAgeDistribution
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#other-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Other Types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Other Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#clinvarvariantgnomadsequencingtypedata" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ClinVarVariantGnomadSequencingTypeData
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exacregionalmissenseconstraintregion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ExacRegionalMissenseConstraintRegion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#heterozygousvariantcooccurrencecountsdata" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HeterozygousVariantCooccurrenceCountsData
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#homozygousvariantcooccurrencecountsdata" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HomozygousVariantCooccurrenceCountsData
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mitochondrialvariantgenotypequalityfilter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MitochondrialVariantGenotypeQualityFilter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mitochondrialvarianthaplogroup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MitochondrialVariantHaplogroup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multinucleotidevariantconstituentsnv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MultiNucleotideVariantConstituentSNV
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multinucleotidevariantconstituentsnvconsequence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MultiNucleotideVariantConstituentSNVConsequence
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multinucleotidevariantconstituentsnvsequencingdata" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MultiNucleotideVariantConstituentSNVSequencingData
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multinucleotidevariantdetailssequencingdata" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MultiNucleotideVariantDetailsSequencingData
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multinucleotidevariantsummary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MultiNucleotideVariantSummary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#proteinmitochondrialgeneconstraint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ProteinMitochondrialGeneConstraint
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#query" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Query
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rnamitochondrialgeneconstraint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RNAMitochondrialGeneConstraint
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shorttandemrepeatadjacentrepeat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ShortTandemRepeatAdjacentRepeat
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shorttandemrepeatagedistributionbin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ShortTandemRepeatAgeDistributionBin
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shorttandemrepeatallelesizedistributioncohort" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ShortTandemRepeatAlleleSizeDistributionCohort
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shorttandemrepeatallelesizeitem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ShortTandemRepeatAlleleSizeItem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shorttandemrepeatassociateddiseaserepeatsizeclassification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ShortTandemRepeatAssociatedDiseaseRepeatSizeClassification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shorttandemrepeatgenotypedistributioncohort" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ShortTandemRepeatGenotypeDistributionCohort
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shorttandemrepeatgenotypeitem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ShortTandemRepeatGenotypeItem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shorttandemrepeatrepeatunit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ShortTandemRepeatRepeatUnit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#statunion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        StatUnion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#structuralvariantcopynumber" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        StructuralVariantCopyNumber
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#structuralvariantgenotypequality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        StructuralVariantGenotypeQuality
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vacohortallelefrequencydata" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VACohortAlleleFrequencyData
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vacohortallelefrequencyderivation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VACohortAlleleFrequencyDerivation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vacohortcharacteristic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VACohortCharacteristic
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vacytobandinterval" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VACytobandInterval
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vadefiniterange" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VADefiniteRange
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vaindefiniterange" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VAIndefiniteRange
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#valiteralsequenceexpression" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VALiteralSequenceExpression
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vanumber" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VANumber
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vasequenceinterval" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VASequenceInterval
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variantdetailsjointsequencingtypedata" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VariantDetailsJointSequencingTypeData
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variantdetailssequencingtypedata" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VariantDetailsSequencingTypeData
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variantjointfrequencycomparisonstats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VariantJointFrequencyComparisonStats
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="gnomad-type-reference">gnomAD Type Reference</h1>
+<p>This document provides detailed information about all data types in the gnomAD GraphQL API.</p>
+<h2 id="table-of-contents">Table of Contents</h2>
+<ul>
+<li><a href="#core-variant-types">Core Variant Types</a></li>
+<li><a href="#specialized-variant-types">Specialized Variant Types</a></li>
+<li><a href="#population-and-frequency-data">Population &amp; Frequency Data</a></li>
+<li><a href="#gene-and-transcript-types">Gene &amp; Transcript Types</a></li>
+<li><a href="#functional-annotation">Functional Annotation</a></li>
+<li><a href="#clinical-and-disease-data">Clinical &amp; Disease Data</a></li>
+<li><a href="#constraint-and-conservation">Constraint &amp; Conservation</a></li>
+<li><a href="#quality-metrics">Quality Metrics</a></li>
+<li><a href="#coverage-data">Coverage Data</a></li>
+<li><a href="#expression-and-tissue-data">Expression &amp; Tissue Data</a></li>
+<li><a href="#search-and-utility-types">Search &amp; Utility Types</a></li>
+<li><a href="#statistical-and-analysis-types">Statistical &amp; Analysis Types</a></li>
+<li><a href="#variant-alliance-types">Variant Alliance Types</a></li>
+<li><a href="#short-tandem-repeats">Short Tandem Repeats</a></li>
+<li><a href="#histogram-and-distribution-types">Histogram &amp; Distribution Types</a></li>
+</ul>
+<hr />
+<h2 id="core-variant-types">Core Variant Types</h2>
+<h3 id="variant"><a id="type-variant"></a><code>Variant</code></h3>
+<p><strong>Used by:</strong> <code>Gene.variants</code>, <code>Region.variants</code>, <code>Transcript.variants</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| alt | `String!` | - |
+| chrom | `String!` | - |
+| domains | `[String!]` | - |
+| flags | `[String!]` | - |
+| in_silico_predictors | `[VariantInSilicoPredictor!]` | - |
+| pos | `Int!` | - |
+| ref | `String!` | - |
+| reference_genome | `ReferenceGenomeId!` | - |
+| rsids | `[String!]` | - |
+| va | `VACohortAlleleFrequency!` | GA4GH-format data |
+| variantId | `String!` | Deprecated - replaced by snake case versions Preserved for compatibility with existing browser queries |
+| **variant_id** | `String!` | - |
+| consequence | `String` | Deprecated - Use transcript_consequences[0] instead Preserved for compatibility with existing browser queries |
+| consequence_in_canonical_transcript | `Boolean` | - |
+| exome | `VariantSequencingTypeData` | - |
+| faf95_joint | `VariantFilteringAlleleFrequency` | - |
+| faf99_joint | `VariantFilteringAlleleFrequency` | - |
+| **gene_id** | `String` | - |
+| gene_symbol | `String` | - |
+| genome | `VariantSequencingTypeData` | - |
+| hgvs | `String` | Deprecated - use hgvsp and hgvsc instead |
+| hgvsc | `String` | - |
+| hgvsp | `String` | - |
+| joint | `VariantJointSequencingTypeData` | - |
+| lof | `String` | - |
+| lof_curation | `LoFCurationInGene` | - |
+| lof_filter | `String` | - |
+| lof_flags | `String` | - |
+| rsid | `String` | Deprecated - use rsids |
+| transcript_consequence | `TranscriptConsequence` | - |
+| **transcript_id** | `String` | - |
+| transcript_version | `String` | - |
+| vrs | `VAAllele` | - |
+
+</details>
+
+<h3 id="variantdetails"><a id="type-variantdetails"></a><code>VariantDetails</code></h3>
+<p><strong>Used by:</strong> <code>Query.variant</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| alt | `String!` | - |
+| chrom | `String!` | - |
+| colocatedVariants | `[String!]!` | - |
+| colocated_variants | `[String!]!` | - |
+| coverage | `VariantCoverage!` | - |
+| flags | `[String!]` | - |
+| in_silico_predictors | `[VariantInSilicoPredictor!]` | - |
+| lof_curations | `[LoFCuration!]` | - |
+| multiNucleotideVariants | `[MultiNucleotideVariantSummary!]` | - |
+| multi_nucleotide_variants | `[MultiNucleotideVariantSummary!]` | - |
+| pos | `Int!` | - |
+| ref | `String!` | - |
+| reference_genome | `ReferenceGenomeId!` | - |
+| rsids | `[String!]` | - |
+| sortedTranscriptConsequences | `[TranscriptConsequence!]` | - |
+| transcript_consequences | `[TranscriptConsequence!]` | - |
+| va | `VACohortAlleleFrequency!` | - |
+| variantId | `String!` | Deprecated - replaced by snake case versions Preserved for compatibility with existing browser queries |
+| **variant_id** | `String!` | - |
+| caid | `String` | - |
+| exome | `VariantDetailsSequencingTypeData` | - |
+| genome | `VariantDetailsSequencingTypeData` | - |
+| joint | `VariantDetailsJointSequencingTypeData` | - |
+| non_coding_constraint | `NonCodingConstraintRegion` | - |
+| rsid | `String` | Deprecated - use rsids |
+| vrs | `VAAllele` | - |
+
+</details>
+
+<h3 id="variantsequencingtypedata"><a id="type-variantsequencingtypedata"></a><code>VariantSequencingTypeData</code></h3>
+<p><strong>Used by:</strong> <code>Variant.exome</code>, <code>Variant.genome</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| filters | `[String!]` | - |
+| flags | `[String!]` | - |
+| **ac** | `Int` | - |
+| ac_hemi | `Int` | - |
+| ac_hom | `Int` | Deprecated - replaced by homozygote/hemizygote count |
+| **af** | `Float` | Deprecated - calculate from AC and AN Preserved for compatibility with existing browser queries |
+| **an** | `Int` | - |
+| faf95 | `VariantFilteringAlleleFrequency` | - |
+| fafmax | `Fafmax` | - |
+| hemizygote_count | `Int` | - |
+| homozygote_count | `Int` | - |
+| populations | `[VariantPopulation]` | - |
+
+</details>
+
+<h3 id="variantjointsequencingtypedata"><a id="type-variantjointsequencingtypedata"></a><code>VariantJointSequencingTypeData</code></h3>
+<p><strong>Used by:</strong> <code>Variant.joint</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| filters | `[String!]` | - |
+| **ac** | `Int` | - |
+| **an** | `Int` | - |
+| fafmax | `Fafmax` | - |
+| hemizygote_count | `Int` | - |
+| homozygote_count | `Int` | - |
+| populations | `[VariantPopulation]` | - |
+
+</details>
+
+<h3 id="variantqualitymetrics"><a id="type-variantqualitymetrics"></a><code>VariantQualityMetrics</code></h3>
+<p><strong>Used by:</strong> <code>VariantDetailsSequencingTypeData.quality_metrics</code>, <code>VariantDetailsSequencingTypeData.qualityMetrics</code>, <code>VariantDetailsJointSequencingTypeData.quality_metrics</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| siteQualityMetrics | `[VariantSiteQualityMetric!]!` | - |
+| site_quality_metrics | `[VariantSiteQualityMetric!]!` | - |
+| alleleBalance | `VariantAlleleBalance` | Deprecated - replaced by snake case versions |
+| allele_balance | `VariantAlleleBalance` | - |
+| genotypeDepth | `VariantGenotypeDepth` | - |
+| genotypeQuality | `VariantGenotypeQuality` | - |
+| genotype_depth | `VariantGenotypeDepth` | - |
+| genotype_quality | `VariantGenotypeQuality` | - |
+
+</details>
+
+<h2 id="specialized-variant-types">Specialized Variant Types</h2>
+<h3 id="mitochondrialvariant"><a id="type-mitochondrialvariant"></a><code>MitochondrialVariant</code></h3>
+<p><strong>Used by:</strong> <code>Gene.mitochondrial_variants</code>, <code>Region.mitochondrial_variants</code>, <code>Transcript.mitochondrial_variants</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| filters | `[String!]` | - |
+| flags | `[String!]` | - |
+| pos | `Int!` | - |
+| reference_genome | `ReferenceGenomeId!` | - |
+| rsids | `[String!]` | - |
+| **variant_id** | `String!` | - |
+| ac_het | `Int` | - |
+| ac_hom | `Int` | - |
+| **an** | `Int` | - |
+| consequence | `String` | - |
+| **gene_id** | `String` | - |
+| gene_symbol | `String` | - |
+| hgvsc | `String` | - |
+| hgvsp | `String` | - |
+| lof | `String` | - |
+| lof_filter | `String` | - |
+| lof_flags | `String` | - |
+| max_heteroplasmy | `Float` | - |
+| rsid | `String` | - |
+| **transcript_id** | `String` | - |
+
+</details>
+
+<h3 id="mitochondrialvariantdetails"><a id="type-mitochondrialvariantdetails"></a><code>MitochondrialVariantDetails</code></h3>
+<p><strong>Used by:</strong> <code>Query.mitochondrial_variant</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| alt | `String!` | - |
+| filters | `[String!]` | - |
+| flags | `[String!]!` | - |
+| genotype_quality_filters | `[MitochondrialVariantGenotypeQualityFilter!]` | - |
+| genotype_quality_metrics | `[MitochondrialVariantGenotypeQualityMetric!]` | - |
+| haplogroups | `[MitochondrialVariantHaplogroup!]` | - |
+| populations | `[MitochondrialVariantPopulation!]!` | - |
+| pos | `Int!` | - |
+| ref | `String!` | - |
+| reference_genome | `ReferenceGenomeId!` | - |
+| transcript_consequences | `[TranscriptConsequence!]` | - |
+| **variant_id** | `String!` | - |
+| ac_het | `Int` | - |
+| ac_hom | `Int` | - |
+| ac_hom_mnv | `Int` | - |
+| age_distribution | `MitochondrialVariantAgeDistribution` | - |
+| **an** | `Int` | - |
+| excluded_ac | `Int` | - |
+| haplogroup_defining | `Boolean` | - |
+| heteroplasmy_distribution | `Histogram` | - |
+| max_heteroplasmy | `Float` | - |
+| mitotip_score | `Float` | - |
+| mitotip_trna_prediction | `String` | - |
+| pon_ml_probability_of_pathogenicity | `Float` | - |
+| pon_mt_trna_prediction | `String` | - |
+| rsid | `String` | - |
+| rsids | `[String]` | - |
+| site_quality_metrics | `[MitochondrialVariantSiteQualityMetric]` | - |
+
+</details>
+
+<h3 id="structuralvariant"><a id="type-structuralvariant"></a><code>StructuralVariant</code></h3>
+<p><strong>Used by:</strong> <code>Gene.structural_variants</code>, <code>Region.structural_variants</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| **ac** | `Int!` | - |
+| **af** | `Float!` | - |
+| **an** | `Int!` | - |
+| chrom | `String!` | - |
+| end | `Int!` | - |
+| filters | `[String!]` | - |
+| pos | `Int!` | - |
+| reference_genome | `ReferenceGenomeId!` | - |
+| **variant_id** | `String!` | - |
+| ac_hemi | `Int` | - |
+| ac_hom | `Int` | Deprecated - replaced by homozygote/hemizygote count |
+| chrom2 | `String` | - |
+| consequence | `String` | Deprecated - replaced by major_consequence |
+| end2 | `Int` | - |
+| hemizygote_count | `Int` | - |
+| homozygote_count | `Int` | - |
+| length | `Int` | - |
+| major_consequence | `String` | - |
+| pos2 | `Int` | - |
+| type | `String` | - |
+
+</details>
+
+<h3 id="structuralvariantdetails"><a id="type-structuralvariantdetails"></a><code>StructuralVariantDetails</code></h3>
+<p><strong>Used by:</strong> <code>Query.structural_variant</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| **ac** | `Int!` | - |
+| **af** | `Float!` | - |
+| algorithms | `[String!]` | - |
+| alts | `[String!]` | - |
+| **an** | `Int!` | - |
+| chrom | `String!` | - |
+| consequences | `[StructuralVariantConsequence!]` | - |
+| copy_numbers | `[StructuralVariantCopyNumber!]` | - |
+| cpx_intervals | `[String!]` | - |
+| end | `Int!` | - |
+| evidence | `[String!]` | - |
+| filters | `[String!]` | - |
+| genes | `[String!]` | - |
+| populations | `[StructuralVariantPopulation!]` | - |
+| pos | `Int!` | - |
+| reference_genome | `ReferenceGenomeId!` | - |
+| **variant_id** | `String!` | - |
+| ac_hemi | `Int` | - |
+| ac_hom | `Int` | Deprecated - replaced by homozygote/hemizygote count |
+| age_distribution | `StructuralVariantAgeDistribution` | - |
+| chrom2 | `String` | - |
+| consequence | `String` | Deprecated - replaced by major_consequence |
+| cpx_type | `String` | - |
+| end2 | `Int` | - |
+| genotype_quality | `StructuralVariantGenotypeQuality` | - |
+| hemizygote_count | `Int` | - |
+| homozygote_count | `Int` | - |
+| length | `Int` | - |
+| major_consequence | `String` | - |
+| pos2 | `Int` | - |
+| qual | `Float` | - |
+| type | `String` | - |
+
+</details>
+
+<h3 id="copynumbervariant"><a id="type-copynumbervariant"></a><code>CopyNumberVariant</code></h3>
+<p><strong>Used by:</strong> <code>Gene.copy_number_variants</code>, <code>Region.copy_number_variants</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| chrom | `String!` | - |
+| end | `Int!` | - |
+| filters | `[String!]` | - |
+| pos | `Int!` | - |
+| reference_genome | `ReferenceGenomeId!` | - |
+| sc | `Float!` | - |
+| sf | `Float!` | - |
+| sn | `Float!` | - |
+| **variant_id** | `String!` | - |
+| endmax | `Int` | - |
+| endmin | `Int` | - |
+| length | `Int` | - |
+| posmax | `Int` | - |
+| posmin | `Int` | - |
+| type | `String` | - |
+
+</details>
+
+<h3 id="copynumbervariantdetails"><a id="type-copynumbervariantdetails"></a><code>CopyNumberVariantDetails</code></h3>
+<p><strong>Used by:</strong> <code>Query.copy_number_variant</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| alts | `[String!]` | - |
+| chrom | `String!` | - |
+| end | `Int!` | - |
+| filters | `[String!]` | - |
+| genes | `[String!]` | - |
+| populations | `[CopyNumberVariantPopulation!]` | - |
+| pos | `Int!` | - |
+| reference_genome | `ReferenceGenomeId!` | - |
+| sc | `Float!` | - |
+| sf | `Float!` | - |
+| sn | `Float!` | - |
+| **variant_id** | `String!` | - |
+| endmax | `Int` | - |
+| endmin | `Int` | - |
+| length | `Int` | - |
+| posmax | `Int` | - |
+| posmin | `Int` | - |
+| qual | `Float` | - |
+| type | `String` | - |
+
+</details>
+
+<h3 id="multinucleotidevariantdetails"><a id="type-multinucleotidevariantdetails"></a><code>MultiNucleotideVariantDetails</code></h3>
+<p><strong>Used by:</strong> <code>Query.multiNucleotideVariant</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| alt | `String!` | - |
+| chrom | `String!` | - |
+| consequences | `[MultiNucleotideVariantConsequence!]` | - |
+| constituent_snvs | `[MultiNucleotideVariantConstituentSNV!]` | - |
+| pos | `Int!` | - |
+| ref | `String!` | - |
+| reference_genome | `ReferenceGenomeId!` | - |
+| related_mnvs | `[MultiNucleotideVariantSummary!]!` | - |
+| **variant_id** | `String!` | - |
+| exome | `MultiNucleotideVariantDetailsSequencingData` | - |
+| genome | `MultiNucleotideVariantDetailsSequencingData` | - |
+
+</details>
+
+<h2 id="population-frequency-data">Population &amp; Frequency Data</h2>
+<h3 id="variantpopulation"><a id="type-variantpopulation"></a><code>VariantPopulation</code></h3>
+<p><strong>Used by:</strong> <code>VariantSequencingTypeData.populations</code>, <code>VariantJointSequencingTypeData.populations</code>, <code>VariantDetailsSequencingTypeData.populations</code>
+ and 1 more...</p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| **ac** | `Int!` | - |
+| ac_hom | `Int!` | Deprecated - replaced by homozygote/hemizygote count |
+| **an** | `Int!` | - |
+| homozygote_count | `Int!` | - |
+| id | `String!` | - |
+| ac_hemi | `Int` | - |
+| hemizygote_count | `Int` | - |
+
+</details>
+
+<h3 id="variantfilteringallelefrequency"><a id="type-variantfilteringallelefrequency"></a><code>VariantFilteringAlleleFrequency</code></h3>
+<p><strong>Used by:</strong> <code>VariantSequencingTypeData.faf95</code>, <code>Variant.faf95_joint</code>, <code>Variant.faf99_joint</code>
+ and 4 more...</p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| popmax | `Float` | - |
+| popmax_population | `String` | - |
+
+</details>
+
+<h3 id="variantlocalancestrypopulation"><a id="type-variantlocalancestrypopulation"></a><code>VariantLocalAncestryPopulation</code></h3>
+<p><strong>Used by:</strong> <code>VariantDetailsSequencingTypeData.local_ancestry_populations</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| **ac** | `Int!` | - |
+| **an** | `Int!` | - |
+| id | `String!` | - |
+
+</details>
+
+<h3 id="mitochondrialvariantpopulation"><a id="type-mitochondrialvariantpopulation"></a><code>MitochondrialVariantPopulation</code></h3>
+<p><strong>Used by:</strong> <code>MitochondrialVariantDetails.populations</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| ac_het | `Int!` | - |
+| ac_hom | `Int!` | - |
+| **an** | `Int!` | - |
+| heteroplasmy_distribution | `Histogram!` | - |
+| id | `String!` | - |
+
+</details>
+
+<h3 id="structuralvariantpopulation"><a id="type-structuralvariantpopulation"></a><code>StructuralVariantPopulation</code></h3>
+<p><strong>Used by:</strong> <code>StructuralVariantDetails.populations</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| **ac** | `Int!` | - |
+| **an** | `Int!` | - |
+| id | `String!` | - |
+| ac_hemi | `Int` | Deprecated - replaced by homozygote/hemizygote count |
+| ac_hom | `Int` | - |
+| hemizygote_count | `Int` | - |
+| homozygote_count | `Int` | - |
+
+</details>
+
+<h3 id="copynumbervariantpopulation"><a id="type-copynumbervariantpopulation"></a><code>CopyNumberVariantPopulation</code></h3>
+<p><strong>Used by:</strong> <code>CopyNumberVariantDetails.populations</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | `String!` | - |
+| sc | `Float!` | - |
+| sf | `Float!` | - |
+| sn | `Float!` | - |
+
+</details>
+
+<h3 id="fafmax"><a id="type-fafmax"></a><code>Fafmax</code></h3>
+<p><strong>Used by:</strong> <code>VariantSequencingTypeData.fafmax</code>, <code>VariantJointSequencingTypeData.fafmax</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| faf95_max | `Float` | - |
+| faf95_max_gen_anc | `String` | - |
+| faf99_max | `Float` | - |
+| faf99_max_gen_anc | `String` | - |
+
+</details>
+
+<h3 id="vagrpmaxfaf95"><a id="type-vagrpmaxfaf95"></a><code>VAGrpMaxFAF95</code></h3>
+<p><strong>Used by:</strong> <code>VAAncillaryResults.grpMaxFAF95</code>, <code>VAAncillaryResults.jointGrpMaxFAF95</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| confidenceInterval | `Float!` | - |
+| frequency | `Float!` | - |
+| groupId | `String!` | - |
+
+</details>
+
+<h2 id="gene-transcript-types">Gene &amp; Transcript Types</h2>
+<h3 id="gene"><a id="type-gene"></a><code>Gene</code></h3>
+<p><strong>Used by:</strong> <code>Query.gene</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| chrom | `String!` | - |
+| clinvar_variants | `[ClinVarVariant!]` | - |
+| cnv_track_callable_coverage | `[CNVTrackCallableCoverageBin!]` | - |
+| copy_number_variants | `[CopyNumberVariant!]!` | - |
+| coverage | `FeatureCoverage!` | - |
+| exac_regional_missense_constraint_regions | `[ExacRegionalMissenseConstraintRegion!]` | - |
+| exons | `[Exon!]!` | - |
+| flags | `[String!]!` | - |
+| gencode_symbol | `String!` | - |
+| **gene_id** | `String!` | - |
+| gene_version | `String!` | - |
+| heterozygous_variant_cooccurrence_counts | `[HeterozygousVariantCooccurrenceCounts!]!` | - |
+| homozygous_variant_cooccurrence_counts | `[HomozygousVariantCooccurrenceCounts!]!` | - |
+| mitochondrial_coverage | `[MitochondrialCoverageBin!]` | - |
+| mitochondrial_variants | `[MitochondrialVariant!]!` | - |
+| reference_genome | `ReferenceGenomeId!` | - |
+| short_tandem_repeats | `[ShortTandemRepeat!]!` | - |
+| start | `Int!` | - |
+| stop | `Int!` | - |
+| strand | `String!` | - |
+| structural_variants | `[StructuralVariant!]!` | - |
+| symbol | `String!` | - |
+| transcripts | `[GeneTranscript!]!` | - |
+| variants | `[Variant!]!` | - |
+| canonical_transcript_id | `String` | - |
+| exac_constraint | `ExacConstraint` | - |
+| gnomad_constraint | `GnomadConstraint` | - |
+| gnomad_v2_regional_missense_constraint | `GnomadV2RegionalMissenseConstraint` | - |
+| hgnc_id | `String` | - |
+| mane_select_transcript | `ManeSelectTranscript` | - |
+| mitochondrial_constraint | `MitochondrialGeneConstraint` | - |
+| mitochondrial_missense_constraint_regions | `[MitochondrialRegionConstraint]` | - |
+| name | `String` | - |
+| ncbi_id | `String` | - |
+| omim_id | `String` | - |
+| pext | `Pext` | - |
+
+</details>
+
+<h3 id="transcript"><a id="type-transcript"></a><code>Transcript</code></h3>
+<p><strong>Used by:</strong> <code>Query.transcript</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| chrom | `String!` | - |
+| clinvar_variants | `[ClinVarVariant!]` | - |
+| coverage | `FeatureCoverage!` | - |
+| exons | `[Exon!]!` | - |
+| gene | `TranscriptGene!` | - |
+| **gene_id** | `String!` | - |
+| mitochondrial_coverage | `[MitochondrialCoverageBin!]` | - |
+| mitochondrial_variants | `[MitochondrialVariant!]!` | - |
+| reference_genome | `ReferenceGenomeId!` | - |
+| start | `Int!` | - |
+| stop | `Int!` | - |
+| strand | `String!` | - |
+| **transcript_id** | `String!` | - |
+| transcript_version | `String!` | - |
+| variants | `[Variant!]!` | - |
+| exac_constraint | `ExacConstraint` | - |
+| gnomad_constraint | `GnomadConstraint` | - |
+| gtex_tissue_expression | `[GtexTissue]` | - |
+
+</details>
+
+<h3 id="exon"><a id="type-exon"></a><code>Exon</code></h3>
+<p><strong>Used by:</strong> <code>GeneTranscript.exons</code>, <code>Gene.exons</code>, <code>RegionGeneTranscript.exons</code>
+ and 3 more...</p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| feature_type | `String!` | - |
+| start | `Int!` | - |
+| stop | `Int!` | - |
+
+</details>
+
+<h3 id="genetranscript"><a id="type-genetranscript"></a><code>GeneTranscript</code></h3>
+<p><strong>Used by:</strong> <code>Gene.transcripts</code>, <code>TranscriptGene.transcripts</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| chrom | `String!` | - |
+| exons | `[Exon!]!` | - |
+| gtex_tissue_expression | `[GtexTissue!]` | - |
+| reference_genome | `ReferenceGenomeId!` | - |
+| start | `Int!` | - |
+| stop | `Int!` | - |
+| strand | `String!` | - |
+| **transcript_id** | `String!` | - |
+| transcript_version | `String!` | - |
+
+</details>
+
+<h3 id="transcriptgene"><a id="type-transcriptgene"></a><code>TranscriptGene</code></h3>
+<p><strong>Used by:</strong> <code>Transcript.gene</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| chrom | `String!` | - |
+| exac_regional_missense_constraint_regions | `[ExacRegionalMissenseConstraintRegion!]` | - |
+| exons | `[Exon!]!` | - |
+| flags | `[String!]!` | - |
+| **gene_id** | `String!` | - |
+| gene_version | `String!` | - |
+| reference_genome | `ReferenceGenomeId!` | - |
+| start | `Int!` | - |
+| stop | `Int!` | - |
+| strand | `String!` | - |
+| symbol | `String!` | - |
+| transcripts | `[GeneTranscript!]!` | - |
+| canonical_transcript_id | `String` | - |
+| exac_constraint | `ExacConstraint` | - |
+| gnomad_constraint | `GnomadConstraint` | - |
+| hgnc_id | `String` | - |
+| mane_select_transcript | `ManeSelectTranscript` | - |
+| name | `String` | - |
+| ncbi_id | `String` | - |
+| omim_id | `String` | - |
+| pext | `Pext` | - |
+
+</details>
+
+<h3 id="regiongene"><a id="type-regiongene"></a><code>RegionGene</code></h3>
+<p><strong>Used by:</strong> <code>Region.genes</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| exons | `[Exon!]!` | - |
+| **gene_id** | `String!` | - |
+| start | `Int!` | - |
+| stop | `Int!` | - |
+| symbol | `String!` | - |
+| transcripts | `[RegionGeneTranscript!]!` | - |
+
+</details>
+
+<h3 id="regiongenetranscript"><a id="type-regiongenetranscript"></a><code>RegionGeneTranscript</code></h3>
+<p><strong>Used by:</strong> <code>RegionGene.transcripts</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| exons | `[Exon!]!` | - |
+| start | `Int!` | - |
+| stop | `Int!` | - |
+| **transcript_id** | `String!` | - |
+
+</details>
+
+<h3 id="maneselecttranscript"><a id="type-maneselecttranscript"></a><code>ManeSelectTranscript</code></h3>
+<p><strong>Used by:</strong> <code>Gene.mane_select_transcript</code>, <code>TranscriptGene.mane_select_transcript</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| ensembl_id | `String!` | - |
+| ensembl_version | `String!` | - |
+| refseq_id | `String!` | - |
+| refseq_version | `String!` | - |
+
+</details>
+
+<h2 id="functional-annotation">Functional Annotation</h2>
+<h3 id="transcriptconsequence"><a id="type-transcriptconsequence"></a><code>TranscriptConsequence</code></h3>
+<p><strong>Used by:</strong> <code>MitochondrialVariantDetails.transcript_consequences</code>, <code>Variant.transcript_consequence</code>, <code>VariantDetails.transcript_consequences</code>
+ and 1 more...</p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| consequence_terms | `[String!]` | - |
+| domains | `[String!]` | - |
+| **gene_id** | `String!` | - |
+| **transcript_id** | `String!` | - |
+| canonical | `Boolean` | Deprecated - replaced by is_canonical |
+| gene_symbol | `String` | - |
+| gene_version | `String` | - |
+| hgvs | `String` | - |
+| hgvsc | `String` | - |
+| hgvsp | `String` | - |
+| is_canonical | `Boolean` | - |
+| is_mane_select | `Boolean` | - |
+| is_mane_select_version | `Boolean` | - |
+| lof | `String` | - |
+| lof_filter | `String` | - |
+| lof_flags | `String` | - |
+| major_consequence | `String` | - |
+| polyphen_prediction | `String` | - |
+| refseq_id | `String` | - |
+| refseq_version | `String` | - |
+| sift_prediction | `String` | - |
+| transcript_version | `String` | - |
+
+</details>
+
+<h3 id="variantinsilicopredictor"><a id="type-variantinsilicopredictor"></a><code>VariantInSilicoPredictor</code></h3>
+<p><strong>Used by:</strong> <code>Variant.in_silico_predictors</code>, <code>VariantDetails.in_silico_predictors</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| flags | `[String!]!` | - |
+| id | `String!` | - |
+| value | `String!` | - |
+
+</details>
+
+<h3 id="lofcuration"><a id="type-lofcuration"></a><code>LoFCuration</code></h3>
+<p><strong>Used by:</strong> <code>VariantDetails.lof_curations</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| flags | `[String!]` | - |
+| **gene_id** | `String!` | - |
+| gene_version | `String!` | - |
+| project | `String!` | - |
+| verdict | `String!` | - |
+| gene_symbol | `String` | - |
+
+</details>
+
+<h3 id="lofcurationingene"><a id="type-lofcurationingene"></a><code>LoFCurationInGene</code></h3>
+<p><strong>Used by:</strong> <code>Variant.lof_curation</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| flags | `[String!]` | - |
+| verdict | `String!` | - |
+
+</details>
+
+<h3 id="multinucleotidevariantconsequence"><a id="type-multinucleotidevariantconsequence"></a><code>MultiNucleotideVariantConsequence</code></h3>
+<p><strong>Used by:</strong> <code>MultiNucleotideVariantDetails.consequences</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| amino_acids | `String!` | - |
+| codons | `String!` | - |
+| consequence | `String!` | - |
+| **gene_id** | `String!` | - |
+| gene_name | `String!` | - |
+| snv_consequences | `[MultiNucleotideVariantConstituentSNVConsequence!]!` | - |
+| **transcript_id** | `String!` | - |
+| category | `String` | - |
+
+</details>
+
+<h3 id="structuralvariantconsequence"><a id="type-structuralvariantconsequence"></a><code>StructuralVariantConsequence</code></h3>
+<p><strong>Used by:</strong> <code>StructuralVariantDetails.consequences</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| consequence | `String!` | - |
+| genes | `[String!]` | - |
+
+</details>
+
+<h2 id="clinical-disease-data">Clinical &amp; Disease Data</h2>
+<h3 id="clinvarvariant"><a id="type-clinvarvariant"></a><code>ClinVarVariant</code></h3>
+<p><strong>Used by:</strong> <code>Gene.clinvar_variants</code>, <code>Region.clinvar_variants</code>, <code>Transcript.clinvar_variants</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| alt | `String!` | - |
+| chrom | `String!` | - |
+| clinical_significance | `String!` | - |
+| clinvar_variation_id | `String!` | - |
+| gold_stars | `Int!` | - |
+| pos | `Int!` | - |
+| ref | `String!` | - |
+| reference_genome | `ReferenceGenomeId!` | - |
+| review_status | `String!` | - |
+| **variant_id** | `String!` | - |
+| gnomad | `ClinVarVariantGnomadData` | - |
+| hgvsc | `String` | - |
+| hgvsp | `String` | - |
+| in_gnomad | `Boolean` | - |
+| major_consequence | `String` | - |
+| **transcript_id** | `String` | - |
+
+</details>
+
+<h3 id="clinvarvariantdetails"><a id="type-clinvarvariantdetails"></a><code>ClinVarVariantDetails</code></h3>
+<p><strong>Used by:</strong> <code>Query.clinvar_variant</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| alt | `String!` | - |
+| chrom | `String!` | - |
+| clinical_significance | `String!` | - |
+| clinvar_variation_id | `String!` | - |
+| gold_stars | `Int!` | - |
+| in_gnomad | `Boolean!` | - |
+| pos | `Int!` | - |
+| ref | `String!` | - |
+| reference_genome | `ReferenceGenomeId!` | - |
+| review_status | `String!` | - |
+| submissions | `[ClinVarSubmission!]!` | - |
+| **variant_id** | `String!` | - |
+| gnomad | `ClinVarVariantGnomadData` | - |
+| last_evaluated | `String` | - |
+| rsid | `String` | - |
+
+</details>
+
+<h3 id="clinvarcondition"><a id="type-clinvarcondition"></a><code>ClinVarCondition</code></h3>
+<p><strong>Used by:</strong> <code>ClinVarSubmission.conditions</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| name | `String!` | - |
+| medgen_id | `String` | - |
+
+</details>
+
+<h3 id="clinvarsubmission"><a id="type-clinvarsubmission"></a><code>ClinVarSubmission</code></h3>
+<p><strong>Used by:</strong> <code>ClinVarVariantDetails.submissions</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| conditions | `[ClinVarCondition!]!` | - |
+| review_status | `String!` | - |
+| submitter_name | `String!` | - |
+| clinical_significance | `String` | - |
+| last_evaluated | `String` | - |
+
+</details>
+
+<h3 id="clinvarvariantgnomaddata"><a id="type-clinvarvariantgnomaddata"></a><code>ClinVarVariantGnomadData</code></h3>
+<p><strong>Used by:</strong> <code>ClinVarVariant.gnomad</code>, <code>ClinVarVariantDetails.gnomad</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| exome | `ClinVarVariantGnomadSequencingTypeData` | - |
+| genome | `ClinVarVariantGnomadSequencingTypeData` | - |
+
+</details>
+
+<h2 id="constraint-conservation">Constraint &amp; Conservation</h2>
+<h3 id="gnomadconstraint"><a id="type-gnomadconstraint"></a><code>GnomadConstraint</code></h3>
+<p><strong>Used by:</strong> <code>Gene.gnomad_constraint</code>, <code>TranscriptGene.gnomad_constraint</code>, <code>Transcript.gnomad_constraint</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| exp_mis | `Float!` | - |
+| flags | `[String!]` | - |
+| mis_z | `Float!` | - |
+| oe_mis | `Float!` | - |
+| syn_z | `Float!` | - |
+| exp_lof | `Float` | - |
+| exp_syn | `Float` | - |
+| lof_z | `Float` | - |
+| obs_lof | `Int` | - |
+| obs_mis | `Int` | - |
+| obs_syn | `Int` | - |
+| oe_lof | `Float` | - |
+| oe_lof_lower | `Float` | - |
+| oe_lof_upper | `Float` | - |
+| oe_mis_lower | `Float` | - |
+| oe_mis_upper | `Float` | - |
+| oe_syn | `Float` | - |
+| oe_syn_lower | `Float` | - |
+| oe_syn_upper | `Float` | - |
+| pLI | `Float` | Deprecated fields |
+| pli | `Float` | - |
+
+</details>
+
+<h3 id="exacconstraint"><a id="type-exacconstraint"></a><code>ExacConstraint</code></h3>
+<p><strong>Used by:</strong> <code>Gene.exac_constraint</code>, <code>TranscriptGene.exac_constraint</code>, <code>Transcript.exac_constraint</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| mis_z | `Float!` | - |
+| pLI | `Float!` | Deprecated fields |
+| syn_z | `Float!` | - |
+| exp_lof | `Float` | - |
+| exp_mis | `Float` | - |
+| exp_syn | `Float` | - |
+| lof_z | `Float` | - |
+| mu_lof | `Float` | - |
+| mu_mis | `Float` | - |
+| mu_syn | `Float` | - |
+| obs_lof | `Int` | - |
+| obs_mis | `Int` | - |
+| obs_syn | `Int` | - |
+| pli | `Float` | - |
+
+</details>
+
+<h3 id="gnomadv2regionalmissenseconstraint"><a id="type-gnomadv2regionalmissenseconstraint"></a><code>GnomadV2RegionalMissenseConstraint</code></h3>
+<p><strong>Used by:</strong> <code>Gene.gnomad_v2_regional_missense_constraint</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| has_no_rmc_evidence | `Boolean` | - |
+| passed_qc | `Boolean` | - |
+| regions | `[GnomadV2RegionalMissenseConstraintRegion]` | - |
+
+</details>
+
+<h3 id="gnomadv2regionalmissenseconstraintregion"><a id="type-gnomadv2regionalmissenseconstraintregion"></a><code>GnomadV2RegionalMissenseConstraintRegion</code></h3>
+<p><strong>Used by:</strong> <code>GnomadV2RegionalMissenseConstraint.regions</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| aa_start | `String` | - |
+| aa_stop | `String` | - |
+| chisq_diff_null | `Float` | - |
+| chrom | `String` | - |
+| exp_mis | `Float` | - |
+| obs_exp | `Float` | - |
+| obs_mis | `Int` | - |
+| p_value | `Float` | - |
+| start | `Int` | - |
+| stop | `Int` | - |
+
+</details>
+
+<h3 id="mitochondrialregionconstraint"><a id="type-mitochondrialregionconstraint"></a><code>MitochondrialRegionConstraint</code></h3>
+<p><strong>Used by:</strong> <code>Gene.mitochondrial_missense_constraint_regions</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| oe | `Float!` | - |
+| oe_lower | `Float!` | - |
+| oe_upper | `Float!` | - |
+| start | `Int!` | - |
+| stop | `Int!` | - |
+
+</details>
+
+<h3 id="noncodingconstraintregion"><a id="type-noncodingconstraintregion"></a><code>NonCodingConstraintRegion</code></h3>
+<p><strong>Used by:</strong> <code>Region.non_coding_constraints</code>, <code>VariantDetails.non_coding_constraint</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| chrom | `String!` | - |
+| element_id | `String!` | - |
+| expected | `Float!` | - |
+| observed | `Float!` | - |
+| oe | `Float!` | - |
+| possible | `Float!` | - |
+| start | `Int!` | - |
+| stop | `Int!` | - |
+| z | `Float!` | - |
+
+</details>
+
+<h2 id="quality-metrics">Quality Metrics</h2>
+<h3 id="variantsitequalitymetric"><a id="type-variantsitequalitymetric"></a><code>VariantSiteQualityMetric</code></h3>
+<p><strong>Used by:</strong> <code>VariantQualityMetrics.site_quality_metrics</code>, <code>VariantQualityMetrics.siteQualityMetrics</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| metric | `String!` | - |
+| value | `Float` | - |
+
+</details>
+
+<h3 id="variantgenotypequality"><a id="type-variantgenotypequality"></a><code>VariantGenotypeQuality</code></h3>
+<p><strong>Used by:</strong> <code>VariantQualityMetrics.genotype_quality</code>, <code>VariantQualityMetrics.genotypeQuality</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| all | `Histogram` | - |
+| alt | `Histogram` | - |
+
+</details>
+
+<h3 id="variantgenotypedepth"><a id="type-variantgenotypedepth"></a><code>VariantGenotypeDepth</code></h3>
+<p><strong>Used by:</strong> <code>VariantQualityMetrics.genotype_depth</code>, <code>VariantQualityMetrics.genotypeDepth</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| all | `Histogram` | - |
+| alt | `Histogram` | - |
+
+</details>
+
+<h3 id="variantallelebalance"><a id="type-variantallelebalance"></a><code>VariantAlleleBalance</code></h3>
+<p><strong>Used by:</strong> <code>VariantQualityMetrics.allele_balance</code>, <code>VariantQualityMetrics.alleleBalance</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| alt | `Histogram` | - |
+
+</details>
+
+<h3 id="mitochondrialvariantgenotypequalitymetric"><a id="type-mitochondrialvariantgenotypequalitymetric"></a><code>MitochondrialVariantGenotypeQualityMetric</code></h3>
+<p><strong>Used by:</strong> <code>MitochondrialVariantDetails.genotype_quality_metrics</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| name | `String!` | - |
+| all | `Histogram` | - |
+| alt | `Histogram` | - |
+
+</details>
+
+<h3 id="mitochondrialvariantsitequalitymetric"><a id="type-mitochondrialvariantsitequalitymetric"></a><code>MitochondrialVariantSiteQualityMetric</code></h3>
+<p><strong>Used by:</strong> <code>MitochondrialVariantDetails.site_quality_metrics</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| name | `String!` | - |
+| value | `Float` | - |
+
+</details>
+
+<h2 id="coverage-data">Coverage Data</h2>
+<h3 id="coverage"><a id="type-coverage"></a><code>Coverage</code></h3>
+<p><strong>Used by:</strong> <code>VariantCoverage.exome</code>, <code>VariantCoverage.genome</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| mean | `Float` | - |
+| median | `Float` | - |
+| over_1 | `Float` | - |
+| over_10 | `Float` | - |
+| over_100 | `Float` | - |
+| over_15 | `Float` | - |
+| over_20 | `Float` | - |
+| over_25 | `Float` | - |
+| over_30 | `Float` | - |
+| over_5 | `Float` | - |
+| over_50 | `Float` | - |
+
+</details>
+
+<h3 id="variantcoverage"><a id="type-variantcoverage"></a><code>VariantCoverage</code></h3>
+<p><strong>Used by:</strong> <code>VariantDetails.coverage</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| exome | `Coverage` | - |
+| genome | `Coverage` | - |
+
+</details>
+
+<h3 id="coveragebin"><a id="type-coveragebin"></a><code>CoverageBin</code></h3>
+<p><strong>Used by:</strong> <code>FeatureCoverage.exome</code>, <code>FeatureCoverage.genome</code>, <code>RegionCoverage.exome</code>
+ and 1 more...</p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| pos | `Int!` | - |
+| mean | `Float` | - |
+| median | `Float` | - |
+| over_1 | `Float` | - |
+| over_10 | `Float` | - |
+| over_100 | `Float` | - |
+| over_15 | `Float` | - |
+| over_20 | `Float` | - |
+| over_25 | `Float` | - |
+| over_30 | `Float` | - |
+| over_5 | `Float` | - |
+| over_50 | `Float` | - |
+
+</details>
+
+<h3 id="featurecoverage"><a id="type-featurecoverage"></a><code>FeatureCoverage</code></h3>
+<p><strong>Used by:</strong> <code>Gene.coverage</code>, <code>Transcript.coverage</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| exome | `[CoverageBin!]!` | - |
+| genome | `[CoverageBin!]!` | - |
+
+</details>
+
+<h3 id="regioncoverage"><a id="type-regioncoverage"></a><code>RegionCoverage</code></h3>
+<p><strong>Used by:</strong> <code>Region.coverage</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| exome | `[CoverageBin!]!` | - |
+| genome | `[CoverageBin!]!` | - |
+
+</details>
+
+<h3 id="mitochondrialcoveragebin"><a id="type-mitochondrialcoveragebin"></a><code>MitochondrialCoverageBin</code></h3>
+<p><strong>Used by:</strong> <code>Gene.mitochondrial_coverage</code>, <code>Region.mitochondrial_coverage</code>, <code>Transcript.mitochondrial_coverage</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| pos | `Float!` | - |
+| mean | `Float` | - |
+| median | `Float` | - |
+| over_100 | `Float` | - |
+| over_1000 | `Float` | - |
+
+</details>
+
+<h3 id="cnvtrackcallablecoveragebin"><a id="type-cnvtrackcallablecoveragebin"></a><code>CNVTrackCallableCoverageBin</code></h3>
+<p><strong>Used by:</strong> <code>Gene.cnv_track_callable_coverage</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| xpos | `Float!` | - |
+| percent_callable | `Float` | - |
+
+</details>
+
+<h2 id="expression-tissue-data">Expression &amp; Tissue Data</h2>
+<h3 id="gtextissue"><a id="type-gtextissue"></a><code>GtexTissue</code></h3>
+<p><strong>Used by:</strong> <code>GeneTranscript.gtex_tissue_expression</code>, <code>Transcript.gtex_tissue_expression</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| tissue | `String!` | - |
+| value | `Float!` | - |
+
+</details>
+
+<h3 id="pextregion"><a id="type-pextregion"></a><code>PextRegion</code></h3>
+<p><strong>Used by:</strong> <code>Pext.regions</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| mean | `Float!` | - |
+| start | `Int!` | - |
+| stop | `Int!` | - |
+| tissues | `[PextRegionTissue!]!` | - |
+
+</details>
+
+<h3 id="pextregiontissue"><a id="type-pextregiontissue"></a><code>PextRegionTissue</code></h3>
+<p><strong>Used by:</strong> <code>PextRegion.tissues</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| tissue | `String` | - |
+| value | `Float` | - |
+
+</details>
+
+<h3 id="pext"><a id="type-pext"></a><code>Pext</code></h3>
+<p><strong>Used by:</strong> <code>Gene.pext</code>, <code>TranscriptGene.pext</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| flags | `[String!]!` | - |
+| regions | `[PextRegion!]!` | - |
+
+</details>
+
+<h2 id="search-utility-types">Search &amp; Utility Types</h2>
+<h3 id="variantsearchresult"><a id="type-variantsearchresult"></a><code>VariantSearchResult</code></h3>
+<p><strong>Used by:</strong> <code>Query.variant_search</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| **variant_id** | `String!` | - |
+
+</details>
+
+<h3 id="genesearchresult"><a id="type-genesearchresult"></a><code>GeneSearchResult</code></h3>
+<p><strong>Used by:</strong> <code>Query.gene_search</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| ensembl_id | `String!` | - |
+| ensembl_version | `String!` | - |
+| symbol | `String` | - |
+
+</details>
+
+<h3 id="liftovervariant"><a id="type-liftovervariant"></a><code>LiftoverVariant</code></h3>
+<p><strong>Used by:</strong> <code>LiftoverResult.source</code>, <code>LiftoverResult.liftover</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| reference_genome | `ReferenceGenomeId!` | - |
+| **variant_id** | `String!` | - |
+
+</details>
+
+<h3 id="liftoverresult"><a id="type-liftoverresult"></a><code>LiftoverResult</code></h3>
+<p><strong>Used by:</strong> <code>Query.liftover</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| datasets | `[String!]!` | - |
+| liftover | `LiftoverVariant!` | - |
+| source | `LiftoverVariant!` | - |
+
+</details>
+
+<h3 id="region"><a id="type-region"></a><code>Region</code></h3>
+<p><strong>Used by:</strong> <code>Query.region</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| chrom | `String!` | - |
+| clinvar_variants | `[ClinVarVariant!]` | - |
+| copy_number_variants | `[CopyNumberVariant!]!` | - |
+| coverage | `RegionCoverage!` | - |
+| genes | `[RegionGene!]!` | - |
+| mitochondrial_coverage | `[MitochondrialCoverageBin!]` | - |
+| mitochondrial_variants | `[MitochondrialVariant!]!` | - |
+| non_coding_constraints | `[NonCodingConstraintRegion!]` | - |
+| reference_genome | `ReferenceGenomeId!` | - |
+| short_tandem_repeats | `[ShortTandemRepeat!]!` | - |
+| start | `Int!` | - |
+| stop | `Int!` | - |
+| structural_variants | `[StructuralVariant!]!` | - |
+| variants | `[Variant!]!` | - |
+
+</details>
+
+<h3 id="browsermetadata"><a id="type-browsermetadata"></a><code>BrowserMetadata</code></h3>
+<p><strong>Used by:</strong> <code>Query.meta</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| clinvar_release_date | `String!` | - |
+
+</details>
+
+<h2 id="statistical-analysis-types">Statistical &amp; Analysis Types</h2>
+<h3 id="variantcooccurrence"><a id="type-variantcooccurrence"></a><code>VariantCooccurrence</code></h3>
+<p><strong>Used by:</strong> <code>Query.variant_cooccurrence</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| genotype_counts | `[Int!]!` | - |
+| haplotype_counts | `[Float!]!` | - |
+| populations | `[VariantCooccurrenceInPopulation!]!` | - |
+| variant_ids | `[String!]!` | - |
+| p_compound_heterozygous | `Float` | - |
+
+</details>
+
+<h3 id="variantcooccurrenceinpopulation"><a id="type-variantcooccurrenceinpopulation"></a><code>VariantCooccurrenceInPopulation</code></h3>
+<p><strong>Used by:</strong> <code>VariantCooccurrence.populations</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| genotype_counts | `[Int!]!` | - |
+| haplotype_counts | `[Float!]!` | - |
+| id | `String!` | - |
+| p_compound_heterozygous | `Float` | - |
+
+</details>
+
+<h3 id="heterozygousvariantcooccurrencecounts"><a id="type-heterozygousvariantcooccurrencecounts"></a><code>HeterozygousVariantCooccurrenceCounts</code></h3>
+<p><strong>Used by:</strong> <code>Gene.heterozygous_variant_cooccurrence_counts</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| af_cutoff | `String!` | - |
+| csq | `String!` | - |
+| data | `HeterozygousVariantCooccurrenceCountsData!` | - |
+
+</details>
+
+<h3 id="homozygousvariantcooccurrencecounts"><a id="type-homozygousvariantcooccurrencecounts"></a><code>HomozygousVariantCooccurrenceCounts</code></h3>
+<p><strong>Used by:</strong> <code>Gene.homozygous_variant_cooccurrence_counts</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| af_cutoff | `String!` | - |
+| csq | `String!` | - |
+| data | `HomozygousVariantCooccurrenceCountsData!` | - |
+
+</details>
+
+<h3 id="contingencytabletest"><a id="type-contingencytabletest"></a><code>ContingencyTableTest</code></h3>
+<p><strong>Used by:</strong> <code>VariantJointFrequencyComparisonStats.contingency_table_test</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| odds_ratio | `String` | - |
+| p_value | `Float` | - |
+
+</details>
+
+<h3 id="cochranmantelhaenszeltest"><a id="type-cochranmantelhaenszeltest"></a><code>CochranMantelHaenszelTest</code></h3>
+<p><strong>Used by:</strong> <code>VariantJointFrequencyComparisonStats.cochran_mantel_haenszel_test</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| chisq | `Float` | - |
+| p_value | `Float` | - |
+
+</details>
+
+<h2 id="variant-alliance-types">Variant Alliance Types</h2>
+<h3 id="vaallele"><a id="type-vaallele"></a><code>VAAllele</code></h3>
+<p><strong>Used by:</strong> <code>VACohortAlleleFrequencyData.focusAllele</code>, <code>Variant.vrs</code>, <code>VariantDetails.vrs</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| location | `VASequenceLocation!` | - |
+| state | `VALiteralSequenceExpression!` | - |
+| type | `String!` | - |
+| _id | `String` | - |
+
+</details>
+
+<h3 id="vacohort"><a id="type-vacohort"></a><code>VACohort</code></h3>
+<p><strong>Used by:</strong> <code>VACohortAlleleFrequencyData.cohort</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| characteristics | `[VACohortCharacteristic!]` | - |
+| id | `String!` | - |
+| label | `String` | - |
+
+</details>
+
+<h3 id="vacohortallelefrequency"><a id="type-vacohortallelefrequency"></a><code>VACohortAlleleFrequency</code></h3>
+<p>A measure of the frequency of an Allele in a cohort.</p>
+<p><strong>Used by:</strong> <code>Variant.va</code>, <code>VariantDetails.va</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| exome | `[VACohortAlleleFrequencyData!]` | - |
+| genome | `[VACohortAlleleFrequencyData!]` | - |
+
+</details>
+
+<h3 id="vasequencelocation"><a id="type-vasequencelocation"></a><code>VASequenceLocation</code></h3>
+<p><strong>Used by:</strong> <code>VAAllele.location</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| interval | `VASequenceInterval!` | - |
+| sequence_id | `String!` | - |
+| type | `String!` | - |
+| _id | `String` | - |
+
+</details>
+
+<h3 id="vaqualitymeasures"><a id="type-vaqualitymeasures"></a><code>VAQualityMeasures</code></h3>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| qcFilters | `[String!]` | - |
+| fractionCoverage20x | `Float` | - |
+| heterozygousSkewedAlleleCount | `Int` | - |
+| lossOfFunctionWarning | `Boolean` | - |
+| lowComplexityRegion | `Boolean` | - |
+| lowConfidenceLossOfFunctionError | `Boolean` | - |
+| meanDepth | `Float` | - |
+| monoallelic | `Boolean` | - |
+| noncodingTranscriptError | `Boolean` | - |
+
+</details>
+
+<h3 id="vaancillaryresults"><a id="type-vaancillaryresults"></a><code>VAAncillaryResults</code></h3>
+<p><strong>Used by:</strong> <code>VACohortAlleleFrequencyData.ancillaryResults</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| grpMaxFAF95 | `VAGrpMaxFAF95` | - |
+| hemizygotes | `Int` | - |
+| homozygotes | `Int` | - |
+| jointGrpMaxFAF95 | `VAGrpMaxFAF95` | - |
+
+</details>
+
+<h2 id="short-tandem-repeats">Short Tandem Repeats</h2>
+<h3 id="shorttandemrepeat"><a id="type-shorttandemrepeat"></a><code>ShortTandemRepeat</code></h3>
+<p><strong>Used by:</strong> <code>Gene.short_tandem_repeats</code>, <code>Query.short_tandem_repeats</code>, <code>Region.short_tandem_repeats</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| associated_diseases | `[ShortTandemRepeatAssociatedDisease!]!` | - |
+| gene | `ShortTandemRepeatGene!` | - |
+| id | `String!` | - |
+| main_reference_region | `ShortTandemRepeatReferenceRegion!` | - |
+| reference_regions | `[ShortTandemRepeatReferenceRegion!]!` | - |
+| reference_repeat_unit | `String!` | - |
+| strchive_id | `String` | - |
+| stripy_id | `String` | - |
+
+</details>
+
+<h3 id="shorttandemrepeatdetails"><a id="type-shorttandemrepeatdetails"></a><code>ShortTandemRepeatDetails</code></h3>
+<p><strong>Used by:</strong> <code>Query.short_tandem_repeat</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| adjacent_repeats | `[ShortTandemRepeatAdjacentRepeat!]!` | - |
+| age_distribution | `[ShortTandemRepeatAgeDistributionBin!]` | - |
+| allele_size_distribution | `[ShortTandemRepeatAlleleSizeDistributionCohort!]!` | - |
+| associated_diseases | `[ShortTandemRepeatAssociatedDisease!]!` | - |
+| gene | `ShortTandemRepeatGene!` | - |
+| genotype_distribution | `[ShortTandemRepeatGenotypeDistributionCohort!]!` | - |
+| id | `String!` | - |
+| main_reference_region | `ShortTandemRepeatReferenceRegion!` | - |
+| reference_regions | `[ShortTandemRepeatReferenceRegion!]!` | - |
+| reference_repeat_unit | `String!` | - |
+| repeat_units | `[ShortTandemRepeatRepeatUnit!]!` | - |
+| strchive_id | `String` | - |
+| stripy_id | `String` | - |
+
+</details>
+
+<h3 id="shorttandemrepeatgene"><a id="type-shorttandemrepeatgene"></a><code>ShortTandemRepeatGene</code></h3>
+<p><strong>Used by:</strong> <code>ShortTandemRepeat.gene</code>, <code>ShortTandemRepeatDetails.gene</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| ensembl_id | `String!` | - |
+| region | `String!` | - |
+| symbol | `String!` | - |
+
+</details>
+
+<h3 id="shorttandemrepeatassociateddisease"><a id="type-shorttandemrepeatassociateddisease"></a><code>ShortTandemRepeatAssociatedDisease</code></h3>
+<p><strong>Used by:</strong> <code>ShortTandemRepeat.associated_diseases</code>, <code>ShortTandemRepeatDetails.associated_diseases</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| inheritance_mode | `String!` | - |
+| name | `String!` | - |
+| repeat_size_classifications | `[ShortTandemRepeatAssociatedDiseaseRepeatSizeClassification!]!` | - |
+| symbol | `String!` | - |
+| notes | `String` | - |
+| omim_id | `String` | - |
+
+</details>
+
+<h3 id="shorttandemrepeatreferenceregion"><a id="type-shorttandemrepeatreferenceregion"></a><code>ShortTandemRepeatReferenceRegion</code></h3>
+<p><strong>Used by:</strong> <code>ShortTandemRepeatAdjacentRepeat.reference_region</code>, <code>ShortTandemRepeat.main_reference_region</code>, <code>ShortTandemRepeat.reference_regions</code>
+ and 2 more...</p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| chrom | `String!` | - |
+| reference_genome | `ReferenceGenomeId!` | - |
+| start | `Int!` | - |
+| stop | `Int!` | - |
+
+</details>
+
+<h2 id="histogram-distribution-types">Histogram &amp; Distribution Types</h2>
+<h3 id="histogram"><a id="type-histogram"></a><code>Histogram</code></h3>
+<p><strong>Used by:</strong> <code>MitochondrialVariantAgeDistribution.het</code>, <code>MitochondrialVariantAgeDistribution.hom</code>, <code>MitochondrialVariantPopulation.heteroplasmy_distribution</code>
+ and 15 more...</p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| bin_edges | `[Float!]!` | - |
+| bin_freq | `[Float!]!` | - |
+| n_larger | `Int` | - |
+| n_smaller | `Int` | - |
+
+</details>
+
+<h3 id="variantagedistribution"><a id="type-variantagedistribution"></a><code>VariantAgeDistribution</code></h3>
+<p><strong>Used by:</strong> <code>VariantDetailsSequencingTypeData.age_distribution</code>, <code>VariantDetailsJointSequencingTypeData.age_distribution</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| het | `Histogram` | - |
+| hom | `Histogram` | - |
+
+</details>
+
+<h3 id="mitochondrialvariantagedistribution"><a id="type-mitochondrialvariantagedistribution"></a><code>MitochondrialVariantAgeDistribution</code></h3>
+<p><strong>Used by:</strong> <code>MitochondrialVariantDetails.age_distribution</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| het | `Histogram` | - |
+| hom | `Histogram` | - |
+
+</details>
+
+<h3 id="structuralvariantagedistribution"><a id="type-structuralvariantagedistribution"></a><code>StructuralVariantAgeDistribution</code></h3>
+<p><strong>Used by:</strong> <code>StructuralVariantDetails.age_distribution</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| het | `Histogram` | - |
+| hom | `Histogram` | - |
+
+</details>
+
+<h2 id="other-types">Other Types</h2>
+<p>These types are used internally or in specific contexts:</p>
+<h3 id="clinvarvariantgnomadsequencingtypedata"><a id="type-clinvarvariantgnomadsequencingtypedata"></a><code>ClinVarVariantGnomadSequencingTypeData</code></h3>
+<p><strong>Used by:</strong> <code>ClinVarVariantGnomadData.exome</code>, <code>ClinVarVariantGnomadData.genome</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| **ac** | `Int!` | - |
+| **an** | `Int!` | - |
+| filters | `[String!]!` | - |
+
+</details>
+
+<h3 id="exacregionalmissenseconstraintregion"><a id="type-exacregionalmissenseconstraintregion"></a><code>ExacRegionalMissenseConstraintRegion</code></h3>
+<p><strong>Used by:</strong> <code>Gene.exac_regional_missense_constraint_regions</code>, <code>TranscriptGene.exac_regional_missense_constraint_regions</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| start | `Int!` | - |
+| stop | `Int!` | - |
+| chisq_diff_null | `Float` | - |
+| exp_mis | `Float` | - |
+| obs_exp | `Float` | - |
+| obs_mis | `Int` | - |
+
+</details>
+
+<h3 id="heterozygousvariantcooccurrencecountsdata"><a id="type-heterozygousvariantcooccurrencecountsdata"></a><code>HeterozygousVariantCooccurrenceCountsData</code></h3>
+<p><strong>Used by:</strong> <code>HeterozygousVariantCooccurrenceCounts.data</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| in_cis | `Int!` | - |
+| in_trans | `Int!` | - |
+| two_het_total | `Int!` | - |
+| unphased | `Int!` | - |
+
+</details>
+
+<h3 id="homozygousvariantcooccurrencecountsdata"><a id="type-homozygousvariantcooccurrencecountsdata"></a><code>HomozygousVariantCooccurrenceCountsData</code></h3>
+<p><strong>Used by:</strong> <code>HomozygousVariantCooccurrenceCounts.data</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| hom_total | `Int!` | - |
+
+</details>
+
+<h3 id="mitochondrialvariantgenotypequalityfilter"><a id="type-mitochondrialvariantgenotypequalityfilter"></a><code>MitochondrialVariantGenotypeQualityFilter</code></h3>
+<p><strong>Used by:</strong> <code>MitochondrialVariantDetails.genotype_quality_filters</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| name | `String!` | - |
+| filtered | `Histogram` | - |
+
+</details>
+
+<h3 id="mitochondrialvarianthaplogroup"><a id="type-mitochondrialvarianthaplogroup"></a><code>MitochondrialVariantHaplogroup</code></h3>
+<p><strong>Used by:</strong> <code>MitochondrialVariantDetails.haplogroups</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| ac_het | `Int` | - |
+| ac_hom | `Int` | - |
+| **an** | `Float` | - |
+| faf | `Float` | - |
+| faf_hom | `Float` | - |
+| id | `String` | - |
+
+</details>
+
+<h3 id="multinucleotidevariantconstituentsnv"><a id="type-multinucleotidevariantconstituentsnv"></a><code>MultiNucleotideVariantConstituentSNV</code></h3>
+<p><strong>Used by:</strong> <code>MultiNucleotideVariantDetails.constituent_snvs</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| **variant_id** | `String!` | - |
+| exome | `MultiNucleotideVariantConstituentSNVSequencingData` | - |
+| genome | `MultiNucleotideVariantConstituentSNVSequencingData` | - |
+
+</details>
+
+<h3 id="multinucleotidevariantconstituentsnvconsequence"><a id="type-multinucleotidevariantconstituentsnvconsequence"></a><code>MultiNucleotideVariantConstituentSNVConsequence</code></h3>
+<p><strong>Used by:</strong> <code>MultiNucleotideVariantConsequence.snv_consequences</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| amino_acids | `String!` | - |
+| codons | `String!` | - |
+| consequence | `String!` | - |
+| **variant_id** | `String!` | - |
+
+</details>
+
+<h3 id="multinucleotidevariantconstituentsnvsequencingdata"><a id="type-multinucleotidevariantconstituentsnvsequencingdata"></a><code>MultiNucleotideVariantConstituentSNVSequencingData</code></h3>
+<p><strong>Used by:</strong> <code>MultiNucleotideVariantConstituentSNV.exome</code>, <code>MultiNucleotideVariantConstituentSNV.genome</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| filters | `[String!]` | - |
+| **ac** | `Int` | - |
+| **an** | `Int` | - |
+
+</details>
+
+<h3 id="multinucleotidevariantdetailssequencingdata"><a id="type-multinucleotidevariantdetailssequencingdata"></a><code>MultiNucleotideVariantDetailsSequencingData</code></h3>
+<p><strong>Used by:</strong> <code>MultiNucleotideVariantDetails.exome</code>, <code>MultiNucleotideVariantDetails.genome</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| **ac** | `Int` | - |
+| ac_hom | `Int` | - |
+| n_individuals | `Int` | - |
+
+</details>
+
+<h3 id="multinucleotidevariantsummary"><a id="type-multinucleotidevariantsummary"></a><code>MultiNucleotideVariantSummary</code></h3>
+<p><strong>Used by:</strong> <code>MultiNucleotideVariantDetails.related_mnvs</code>, <code>VariantDetails.multi_nucleotide_variants</code>, <code>VariantDetails.multiNucleotideVariants</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| changes_amino_acids | `Boolean!` | - |
+| combined_variant_id | `String!` | - |
+| n_individuals | `Int!` | - |
+| other_constituent_snvs | `[String!]!` | - |
+
+</details>
+
+<h3 id="proteinmitochondrialgeneconstraint"><a id="type-proteinmitochondrialgeneconstraint"></a><code>ProteinMitochondrialGeneConstraint</code></h3>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| exp_lof | `Float!` | - |
+| exp_mis | `Float!` | - |
+| exp_syn | `Float!` | - |
+| obs_lof | `Float!` | - |
+| obs_mis | `Float!` | - |
+| obs_syn | `Float!` | - |
+| oe_lof | `Float!` | - |
+| oe_lof_lower | `Float!` | - |
+| oe_lof_upper | `Float!` | - |
+| oe_mis | `Float!` | - |
+| oe_mis_lower | `Float!` | - |
+| oe_mis_upper | `Float!` | - |
+| oe_syn | `Float!` | - |
+| oe_syn_lower | `Float!` | - |
+| oe_syn_upper | `Float!` | - |
+
+</details>
+
+<h3 id="query"><a id="type-query"></a><code>Query</code></h3>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| gene_search | `[GeneSearchResult!]!` | - |
+| liftover | `[LiftoverResult!]!` | - |
+| meta | `BrowserMetadata!` | - |
+| region | `Region!` | - |
+| short_tandem_repeats | `[ShortTandemRepeat!]!` | - |
+| variant_search | `[VariantSearchResult!]!` | - |
+| clinvar_variant | `ClinVarVariantDetails` | - |
+| copy_number_variant | `CopyNumberVariantDetails` | - |
+| gene | `Gene` | - |
+| mitochondrial_variant | `MitochondrialVariantDetails` | - |
+| multiNucleotideVariant | `MultiNucleotideVariantDetails` | - |
+| short_tandem_repeat | `ShortTandemRepeatDetails` | - |
+| structural_variant | `StructuralVariantDetails` | - |
+| transcript | `Transcript` | - |
+| variant | `VariantDetails` | - |
+| variant_cooccurrence | `VariantCooccurrence` | - |
+
+</details>
+
+<h3 id="rnamitochondrialgeneconstraint"><a id="type-rnamitochondrialgeneconstraint"></a><code>RNAMitochondrialGeneConstraint</code></h3>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| expected | `Float!` | - |
+| observed | `Float!` | - |
+| oe | `Float!` | - |
+| oe_lower | `Float!` | - |
+| oe_upper | `Float!` | - |
+
+</details>
+
+<h3 id="shorttandemrepeatadjacentrepeat"><a id="type-shorttandemrepeatadjacentrepeat"></a><code>ShortTandemRepeatAdjacentRepeat</code></h3>
+<p><strong>Used by:</strong> <code>ShortTandemRepeatDetails.adjacent_repeats</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| age_distribution | `[ShortTandemRepeatAgeDistributionBin!]` | - |
+| allele_size_distribution | `[ShortTandemRepeatAlleleSizeDistributionCohort!]!` | - |
+| genotype_distribution | `[ShortTandemRepeatGenotypeDistributionCohort!]!` | - |
+| id | `String!` | - |
+| reference_region | `ShortTandemRepeatReferenceRegion!` | - |
+| reference_repeat_unit | `String!` | - |
+| repeat_units | `[String!]!` | - |
+
+</details>
+
+<h3 id="shorttandemrepeatagedistributionbin"><a id="type-shorttandemrepeatagedistributionbin"></a><code>ShortTandemRepeatAgeDistributionBin</code></h3>
+<p><strong>Used by:</strong> <code>ShortTandemRepeatAdjacentRepeat.age_distribution</code>, <code>ShortTandemRepeatDetails.age_distribution</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| age_range | `[Int]!` | - |
+| distribution | `[[Int!]!]!` | - |
+
+</details>
+
+<h3 id="shorttandemrepeatallelesizedistributioncohort"><a id="type-shorttandemrepeatallelesizedistributioncohort"></a><code>ShortTandemRepeatAlleleSizeDistributionCohort</code></h3>
+<p><strong>Used by:</strong> <code>ShortTandemRepeatAdjacentRepeat.allele_size_distribution</code>, <code>ShortTandemRepeatDetails.allele_size_distribution</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| ancestry_group | `String!` | - |
+| distribution | `[ShortTandemRepeatAlleleSizeItem!]!` | - |
+| q_score | `Float!` | - |
+| quality_description | `String!` | - |
+| repunit | `String!` | - |
+| sex | `String!` | - |
+
+</details>
+
+<h3 id="shorttandemrepeatallelesizeitem"><a id="type-shorttandemrepeatallelesizeitem"></a><code>ShortTandemRepeatAlleleSizeItem</code></h3>
+<p><strong>Used by:</strong> <code>ShortTandemRepeatAlleleSizeDistributionCohort.distribution</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| frequency | `Int!` | - |
+| repunit_count | `Int!` | - |
+
+</details>
+
+<h3 id="shorttandemrepeatassociateddiseaserepeatsizeclassification"><a id="type-shorttandemrepeatassociateddiseaserepeatsizeclassification"></a><code>ShortTandemRepeatAssociatedDiseaseRepeatSizeClassification</code></h3>
+<p><strong>Used by:</strong> <code>ShortTandemRepeatAssociatedDisease.repeat_size_classifications</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| classification | `String!` | - |
+| max | `Int` | - |
+| min | `Int` | - |
+
+</details>
+
+<h3 id="shorttandemrepeatgenotypedistributioncohort"><a id="type-shorttandemrepeatgenotypedistributioncohort"></a><code>ShortTandemRepeatGenotypeDistributionCohort</code></h3>
+<p><strong>Used by:</strong> <code>ShortTandemRepeatAdjacentRepeat.genotype_distribution</code>, <code>ShortTandemRepeatDetails.genotype_distribution</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| ancestry_group | `String!` | - |
+| distribution | `[ShortTandemRepeatGenotypeItem!]!` | - |
+| long_allele_repunit | `String!` | - |
+| q_score | `Float!` | - |
+| quality_description | `String!` | - |
+| sex | `String!` | - |
+| short_allele_repunit | `String!` | - |
+
+</details>
+
+<h3 id="shorttandemrepeatgenotypeitem"><a id="type-shorttandemrepeatgenotypeitem"></a><code>ShortTandemRepeatGenotypeItem</code></h3>
+<p><strong>Used by:</strong> <code>ShortTandemRepeatGenotypeDistributionCohort.distribution</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| frequency | `Int!` | - |
+| long_allele_repunit_count | `Int!` | - |
+| short_allele_repunit_count | `Int!` | - |
+
+</details>
+
+<h3 id="shorttandemrepeatrepeatunit"><a id="type-shorttandemrepeatrepeatunit"></a><code>ShortTandemRepeatRepeatUnit</code></h3>
+<p><strong>Used by:</strong> <code>ShortTandemRepeatDetails.repeat_units</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| classification | `String!` | - |
+| repeat_unit | `String!` | - |
+
+</details>
+
+<h3 id="statunion"><a id="type-statunion"></a><code>StatUnion</code></h3>
+<p><strong>Used by:</strong> <code>VariantJointFrequencyComparisonStats.stat_union</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| gen_ancs | `[String]` | - |
+| p_value | `Float` | - |
+| stat_test_name | `String` | - |
+
+</details>
+
+<h3 id="structuralvariantcopynumber"><a id="type-structuralvariantcopynumber"></a><code>StructuralVariantCopyNumber</code></h3>
+<p><strong>Used by:</strong> <code>StructuralVariantDetails.copy_numbers</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| **ac** | `Int!` | - |
+| copy_number | `Int!` | - |
+
+</details>
+
+<h3 id="structuralvariantgenotypequality"><a id="type-structuralvariantgenotypequality"></a><code>StructuralVariantGenotypeQuality</code></h3>
+<p><strong>Used by:</strong> <code>StructuralVariantDetails.genotype_quality</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| all | `Histogram` | - |
+| alt | `Histogram` | - |
+
+</details>
+
+<h3 id="vacohortallelefrequencydata"><a id="type-vacohortallelefrequencydata"></a><code>VACohortAlleleFrequencyData</code></h3>
+<p><strong>Used by:</strong> <code>VACohortAlleleFrequencyData.subcohortFrequency</code>, <code>VACohortAlleleFrequency.exome</code>, <code>VACohortAlleleFrequency.genome</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| alleleFrequency | `Float!` | The frequency of the focusAllele in the cohort. |
+| cohort | `VACohort!` | The cohort from which the frequency was derived. |
+| focusAllele | `VAAllele!` | The Allele for which the frequency is being reported. |
+| focusAlleleCount | `Int!` | The number of occurrences of the focusAllele in the cohort. |
+| id | `String!` | - |
+| locusAlleleCount | `Int!` | The number of occurrences of alleles at the locus in the cohort (count of all alleles at this locus, sometimes referred to as "allele number"). |
+| subcohortFrequency | `[VACohortAlleleFrequencyData!]` | A list of CohortAlleleFrequency objects describing subcohorts of the cohort currently being described. This creates a recursive relationship and subcohorts can be further subdivided into more subcohorts. This enables, for example, the description of different ancestry groups and sexes among those ancestry groups. |
+| type | `String!` | - |
+| ancillaryResults | `VAAncillaryResults` | Ancillary results that may be associated with the CohortAlleleFrequency, providing additional context or information. |
+| derivedFrom | `VACohortAlleleFrequencyDerivation` | Information about the dataset from which the CohortAlleleFrequency was reported. |
+| label | `String` | - |
+
+</details>
+
+<h3 id="vacohortallelefrequencyderivation"><a id="type-vacohortallelefrequencyderivation"></a><code>VACohortAlleleFrequencyDerivation</code></h3>
+<p><strong>Used by:</strong> <code>VACohortAlleleFrequencyData.derivedFrom</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | `String` | The identifier of the dataset. |
+| label | `String` | A descriptive label for the dataset. |
+| type | `String` | The type of the dataset. (e.g. "DataSet") |
+| version | `String` | The version of the dataset. |
+
+</details>
+
+<h3 id="vacohortcharacteristic"><a id="type-vacohortcharacteristic"></a><code>VACohortCharacteristic</code></h3>
+<p><strong>Used by:</strong> <code>VACohort.characteristics</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| name | `String!` | - |
+| value | `String!` | - |
+
+</details>
+
+<h3 id="vacytobandinterval"><a id="type-vacytobandinterval"></a><code>VACytobandInterval</code></h3>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| end | `String!` | - |
+| start | `String!` | - |
+| type | `String!` | - |
+
+</details>
+
+<h3 id="vadefiniterange"><a id="type-vadefiniterange"></a><code>VADefiniteRange</code></h3>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| max | `Float!` | - |
+| min | `Float!` | - |
+| type | `String!` | - |
+
+</details>
+
+<h3 id="vaindefiniterange"><a id="type-vaindefiniterange"></a><code>VAIndefiniteRange</code></h3>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| comparator | `VAComparator!` | - |
+| type | `String!` | - |
+| value | `Float!` | - |
+
+</details>
+
+<h3 id="valiteralsequenceexpression"><a id="type-valiteralsequenceexpression"></a><code>VALiteralSequenceExpression</code></h3>
+<p><strong>Used by:</strong> <code>VAAllele.state</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| sequence | `String!` | - |
+| type | `String!` | - |
+
+</details>
+
+<h3 id="vanumber"><a id="type-vanumber"></a><code>VANumber</code></h3>
+<p><strong>Used by:</strong> <code>VASequenceInterval.start</code>, <code>VASequenceInterval.end</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| type | `String!` | - |
+| value | `Int!` | - |
+
+</details>
+
+<h3 id="vasequenceinterval"><a id="type-vasequenceinterval"></a><code>VASequenceInterval</code></h3>
+<p><strong>Used by:</strong> <code>VASequenceLocation.interval</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| end | `VANumber!` | - |
+| start | `VANumber!` | - |
+| type | `String!` | - |
+
+</details>
+
+<h3 id="variantdetailsjointsequencingtypedata"><a id="type-variantdetailsjointsequencingtypedata"></a><code>VariantDetailsJointSequencingTypeData</code></h3>
+<p><strong>Used by:</strong> <code>VariantDetails.joint</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| filters | `[String!]` | - |
+| **ac** | `Int` | - |
+| age_distribution | `VariantAgeDistribution` | - |
+| **an** | `Int` | - |
+| faf95 | `VariantFilteringAlleleFrequency` | - |
+| faf99 | `VariantFilteringAlleleFrequency` | - |
+| freq_comparison_stats | `VariantJointFrequencyComparisonStats` | - |
+| hemizygote_count | `Int` | - |
+| homozygote_count | `Int` | - |
+| populations | `[VariantPopulation]` | - |
+| quality_metrics | `VariantQualityMetrics` | - |
+
+</details>
+
+<h3 id="variantdetailssequencingtypedata"><a id="type-variantdetailssequencingtypedata"></a><code>VariantDetailsSequencingTypeData</code></h3>
+<p><strong>Used by:</strong> <code>VariantDetails.exome</code>, <code>VariantDetails.genome</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| filters | `[String!]` | - |
+| flags | `[String!]` | - |
+| **ac** | `Int` | - |
+| ac_hemi | `Int` | - |
+| ac_hom | `Int` | Deprecated - replaced by homozygote/hemizygote count |
+| **af** | `Float` | Deprecated - calculate from AC and AN Preserved for compatibility with existing browser queries |
+| age_distribution | `VariantAgeDistribution` | - |
+| **an** | `Int` | - |
+| faf95 | `VariantFilteringAlleleFrequency` | - |
+| faf99 | `VariantFilteringAlleleFrequency` | - |
+| hemizygote_count | `Int` | - |
+| homozygote_count | `Int` | - |
+| local_ancestry_populations | `[VariantLocalAncestryPopulation]` | - |
+| populations | `[VariantPopulation]` | - |
+| qualityMetrics | `VariantQualityMetrics` | Deprecated - replaced by snake case |
+| quality_metrics | `VariantQualityMetrics` | - |
+
+</details>
+
+<h3 id="variantjointfrequencycomparisonstats"><a id="type-variantjointfrequencycomparisonstats"></a><code>VariantJointFrequencyComparisonStats</code></h3>
+<p><strong>Used by:</strong> <code>VariantDetailsJointSequencingTypeData.freq_comparison_stats</code></p>
+<details>
+<summary><strong>Fields</strong></summary>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| cochran_mantel_haenszel_test | `CochranMantelHaenszelTest` | - |
+| contingency_table_test | `[ContingencyTableTest]` | - |
+| stat_union | `StatUnion` | - |
+
+</details>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "content.code.copy", "search.suggest"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

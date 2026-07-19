@@ -1,0 +1,928 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="MCP server bridging the gnomAD database to AI applications.">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>CI/CD, Sibling-Aligned Release/Versioning, and v2/v3 Test Coverage — Design - gnomAD-Link</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#cicd-sibling-aligned-releaseversioning-and-v2v3-test-coverage-design" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="gnomAD-Link" class="md-header__button md-logo" aria-label="gnomAD-Link" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            gnomAD-Link
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              CI/CD, Sibling-Aligned Release/Versioning, and v2/v3 Test Coverage — Design
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/berntpopp/gnomad-link" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="gnomAD-Link" class="md-nav__button md-logo" aria-label="gnomAD-Link" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    gnomAD-Link
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/berntpopp/gnomad-link" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data & provenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../MCP_CONNECTION_GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP connection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#motivation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Motivation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#workstream-a-cicd-bundle-4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workstream A — CI/CD bundle (#4)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Workstream A — CI/CD bundle (#4)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ciyml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ci.yml
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#securityyml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        security.yml
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dockeryml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        docker.yml
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#container-securityyml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        container-security.yml
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dependabotyml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dependabot.yml
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pull_request_templatemd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pull_request_template.md
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#workstream-b-release-versioning-2-sibling-aligned" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workstream B — Release + versioning (#2, sibling-aligned)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Workstream B — Release + versioning (#2, sibling-aligned)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#releaseyml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        release.yml
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#version-single-sourcing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Version single-sourcing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#workstream-c-v2v3v4-test-coverage-5-focused" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workstream C — v2/v3/v4 test coverage (#5, focused)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#invariants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Invariants
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#definition-of-done" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Definition of Done
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#execution-parallelism" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Execution / parallelism
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="cicd-sibling-aligned-releaseversioning-and-v2v3-test-coverage-design">CI/CD, Sibling-Aligned Release/Versioning, and v2/v3 Test Coverage — Design</h1>
+<blockquote>
+<p>Historical record</p>
+</blockquote>
+<p>Status: draft
+Date: 2026-06-16
+Owner: gnomAD Link</p>
+<h2 id="motivation">Motivation</h2>
+<p>A triage of the seven open GitHub issues (filed Jul 2025, before the repo's
+pivot to an MCP-first architecture) against the current <code>main</code> (HEAD <code>7ef9627</code>)
+and against the sibling <code>*-link</code> repos found that the architecture issues are
+already solved and the remaining value is in tooling and test breadth:</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Issue</th>
+<th>Verdict</th>
+<th>Disposition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>#1</td>
+<td>unify FastAPI + FastMCP</td>
+<td>Done/superseded — single <code>server_manager.py</code> mounts MCP on FastAPI via <code>app.mount()</code> (<code>server_manager.py:133-135</code>), shared <code>app.state.frequency_service</code></td>
+<td><strong>Closed with evidence</strong></td>
+</tr>
+<tr>
+<td>#6</td>
+<td>onion architecture</td>
+<td>Done/superseded — <code>api/</code> -&gt; <code>services/</code> -&gt; <code>models/</code> -&gt; <code>mcp/</code> layering realized; rich-REST layer intentionally dropped</td>
+<td><strong>Closed with evidence</strong></td>
+</tr>
+<tr>
+<td>#7</td>
+<td>error handling</td>
+<td>Largely done — deterministic MCP error envelopes (<code>mcp/errors.py</code>) + taxonomy tests; REST is <code>/health</code>-only</td>
+<td><strong>Closed with evidence</strong></td>
+</tr>
+<tr>
+<td>#4</td>
+<td>CI/CD GitHub Actions</td>
+<td><strong>Not started — no <code>.github/</code> at all</strong></td>
+<td><strong>This spec</strong></td>
+</tr>
+<tr>
+<td>#2</td>
+<td>semantic versioning</td>
+<td>Not started; no sibling uses python-semantic-release</td>
+<td><strong>This spec (sibling-aligned)</strong></td>
+</tr>
+<tr>
+<td>#3</td>
+<td>docs site / Pages</td>
+<td>Not started; no sibling ships a docs site</td>
+<td><strong>Deferred</strong> (note on issue)</td>
+</tr>
+<tr>
+<td>#5</td>
+<td>v2/v3 test coverage</td>
+<td>Partial — r2_1/r3/r4 supported in code; no systematic cross-version tests</td>
+<td><strong>This spec (focused top-up)</strong></td>
+</tr>
+</tbody>
+</table>
+<p><code>make ci-local</code> already exists and is the project's canonical gate
+(<code>format-check lint-ci lint-loc typecheck-fast test-fast eval-ci</code>). The single
+biggest gap is that <strong>nothing runs it on GitHub</strong>. The sibling repos
+(<code>gtex-link</code>, <code>pubtator-link</code>, <code>genereviews-link</code>, <code>litvar-link</code>,
+<code>autopvs1-link</code>) all share an identical, proven <code>.github/</code> layout. This spec
+ports that layout, adds a sibling-aligned tag-triggered release, single-sources
+the version, and adds focused deterministic v2/v3/v4 tests.</p>
+<h2 id="scope">Scope</h2>
+<p>In scope (three independent workstreams, parallelizable — disjoint paths):</p>
+<ul>
+<li><strong>A — CI/CD bundle (#4):</strong> <code>.github/workflows/{ci,security,docker,container-security}.yml</code>, <code>.github/dependabot.yml</code>, <code>.github/pull_request_template.md</code>.</li>
+<li><strong>B — Release + versioning (#2):</strong> <code>.github/workflows/release.yml</code>, conventional-commit + release docs, version single-sourced to <code>gnomad_link/__init__.py</code>.</li>
+<li><strong>C — v2/v3/v4 tests (#5):</strong> parametrized deterministic unit tests under <code>tests/unit/</code>.</li>
+</ul>
+<p>Out of scope (explicit):</p>
+<ul>
+<li>Rich REST API / Layer-3 endpoints (project is MCP-first; REST = <code>/health</code>).</li>
+<li>python-semantic-release auto-bump on push to <code>main</code> (issue #2's literal spec; rejected as non-sibling-aligned — releases stay tag-driven and intentional).</li>
+<li>MkDocs / GitHub Pages docs site (#3, deferred — siblings keep curated in-repo <code>docs/</code>).</li>
+<li>PyPI publishing in CD. Siblings do not auto-publish; release validates + builds the Docker image. (Can be added later behind a trusted-publisher flow.)</li>
+<li>Multi-Python test matrix. <code>requires-python &gt;=3.12</code> and <code>make ci-local</code> is single-version; siblings test 3.12 only. No 3.9-3.11 matrix (issue #4's example is stale — the project dropped &lt;3.12).</li>
+<li>Live gnomAD calls in default CI (integration tests stay <code>integration</code>-marked and out of <code>ci.yml</code>).</li>
+</ul>
+<h2 id="workstream-a-cicd-bundle-4">Workstream A — CI/CD bundle (#4)</h2>
+<p>Port the sibling template verbatim in structure, adapted to gnomAD Link's Make
+targets and Docker layout. All third-party actions <strong>SHA-pinned</strong> with a version
+comment (matches siblings; satisfies the supply-chain posture). Every workflow:
+<code>concurrency</code> group with <code>cancel-in-progress</code>, <code>permissions: contents: read</code> by
+default, <code>uv</code> with cache, <code>uv sync --group dev --frozen</code>.</p>
+<h3 id="ciyml"><code>ci.yml</code></h3>
+<ul>
+<li>Triggers: <code>pull_request</code>, <code>push</code> to <code>main</code>.</li>
+<li>One <code>quality</code> job (ubuntu-latest, Python 3.12): checkout -&gt; setup-python -&gt; setup-uv -&gt; <code>uv sync --group dev --frozen</code> -&gt; <code>make ci-local</code> -&gt; <code>make test-cov</code>.</li>
+<li>Mirror of <code>gtex-link/.github/workflows/ci.yml</code>. <code>make ci-local</code> already includes format-check, lint, lint-loc, typecheck, test-fast, and the deterministic eval harness, so CI == local gate.</li>
+</ul>
+<h3 id="securityyml"><code>security.yml</code></h3>
+<ul>
+<li>Triggers: <code>pull_request</code>, <code>push</code> to <code>main</code>, weekly cron.</li>
+<li><code>codeql</code> job (Python, <code>build-mode: none</code>, gated <code>if: !github.event.repository.private</code>, <code>security-events: write</code>).</li>
+<li><code>dependency-review</code> job (PR-only, <code>continue-on-error: true</code>).</li>
+<li>Mirror of <code>gtex-link/.github/workflows/security.yml</code>.</li>
+</ul>
+<h3 id="dockeryml"><code>docker.yml</code></h3>
+<ul>
+<li>Triggers: PR + push to <code>main</code>, path-filtered (<code>docker/**</code>, <code>pyproject.toml</code>, <code>uv.lock</code>, the workflow itself).</li>
+<li><code>validate-compose</code> job: render compose via the repo's own Make targets — <code>make docker-prod-config</code> and <code>make docker-npm-config</code> (these wrap <code>docker compose ... config</code>, keeping CI and local identical).</li>
+<li><code>build-image</code> job: <code>docker build -f docker/Dockerfile -t gnomad-link:ci .</code>.</li>
+</ul>
+<h3 id="container-securityyml"><code>container-security.yml</code></h3>
+<ul>
+<li>Triggers: PR + push to <code>main</code>, weekly cron.</li>
+<li>Build <code>gnomad-link:scan</code>, Trivy vulnerability scan (table, <code>exit-code: 0</code> — report-only), Trivy SBOM (CycloneDX), upload artifacts.</li>
+<li>Mirror of <code>pubtator-link/.github/workflows/container-security.yml</code>.</li>
+</ul>
+<h3 id="dependabotyml"><code>dependabot.yml</code></h3>
+<ul>
+<li>Ecosystems: <code>uv</code> (<code>/</code>, grouped weekly), <code>github-actions</code> (<code>/</code>, weekly), <code>docker</code> (<code>/docker</code>, weekly).</li>
+<li>Mirror of <code>gtex-link/.github/dependabot.yml</code>.</li>
+</ul>
+<h3 id="pull_request_templatemd"><code>pull_request_template.md</code></h3>
+<ul>
+<li>Summary / Type (conventional-commit categories) / Verification (<code>make ci-local</code> passes, tests added, CHANGELOG updated) / Breaking changes. Mirror of <code>gtex-link</code> template.</li>
+</ul>
+<h2 id="workstream-b-release-versioning-2-sibling-aligned">Workstream B — Release + versioning (#2, sibling-aligned)</h2>
+<p>The repo already uses Conventional Commits (<code>feat!:</code>, <code>fix(mcp):</code>, <code>docs(...)</code>,
+<code>build(...)</code> throughout <code>git log</code>) and keeps a hand-maintained <code>CHANGELOG.md</code>.
+Sibling practice is <strong>manual, intentional version bumps + a tag-triggered
+release-validation workflow</strong> — not auto-bump. We match that and add one guard
+the siblings lack: the release asserts the git tag matches the package version.</p>
+<h3 id="releaseyml"><code>release.yml</code></h3>
+<ul>
+<li>Trigger: <code>push</code> tags <code>v*</code>.</li>
+<li><code>release-validation</code> job: checkout -&gt; setup-python/uv -&gt; <code>uv sync --group dev --frozen</code> -&gt; <code>make ci-local</code> -&gt; <code>make docker-prod-config</code> -&gt; <code>make docker-npm-config</code> -&gt; <code>docker build -f docker/Dockerfile -t gnomad-link:release .</code>.</li>
+<li><strong>Tag/version guard:</strong> a step asserts the tag (<code>${GITHUB_REF_NAME#v}</code>) equals <code>gnomad_link.__version__</code>, failing the release on drift. Mirror of <code>gtex-link/release.yml</code> + the guard.</li>
+</ul>
+<h3 id="version-single-sourcing">Version single-sourcing</h3>
+<p>Today the version string is duplicated in three places: <code>pyproject.toml:7</code>,
+<code>gnomad_link/__init__.py:3</code>, <code>server_manager.py:64</code>. Collapse to one source:</p>
+<ul>
+<li><code>pyproject.toml</code>: <code>[project]</code> gains <code>dynamic = ["version"]</code> (drop the static <code>version = "5.0.0"</code>); add <code>[tool.hatch.version] path = "gnomad_link/__init__.py"</code>.</li>
+<li><code>gnomad_link/__init__.py</code>: <code>__version__ = "5.0.0"</code> becomes the single source of truth (hatchling reads it at build time).</li>
+<li><code>server_manager.py:64</code>: replace the hardcoded <code>version="5.0.0"</code> with <code>from gnomad_link import __version__</code>.</li>
+</ul>
+<p>This is backward-compatible (wheel still gets a concrete version) and makes the
+release tag/version guard meaningful.</p>
+<h3 id="docs">Docs</h3>
+<ul>
+<li><code>CONTRIBUTING.md</code> (new) or a <code>docs/development.md</code> section: Conventional Commits convention + the "bump <code>__version__</code>, update CHANGELOG, tag <code>vX.Y.Z</code>, push tag" release recipe. <code>commit-msg</code> validation via pre-commit is <strong>optional/deferred</strong> (no sibling enforces it in-repo; the PR template's Type checklist covers it).</li>
+</ul>
+<h2 id="workstream-c-v2v3v4-test-coverage-5-focused">Workstream C — v2/v3/v4 test coverage (#5, focused)</h2>
+<p>The premise of issue #5 ("v4 only") is already false: <code>models/enums.py:9-11</code>
+defines <code>GNOMAD_R2_1</code>/<code>GNOMAD_R3</code>/<code>GNOMAD_R4</code>, <code>graphql/queries/v2|v3</code> exist, and
+there is a live r2_1 regression. The real gap is <strong>systematic, deterministic
+cross-version unit coverage</strong>. Add a small parametrized layer (no network; use
+the existing <code>respx</code> dev dep and the query loader/builder which are pure):</p>
+<ul>
+<li><strong>C1 — query selection per dataset (pure, highest value):</strong> parametrize over <code>(gnomad_r2_1 -&gt; v2, gnomad_r3 -&gt; v3, gnomad_r4 -&gt; v4/shared)</code> and assert the loader/builder selects the correct versioned GraphQL document and includes/excludes version-specific fields. Grounded in <code>graphql/query_builder.py</code> + <code>query_loader.py</code> (exact assertions finalized against source during planning).</li>
+<li><strong>C2 — frequency shaping per version (respx-mocked):</strong> minimal per-version upstream response fixtures exercising one version-divergent field (e.g. v2 <code>popmax</code> vs v4 <code>grpmax</code>/joint) through the frequency service/shaping; assert no cross-version regression. Fixtures kept minimal (not the full <code>tests/test_data/{v2,v3,v4}</code> reorg from #5's maximal spec).</li>
+<li><strong>C3 — version-aware error path:</strong> assert build/dataset-mismatch handling (<code>mcp/build_check.py</code>, <code>BuildMismatchError</code>) behaves per version.</li>
+</ul>
+<p>Coverage target: keep <code>make test-cov</code> above its configured floor; new tests run
+inside the new <code>ci.yml</code>. Tests live under <code>tests/unit/</code> (no alternate root, per
+AGENTS.md). All deterministic — zero live gnomAD calls.</p>
+<h2 id="invariants">Invariants</h2>
+<ul>
+<li>Additive and non-breaking: no MCP tool-name/schema changes, no REST changes.</li>
+<li>&lt;=600 LOC/module (<code>mcp/errors.py</code>, <code>mcp/shaping.py</code> near cap — no growth).</li>
+<li>No new runtime dependencies. Workstream C uses existing <code>respx</code>/<code>pytest</code>.</li>
+<li>Default CI never hits the live gnomAD API; integration tests stay <code>integration</code>-marked and excluded from <code>ci.yml</code>.</li>
+<li>Actions SHA-pinned with version comments.</li>
+<li>Research-use scope only; no clinical-decision-support implications.</li>
+</ul>
+<h2 id="definition-of-done">Definition of Done</h2>
+<ul>
+<li>[ ] <code>.github/</code> contains <code>ci.yml</code>, <code>security.yml</code>, <code>docker.yml</code>, <code>container-security.yml</code>, <code>release.yml</code>, <code>dependabot.yml</code>, <code>pull_request_template.md</code>; all actions SHA-pinned.</li>
+<li>[ ] <code>ci.yml</code> runs <code>make ci-local</code> + <code>make test-cov</code> and is green on a PR.</li>
+<li>[ ] Version is single-sourced to <code>gnomad_link/__init__.py</code>; <code>pyproject.toml</code> is dynamic; <code>server_manager.py</code> imports it; <code>release.yml</code> guards tag==version.</li>
+<li>[ ] Conventional-commit + release recipe documented.</li>
+<li>[ ] Parametrized v2/v3/v4 unit tests added and green under <code>make test-fast</code>; <code>make test-cov</code> stays above floor.</li>
+<li>[ ] <code>make ci-local</code> green locally before handoff.</li>
+<li>[ ] #3 annotated as deferred (sibling-aligned) on the issue; #4/#2/#5 referenced from their PR(s).</li>
+</ul>
+<h2 id="execution-parallelism">Execution / parallelism</h2>
+<p>Workstreams A, B, C touch disjoint paths (<code>.github/</code> vs <code>pyproject.toml</code>+2 src
+lines vs <code>tests/</code>), so they can be implemented and committed in parallel and
+land as one PR (or three focused commits). A is the highest-value, lowest-risk
+piece and should land first so B/C are validated by the new CI.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.sections", "content.code.copy", "search.suggest"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

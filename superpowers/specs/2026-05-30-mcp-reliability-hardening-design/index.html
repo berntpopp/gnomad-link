@@ -1,0 +1,790 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="MCP server bridging the gnomAD database to AI applications.">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>MCP Reliability Hardening — Design Spec - gnomAD-Link</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#mcp-reliability-hardening-design-spec" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="gnomAD-Link" class="md-header__button md-logo" aria-label="gnomAD-Link" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            gnomAD-Link
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              MCP Reliability Hardening — Design Spec
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/berntpopp/gnomad-link" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="gnomAD-Link" class="md-nav__button md-logo" aria-label="gnomAD-Link" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    gnomAD-Link
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/berntpopp/gnomad-link" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data & provenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../MCP_CONNECTION_GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP connection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#motivation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Motivation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#findings-root-cause-fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Findings → root cause → fix
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Findings → root cause → fix">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#h-1-high-get_variant_details-silent-empty-payload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        H-1 (HIGH) get_variant_details silent-empty payload
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#m-3-medium-no-concurrency-safety-429-smoothing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        M-3 (MEDIUM) No concurrency safety / 429 smoothing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#m-2-l-5-mediumlow-error-taxonomy-fallback" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        M-2 / L-5 (MEDIUM/LOW) Error taxonomy + fallback
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#m-1-l-3-mediumlow-sv-output-null-safety-duplication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        M-1 / L-3 (MEDIUM/LOW) SV output null-safety + duplication
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#m-4-medium-get_transcript_details-gtex-absent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        M-4 (MEDIUM) get_transcript_details GTEx absent
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#l-1-low-liftover_variant-bare-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        L-1 (LOW) liftover_variant bare results:[]
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#l-4-low-field-level-response-control" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        L-4 (LOW) Field-level response control
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#l-2-already-fixed-in-code-heteroplasmy-zero-bin-trim" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        L-2 (already fixed in code) heteroplasmy zero-bin trim
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#l-6-already-shipped-gene-level-carrier-frequency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        L-6 (already shipped) gene-level carrier frequency
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cross-cutting-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cross-cutting constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="mcp-reliability-hardening-design-spec">MCP Reliability Hardening — Design Spec</h1>
+<blockquote>
+<p>Historical record</p>
+</blockquote>
+<p>Date: 2026-05-30
+Branch: <code>feat/mcp-reliability-hardening</code>
+Status: in progress</p>
+<h2 id="motivation">Motivation</h2>
+<p>A full-tool live review of the gnomAD Link MCP (21 tools, server v2.0.0, gnomAD
+4.1.0) scored the architecture 9-10 but reliability 7.5/10. This spec captures
+the fixes that take reliability past 9.5 without touching the strong scaffolding
+(error envelopes, <code>truncated</code>/<code>to_restore</code> hints, <code>next_commands</code>, token hints,
+capabilities surface). Findings were reproduced against the live server and
+root-caused in current-<code>main</code> source; best practices were researched against gql
+3.5.3 source, the MCP spec, JSON Schema 2020-12, and Anthropic tool-design docs.</p>
+<h2 id="findings-root-cause-fix">Findings → root cause → fix</h2>
+<h3 id="h-1-high-get_variant_details-silent-empty-payload">H-1 (HIGH) <code>get_variant_details</code> silent-empty payload</h3>
+<ul>
+<li>Root cause: <code>service.get_variant</code> returns the GraphQL wrapper <code>{"variant": {...}}</code>;
+  the tool fed that straight into <code>shape_variant_details_compact</code>, whose keep-set
+  keys live one level deeper, so the projection matched nothing → bare <code>{_meta}</code>.
+  Unlike the SV/mito/region tools, it never unwrapped.</li>
+<li>Fix: unwrap <code>raw.get("variant", raw)</code> before shaping; return the unwrapped block
+  in full mode; raise <code>VariantNotFoundError</code> on an absent variant (never silently
+  empty). <strong>DONE</strong> (commit 351b918).</li>
+</ul>
+<h3 id="m-3-medium-no-concurrency-safety-429-smoothing">M-3 (MEDIUM) No concurrency safety / 429 smoothing</h3>
+<ul>
+<li>Root cause (verified in gql 3.5.3 source): one shared <code>AIOHTTPTransport</code> + the
+  one-shot <code>Client.execute_async</code> (which connects AND closes the transport every
+  call). Two concurrent calls race → <code>TransportAlreadyConnected</code>; unbounded fan-out
+  trips gnomAD's rate limiter (429 storm).</li>
+<li>Fix: ONE persistent reconnecting session per client (<code>connect_async(reconnecting=True)</code>),
+  opened lazily under a double-checked <code>asyncio.Lock</code>, reused across concurrent
+  tasks via <code>session.execute(...)</code>; bound by an <code>asyncio.Semaphore</code>
+  (<code>GNOMAD_MAX_CONCURRENCY</code>, default 5); a <code>backoff</code> retry layer with full jitter on
+  <code>TransportServerError.code in {429,500,502,503,504}</code> + <code>TransportClosed</code>/<code>TimeoutError</code>.
+  <code>close()</code> becomes idempotent and closes the session; FastAPI lifespan teardown
+  closes the service. Do NOT retry <code>TransportQueryError</code> (business errors).</li>
+</ul>
+<h3 id="m-2-l-5-mediumlow-error-taxonomy-fallback">M-2 / L-5 (MEDIUM/LOW) Error taxonomy + fallback</h3>
+<ul>
+<li>Root cause: base_client collapses every non-"not found" <code>TransportQueryError</code>
+  into <code>GnomadApiError</code> → errors.py maps to <code>upstream_unavailable</code>/<code>retryable=true</code>,
+  so a deterministic input error ("Unrecognized query.") tells the LLM to retry
+  forever. <code>not_found</code> fallback is hard-coded to <code>search_genes</code> for every tool.</li>
+<li>Fix: classify at the base_client boundary into a new <code>UpstreamInputError</code>
+  (GraphQL-validation phrasing) and <code>RateLimitedError</code> (429); errors.py adds
+  non-retryable <code>invalid_input</code> and retryable <code>rate_limited</code>, isinstance-checked
+  BEFORE <code>GnomadApiError</code>. Make <code>fallback_tool</code>/<code>fallback_args</code> context-aware from
+  <code>McpErrorContext</code>: variant tools → <code>resolve_variant_id</code>, gene/transcript tools →
+  <code>search_genes</code>, else <code>get_server_capabilities</code>. Invariant: <code>retryable=true</code> ⇒
+  identical call may later succeed; <code>false</code> ⇒ never.</li>
+</ul>
+<h3 id="m-1-l-3-mediumlow-sv-output-null-safety-duplication">M-1 / L-3 (MEDIUM/LOW) SV output null-safety + duplication</h3>
+<ul>
+<li>Root cause: <code>StructuralVariant</code> types <code>end</code>/<code>af</code>/<code>pos</code>/<code>ac</code>/<code>an</code> as non-nullable,
+  but BND/CTX/CPX classes return null → MCP output-schema validation rejects with
+  "Output validation error". <code>relax_output_schema</code> strips <code>required</code> but leaves
+  scalar <code>type</code> intact, so it does not help. Also <code>genes</code> is duplicated (top-level</li>
+<li><code>consequences[].genes</code>); token hint understated (~1-3kB vs ~15kB).</li>
+<li>Fix: extend <code>relax_output_schema</code> to nullable-ize BARE scalar types via the
+  <code>["integer","null"]</code> idiom (skip any node with <code>enum</code>/<code>const</code>; skip object/array
+  containers). Make genuinely-nullable SV model fields <code>Optional</code>. Add
+  <code>shape_structural_variant</code> to trim heavy histograms and drop the duplicated
+  top-level <code>genes</code>. Correct the token hint.</li>
+</ul>
+<h3 id="m-4-medium-get_transcript_details-gtex-absent">M-4 (MEDIUM) <code>get_transcript_details</code> GTEx absent</h3>
+<ul>
+<li>Root cause: the v4 transcript query never requests <code>gtex_tissue_expression</code> (the
+  standalone <code>transcript()</code> GTEx field is unavailable on GRCh38 / errors on GRCh37);
+  payload is also wrapped under <code>transcript</code>.</li>
+<li>Fix: unwrap; best-effort enrich GTEx via the working gene path
+  (<code>gene.transcripts[].gtex_tissue_expression</code>, already used by gene summary),
+  filtered to the requested transcript, with a compact top-tissues summary; correct
+  the description.</li>
+</ul>
+<h3 id="l-1-low-liftover_variant-bare-results">L-1 (LOW) <code>liftover_variant</code> bare <code>results:[]</code></h3>
+<ul>
+<li>Fix: add a <code>build_note</code> explaining no liftover mapping exists when results is
+  empty (mirrors <code>compare_variant</code> build_notes).</li>
+</ul>
+<h3 id="l-4-low-field-level-response-control">L-4 (LOW) Field-level response control</h3>
+<ul>
+<li>Fix: add section/<code>include_*</code> projection to <code>get_gene_summary</code> (decouple
+  "full ClinVar rows" from "full everything"); document token impact per flag.</li>
+<li>Follow-through (post-review): the finding also named <code>get_variant_details</code> and
+  <code>get_gene_variants</code>, which still leaked the untrimmed population firehose while
+  their sibling <code>get_variant_frequencies</code> trimmed it. Unify all three on one
+  projector extracted to <code>population_shaping.py</code> (<code>project_variant_source</code>):
+  drop subcohort / sex-split / zero-AC by default, additive toggles with
+  back-compat to <code>get_variant_frequencies</code>, <code>response_mode='full'</code> (variant
+  details) / <code>include_populations</code> (gene variants) as the escape hatches. Measured
+  live: variant-details F508del 28.8 kB → 4.8 kB. Best-practice basis: Anthropic
+  "Code execution with MCP" and StackOne token-optimization — filter before the
+  model, lightweight-by-default with an opt-in detailed mode.</li>
+</ul>
+<h3 id="l-2-already-fixed-in-code-heteroplasmy-zero-bin-trim">L-2 (already fixed in code) heteroplasmy zero-bin trim</h3>
+<ul>
+<li>The live container was stale; current-<code>main</code> <code>heteroplasmy.py</code> already trims and
+  emits <code>truncated.kind=heteroplasmy_zeros</code>. Confirm on rebuild.</li>
+</ul>
+<h3 id="l-6-already-shipped-gene-level-carrier-frequency">L-6 (already shipped) gene-level carrier frequency</h3>
+<ul>
+<li><code>compute_gene_carrier_frequency</code> already added.</li>
+</ul>
+<h2 id="cross-cutting-constraints">Cross-cutting constraints</h2>
+<ul>
+<li>600-LOC hard cap (<code>make lint-loc</code>). <code>shaping.py</code> (575) is at its ceiling — new
+  projection logic goes in <code>gene_summary_shaping.py</code> / new helpers, not <code>shaping.py</code>.</li>
+<li>Preserve MCP tool names + response schemas; new params are additive with
+  backward-compatible defaults.</li>
+<li>Every new envelope field must survive <code>relax_output_schema</code> (additionalProperties).</li>
+<li>No ruff/mypy ignore widening. <code>make ci-local</code> green before handoff.</li>
+<li>Keep live calls out of default CI; live behavior validated via Docker rebuild + smoke.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.sections", "content.code.copy", "search.suggest"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

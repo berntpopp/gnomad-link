@@ -1,0 +1,2518 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="MCP server bridging the gnomAD database to AI applications.">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>gnomAD GraphQL API Reference - gnomAD-Link</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#gnomad-graphql-api-reference" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="gnomAD-Link" class="md-header__button md-logo" aria-label="gnomAD-Link" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            gnomAD-Link
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              gnomAD GraphQL API Reference
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/berntpopp/gnomad-link" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="gnomAD-Link" class="md-nav__button md-logo" aria-label="gnomAD-Link" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    gnomAD-Link
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/berntpopp/gnomad-link" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data & provenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../MCP_CONNECTION_GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP connection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📚 Table of Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Overview">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#available-datasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Available Datasets
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick Start
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quick Start">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#api-endpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API Endpoint
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#basic-query-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Basic Query Structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#available-queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Available Queries
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Available Queries">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#variant-queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Variant Queries
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Variant Queries">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#copy_number_variant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        copy_number_variant
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mitochondrial_variant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mitochondrial_variant
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multinucleotidevariant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        multiNucleotideVariant
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#structural_variant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        structural_variant
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        variant
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variant_cooccurrence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        variant_cooccurrence
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gene-queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gene Queries
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Gene Queries">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#gene" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        gene
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#transcript" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        transcript
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#search-queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Search Queries
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Search Queries">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#gene_search" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        gene_search
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variant_search" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        variant_search
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clinical-data-queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Clinical Data Queries
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Clinical Data Queries">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#clinvar_variant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        clinvar_variant
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#utility-queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Utility Queries
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Utility Queries">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#liftover" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        liftover
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#meta" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        meta
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#region" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        region
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#short_tandem_repeat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        short_tandem_repeat
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#short_tandem_repeats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        short_tandem_repeats
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#core-variant-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Variant Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#specialized-variant-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Specialized Variant Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#population-frequency-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Population &amp; Frequency Data
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gene-transcript-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gene &amp; Transcript Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#functional-annotation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Functional Annotation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clinical-disease-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Clinical &amp; Disease Data
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#constraint-conservation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Constraint &amp; Conservation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quality-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quality Metrics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#coverage-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Coverage Data
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#expression-tissue-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Expression &amp; Tissue Data
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#search-utility-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Search &amp; Utility Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#statistical-analysis-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Statistical &amp; Analysis Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variant-alliance-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Variant Alliance Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#short-tandem-repeats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Short Tandem Repeats
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#histogram-distribution-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Histogram &amp; Distribution Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#enumerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enumerations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Enumerations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#copynumbervariantdatasetid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CopyNumberVariantDatasetId
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#datasetid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DatasetId
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#referencegenomeid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ReferenceGenomeId
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#structuralvariantdatasetid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        StructuralVariantDatasetId
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vacomparator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VAComparator
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Best Practices
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Best Practices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-request-only-needed-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Request Only Needed Fields
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-use-appropriate-datasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Use Appropriate Datasets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-handle-errors-gracefully" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Handle Errors Gracefully
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-variant-id-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Variant ID Format
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="gnomad-graphql-api-reference">gnomAD GraphQL API Reference</h1>
+<p><em>Generated on 2025-07-08 12:25:22</em></p>
+<h2 id="table-of-contents">📚 Table of Contents</h2>
+<ul>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#quick-start">Quick Start</a></li>
+<li><a href="#available-queries">Available Queries</a></li>
+<li><a href="#variant-queries">Variant Queries</a></li>
+<li><a href="#gene-queries">Gene Queries</a></li>
+<li><a href="#search-queries">Search Queries</a></li>
+<li><a href="#clinical-data-queries">Clinical Data Queries</a></li>
+<li><a href="#utility-queries">Utility Queries</a></li>
+<li><a href="#data-types">Data Types</a></li>
+<li><a href="#enumerations">Enumerations</a></li>
+<li><a href="#best-practices">Best Practices</a></li>
+</ul>
+<hr />
+<h2 id="overview">Overview</h2>
+<p>The gnomAD (Genome Aggregation Database) GraphQL API provides programmatic access to:</p>
+<ul>
+<li><strong>🧬 Genetic Variants</strong>: Population frequencies, functional annotations, quality metrics</li>
+<li><strong>🧪 Clinical Data</strong>: ClinVar annotations, disease associations, pathogenicity</li>
+<li><strong>📊 Gene Information</strong>: Constraint scores, expression data, transcript details</li>
+<li><strong>🔍 Search Functions</strong>: Find variants and genes by various criteria</li>
+<li><strong>🛠️ Utilities</strong>: Coordinate liftover, metadata, co-occurrence analysis</li>
+</ul>
+<h3 id="available-datasets">Available Datasets</h3>
+<table>
+<thead>
+<tr>
+<th>Dataset</th>
+<th>Reference</th>
+<th>Samples</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gnomad_r4</code></td>
+<td>GRCh38</td>
+<td>807,162</td>
+<td>Latest release (v4.1)</td>
+</tr>
+<tr>
+<td><code>gnomad_r3</code></td>
+<td>GRCh38</td>
+<td>76,156</td>
+<td>Previous release (v3.1.2)</td>
+</tr>
+<tr>
+<td><code>gnomad_r2_1</code></td>
+<td>GRCh37</td>
+<td>141,456</td>
+<td>Legacy release (v2.1.1)</td>
+</tr>
+<tr>
+<td><code>gnomad_sv_r4</code></td>
+<td>GRCh38</td>
+<td>-</td>
+<td>Structural variants</td>
+</tr>
+<tr>
+<td><code>gnomad_cnv_r4</code></td>
+<td>GRCh38</td>
+<td>-</td>
+<td>Copy number variants</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="quick-start">Quick Start</h2>
+<h3 id="api-endpoint">API Endpoint</h3>
+<div class="highlight"><pre><span></span><code>POST https://gnomad.broadinstitute.org/api/
+Content-Type: application/json
+</code></pre></div>
+<h3 id="basic-query-structure">Basic Query Structure</h3>
+<div class="highlight"><pre><span></span><code><span class="k">query</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">variant</span><span class="p">(</span><span class="n">variantId</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1-55516888-G-A&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">dataset</span><span class="p">:</span><span class="w"> </span><span class="no">gnomad_r4</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">variant_id</span>
+<span class="w">    </span><span class="n">genome</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="n">af</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<hr />
+<h2 id="available-queries">Available Queries</h2>
+<h3 id="variant-queries">Variant Queries</h3>
+<h4 id="copy_number_variant"><code>copy_number_variant</code></h4>
+<p>No description available</p>
+<p><strong>Returns:</strong> <code>CopyNumberVariantDetails</code></p>
+<details>
+<summary><strong>Arguments</strong></summary>
+
+| Argument | Type | Required | Description |
+|----------|------|----------|-------------|
+| `variantId` | `String!` | Yes | - |
+| `dataset` | `CopyNumberVariantDatasetId!` | Yes | - |
+
+</details>
+
+<details>
+<summary><strong>Example</strong></summary>
+
+<div class="highlight"><pre><span></span><code><span class="k">query</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">copy_number_variant</span><span class="p">(</span><span class="n">variantId</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1-55516888-G-A&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">dataset</span><span class="p">:</span><span class="w"> </span><span class="no">gnomad_r4</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">variant_id</span>
+<span class="w">    </span><span class="n">genome</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">af</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</details>
+
+<h4 id="mitochondrial_variant"><code>mitochondrial_variant</code></h4>
+<p>No description available</p>
+<p><strong>Returns:</strong> <code>MitochondrialVariantDetails</code></p>
+<details>
+<summary><strong>Arguments</strong></summary>
+
+| Argument | Type | Required | Description |
+|----------|------|----------|-------------|
+| `variant_id` | `String` | No | - |
+| `dataset` | `DatasetId!` | Yes | - |
+
+</details>
+
+<details>
+<summary><strong>Example</strong></summary>
+
+<div class="highlight"><pre><span></span><code><span class="k">query</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">mitochondrial_variant</span><span class="p">(</span><span class="n">variant_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1-55516888-G-A&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">dataset</span><span class="p">:</span><span class="w"> </span><span class="no">gnomad_r4</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">variant_id</span>
+<span class="w">    </span><span class="n">genome</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">af</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</details>
+
+<h4 id="multinucleotidevariant"><code>multiNucleotideVariant</code></h4>
+<p>No description available</p>
+<p><strong>Returns:</strong> <code>MultiNucleotideVariantDetails</code></p>
+<details>
+<summary><strong>Arguments</strong></summary>
+
+| Argument | Type | Required | Description |
+|----------|------|----------|-------------|
+| `variant_id` | `String!` | Yes | - |
+| `dataset` | `DatasetId!` | Yes | - |
+
+</details>
+
+<details>
+<summary><strong>Example</strong></summary>
+
+<div class="highlight"><pre><span></span><code><span class="k">query</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">multiNucleotideVariant</span><span class="p">(</span><span class="n">variant_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1-55516888-G-A&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">dataset</span><span class="p">:</span><span class="w"> </span><span class="no">gnomad_r4</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c"># Add fields here</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</details>
+
+<h4 id="structural_variant"><code>structural_variant</code></h4>
+<p>No description available</p>
+<p><strong>Returns:</strong> <code>StructuralVariantDetails</code></p>
+<details>
+<summary><strong>Arguments</strong></summary>
+
+| Argument | Type | Required | Description |
+|----------|------|----------|-------------|
+| `variantId` | `String!` | Yes | - |
+| `dataset` | `StructuralVariantDatasetId!` | Yes | - |
+
+</details>
+
+<details>
+<summary><strong>Example</strong></summary>
+
+<div class="highlight"><pre><span></span><code><span class="k">query</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">structural_variant</span><span class="p">(</span><span class="n">variantId</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1-55516888-G-A&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">dataset</span><span class="p">:</span><span class="w"> </span><span class="no">gnomad_r4</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">variant_id</span>
+<span class="w">    </span><span class="n">genome</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">af</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</details>
+
+<h4 id="variant"><code>variant</code></h4>
+<p>No description available</p>
+<p><strong>Returns:</strong> <code>VariantDetails</code></p>
+<details>
+<summary><strong>Arguments</strong></summary>
+
+| Argument | Type | Required | Description |
+|----------|------|----------|-------------|
+| `variantId` | `String` | No | - |
+| `rsid` | `String` | No | - |
+| `vrsId` | `String` | No | - |
+| `dataset` | `DatasetId!` | Yes | - |
+
+</details>
+
+<details>
+<summary><strong>Example</strong></summary>
+
+<div class="highlight"><pre><span></span><code><span class="k">query</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">variant</span><span class="p">(</span><span class="n">variantId</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1-55516888-G-A&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">dataset</span><span class="p">:</span><span class="w"> </span><span class="no">gnomad_r4</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">variant_id</span>
+<span class="w">    </span><span class="n">genome</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">af</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</details>
+
+<h4 id="variant_cooccurrence"><code>variant_cooccurrence</code></h4>
+<p>No description available</p>
+<p><strong>Returns:</strong> <code>VariantCooccurrence</code></p>
+<details>
+<summary><strong>Arguments</strong></summary>
+
+| Argument | Type | Required | Description |
+|----------|------|----------|-------------|
+| `variants` | `[String!]!` | Yes | - |
+| `dataset` | `DatasetId!` | Yes | - |
+
+</details>
+
+<details>
+<summary><strong>Example</strong></summary>
+
+<div class="highlight"><pre><span></span><code><span class="k">query</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">variant_cooccurrence</span><span class="p">(</span><span class="n">variants</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1-55516888-G-A&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">dataset</span><span class="p">:</span><span class="w"> </span><span class="no">gnomad_r4</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">variant_id</span>
+<span class="w">    </span><span class="n">genome</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">af</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</details>
+
+<h3 id="gene-queries">Gene Queries</h3>
+<h4 id="gene"><code>gene</code></h4>
+<p>No description available</p>
+<p><strong>Returns:</strong> <code>Gene</code></p>
+<details>
+<summary><strong>Arguments</strong></summary>
+
+| Argument | Type | Required | Description |
+|----------|------|----------|-------------|
+| `gene_id` | `String` | No | - |
+| `gene_symbol` | `String` | No | - |
+| `reference_genome` | `ReferenceGenomeId!` | Yes | - |
+
+</details>
+
+<details>
+<summary><strong>Example</strong></summary>
+
+<div class="highlight"><pre><span></span><code><span class="k">query</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">gene</span><span class="p">(</span><span class="n">gene_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ENSG00000139618&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">gene_symbol</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;BRCA2&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">reference_genome</span><span class="p">:</span><span class="w"> </span><span class="no">GRCh38</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">gene_id</span>
+<span class="w">    </span><span class="n">symbol</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</details>
+
+<h4 id="transcript"><code>transcript</code></h4>
+<p>No description available</p>
+<p><strong>Returns:</strong> <code>Transcript</code></p>
+<details>
+<summary><strong>Arguments</strong></summary>
+
+| Argument | Type | Required | Description |
+|----------|------|----------|-------------|
+| `transcript_id` | `String!` | Yes | - |
+| `reference_genome` | `ReferenceGenomeId!` | Yes | - |
+
+</details>
+
+<details>
+<summary><strong>Example</strong></summary>
+
+<div class="highlight"><pre><span></span><code><span class="k">query</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">transcript</span><span class="p">(</span><span class="n">transcript_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;example&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">reference_genome</span><span class="p">:</span><span class="w"> </span><span class="no">GRCh38</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c"># Add fields here</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</details>
+
+<h3 id="search-queries">Search Queries</h3>
+<h4 id="gene_search"><code>gene_search</code></h4>
+<p>No description available</p>
+<p><strong>Returns:</strong> <code>[GeneSearchResult!]!</code></p>
+<details>
+<summary><strong>Arguments</strong></summary>
+
+| Argument | Type | Required | Description |
+|----------|------|----------|-------------|
+| `query` | `String!` | Yes | - |
+| `reference_genome` | `ReferenceGenomeId!` | Yes | - |
+
+</details>
+
+<details>
+<summary><strong>Example</strong></summary>
+
+<div class="highlight"><pre><span></span><code><span class="k">query</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">gene_search</span><span class="p">(</span><span class="n">query</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;APOE&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">reference_genome</span><span class="p">:</span><span class="w"> </span><span class="no">GRCh38</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">gene_id</span>
+<span class="w">    </span><span class="n">symbol</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</details>
+
+<h4 id="variant_search"><code>variant_search</code></h4>
+<p>No description available</p>
+<p><strong>Returns:</strong> <code>[VariantSearchResult!]!</code></p>
+<details>
+<summary><strong>Arguments</strong></summary>
+
+| Argument | Type | Required | Description |
+|----------|------|----------|-------------|
+| `query` | `String!` | Yes | - |
+| `dataset` | `DatasetId!` | Yes | - |
+
+</details>
+
+<details>
+<summary><strong>Example</strong></summary>
+
+<div class="highlight"><pre><span></span><code><span class="k">query</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">variant_search</span><span class="p">(</span><span class="n">query</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;APOE&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">dataset</span><span class="p">:</span><span class="w"> </span><span class="no">gnomad_r4</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">variant_id</span>
+<span class="w">    </span><span class="n">genome</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">af</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</details>
+
+<h3 id="clinical-data-queries">Clinical Data Queries</h3>
+<h4 id="clinvar_variant"><code>clinvar_variant</code></h4>
+<p>No description available</p>
+<p><strong>Returns:</strong> <code>ClinVarVariantDetails</code></p>
+<details>
+<summary><strong>Arguments</strong></summary>
+
+| Argument | Type | Required | Description |
+|----------|------|----------|-------------|
+| `variant_id` | `String!` | Yes | - |
+| `reference_genome` | `ReferenceGenomeId!` | Yes | - |
+
+</details>
+
+<details>
+<summary><strong>Example</strong></summary>
+
+<div class="highlight"><pre><span></span><code><span class="k">query</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">clinvar_variant</span><span class="p">(</span><span class="n">variant_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1-55516888-G-A&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">reference_genome</span><span class="p">:</span><span class="w"> </span><span class="no">GRCh38</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">variant_id</span>
+<span class="w">    </span><span class="n">genome</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">af</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</details>
+
+<h3 id="utility-queries">Utility Queries</h3>
+<h4 id="liftover"><code>liftover</code></h4>
+<p>No description available</p>
+<p><strong>Returns:</strong> <code>[LiftoverResult!]!</code></p>
+<details>
+<summary><strong>Arguments</strong></summary>
+
+| Argument | Type | Required | Description |
+|----------|------|----------|-------------|
+| `source_variant_id` | `String` | No | - |
+| `liftover_variant_id` | `String` | No | - |
+| `reference_genome` | `ReferenceGenomeId!` | Yes | - |
+
+</details>
+
+<details>
+<summary><strong>Example</strong></summary>
+
+<div class="highlight"><pre><span></span><code><span class="k">query</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">liftover</span><span class="p">(</span><span class="n">source_variant_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1-55516888-G-A&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">liftover_variant_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1-55516888-G-A&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">reference_genome</span><span class="p">:</span><span class="w"> </span><span class="no">GRCh38</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c"># Add fields here</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</details>
+
+<h4 id="meta"><code>meta</code></h4>
+<p>No description available</p>
+<p><strong>Returns:</strong> <code>BrowserMetadata!</code></p>
+<details>
+<summary><strong>Example</strong></summary>
+
+<div class="highlight"><pre><span></span><code><span class="k">query</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">meta</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c"># Add fields here</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</details>
+
+<h4 id="region"><code>region</code></h4>
+<p>No description available</p>
+<p><strong>Returns:</strong> <code>Region!</code></p>
+<details>
+<summary><strong>Arguments</strong></summary>
+
+| Argument | Type | Required | Description |
+|----------|------|----------|-------------|
+| `chrom` | `String!` | Yes | - |
+| `start` | `Int!` | Yes | - |
+| `stop` | `Int!` | Yes | - |
+| `reference_genome` | `ReferenceGenomeId!` | Yes | - |
+
+</details>
+
+<details>
+<summary><strong>Example</strong></summary>
+
+<div class="highlight"><pre><span></span><code><span class="k">query</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">region</span><span class="p">(</span><span class="n">chrom</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;example&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">start</span><span class="p">:</span><span class="w"> </span><span class="mi">123</span><span class="p">,</span><span class="w"> </span><span class="n">stop</span><span class="p">:</span><span class="w"> </span><span class="mi">123</span><span class="p">,</span><span class="w"> </span><span class="n">reference_genome</span><span class="p">:</span><span class="w"> </span><span class="no">GRCh38</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c"># Add fields here</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</details>
+
+<h4 id="short_tandem_repeat"><code>short_tandem_repeat</code></h4>
+<p>No description available</p>
+<p><strong>Returns:</strong> <code>ShortTandemRepeatDetails</code></p>
+<details>
+<summary><strong>Arguments</strong></summary>
+
+| Argument | Type | Required | Description |
+|----------|------|----------|-------------|
+| `id` | `String!` | Yes | - |
+| `dataset` | `DatasetId!` | Yes | - |
+
+</details>
+
+<details>
+<summary><strong>Example</strong></summary>
+
+<div class="highlight"><pre><span></span><code><span class="k">query</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">short_tandem_repeat</span><span class="p">(</span><span class="n">id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;example&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">dataset</span><span class="p">:</span><span class="w"> </span><span class="no">gnomad_r4</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c"># Add fields here</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</details>
+
+<h4 id="short_tandem_repeats"><code>short_tandem_repeats</code></h4>
+<p>No description available</p>
+<p><strong>Returns:</strong> <code>[ShortTandemRepeat!]!</code></p>
+<details>
+<summary><strong>Arguments</strong></summary>
+
+| Argument | Type | Required | Description |
+|----------|------|----------|-------------|
+| `dataset` | `DatasetId!` | Yes | - |
+
+</details>
+
+<details>
+<summary><strong>Example</strong></summary>
+
+<div class="highlight"><pre><span></span><code><span class="k">query</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">short_tandem_repeats</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span><span class="w"> </span><span class="no">gnomad_r4</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c"># Add fields here</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</details>
+
+<hr />
+<h2 id="data-types">Data Types</h2>
+<p>The API uses the following type categories:</p>
+<h3 id="core-variant-types">Core Variant Types</h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+<th>Key Fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#type-variant">Variant</a></td>
+<td></td>
+<td><code>variant_id</code>, <code>reference_genome</code>, <code>chrom</code></td>
+</tr>
+<tr>
+<td><a href="#type-variantdetails">VariantDetails</a></td>
+<td></td>
+<td><code>variant_id</code>, <code>reference_genome</code>, <code>chrom</code></td>
+</tr>
+<tr>
+<td><a href="#type-variantsequencingtypedata">VariantSequencingTypeData</a></td>
+<td></td>
+<td><code>ac</code>, <code>an</code>, <code>homozygote_count</code></td>
+</tr>
+<tr>
+<td><a href="#type-variantjointsequencingtypedata">VariantJointSequencingTypeData</a></td>
+<td></td>
+<td><code>ac</code>, <code>an</code>, <code>homozygote_count</code></td>
+</tr>
+<tr>
+<td><a href="#type-variantqualitymetrics">VariantQualityMetrics</a></td>
+<td></td>
+<td><code>allele_balance</code>, <code>genotype_depth</code>, <code>genotype_quality</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="specialized-variant-types">Specialized Variant Types</h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+<th>Key Fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#type-mitochondrialvariant">MitochondrialVariant</a></td>
+<td></td>
+<td><code>ac_het</code>, <code>ac_hom</code>, <code>an</code></td>
+</tr>
+<tr>
+<td><a href="#type-mitochondrialvariantdetails">MitochondrialVariantDetails</a></td>
+<td></td>
+<td><code>ac_het</code>, <code>ac_hom</code>, <code>ac_hom_mnv</code></td>
+</tr>
+<tr>
+<td><a href="#type-structuralvariant">StructuralVariant</a></td>
+<td></td>
+<td><code>ac</code>, <code>an</code>, <code>af</code></td>
+</tr>
+<tr>
+<td><a href="#type-structuralvariantdetails">StructuralVariantDetails</a></td>
+<td></td>
+<td><code>age_distribution</code>, <code>algorithms</code>, <code>alts</code></td>
+</tr>
+<tr>
+<td><a href="#type-copynumbervariant">CopyNumberVariant</a></td>
+<td></td>
+<td><code>sc</code>, <code>sn</code>, <code>sf</code></td>
+</tr>
+<tr>
+<td><a href="#type-copynumbervariantdetails">CopyNumberVariantDetails</a></td>
+<td></td>
+<td><code>alts</code>, <code>sc</code>, <code>sn</code></td>
+</tr>
+<tr>
+<td><a href="#type-multinucleotidevariantdetails">MultiNucleotideVariantDetails</a></td>
+<td></td>
+<td><code>variant_id</code>, <code>reference_genome</code>, <code>chrom</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="population-frequency-data">Population &amp; Frequency Data</h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+<th>Key Fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#type-variantpopulation">VariantPopulation</a></td>
+<td></td>
+<td><code>id</code>, <code>ac</code>, <code>an</code></td>
+</tr>
+<tr>
+<td><a href="#type-variantfilteringallelefrequency">VariantFilteringAlleleFrequency</a></td>
+<td></td>
+<td><code>popmax</code>, <code>popmax_population</code></td>
+</tr>
+<tr>
+<td><a href="#type-variantlocalancestrypopulation">VariantLocalAncestryPopulation</a></td>
+<td></td>
+<td><code>id</code>, <code>ac</code>, <code>an</code></td>
+</tr>
+<tr>
+<td><a href="#type-mitochondrialvariantpopulation">MitochondrialVariantPopulation</a></td>
+<td></td>
+<td><code>id</code>, <code>an</code>, <code>ac_het</code></td>
+</tr>
+<tr>
+<td><a href="#type-structuralvariantpopulation">StructuralVariantPopulation</a></td>
+<td></td>
+<td><code>id</code>, <code>ac</code>, <code>an</code></td>
+</tr>
+<tr>
+<td><a href="#type-copynumbervariantpopulation">CopyNumberVariantPopulation</a></td>
+<td></td>
+<td><code>id</code>, <code>sc</code>, <code>sn</code></td>
+</tr>
+<tr>
+<td><a href="#type-fafmax">Fafmax</a></td>
+<td></td>
+<td><code>faf95_max</code>, <code>faf95_max_gen_anc</code>, <code>faf99_max</code></td>
+</tr>
+<tr>
+<td><a href="#type-vagrpmaxfaf95">VAGrpMaxFAF95</a></td>
+<td></td>
+<td><code>frequency</code>, <code>confidenceInterval</code>, <code>groupId</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="gene-transcript-types">Gene &amp; Transcript Types</h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+<th>Key Fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#type-gene">Gene</a></td>
+<td></td>
+<td><code>reference_genome</code>, <code>gene_id</code>, <code>gene_version</code></td>
+</tr>
+<tr>
+<td><a href="#type-transcript">Transcript</a></td>
+<td></td>
+<td><code>reference_genome</code>, <code>transcript_id</code>, <code>transcript_version</code></td>
+</tr>
+<tr>
+<td><a href="#type-exon">Exon</a></td>
+<td></td>
+<td><code>feature_type</code>, <code>start</code>, <code>stop</code></td>
+</tr>
+<tr>
+<td><a href="#type-genetranscript">GeneTranscript</a></td>
+<td></td>
+<td><code>reference_genome</code>, <code>transcript_id</code>, <code>transcript_version</code></td>
+</tr>
+<tr>
+<td><a href="#type-transcriptgene">TranscriptGene</a></td>
+<td></td>
+<td><code>reference_genome</code>, <code>gene_id</code>, <code>gene_version</code></td>
+</tr>
+<tr>
+<td><a href="#type-regiongene">RegionGene</a></td>
+<td></td>
+<td><code>gene_id</code>, <code>symbol</code>, <code>start</code></td>
+</tr>
+<tr>
+<td><a href="#type-regiongenetranscript">RegionGeneTranscript</a></td>
+<td></td>
+<td><code>transcript_id</code>, <code>start</code>, <code>stop</code></td>
+</tr>
+<tr>
+<td><a href="#type-maneselecttranscript">ManeSelectTranscript</a></td>
+<td></td>
+<td><code>ensembl_id</code>, <code>ensembl_version</code>, <code>refseq_id</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="functional-annotation">Functional Annotation</h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+<th>Key Fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#type-transcriptconsequence">TranscriptConsequence</a></td>
+<td></td>
+<td><code>consequence_terms</code>, <code>domains</code>, <code>gene_id</code></td>
+</tr>
+<tr>
+<td><a href="#type-variantinsilicopredictor">VariantInSilicoPredictor</a></td>
+<td></td>
+<td><code>id</code>, <code>value</code>, <code>flags</code></td>
+</tr>
+<tr>
+<td><a href="#type-lofcuration">LoFCuration</a></td>
+<td></td>
+<td><code>gene_id</code>, <code>gene_version</code>, <code>gene_symbol</code></td>
+</tr>
+<tr>
+<td><a href="#type-lofcurationingene">LoFCurationInGene</a></td>
+<td></td>
+<td><code>verdict</code>, <code>flags</code></td>
+</tr>
+<tr>
+<td><a href="#type-multinucleotidevariantconsequence">MultiNucleotideVariantConsequence</a></td>
+<td></td>
+<td><code>gene_id</code>, <code>gene_name</code>, <code>transcript_id</code></td>
+</tr>
+<tr>
+<td><a href="#type-structuralvariantconsequence">StructuralVariantConsequence</a></td>
+<td></td>
+<td><code>consequence</code>, <code>genes</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="clinical-disease-data">Clinical &amp; Disease Data</h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+<th>Key Fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#type-clinvarvariant">ClinVarVariant</a></td>
+<td></td>
+<td><code>variant_id</code>, <code>reference_genome</code>, <code>chrom</code></td>
+</tr>
+<tr>
+<td><a href="#type-clinvarvariantdetails">ClinVarVariantDetails</a></td>
+<td></td>
+<td><code>variant_id</code>, <code>reference_genome</code>, <code>chrom</code></td>
+</tr>
+<tr>
+<td><a href="#type-clinvarcondition">ClinVarCondition</a></td>
+<td></td>
+<td><code>name</code>, <code>medgen_id</code></td>
+</tr>
+<tr>
+<td><a href="#type-clinvarsubmission">ClinVarSubmission</a></td>
+<td></td>
+<td><code>clinical_significance</code>, <code>last_evaluated</code>, <code>review_status</code></td>
+</tr>
+<tr>
+<td><a href="#type-clinvarvariantgnomaddata">ClinVarVariantGnomadData</a></td>
+<td></td>
+<td><code>exome</code>, <code>genome</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="constraint-conservation">Constraint &amp; Conservation</h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+<th>Key Fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#type-gnomadconstraint">GnomadConstraint</a></td>
+<td></td>
+<td><code>exp_lof</code>, <code>exp_mis</code>, <code>exp_syn</code></td>
+</tr>
+<tr>
+<td><a href="#type-exacconstraint">ExacConstraint</a></td>
+<td></td>
+<td><code>exp_syn</code>, <code>exp_mis</code>, <code>exp_lof</code></td>
+</tr>
+<tr>
+<td><a href="#type-gnomadv2regionalmissenseconstraint">GnomadV2RegionalMissenseConstraint</a></td>
+<td></td>
+<td><code>has_no_rmc_evidence</code>, <code>passed_qc</code>, <code>regions</code></td>
+</tr>
+<tr>
+<td><a href="#type-gnomadv2regionalmissenseconstraintregion">GnomadV2RegionalMissenseConstraintRegion</a></td>
+<td></td>
+<td><code>chrom</code>, <code>start</code>, <code>stop</code></td>
+</tr>
+<tr>
+<td><a href="#type-mitochondrialregionconstraint">MitochondrialRegionConstraint</a></td>
+<td></td>
+<td><code>start</code>, <code>stop</code>, <code>oe</code></td>
+</tr>
+<tr>
+<td><a href="#type-noncodingconstraintregion">NonCodingConstraintRegion</a></td>
+<td></td>
+<td><code>chrom</code>, <code>start</code>, <code>stop</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="quality-metrics">Quality Metrics</h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+<th>Key Fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#type-variantsitequalitymetric">VariantSiteQualityMetric</a></td>
+<td></td>
+<td><code>metric</code>, <code>value</code></td>
+</tr>
+<tr>
+<td><a href="#type-variantgenotypequality">VariantGenotypeQuality</a></td>
+<td></td>
+<td><code>all</code>, <code>alt</code></td>
+</tr>
+<tr>
+<td><a href="#type-variantgenotypedepth">VariantGenotypeDepth</a></td>
+<td></td>
+<td><code>all</code>, <code>alt</code></td>
+</tr>
+<tr>
+<td><a href="#type-variantallelebalance">VariantAlleleBalance</a></td>
+<td></td>
+<td><code>alt</code></td>
+</tr>
+<tr>
+<td><a href="#type-mitochondrialvariantgenotypequalitymetric">MitochondrialVariantGenotypeQualityMetric</a></td>
+<td></td>
+<td><code>name</code>, <code>all</code>, <code>alt</code></td>
+</tr>
+<tr>
+<td><a href="#type-mitochondrialvariantsitequalitymetric">MitochondrialVariantSiteQualityMetric</a></td>
+<td></td>
+<td><code>name</code>, <code>value</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="coverage-data">Coverage Data</h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+<th>Key Fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#type-coverage">Coverage</a></td>
+<td></td>
+<td><code>mean</code>, <code>median</code>, <code>over_1</code></td>
+</tr>
+<tr>
+<td><a href="#type-variantcoverage">VariantCoverage</a></td>
+<td></td>
+<td><code>exome</code>, <code>genome</code></td>
+</tr>
+<tr>
+<td><a href="#type-coveragebin">CoverageBin</a></td>
+<td></td>
+<td><code>pos</code>, <code>mean</code>, <code>median</code></td>
+</tr>
+<tr>
+<td><a href="#type-featurecoverage">FeatureCoverage</a></td>
+<td></td>
+<td><code>exome</code>, <code>genome</code></td>
+</tr>
+<tr>
+<td><a href="#type-regioncoverage">RegionCoverage</a></td>
+<td></td>
+<td><code>exome</code>, <code>genome</code></td>
+</tr>
+<tr>
+<td><a href="#type-mitochondrialcoveragebin">MitochondrialCoverageBin</a></td>
+<td></td>
+<td><code>pos</code>, <code>mean</code>, <code>median</code></td>
+</tr>
+<tr>
+<td><a href="#type-cnvtrackcallablecoveragebin">CNVTrackCallableCoverageBin</a></td>
+<td></td>
+<td><code>xpos</code>, <code>percent_callable</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="expression-tissue-data">Expression &amp; Tissue Data</h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+<th>Key Fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#type-gtextissue">GtexTissue</a></td>
+<td></td>
+<td><code>tissue</code>, <code>value</code></td>
+</tr>
+<tr>
+<td><a href="#type-pextregion">PextRegion</a></td>
+<td></td>
+<td><code>start</code>, <code>stop</code>, <code>mean</code></td>
+</tr>
+<tr>
+<td><a href="#type-pextregiontissue">PextRegionTissue</a></td>
+<td></td>
+<td><code>tissue</code>, <code>value</code></td>
+</tr>
+<tr>
+<td><a href="#type-pext">Pext</a></td>
+<td></td>
+<td><code>regions</code>, <code>flags</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="search-utility-types">Search &amp; Utility Types</h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+<th>Key Fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#type-variantsearchresult">VariantSearchResult</a></td>
+<td></td>
+<td><code>variant_id</code></td>
+</tr>
+<tr>
+<td><a href="#type-genesearchresult">GeneSearchResult</a></td>
+<td></td>
+<td><code>ensembl_id</code>, <code>ensembl_version</code>, <code>symbol</code></td>
+</tr>
+<tr>
+<td><a href="#type-liftovervariant">LiftoverVariant</a></td>
+<td></td>
+<td><code>variant_id</code>, <code>reference_genome</code></td>
+</tr>
+<tr>
+<td><a href="#type-liftoverresult">LiftoverResult</a></td>
+<td></td>
+<td><code>source</code>, <code>liftover</code>, <code>datasets</code></td>
+</tr>
+<tr>
+<td><a href="#type-region">Region</a></td>
+<td></td>
+<td><code>reference_genome</code>, <code>chrom</code>, <code>start</code></td>
+</tr>
+<tr>
+<td><a href="#type-browsermetadata">BrowserMetadata</a></td>
+<td></td>
+<td><code>clinvar_release_date</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="statistical-analysis-types">Statistical &amp; Analysis Types</h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+<th>Key Fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#type-variantcooccurrence">VariantCooccurrence</a></td>
+<td></td>
+<td><code>variant_ids</code>, <code>genotype_counts</code>, <code>haplotype_counts</code></td>
+</tr>
+<tr>
+<td><a href="#type-variantcooccurrenceinpopulation">VariantCooccurrenceInPopulation</a></td>
+<td></td>
+<td><code>id</code>, <code>genotype_counts</code>, <code>haplotype_counts</code></td>
+</tr>
+<tr>
+<td><a href="#type-heterozygousvariantcooccurrencecounts">HeterozygousVariantCooccurrenceCounts</a></td>
+<td></td>
+<td><code>csq</code>, <code>af_cutoff</code>, <code>data</code></td>
+</tr>
+<tr>
+<td><a href="#type-homozygousvariantcooccurrencecounts">HomozygousVariantCooccurrenceCounts</a></td>
+<td></td>
+<td><code>csq</code>, <code>af_cutoff</code>, <code>data</code></td>
+</tr>
+<tr>
+<td><a href="#type-contingencytabletest">ContingencyTableTest</a></td>
+<td></td>
+<td><code>p_value</code>, <code>odds_ratio</code></td>
+</tr>
+<tr>
+<td><a href="#type-cochranmantelhaenszeltest">CochranMantelHaenszelTest</a></td>
+<td></td>
+<td><code>chisq</code>, <code>p_value</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="variant-alliance-types">Variant Alliance Types</h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+<th>Key Fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#type-vaallele">VAAllele</a></td>
+<td></td>
+<td><code>type</code>, <code>location</code></td>
+</tr>
+<tr>
+<td><a href="#type-vacohort">VACohort</a></td>
+<td></td>
+<td><code>id</code>, <code>label</code>, <code>characteristics</code></td>
+</tr>
+<tr>
+<td><a href="#type-vacohortallelefrequency">VACohortAlleleFrequency</a></td>
+<td>A measure of the frequency of an Allele in a cohort.</td>
+<td><code>exome</code>, <code>genome</code></td>
+</tr>
+<tr>
+<td><a href="#type-vasequencelocation">VASequenceLocation</a></td>
+<td></td>
+<td><code>type</code>, <code>sequence_id</code></td>
+</tr>
+<tr>
+<td><a href="#type-vaqualitymeasures">VAQualityMeasures</a></td>
+<td></td>
+<td><code>meanDepth</code>, <code>fractionCoverage20x</code>, <code>qcFilters</code></td>
+</tr>
+<tr>
+<td><a href="#type-vaancillaryresults">VAAncillaryResults</a></td>
+<td></td>
+<td><code>grpMaxFAF95</code>, <code>jointGrpMaxFAF95</code>, <code>homozygotes</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="short-tandem-repeats">Short Tandem Repeats</h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+<th>Key Fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#type-shorttandemrepeat">ShortTandemRepeat</a></td>
+<td></td>
+<td><code>id</code>, <code>gene</code>, <code>associated_diseases</code></td>
+</tr>
+<tr>
+<td><a href="#type-shorttandemrepeatdetails">ShortTandemRepeatDetails</a></td>
+<td></td>
+<td><code>id</code>, <code>gene</code>, <code>associated_diseases</code></td>
+</tr>
+<tr>
+<td><a href="#type-shorttandemrepeatgene">ShortTandemRepeatGene</a></td>
+<td></td>
+<td><code>ensembl_id</code>, <code>symbol</code>, <code>region</code></td>
+</tr>
+<tr>
+<td><a href="#type-shorttandemrepeatassociateddisease">ShortTandemRepeatAssociatedDisease</a></td>
+<td></td>
+<td><code>name</code>, <code>symbol</code>, <code>omim_id</code></td>
+</tr>
+<tr>
+<td><a href="#type-shorttandemrepeatreferenceregion">ShortTandemRepeatReferenceRegion</a></td>
+<td></td>
+<td><code>reference_genome</code>, <code>chrom</code>, <code>start</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="histogram-distribution-types">Histogram &amp; Distribution Types</h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+<th>Key Fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#type-histogram">Histogram</a></td>
+<td></td>
+<td><code>bin_edges</code>, <code>bin_freq</code>, <code>n_larger</code></td>
+</tr>
+<tr>
+<td><a href="#type-variantagedistribution">VariantAgeDistribution</a></td>
+<td></td>
+<td><code>het</code>, <code>hom</code></td>
+</tr>
+<tr>
+<td><a href="#type-mitochondrialvariantagedistribution">MitochondrialVariantAgeDistribution</a></td>
+<td></td>
+<td><code>het</code>, <code>hom</code></td>
+</tr>
+<tr>
+<td><a href="#type-structuralvariantagedistribution">StructuralVariantAgeDistribution</a></td>
+<td></td>
+<td><code>het</code>, <code>hom</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="enumerations">Enumerations</h2>
+<h3 id="copynumbervariantdatasetid"><code>CopyNumberVariantDatasetId</code></h3>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gnomad_cnv_r4</code></td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<h3 id="datasetid"><code>DatasetId</code></h3>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gnomad_r4</code></td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>gnomad_r4_non_ukb</code></td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>gnomad_r3</code></td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>gnomad_r3_controls_and_biobanks</code></td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>gnomad_r3_non_cancer</code></td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>gnomad_r3_non_neuro</code></td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>gnomad_r3_non_topmed</code></td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>gnomad_r3_non_v2</code></td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>gnomad_r2_1</code></td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>gnomad_r2_1_controls</code></td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>gnomad_r2_1_non_neuro</code></td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>gnomad_r2_1_non_cancer</code></td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>gnomad_r2_1_non_topmed</code></td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>exac</code></td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<h3 id="referencegenomeid"><code>ReferenceGenomeId</code></h3>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GRCh37</code></td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>GRCh38</code></td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<h3 id="structuralvariantdatasetid"><code>StructuralVariantDatasetId</code></h3>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gnomad_sv_r2_1</code></td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>gnomad_sv_r2_1_controls</code></td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>gnomad_sv_r2_1_non_neuro</code></td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>gnomad_sv_r4</code></td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<h3 id="vacomparator"><code>VAComparator</code></h3>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>LTE</code></td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>GTE</code></td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="best-practices">Best Practices</h2>
+<h3 id="1-request-only-needed-fields">1. Request Only Needed Fields</h3>
+<div class="highlight"><pre><span></span><code><span class="c"># ❌ Bad - requests all fields</span>
+<span class="k">query</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">variant</span><span class="p">(</span><span class="n">variantId</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1-55516888-G-A&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">dataset</span><span class="p">:</span><span class="w"> </span><span class="no">gnomad_r4</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">...</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="nc">VariantDetails</span><span class="w">  </span><span class="c"># Don&#39;t use fragments for everything</span>
+<span class="w">  </span><span class="err">}</span>
+<span class="err">}</span>
+
+<span class="c"># ✅ Good - requests only needed fields</span>
+<span class="nc">query</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">variant</span><span class="p">(</span><span class="n">variantId</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1-55516888-G-A&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">dataset</span><span class="p">:</span><span class="w"> </span><span class="no">gnomad_r4</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">variant_id</span>
+<span class="w">    </span><span class="n">genome</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">af</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h3 id="2-use-appropriate-datasets">2. Use Appropriate Datasets</h3>
+<ul>
+<li>For GRCh38: Use <code>gnomad_r4</code> (latest) or <code>gnomad_r3</code></li>
+<li>For GRCh37: Use <code>gnomad_r2_1</code></li>
+<li>Match dataset to your reference genome</li>
+</ul>
+<h3 id="3-handle-errors-gracefully">3. Handle Errors Gracefully</h3>
+<ul>
+<li>Check for <code>errors</code> in response</li>
+<li>Handle null results (variant not found)</li>
+<li>Implement timeout handling</li>
+</ul>
+<h3 id="4-variant-id-format">4. Variant ID Format</h3>
+<ul>
+<li>Format: <code>chromosome-position-reference-alternate</code></li>
+<li>Example: <code>1-55516888-G-A</code></li>
+<li>Chromosome can be 1-22, X, Y, or MT</li>
+</ul>
+<hr />
+<p><em>For more examples, see the <a href="../gnomad_query_cookbook/">Query Cookbook</a></em></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "content.code.copy", "search.suggest"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

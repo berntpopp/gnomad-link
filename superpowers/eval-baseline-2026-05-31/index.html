@@ -1,0 +1,1113 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="MCP server bridging the gnomAD database to AI applications.">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>MCP 9.5 Eval Baseline -- 2026-05-31 - gnomAD-Link</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#mcp-95-eval-baseline-2026-05-31" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="gnomAD-Link" class="md-header__button md-logo" aria-label="gnomAD-Link" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            gnomAD-Link
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              MCP 9.5 Eval Baseline -- 2026-05-31
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/berntpopp/gnomad-link" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="gnomAD-Link" class="md-nav__button md-logo" aria-label="gnomAD-Link" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    gnomAD-Link
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/berntpopp/gnomad-link" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data & provenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../MCP_CONNECTION_GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP connection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#aggregate-dimensions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aggregate Dimensions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Aggregate Dimensions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-initial-baseline-pre-phase-3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2 (initial baseline, pre-Phase 3)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-post-current-baselinejson" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3 (post -- current baseline.json)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#per-scenario-byte-budget" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Per-Scenario Byte Budget
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Per-Scenario Byte Budget">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-initial" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2 (initial)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-post-current-baselinejson_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3 (post -- current baseline.json)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4a-response_modeminimal-scenarios" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4a (response_mode='minimal' scenarios)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-3-result" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3 Result
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mapping-to-prior-qualitative-scores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mapping to Prior Qualitative Scores
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#final-milestone-scorecard-post-phase-5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Final Milestone Scorecard (post Phase 5)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Final Milestone Scorecard (post Phase 5)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#aggregate-dimensions-final" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aggregate dimensions -- final
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#before-after-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Before / after summary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#per-scenario-measured-bytes-final-from-baselinejson" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Per-scenario measured bytes -- final (from baseline.json)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#token-reduction-evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Token-reduction evidence
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#95-milestone-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.5 Milestone checklist
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-refresh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How to Refresh
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="mcp-95-eval-baseline-2026-05-31">MCP 9.5 Eval Baseline -- 2026-05-31</h1>
+<p><strong>Purpose:</strong> Deterministic baseline that gates Phases 3-5.
+Values are measured by the harness, not asserted by hand.</p>
+<p>This document now records both the Phase 2 (initial) numbers and the
+Phase 3 (post) improved numbers so the before/after is visible.</p>
+<h2 id="aggregate-dimensions">Aggregate Dimensions</h2>
+<h3 id="phase-2-initial-baseline-pre-phase-3">Phase 2 (initial baseline, pre-Phase 3)</h3>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Score</th>
+<th>Max</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>trajectory</td>
+<td>10.000000</td>
+<td>10.0</td>
+<td>All 5 scenarios followed expected call order</td>
+</tr>
+<tr>
+<td>token_cost</td>
+<td>10.000000</td>
+<td>10.0</td>
+<td>All serialized payloads within byte budgets</td>
+</tr>
+<tr>
+<td>envelope_conformance</td>
+<td>9.266667</td>
+<td>10.0</td>
+<td>resolve_variant_id / get_gene_variants had no next_commands</td>
+</tr>
+<tr>
+<td><strong>total</strong></td>
+<td><strong>9.755556</strong></td>
+<td><strong>10.0</strong></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="phase-3-post-current-baselinejson">Phase 3 (post -- current baseline.json)</h3>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Score</th>
+<th>Max</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>trajectory</td>
+<td>10.000000</td>
+<td>10.0</td>
+<td>All 5 scenarios followed expected call order</td>
+</tr>
+<tr>
+<td>token_cost</td>
+<td>10.000000</td>
+<td>10.0</td>
+<td>All serialized payloads within byte budgets</td>
+</tr>
+<tr>
+<td>envelope_conformance</td>
+<td>10.000000</td>
+<td>10.0</td>
+<td>Universal next_commands on every tool</td>
+</tr>
+<tr>
+<td><strong>total</strong></td>
+<td><strong>10.000000</strong></td>
+<td><strong>10.0</strong></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="per-scenario-byte-budget">Per-Scenario Byte Budget</h2>
+<p>Each value is the measured serialized response size in bytes from <code>baseline.json</code>.
+Multiple values indicate a multi-call scenario (one entry per call).</p>
+<h3 id="phase-2-initial">Phase 2 (initial)</h3>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Tool call(s)</th>
+<th>Measured bytes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>gene_carrier_frequency_hfe</td>
+<td>compute_gene_carrier_frequency</td>
+<td>2049</td>
+</tr>
+<tr>
+<td>compare_variant_across_datasets_r4_r2_1</td>
+<td>compare_variant_across_datasets</td>
+<td>2221</td>
+</tr>
+<tr>
+<td>gene_variants_stop_gained</td>
+<td>get_gene_variants</td>
+<td>1531</td>
+</tr>
+<tr>
+<td>resolve_then_xl_carrier_frequency</td>
+<td>resolve_variant_id, compute_carrier_frequency</td>
+<td>413, 1351</td>
+</tr>
+<tr>
+<td>variant_clinical_evidence</td>
+<td>get_mitochondrial_variant, get_clinvar_variant_details</td>
+<td>715, 1524</td>
+</tr>
+</tbody>
+</table>
+<h3 id="phase-3-post-current-baselinejson_1">Phase 3 (post -- current baseline.json)</h3>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Tool call(s)</th>
+<th>Measured bytes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>gene_carrier_frequency_hfe</td>
+<td>compute_gene_carrier_frequency</td>
+<td>2049</td>
+</tr>
+<tr>
+<td>compare_variant_across_datasets_r4_r2_1</td>
+<td>compare_variant_across_datasets</td>
+<td>2221</td>
+</tr>
+<tr>
+<td>gene_variants_stop_gained</td>
+<td>get_gene_variants</td>
+<td>1707 (+176)</td>
+</tr>
+<tr>
+<td>resolve_then_xl_carrier_frequency</td>
+<td>resolve_variant_id, compute_carrier_frequency</td>
+<td>630 (+217), 1351</td>
+</tr>
+<tr>
+<td>variant_clinical_evidence</td>
+<td>get_mitochondrial_variant, get_clinvar_variant_details</td>
+<td>715, 1524</td>
+</tr>
+</tbody>
+</table>
+<p>The two byte increases (+217 bytes on resolve_variant_id, +176 bytes on
+get_gene_variants) are the added structured next_commands JSON. This is an
+intended, reviewed token cost that pays for full groundability: every tool
+now carries a ready-to-call next step so the consuming LLM never has to guess.</p>
+<h3 id="phase-4a-response_modeminimal-scenarios">Phase 4a (response_mode='minimal' scenarios)</h3>
+<p>Two minimal-mode scenarios were added; they reuse the existing gene_carrier
+and compare stubs and prove the projection's measured reduction. All existing
+budgets are unchanged and all dimensions stay 10.0 (minimal keeps headline +
+_meta + non-empty next_commands, so envelope conformance is preserved).</p>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Tool call(s)</th>
+<th>Measured bytes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>gene_carrier_frequency_hfe_minimal</td>
+<td>compute_gene_carrier_frequency (minimal)</td>
+<td>1076 (compact 2049)</td>
+</tr>
+<tr>
+<td>compare_variant_across_datasets_minimal</td>
+<td>compare_variant_across_datasets (minimal)</td>
+<td>934  (compact 2221)</td>
+</tr>
+</tbody>
+</table>
+<p>Each minimal scenario's byte budget is smaller than its compact counterpart:
+gene carrier 1076 vs 2049 (-47.5%), compare 934 vs 2221 (-57.9%).</p>
+<h2 id="phase-3-result">Phase 3 Result</h2>
+<p>Phase 3 added structured <code>_meta.next_commands</code> ({tool, arguments} entries) to
+every tool's success and error envelope:</p>
+<ul>
+<li><code>resolve_variant_id</code> and <code>search_variants</code> (deprecated alias) converted from
+  the prose <code>next_steps</code> array to structured next_commands; <code>next_steps</code> is
+  retained as a deprecated field for one release.</li>
+<li><code>get_gene_variants</code> gained next_commands on its success path.</li>
+<li><code>get_mitochondrial_variant</code> and <code>get_transcript_details</code> made next_commands
+  unconditional (previously emitted only on some code paths).</li>
+<li><code>get_variant_details</code> and structural variant tools (<code>get_structural_variant</code>,
+  <code>search_structural_variants</code>) gained next_commands on success and error paths.</li>
+</ul>
+<p>Net effect: <code>envelope_conformance</code> 9.266667 -&gt; 10.0, <code>total</code> 9.755556 -&gt; 10.0.</p>
+<h2 id="mapping-to-prior-qualitative-scores">Mapping to Prior Qualitative Scores</h2>
+<p>Previous manual reviews produced two qualitative scores:</p>
+<ul>
+<li>Consuming LLM judge: ~8.9 / 10 across 22 tools</li>
+<li>Senior-tester review: ~8.1 / 10 across 22 tools</li>
+</ul>
+<p>Those scores were subjective, non-deterministic, and covered the full tool
+surface. This harness measures five representative multi-step scenarios on
+three objective dimensions (trajectory correctness, token economy, envelope
+conformance). The prior scores are not directly comparable to these numbers;
+this harness now produces the true, reproducible baseline against which
+Phases 4-5 improvements will be measured.</p>
+<h2 id="final-milestone-scorecard-post-phase-5">Final Milestone Scorecard (post Phase 5)</h2>
+<h3 id="aggregate-dimensions-final">Aggregate dimensions -- final</h3>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Score</th>
+<th>Max</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>trajectory</td>
+<td>10.000000</td>
+<td>10.0</td>
+<td>All 7 scenarios followed expected call order</td>
+</tr>
+<tr>
+<td>token_cost</td>
+<td>10.000000</td>
+<td>10.0</td>
+<td>All serialized payloads within byte budgets</td>
+</tr>
+<tr>
+<td>envelope_conformance</td>
+<td>10.000000</td>
+<td>10.0</td>
+<td>Universal next_commands preserved through Phase 5</td>
+</tr>
+<tr>
+<td><strong>total</strong></td>
+<td><strong>10.000000</strong></td>
+<td><strong>10.0</strong></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>Source: <code>tests/eval/baseline.json</code> (7 scenarios, 9 measured-bytes entries).</p>
+<h3 id="before-after-summary">Before / after summary</h3>
+<table>
+<thead>
+<tr>
+<th>Milestone point</th>
+<th>envelope_conformance</th>
+<th>total</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Phase 2 initial</td>
+<td>9.266667</td>
+<td>9.755556</td>
+</tr>
+<tr>
+<td>Phase 3 (post)</td>
+<td>10.000000</td>
+<td>10.000000</td>
+</tr>
+<tr>
+<td>Phase 5 / final</td>
+<td>10.000000</td>
+<td>10.000000</td>
+</tr>
+</tbody>
+</table>
+<p>Phase 2 added the harness and captured the initial gap (two tools lacked
+next_commands). Phase 3 closed the conformance gap. Phases 4-5 added the
+compare-bug fix, minimal-mode projections, and SV/mito compact trimming
+without disturbing any scored dimension.</p>
+<h3 id="per-scenario-measured-bytes-final-from-baselinejson">Per-scenario measured bytes -- final (from baseline.json)</h3>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Tool call(s)</th>
+<th>Bytes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>gene_carrier_frequency_hfe</td>
+<td>compute_gene_carrier_frequency</td>
+<td>2049</td>
+</tr>
+<tr>
+<td>gene_carrier_frequency_hfe_minimal</td>
+<td>compute_gene_carrier_frequency (minimal)</td>
+<td>1076</td>
+</tr>
+<tr>
+<td>compare_variant_across_datasets_r4_r2_1</td>
+<td>compare_variant_across_datasets</td>
+<td>2221</td>
+</tr>
+<tr>
+<td>compare_variant_across_datasets_minimal</td>
+<td>compare_variant_across_datasets (minimal)</td>
+<td>934</td>
+</tr>
+<tr>
+<td>gene_variants_stop_gained</td>
+<td>get_gene_variants</td>
+<td>1707</td>
+</tr>
+<tr>
+<td>resolve_then_xl_carrier_frequency</td>
+<td>resolve_variant_id, compute_carrier_frequency</td>
+<td>630, 1351</td>
+</tr>
+<tr>
+<td>variant_clinical_evidence</td>
+<td>get_mitochondrial_variant, get_clinvar_variant_details</td>
+<td>738, 1524</td>
+</tr>
+</tbody>
+</table>
+<h3 id="token-reduction-evidence">Token-reduction evidence</h3>
+<p>Minimal-mode scenarios (eval harness, <code>tests/eval/scenarios.py</code>):</p>
+<ul>
+<li>gene_carrier compact 2049 B -&gt; minimal 1076 B: -47.5%</li>
+<li>compare compact 2221 B -&gt; minimal 934 B: -57.9%</li>
+</ul>
+<p>SV compact-population-trim (<code>test_compact_population_trim_reduces_serialized_bytes</code>
+in <code>tests/unit/mcp/test_sv_single_shaping.py</code>): realistic 28-row population
+payload, full=2429 B, compact=374 B, -84.6%.</p>
+<p>Mito compact-trim (<code>test_compact_byte_reduction</code> in
+<code>tests/unit/mcp/test_mt_heteroplasmy_trim.py</code>): 10-population + 10-haplogroup
+realistic payload, full=1728 B, compact=463 B, -73.2%.</p>
+<p>All four reductions are asserted by deterministic unit or eval tests; no
+network access required.</p>
+<h3 id="95-milestone-checklist">9.5 Milestone checklist</h3>
+<ol>
+<li>
+<p>PASS  Compare-bug correctness -- gnomad_r2_1 leg resolves for C282Y.
+   Eval scenario <code>compare_variant_across_datasets_r4_r2_1</code> (tests/eval/scenarios.py
+   line ~87 _check_compare) asserts present=True for both r4 and r2_1 legs AND
+   lifted_variant_id == "6-26093141-G-A". All 8 eval tests pass (make eval-ci,
+   uv run pytest tests/eval -q). Live guard: tests/integration/
+   test_mcp_live_tools.py::test_compare_finds_hfe_c282y_in_r2_1_live.</p>
+</li>
+<li>
+<p>PASS  Envelope conformance = 100% -- envelope_conformance == 10.0 in
+   baseline.json; all 7 scenarios pass the conformance check.</p>
+</li>
+<li>
+<p>PASS  Measured token reduction -- minimal-mode: gene_carrier -47.5%,
+   compare -57.9% (eval harness). SV compact trim: -84.6%
+   (test_sv_single_shaping.py). Mito compact trim: -73.2%
+   (test_mt_heteroplasmy_trim.py).</p>
+</li>
+<li>
+<p>PASS  Zero regressions -- all dimensions 10.0; no dimension below the
+   Phase-2 baseline (trajectory was already 10.0; token_cost was already 10.0;
+   envelope_conformance improved from 9.266667 to 10.0). uv run pytest tests/eval
+   -q passes without failures.</p>
+</li>
+<li>
+<p>PASS  Total &gt;= 9.4 -- total == 10.0 in baseline.json.</p>
+</li>
+</ol>
+<h2 id="how-to-refresh">How to Refresh</h2>
+<p>Re-write <code>baseline.json</code> intentionally after a planned improvement:</p>
+<div class="highlight"><pre><span></span><code>EVAL_UPDATE_BASELINE=1 uv run pytest tests/eval
+</code></pre></div>
+<p>Run the deterministic harness in CI (no network required):</p>
+<div class="highlight"><pre><span></span><code>make eval-ci
+</code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "content.code.copy", "search.suggest"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,1322 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="MCP server bridging the gnomAD database to AI applications.">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>gnomAD Link MCP 9.5/10 — Implementation Plan - gnomAD-Link</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#gnomad-link-mcp-9510-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="gnomAD-Link" class="md-header__button md-logo" aria-label="gnomAD-Link" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            gnomAD-Link
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              gnomAD Link MCP 9.5/10 — Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/berntpopp/gnomad-link" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="gnomAD-Link" class="md-nav__button md-logo" aria-label="gnomAD-Link" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    gnomAD-Link
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/berntpopp/gnomad-link" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data & provenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../MCP_CONNECTION_GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP connection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#file-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Structure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-1-fix-the-high-correctness-bug-ship-first" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1 — Fix the HIGH correctness bug (ship first)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 1 — Fix the HIGH correctness bug (ship first)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-extract-a-shared-build-resolver-helper" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Extract a shared build-resolver helper
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-fix-the-masking-test-fixture-red-then-fix-compare-green" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Fix the masking test fixture (red), then fix compare (green)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-add-a-dedicated-regression-test-mirroring-the-real-hfe-case" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Add a dedicated regression test mirroring the real HFE case
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-add-a-live-integration-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Add a live integration test
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-2-eval-harness-baseline-the-gate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2 — Eval harness + baseline (the gate)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 2 — Eval harness + baseline (the gate)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-5-deterministic-eval-harness-skeleton-testseval" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Deterministic eval harness skeleton (tests/eval/)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-6-wire-eval-ci-into-ci-local-scaffold-eval-live-commit-baseline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: Wire eval-ci into ci-local; scaffold eval-live; commit baseline
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-3-contract-consistency-finish-g5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3 — Contract consistency (finish G5)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 3 — Contract consistency (finish G5)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-7-shared-next_commands-builders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 7: Shared next_commands builders
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-8-convert-resolve_variant_id-search_variants-to-structured-next_commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 8: Convert resolve_variant_id / search_variants to structured next_commands
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-9-add-next_commands-to-variant_details-structural_variant-gene_variants-unconditional-for-mitotranscript" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 9: Add next_commands to variant_details / structural_variant / gene_variants; unconditional for mito/transcript
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-10-executable-error-fallback-args" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 10: Executable error fallback args
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-11-update-capabilities-contract-text-re-score" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 11: Update capabilities contract text + re-score
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-4-token-efficiency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4 — Token efficiency
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 4 — Token efficiency">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-12-response_modeminimal-per-tool-4a" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 12: response_mode='minimal' per-tool (4a)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-13-svmito-compact-trimming-domain-specific-4b" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 13: SV/mito compact trimming — domain-specific (4b)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-5-docs-gemini-interop-polish" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 5 — Docs + Gemini interop (polish)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 5 — Docs + Gemini interop (polish)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-14-doc-string-and-capabilities-corrections" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 14: Doc-string and capabilities corrections
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-15-readme-mcp-connection-guide-tool-count-gemini-interop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 15: README + MCP connection guide (tool count, Gemini interop)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-16-final-scorecard-milestone-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 16: Final scorecard + milestone check
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-Review
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="gnomad-link-mcp-9510-implementation-plan">gnomAD Link MCP 9.5/10 — Implementation Plan</h1>
+<blockquote>
+<p>Historical record</p>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Take the gnomAD Link MCP from ~8.1-8.9 to a measured &gt;=9.4/10 by fixing the one HIGH correctness bug, building the eval harness that gates the rest, and closing residual contract/token gaps — all additive, non-breaking.</p>
+<p><strong>Architecture:</strong> Five sequential phases, each a commit boundary. Phase 1 (correctness) ships first. Phase 2 builds a deterministic eval harness wired into <code>ci-local</code> that scores Phases 3-5. Phases 3-5 are measured against that baseline.</p>
+<p><strong>Tech Stack:</strong> Python 3.12, FastMCP facade, Pydantic models, <code>respx</code> (HTTP mock, already a dev dep), pytest, Ruff, mypy, <code>uv</code>, Make targets.</p>
+<p>Spec: <code>docs/superpowers/specs/2026-05-31-mcp-9-5-correctness-and-eval-design.md</code></p>
+<p><strong>Invariants (every task):</strong> additive only (no tool-name/response-schema break); &lt;=600 LOC/module (<code>shaping.py</code> 563, <code>errors.py</code> 515 are near cap — new logic in new modules); no new runtime dependencies; no live gnomAD calls in default CI (live tests <code>integration</code>-marked); research-use scope only. Run <code>make test-fast</code> after each task; <code>make ci-local</code> green before each phase handoff. Do NOT push without explicit go-ahead.</p>
+<hr />
+<h2 id="file-structure">File Structure</h2>
+<p>New files:
+- <code>gnomad_link/mcp/minimal_shaping.py</code> — per-tool <code>response_mode='minimal'</code> projections (Phase 4a)
+- <code>gnomad_link/mcp/next_commands.py</code> — typed <code>_meta.next_commands</code> builders (Phase 3)
+- <code>tests/eval/</code> — deterministic eval harness package (Phase 2a)
+  - <code>tests/eval/scenarios.py</code>, <code>tests/eval/scoring.py</code>, <code>tests/eval/fixtures.py</code>, <code>tests/eval/test_eval_baseline.py</code>
+- <code>docs/superpowers/eval-baseline-2026-05-31.md</code> — committed baseline scorecard (Phase 2a)</p>
+<p>Modified files (by phase):
+- P1: <code>gnomad_link/mcp/tools/coordinates.py</code>, <code>gnomad_link/mcp/tools/comparison.py</code>, <code>tests/unit/mcp/test_compare_variant.py</code>, <code>tests/integration/</code> (new live test)
+- P3: <code>gnomad_link/mcp/tools/search.py</code>, <code>gnomad_link/mcp/errors.py</code>, <code>gnomad_link/mcp/tools/variants.py</code>, <code>gnomad_link/mcp/tools/specialty.py</code>, <code>gnomad_link/mcp/tools/genes.py</code>, <code>gnomad_link/mcp/resources.py</code>
+- P4: <code>gnomad_link/mcp/tools/{variants,genes,gene_summary,carrier,gene_carrier,comparison}.py</code>, <code>gnomad_link/mcp/sv_shaping.py</code>, <code>gnomad_link/mcp/heteroplasmy.py</code>
+- P5: <code>gnomad_link/mcp/tools/metadata.py</code>, <code>gnomad_link/mcp/resources.py</code>, <code>README.md</code>, <code>docs/</code> MCP connection guide
+- Makefile: <code>eval-ci</code>, <code>eval-live</code> targets; <code>ci-local</code> gains <code>eval-ci</code></p>
+<hr />
+<h2 id="phase-1-fix-the-high-correctness-bug-ship-first">Phase 1 — Fix the HIGH correctness bug (ship first)</h2>
+<p>The bug: <code>compare_variant_across_datasets</code> queries the GRCh37 <code>gnomad_r2_1</code> leg with the wrong (GRCh38) coordinate, producing a false <code>present:false</code>. Root cause: <code>comparison.py:71</code> hardcodes <code>item["liftover"].variant_id</code> (always GRCh38) instead of resolving by build. The standalone <code>liftover_variant</code> (<code>coordinates.py:75-79</code>) already does it correctly. Confirmed real API ordering (<code>liftover_models.py:52-59</code>): <code>source</code>=GRCh37, <code>liftover</code>=GRCh38. The existing test fixture inverts these, masking the bug.</p>
+<h3 id="task-1-extract-a-shared-build-resolver-helper">Task 1: Extract a shared build-resolver helper</h3>
+<p><strong>Files:</strong>
+- Modify: <code>gnomad_link/mcp/tools/coordinates.py</code> (add module-level function; rewire <code>call()</code> at <code>:75-79</code>)</p>
+<ul>
+<li>[ ] <strong>Step 1: Add the helper at module top of <code>coordinates.py</code></strong> (after imports, before <code>register_*</code>):</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">select_build_variant_id</span><span class="p">(</span><span class="n">record</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">target_build</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the liftover entry&#39;s variant id whose reference_genome == target_build.</span>
+
+<span class="sd">    gnomAD liftover records carry BOTH a GRCh37 ``source`` and a GRCh38</span>
+<span class="sd">    ``liftover`` entry (see LiftoverResult); pick the one matching the requested</span>
+<span class="sd">    build regardless of query direction. Returns None when neither entry matches.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;source&quot;</span><span class="p">,</span> <span class="s2">&quot;liftover&quot;</span><span class="p">):</span>
+        <span class="n">entry</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reference_genome&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">target_build</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;variant_id&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="kc">None</span>
+</code></pre></div>
+<ul>
+<li>[ ] <strong>Step 2: Rewire the standalone path</strong> — replace the inline loop at <code>coordinates.py:75-79</code>:</li>
+</ul>
+<div class="highlight"><pre><span></span><code>            <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+                <span class="n">record</span><span class="p">[</span><span class="s2">&quot;target_variant_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">select_build_variant_id</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+</code></pre></div>
+<ul>
+<li>[ ] <strong>Step 3: Run existing liftover tests to confirm no behavior change</strong></li>
+</ul>
+<p>Run: <code>uv run pytest tests/unit/mcp -k liftover -v</code>
+Expected: PASS (standalone behavior is identical).</p>
+<ul>
+<li>[ ] <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>gnomad_link/mcp/tools/coordinates.py
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;refactor(mcp): extract select_build_variant_id liftover resolver&quot;</span>
+</code></pre></div>
+<h3 id="task-2-fix-the-masking-test-fixture-red-then-fix-compare-green">Task 2: Fix the masking test fixture (red), then fix <code>compare</code> (green)</h3>
+<p><strong>Files:</strong>
+- Modify: <code>tests/unit/mcp/test_compare_variant.py:219-225</code> (correct fixture to real API ordering)
+- Modify: <code>gnomad_link/mcp/tools/comparison.py:69-76</code> (<code>_resolve_r2_1_id</code>)</p>
+<ul>
+<li>[ ] <strong>Step 1: Correct the inverted fixture</strong> in <code>test_auto_liftover_converts_grch38_id_for_r2_1</code> (<code>:219-225</code>) so the field labels match the real API (<code>source</code>=GRCh37, <code>liftover</code>=GRCh38). Swap the two ids/builds:</li>
+</ul>
+<div class="highlight"><pre><span></span><code>        <span class="n">liftover_result</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;variant_id&quot;</span><span class="p">:</span> <span class="s2">&quot;17-7577121-G-A&quot;</span><span class="p">,</span> <span class="s2">&quot;reference_genome&quot;</span><span class="p">:</span> <span class="s2">&quot;GRCh37&quot;</span><span class="p">},</span>
+                <span class="s2">&quot;liftover&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;variant_id&quot;</span><span class="p">:</span> <span class="s2">&quot;17-7673803-G-A&quot;</span><span class="p">,</span> <span class="s2">&quot;reference_genome&quot;</span><span class="p">:</span> <span class="s2">&quot;GRCh38&quot;</span><span class="p">},</span>
+                <span class="s2">&quot;datasets&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;gnomad_r2_1&quot;</span><span class="p">,</span> <span class="s2">&quot;gnomad_r4&quot;</span><span class="p">],</span>
+            <span class="p">}</span>
+        <span class="p">],</span>
+</code></pre></div>
+<p>The test's existing assertions stay (<code>r2["lifted_variant_id"] == "17-7577121-G-A"</code>, the GRCh37 id; r2_1 freq stub already keyed on <code>17-7577121-G-A</code>).</p>
+<ul>
+<li>[ ] <strong>Step 2: Run the test to confirm it now FAILS</strong> (the bug is exposed by the corrected fixture)</li>
+</ul>
+<p>Run: <code>uv run pytest tests/unit/mcp/test_compare_variant.py::test_auto_liftover_converts_grch38_id_for_r2_1 -v</code>
+Expected: FAIL — buggy code reads <code>liftover</code> (now GRCh38 <code>17-7673803-G-A</code>), queries r2_1 with it, the r2_1 freq stub only has <code>17-7577121-G-A</code>, so the leg is <code>present:false</code>.</p>
+<ul>
+<li>[ ] <strong>Step 3: Fix <code>_resolve_r2_1_id</code></strong> in <code>comparison.py</code> — replace the hardcoded read at <code>:69-76</code> with the shared helper:</li>
+</ul>
+<div class="highlight"><pre><span></span><code>    <span class="n">results</span> <span class="o">=</span> <span class="k">await</span> <span class="n">service</span><span class="o">.</span><span class="n">liftover_variant</span><span class="p">(</span><span class="n">variant_id</span><span class="p">,</span> <span class="s2">&quot;GRCh38&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+        <span class="n">lifted</span> <span class="o">=</span> <span class="n">select_build_variant_id</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;GRCh37&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">lifted</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">lifted</span><span class="p">,</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;gnomad_r2_1 (GRCh37) used lifted id </span><span class="si">{</span><span class="n">lifted</span><span class="si">}</span><span class="s2"> from GRCh38 </span><span class="si">{</span><span class="n">variant_id</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+    <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;gnomad_r2_1 (GRCh37) skipped: no liftover mapping found for </span><span class="si">{</span><span class="n">variant_id</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>Add the import at the top of <code>comparison.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gnomad_link.mcp.tools.coordinates</span><span class="w"> </span><span class="kn">import</span> <span class="n">select_build_variant_id</span>
+</code></pre></div>
+<p>(If this introduces an import cycle, move <code>select_build_variant_id</code> to a new leaf module <code>gnomad_link/mcp/liftover_select.py</code> and import it in both files.)</p>
+<ul>
+<li>[ ] <strong>Step 4: Run the test to confirm it now PASSES</strong></li>
+</ul>
+<p>Run: <code>uv run pytest tests/unit/mcp/test_compare_variant.py -v</code>
+Expected: PASS — fixed code resolves GRCh37 to <code>source</code> (<code>17-7577121-G-A</code>), queries r2_1 with it, leg is <code>present:true</code>.</p>
+<ul>
+<li>[ ] <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>tests/unit/mcp/test_compare_variant.py<span class="w"> </span>gnomad_link/mcp/tools/comparison.py
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;fix(mcp): compare_variant lifts r2_1 leg to GRCh37 (was false present:false)&quot;</span>
+</code></pre></div>
+<h3 id="task-3-add-a-dedicated-regression-test-mirroring-the-real-hfe-case">Task 3: Add a dedicated regression test mirroring the real HFE case</h3>
+<p><strong>Files:</strong>
+- Modify: <code>tests/unit/mcp/test_compare_variant.py</code> (add one test)</p>
+<ul>
+<li>[ ] <strong>Step 1: Add the regression test</strong> (uses HFE C282Y-shaped coords; asserts the lifted id is distinct from the GRCh38 input):</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">asyncio</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">test_compare_r2_1_uses_grch37_source_not_input_coordinate</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Regression: the r2_1 leg must use the GRCh37 `source` id, not the GRCh38 input.&quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">gnomad_link.mcp.facade</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_gnomad_mcp</span>
+
+    <span class="n">stub</span> <span class="o">=</span> <span class="n">_StubService</span><span class="p">(</span>
+        <span class="n">freq_by_dataset</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;gnomad_r4&quot;</span><span class="p">:</span> <span class="n">_freq</span><span class="p">(</span><span class="s2">&quot;6-26092913-G-A&quot;</span><span class="p">,</span> <span class="s2">&quot;gnomad_r4&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;gnomad_r2_1&quot;</span><span class="p">:</span> <span class="n">_freq</span><span class="p">(</span><span class="s2">&quot;6-26093141-G-A&quot;</span><span class="p">,</span> <span class="s2">&quot;gnomad_r2_1&quot;</span><span class="p">),</span>
+        <span class="p">},</span>
+        <span class="n">liftover_result</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;variant_id&quot;</span><span class="p">:</span> <span class="s2">&quot;6-26093141-G-A&quot;</span><span class="p">,</span> <span class="s2">&quot;reference_genome&quot;</span><span class="p">:</span> <span class="s2">&quot;GRCh37&quot;</span><span class="p">},</span>
+                <span class="s2">&quot;liftover&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;variant_id&quot;</span><span class="p">:</span> <span class="s2">&quot;6-26092913-G-A&quot;</span><span class="p">,</span> <span class="s2">&quot;reference_genome&quot;</span><span class="p">:</span> <span class="s2">&quot;GRCh38&quot;</span><span class="p">},</span>
+                <span class="s2">&quot;datasets&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;gnomad_r2_1&quot;</span><span class="p">,</span> <span class="s2">&quot;gnomad_r4&quot;</span><span class="p">],</span>
+            <span class="p">}</span>
+        <span class="p">],</span>
+    <span class="p">)</span>
+    <span class="n">mcp</span> <span class="o">=</span> <span class="n">create_gnomad_mcp</span><span class="p">(</span><span class="n">service_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">stub</span><span class="p">)</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">mcp</span><span class="o">.</span><span class="n">call_tool</span><span class="p">(</span>
+        <span class="s2">&quot;compare_variant_across_datasets&quot;</span><span class="p">,</span>
+        <span class="p">{</span><span class="s2">&quot;variant_id&quot;</span><span class="p">:</span> <span class="s2">&quot;6-26092913-G-A&quot;</span><span class="p">,</span> <span class="s2">&quot;datasets&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;gnomad_r4&quot;</span><span class="p">,</span> <span class="s2">&quot;gnomad_r2_1&quot;</span><span class="p">],</span> <span class="s2">&quot;auto_liftover&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">payload</span> <span class="o">=</span> <span class="n">_structured</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">payload</span><span class="p">[</span><span class="s2">&quot;datasets&quot;</span><span class="p">][</span><span class="s2">&quot;gnomad_r2_1&quot;</span><span class="p">][</span><span class="s2">&quot;present&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">True</span>
+    <span class="k">assert</span> <span class="p">(</span><span class="s2">&quot;6-26093141-G-A&quot;</span><span class="p">,</span> <span class="s2">&quot;gnomad_r2_1&quot;</span><span class="p">)</span> <span class="ow">in</span> <span class="n">stub</span><span class="o">.</span><span class="n">freq_calls</span>
+    <span class="k">assert</span> <span class="p">(</span><span class="s2">&quot;6-26092913-G-A&quot;</span><span class="p">,</span> <span class="s2">&quot;gnomad_r2_1&quot;</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stub</span><span class="o">.</span><span class="n">freq_calls</span>
+    <span class="k">assert</span> <span class="nb">any</span><span class="p">(</span><span class="s2">&quot;6-26093141-G-A&quot;</span> <span class="ow">in</span> <span class="n">note</span> <span class="k">for</span> <span class="n">note</span> <span class="ow">in</span> <span class="n">payload</span><span class="p">[</span><span class="s2">&quot;build_notes&quot;</span><span class="p">])</span>
+</code></pre></div>
+<ul>
+<li>[ ] <strong>Step 2: Run it</strong></li>
+</ul>
+<p>Run: <code>uv run pytest tests/unit/mcp/test_compare_variant.py::test_compare_r2_1_uses_grch37_source_not_input_coordinate -v</code>
+Expected: PASS.</p>
+<ul>
+<li>[ ] <strong>Step 3: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>tests/unit/mcp/test_compare_variant.py
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;test(mcp): regression for compare r2_1 GRCh37 liftover coordinate&quot;</span>
+</code></pre></div>
+<h3 id="task-4-add-a-live-integration-test">Task 4: Add a live integration test</h3>
+<p><strong>Files:</strong>
+- Create/modify: a test in <code>tests/integration/</code> (follow the existing integration test pattern there)</p>
+<ul>
+<li>[ ] <strong>Step 1: Add an <code>integration</code>-marked live test</strong> asserting HFE C282Y resolves in r2_1 via compare:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">integration</span>
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">asyncio</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">test_compare_finds_hfe_c282y_in_r2_1_live</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">gnomad_link.mcp.facade</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_gnomad_mcp</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">gnomad_link.services.frequency_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">FrequencyService</span>  <span class="c1"># adjust to real factory</span>
+
+    <span class="n">mcp</span> <span class="o">=</span> <span class="n">create_gnomad_mcp</span><span class="p">()</span>  <span class="c1"># real service factory per existing integration tests</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">mcp</span><span class="o">.</span><span class="n">call_tool</span><span class="p">(</span>
+        <span class="s2">&quot;compare_variant_across_datasets&quot;</span><span class="p">,</span>
+        <span class="p">{</span><span class="s2">&quot;variant_id&quot;</span><span class="p">:</span> <span class="s2">&quot;6-26092913-G-A&quot;</span><span class="p">,</span> <span class="s2">&quot;datasets&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;gnomad_r4&quot;</span><span class="p">,</span> <span class="s2">&quot;gnomad_r2_1&quot;</span><span class="p">],</span> <span class="s2">&quot;auto_liftover&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">payload</span> <span class="o">=</span> <span class="n">_structured</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+    <span class="n">r2</span> <span class="o">=</span> <span class="n">payload</span><span class="p">[</span><span class="s2">&quot;datasets&quot;</span><span class="p">][</span><span class="s2">&quot;gnomad_r2_1&quot;</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="n">r2</span><span class="p">[</span><span class="s2">&quot;present&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">True</span>
+    <span class="k">assert</span> <span class="n">r2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;lifted_variant_id&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;6-26093141-G-A&quot;</span>
+</code></pre></div>
+<p>(Match the real construction/helpers used by existing <code>tests/integration/</code> tests; do not invent a factory.)</p>
+<ul>
+<li>[ ] <strong>Step 2: Run live (manual)</strong></li>
+</ul>
+<p>Run: <code>make test-integration</code> (or <code>uv run pytest tests/integration -k hfe_c282y -m integration -v</code>)
+Expected: PASS against live gnomAD (skip if API rate-limited).</p>
+<ul>
+<li>[ ] <strong>Step 3: <code>make ci-local</code> and commit</strong></li>
+</ul>
+<p>Run: <code>make ci-local</code>
+Expected: green (integration test excluded from default path).</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>tests/integration/
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;test(mcp): live integration for compare HFE C282Y r2_1 presence&quot;</span>
+</code></pre></div>
+<p><strong>Phase 1 acceptance:</strong> corrected fixture went red then green; new regression passes; <code>make ci-local</code> green; live integration confirms r2_1 presence.</p>
+<hr />
+<h2 id="phase-2-eval-harness-baseline-the-gate">Phase 2 — Eval harness + baseline (the gate)</h2>
+<p>Two harnesses (see spec). <strong>2a is deterministic and wired into <code>ci-local</code></strong>; 2b is optional/live. Build 2a fully; scaffold 2b.</p>
+<h3 id="task-5-deterministic-eval-harness-skeleton-testseval">Task 5: Deterministic eval harness skeleton (<code>tests/eval/</code>)</h3>
+<p><strong>Files:</strong>
+- Create: <code>tests/eval/__init__.py</code>, <code>tests/eval/fixtures.py</code>, <code>tests/eval/scenarios.py</code>, <code>tests/eval/scoring.py</code>, <code>tests/eval/test_eval_baseline.py</code></p>
+<ul>
+<li>
+<p>[ ] <strong>Step 1: <code>fixtures.py</code></strong> — recorded gnomAD responses via <code>respx</code> + canned JSON. Reuse the JSON shapes already asserted in <code>tests/unit/mcp/</code> (e.g. the <code>_freq</code> shapes, gene/SV/mito payloads). One <code>respx</code> router fixture that maps the gnomAD GraphQL endpoint to canned responses keyed by the scenario's variant/gene. No network.</p>
+</li>
+<li>
+<p>[ ] <strong>Step 2: <code>scenarios.py</code></strong> — a list of <code>Scenario</code> dataclasses, each with: <code>name</code>, an ordered list of <code>(tool_name, arguments)</code> calls, the <code>expected_tools</code> set, a <code>trajectory_mode</code> (<code>EXACT</code>/<code>IN_ORDER</code>/<code>ANY_ORDER</code>), and <code>correctness_assertions</code> (callables over the final payload). Encode the 5 scenarios from the spec:</p>
+</li>
+<li><code>carrier_frequency_hfe</code> — <code>compute_gene_carrier_frequency(gene_symbol="HFE")</code></li>
+<li><code>compare_c282y</code> — <code>compare_variant_across_datasets("6-26092913-G-A")</code>; assert r2_1 <code>present:true</code></li>
+<li><code>mito_m3243ag_evidence</code> — <code>get_mitochondrial_variant</code> + <code>get_clinvar_variant_details</code>; assert evidence fields present (NOT a pathogenicity verdict)</li>
+<li><code>g6pd_xl_carrier</code> — <code>resolve_variant_id</code> -&gt; <code>compute_carrier_frequency(inheritance="XL")</code>; assert afr female-carrier ~0.262 band</li>
+<li>
+<p><code>grin2b_lof</code> — <code>get_gene_variants(consequence="stop_gained")</code>; assert count consistent with <code>obs_lof</code></p>
+</li>
+<li>
+<p>[ ] <strong>Step 3: <code>scoring.py</code></strong> — three scorers returning 0-10 per dimension:</p>
+</li>
+<li><code>score_trajectory(actual_calls, scenario)</code> — set/order match per <code>trajectory_mode</code></li>
+<li><code>score_token_cost(payloads)</code> — measured <code>len(json.dumps(payload))</code> per call; scored against a per-scenario byte budget recorded in the baseline</li>
+<li><code>score_envelope_conformance(payload, tool)</code> — asserts the Success-envelope contract (spec): <code>_meta.unsafe_for_clinical_use is True</code>, <code>_meta.gnomad_release</code> present, <code>_meta.next_commands</code> is a non-empty list of <code>{tool, arguments}</code> with non-empty <code>arguments</code>, and <code>headline</code> present for headline tools.</li>
+<li>
+<p><code>aggregate(scores) -&gt; Scorecard</code> — per-dimension + weighted total.</p>
+</li>
+<li>
+<p>[ ] <strong>Step 4: <code>test_eval_baseline.py</code></strong> — a pytest module (deterministic, default CI) that runs every scenario through the in-process MCP (<code>create_gnomad_mcp(service_factory=...)</code> against the <code>respx</code> fixtures), scores them, writes/loads the baseline snapshot, and asserts <code>total &gt;= baseline.total</code> (no regression). On first run, write the baseline.</p>
+</li>
+<li>
+<p>[ ] <strong>Step 5: Run it</strong></p>
+</li>
+</ul>
+<p>Run: <code>uv run pytest tests/eval -v</code>
+Expected: PASS; baseline scorecard produced.</p>
+<ul>
+<li>[ ] <strong>Step 6: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>tests/eval/
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;test(eval): deterministic MCP eval harness (trajectory/token/conformance)&quot;</span>
+</code></pre></div>
+<h3 id="task-6-wire-eval-ci-into-ci-local-scaffold-eval-live-commit-baseline">Task 6: Wire <code>eval-ci</code> into <code>ci-local</code>; scaffold <code>eval-live</code>; commit baseline</h3>
+<p><strong>Files:</strong>
+- Modify: <code>Makefile</code> (add <code>eval-ci</code>, <code>eval-live</code>; add <code>eval-ci</code> to <code>ci-local</code>)
+- Create: <code>docs/superpowers/eval-baseline-2026-05-31.md</code></p>
+<ul>
+<li>[ ] <strong>Step 1: Add Make targets</strong> (mirror existing <code>test-*</code> style):</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nf">eval-ci</span><span class="o">:</span><span class="w"> </span><span class="c">## Run deterministic MCP eval harness (no network)</span>
+<span class="w">    </span>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/eval<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;not integration&quot;</span><span class="w"> </span>-q
+
+<span class="nf">eval-live</span><span class="o">:</span><span class="w"> </span><span class="c">## Run agentic/live eval against real gnomAD (manual)</span>
+<span class="w">    </span>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/eval<span class="w"> </span>-m<span class="w"> </span>integration<span class="w"> </span>-q
+</code></pre></div>
+<ul>
+<li>[ ] <strong>Step 2: Add <code>eval-ci</code> to <code>ci-local</code></strong> — change the <code>ci-local</code> recipe line to:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nf">ci-local</span><span class="o">:</span><span class="w"> </span><span class="n">format</span>-<span class="n">check</span> <span class="n">lint</span>-<span class="n">ci</span> <span class="n">lint</span>-<span class="n">loc</span> <span class="n">typecheck</span>-<span class="n">fast</span> <span class="n">test</span>-<span class="n">fast</span> <span class="n">eval</span>-<span class="n">ci</span> <span class="c">## Run fast local CI-equivalent checks</span>
+</code></pre></div>
+<ul>
+<li>
+<p>[ ] <strong>Step 3: Write the baseline scorecard</strong> to <code>docs/superpowers/eval-baseline-2026-05-31.md</code> (per-dimension + total from Task 5's run; map the 8 reviewer dimensions to the captured numbers).</p>
+</li>
+<li>
+<p>[ ] <strong>Step 4: Verify</strong></p>
+</li>
+</ul>
+<p>Run: <code>make ci-local</code>
+Expected: green, including <code>eval-ci</code>.</p>
+<ul>
+<li>[ ] <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>Makefile<span class="w"> </span>docs/superpowers/eval-baseline-2026-05-31.md
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;build(eval): wire eval-ci into ci-local; commit baseline scorecard&quot;</span>
+</code></pre></div>
+<ul>
+<li>[ ] <strong>Step 6 (optional, 2b scaffold):</strong> add a <code>tests/eval/test_eval_agentic.py</code> marked <code>@pytest.mark.integration</code> that runs a real-model loop and scores final-answer quality (LLM-as-judge). Opt-in only; skipped without model credentials. Commit separately.</li>
+</ul>
+<p><strong>Phase 2 acceptance:</strong> <code>make eval-ci</code> runs deterministically inside <code>ci-local</code>; baseline committed; <code>eval-live</code> target exists.</p>
+<hr />
+<h2 id="phase-3-contract-consistency-finish-g5">Phase 3 — Contract consistency (finish G5)</h2>
+<p>Make <code>_meta.next_commands</code> structured-and-present on every success, and error fallbacks executable.</p>
+<h3 id="task-7-shared-next_commands-builders">Task 7: Shared <code>next_commands</code> builders</h3>
+<p><strong>Files:</strong>
+- Create: <code>gnomad_link/mcp/next_commands.py</code></p>
+<ul>
+<li>[ ] <strong>Step 1:</strong> Add typed builders so every tool emits the same shape, e.g.:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">cmd</span><span class="p">(</span><span class="n">tool</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">arguments</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;One next_commands entry. Arguments must be directly callable (never empty).&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;tool&quot;</span><span class="p">:</span> <span class="n">tool</span><span class="p">,</span> <span class="s2">&quot;arguments&quot;</span><span class="p">:</span> <span class="n">arguments</span><span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">for_variant</span><span class="p">(</span><span class="n">variant_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="n">cmd</span><span class="p">(</span><span class="s2">&quot;get_variant_frequencies&quot;</span><span class="p">,</span> <span class="n">variant_id</span><span class="o">=</span><span class="n">variant_id</span><span class="p">,</span> <span class="n">dataset</span><span class="o">=</span><span class="n">dataset</span><span class="p">),</span>
+        <span class="n">cmd</span><span class="p">(</span><span class="s2">&quot;get_clinvar_variant_details&quot;</span><span class="p">,</span> <span class="n">variant_id</span><span class="o">=</span><span class="n">variant_id</span><span class="p">),</span>
+    <span class="p">]</span>
+</code></pre></div>
+<ul>
+<li>[ ] <strong>Step 2:</strong> Unit test <code>tests/unit/mcp/test_next_commands.py</code> asserting each builder returns non-empty <code>arguments</code>. Run, then commit.</li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>gnomad_link/mcp/next_commands.py<span class="w"> </span>tests/unit/mcp/test_next_commands.py
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(mcp): shared next_commands builders&quot;</span>
+</code></pre></div>
+<h3 id="task-8-convert-resolve_variant_id-search_variants-to-structured-next_commands">Task 8: Convert <code>resolve_variant_id</code> / <code>search_variants</code> to structured next_commands</h3>
+<p><strong>Files:</strong>
+- Modify: <code>gnomad_link/mcp/tools/search.py:255-268</code> and <code>:337-344</code></p>
+<ul>
+<li>
+<p>[ ] <strong>Step 1: Write the failing test</strong> in <code>tests/unit/mcp/</code> asserting <code>resolve_variant_id</code> success payload has <code>_meta.next_commands[0] == {"tool": "get_variant_frequencies", "arguments": {"variant_id": &lt;top hit&gt;, "dataset": &lt;dataset&gt;}}</code> and still carries <code>next_steps</code> (deprecated). Run; expect FAIL.</p>
+</li>
+<li>
+<p>[ ] <strong>Step 2: Implement</strong> — in <code>resolve_variant_id.call()</code> (<code>:255-262</code>), keep <code>next_steps</code> and add <code>_meta.next_commands</code> built from <code>results[0]["variant_id"]</code> when results exist:</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>            <span class="n">payload</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;results&quot;</span><span class="p">:</span> <span class="n">results</span><span class="p">,</span>
+                <span class="s2">&quot;returned&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">),</span>
+                <span class="s2">&quot;next_steps&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="s2">&quot;Pick one variant_id and call get_variant_frequencies(variant_id, dataset).&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;Or call get_variant_details(variant_id, dataset) for annotations.&quot;</span><span class="p">,</span>
+                <span class="p">],</span>
+            <span class="p">}</span>
+            <span class="n">meta</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">if</span> <span class="n">results</span><span class="p">:</span>
+                <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;next_commands&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">for_variant</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;variant_id&quot;</span><span class="p">],</span> <span class="n">dataset</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">enrichment_failures</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;enrichment_partial&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;enrichment_failures&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">enrichment_failures</span>
+            <span class="k">if</span> <span class="n">meta</span><span class="p">:</span>
+                <span class="n">payload</span><span class="p">[</span><span class="s2">&quot;_meta&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">meta</span>
+            <span class="k">return</span> <span class="n">payload</span>
+</code></pre></div>
+<p>Apply the same to <code>search_variants.call()</code> (<code>:337-344</code>), merging into its existing <code>_meta</code> dict. Add <code>from gnomad_link.mcp.next_commands import for_variant</code> import.</p>
+<ul>
+<li>[ ] <strong>Step 3:</strong> Run the test; expect PASS. Commit.</li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>gnomad_link/mcp/tools/search.py<span class="w"> </span>tests/unit/mcp/
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(mcp): structured next_commands on resolve_variant_id/search_variants&quot;</span>
+</code></pre></div>
+<h3 id="task-9-add-next_commands-to-variant_details-structural_variant-gene_variants-unconditional-for-mitotranscript">Task 9: Add next_commands to variant_details / structural_variant / gene_variants; unconditional for mito/transcript</h3>
+<p><strong>Files:</strong>
+- Modify: <code>gnomad_link/mcp/tools/variants.py</code> (<code>get_variant_details</code>), <code>gnomad_link/mcp/tools/specialty.py</code> (<code>get_structural_variant</code>, <code>get_mitochondrial_variant</code>, <code>get_transcript_details</code>), <code>gnomad_link/mcp/tools/genes.py</code> (<code>get_gene_variants</code>)</p>
+<ul>
+<li>
+<p>[ ] <strong>Step 1:</strong> Write per-tool tests asserting each success payload carries a non-empty <code>_meta.next_commands</code>. Run; expect FAIL for the tools currently omitting it.</p>
+</li>
+<li>
+<p>[ ] <strong>Step 2:</strong> Add <code>_meta.next_commands</code> to each:</p>
+</li>
+<li><code>get_variant_details</code> -&gt; <code>for_variant(variant_id, dataset)</code></li>
+<li><code>get_structural_variant</code> -&gt; <code>[cmd("search_structural_variants", gene_symbol=&lt;mate gene or input&gt;), cmd("get_region", region=&lt;sv region&gt;)]</code></li>
+<li><code>get_gene_variants</code> -&gt; <code>[cmd("get_gene_details", gene_symbol=symbol), cmd("get_clinvar_variant_details", variant_id=&lt;first hit&gt;)]</code></li>
+<li>
+<p><code>get_mitochondrial_variant</code> / <code>get_transcript_details</code> -&gt; make the existing conditional emission unconditional (provide a default chain to <code>get_server_capabilities</code>/<code>get_gene_details</code> when gene context is absent).</p>
+</li>
+<li>
+<p>[ ] <strong>Step 3:</strong> Run tests; expect PASS. Commit.</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>gnomad_link/mcp/tools/variants.py<span class="w"> </span>gnomad_link/mcp/tools/specialty.py<span class="w"> </span>gnomad_link/mcp/tools/genes.py<span class="w"> </span>tests/unit/mcp/
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(mcp): universal next_commands on detail/SV/gene-variants/mito/transcript&quot;</span>
+</code></pre></div>
+<h3 id="task-10-executable-error-fallback-args">Task 10: Executable error fallback args</h3>
+<p><strong>Files:</strong>
+- Modify: <code>gnomad_link/mcp/errors.py:54-63</code> (<code>McpErrorContext</code>), <code>:146-147</code> (<code>_fallback_for</code>); <code>gnomad_link/mcp/tools/search.py:273,349</code></p>
+<ul>
+<li>
+<p>[ ] <strong>Step 1: Write the failing test</strong> asserting a <code>resolve_variant_id</code> not_found/invalid_input envelope has <code>_meta.next_commands[0] == {"tool": "search_genes", "arguments": {"query": &lt;original query&gt;}}</code> (not <code>{}</code>). Run; expect FAIL.</p>
+</li>
+<li>
+<p>[ ] <strong>Step 2: Implement</strong> — add <code>query: str | None = None</code> to <code>McpErrorContext</code>:</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">McpErrorContext</span><span class="p">:</span>
+    <span class="n">tool_name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">variant_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">gene_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">gene_symbol</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">region</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">dataset</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">query</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">extra</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+</code></pre></div>
+<p>Change <code>_fallback_for</code> (<code>:146-147</code>):</p>
+<div class="highlight"><pre><span></span><code>    <span class="k">if</span> <span class="n">context</span><span class="o">.</span><span class="n">tool_name</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;resolve_variant_id&quot;</span><span class="p">,</span> <span class="s2">&quot;search_variants&quot;</span><span class="p">}:</span>
+        <span class="k">return</span> <span class="s2">&quot;search_genes&quot;</span><span class="p">,</span> <span class="p">({</span><span class="s2">&quot;query&quot;</span><span class="p">:</span> <span class="n">context</span><span class="o">.</span><span class="n">query</span><span class="p">}</span> <span class="k">if</span> <span class="n">context</span><span class="o">.</span><span class="n">query</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+<p>Populate the context at the two call sites (<code>search.py:273</code> and <code>:349</code>):</p>
+<p><div class="highlight"><pre><span></span><code>        <span class="n">context</span><span class="o">=</span><span class="n">McpErrorContext</span><span class="p">(</span><span class="n">tool_name</span><span class="o">=</span><span class="s2">&quot;resolve_variant_id&quot;</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">),</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>        <span class="n">context</span><span class="o">=</span><span class="n">McpErrorContext</span><span class="p">(</span><span class="n">tool_name</span><span class="o">=</span><span class="s2">&quot;search_variants&quot;</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">),</span>
+</code></pre></div></p>
+<ul>
+<li>[ ] <strong>Step 3:</strong> Run the test; expect PASS. Commit.</li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>gnomad_link/mcp/errors.py<span class="w"> </span>gnomad_link/mcp/tools/search.py<span class="w"> </span>tests/unit/mcp/
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;fix(mcp): populate executable query in resolve/search error fallback&quot;</span>
+</code></pre></div>
+<h3 id="task-11-update-capabilities-contract-text-re-score">Task 11: Update capabilities contract text + re-score</h3>
+<p><strong>Files:</strong>
+- Modify: <code>gnomad_link/mcp/resources.py:226-230</code></p>
+<ul>
+<li>[ ] <strong>Step 1:</strong> Update the <code>next_commands</code> contract description so it truthfully states it is present (structured) on success and error envelopes for all tools.</li>
+<li>[ ] <strong>Step 2:</strong> Run <code>make eval-ci</code>; confirm the envelope-conformance dimension is 100% and total &gt;= baseline. Update the baseline doc if improved.</li>
+<li>[ ] <strong>Step 3: <code>make ci-local</code> + commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>gnomad_link/mcp/resources.py<span class="w"> </span>docs/superpowers/eval-baseline-2026-05-31.md
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;docs(mcp): capabilities reflects universal next_commands contract&quot;</span>
+</code></pre></div>
+<p><strong>Phase 3 acceptance:</strong> envelope-conformance = 100% in <code>eval-ci</code>; <code>make ci-local</code> green.</p>
+<hr />
+<h2 id="phase-4-token-efficiency">Phase 4 — Token efficiency</h2>
+<h3 id="task-12-response_modeminimal-per-tool-4a">Task 12: <code>response_mode='minimal'</code> per-tool (4a)</h3>
+<p><strong>Files:</strong>
+- Create: <code>gnomad_link/mcp/minimal_shaping.py</code>
+- Modify: <code>gnomad_link/mcp/tools/{variants,genes,gene_summary,carrier,gene_carrier,comparison}.py</code></p>
+<ul>
+<li>
+<p>[ ] <strong>Step 1:</strong> In <code>minimal_shaping.py</code>, add one projection per tool reading that tool's headline-source fields (see the spec's Phase-4 table for exact field lists). Each returns <code>{headline, &lt;global block&gt;, _meta}</code> and a <code>truncated</code> block with <code>to_restore: "response_mode='compact'"</code>. Keep the full <code>_meta</code> (provenance + next_commands) and the research-use flag — minimal must not drop groundability.</p>
+</li>
+<li>
+<p>[ ] <strong>Step 2:</strong> For <code>get_variant_frequencies</code> (<code>variants.py:48</code>), <strong>add</strong> a <code>response_mode</code> param <code>Literal["compact", "full", "minimal"]</code> defaulting to <code>"compact"</code> (current behavior). For the other five tools, <strong>extend</strong> the existing <code>Literal["compact", "full"]</code> to include <code>"minimal"</code>. Route <code>response_mode == "minimal"</code> through the new projection.</p>
+</li>
+<li>
+<p>[ ] <strong>Step 3:</strong> Per-tool tests asserting <code>minimal</code> returns only the headline + global block + <code>_meta</code> (no per-pop/contributing arrays) and that <code>compact</code>/<code>full</code> are byte-for-byte unchanged. Run; expect PASS.</p>
+</li>
+<li>
+<p>[ ] <strong>Step 4: <code>make eval-ci</code></strong> — confirm the token-cost dimension drops for the top-line scenarios; update baseline. Commit.</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>gnomad_link/mcp/minimal_shaping.py<span class="w"> </span>gnomad_link/mcp/tools/<span class="w"> </span>tests/unit/mcp/<span class="w"> </span>docs/superpowers/eval-baseline-2026-05-31.md
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(mcp): response_mode=&#39;minimal&#39; for headline tools&quot;</span>
+</code></pre></div>
+<h3 id="task-13-svmito-compact-trimming-domain-specific-4b">Task 13: SV/mito compact trimming — domain-specific (4b)</h3>
+<p><strong>Files:</strong>
+- Modify: <code>gnomad_link/mcp/sv_shaping.py</code> (<code>shape_structural_variant</code>), <code>gnomad_link/mcp/heteroplasmy.py</code> (<code>shape_mitochondrial_variant</code>)</p>
+<ul>
+<li>
+<p>[ ] <strong>Step 1: Write failing tests.</strong> SV: under <code>compact</code>, populations with <code>ac == 0</code> and <code>_XX</code>/<code>_XY</code> rows are dropped while <code>homozygote_count</code>/<code>hemizygote_count</code> survive on kept rows. Mito: rows with <code>ac_het == 0 and ac_hom == 0</code> and <code>_XX</code>/<code>_XY</code> and all-zero haplogroup rows are dropped. Both emit a <code>truncated</code> block. Run; expect FAIL.</p>
+</li>
+<li>
+<p>[ ] <strong>Step 2: Implement separate projections</strong> (do NOT call SNV <code>filter_populations</code>, which keys on <code>ac</code>):</p>
+</li>
+<li>SV: filter <code>populations</code> on <code>(p.get("ac") or 0) &gt; 0</code> and <code>not is_sex_split(p["id"])</code>; preserve all other fields.</li>
+<li>Mito: filter on <code>(p.get("ac_het") or 0) &gt; 0 or (p.get("ac_hom") or 0) &gt; 0</code>, drop sex-split and all-zero haplogroup rows. Reuse <code>population_shaping.is_sex_split</code> for the sex-split test only.</li>
+<li>
+<p>Emit <code>truncated</code> blocks; correct the <code>token_cost_hints</code> for both tools.</p>
+</li>
+<li>
+<p>[ ] <strong>Step 3:</strong> Run tests; expect PASS. <code>make eval-ci</code>; commit.</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>gnomad_link/mcp/sv_shaping.py<span class="w"> </span>gnomad_link/mcp/heteroplasmy.py<span class="w"> </span>tests/unit/mcp/
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;perf(mcp): trim zero-AC/sex-split rows in SV and mito compact mode&quot;</span>
+</code></pre></div>
+<p><strong>Phase 4 acceptance:</strong> <code>minimal</code> shapes verified; SV/mito trimming verified (incl. mito <code>ac_het</code>/<code>ac_hom</code> rule); measured token reduction in <code>eval-ci</code>.</p>
+<hr />
+<h2 id="phase-5-docs-gemini-interop-polish">Phase 5 — Docs + Gemini interop (polish)</h2>
+<h3 id="task-14-doc-string-and-capabilities-corrections">Task 14: Doc-string and capabilities corrections</h3>
+<p><strong>Files:</strong>
+- Modify: <code>gnomad_link/mcp/tools/metadata.py:40</code>, <code>gnomad_link/mcp/resources.py</code> (concurrency note)</p>
+<ul>
+<li>[ ] <strong>Step 1:</strong> <code>metadata.py:40</code> — change <code>"Returns &lt;2kB."</code> to <code>"Returns ~7kB."</code> (match <code>resources.py:105</code>).</li>
+<li>[ ] <strong>Step 2:</strong> In <code>resources.py</code>, extend the concurrency note: <code>compare_variant_across_datasets</code> issues ~4 <em>sequential</em> upstream calls per invocation (one per dataset + the r2_1 liftover), so N concurrent <code>compare</code> calls consume N slots continuously.</li>
+<li>[ ] <strong>Step 3:</strong> If a unit test asserts the <code>metadata</code> description text, update it. Run <code>make test-fast</code>; commit.</li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>gnomad_link/mcp/tools/metadata.py<span class="w"> </span>gnomad_link/mcp/resources.py<span class="w"> </span>tests/
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;docs(mcp): fix capabilities size hint and compare concurrency note&quot;</span>
+</code></pre></div>
+<h3 id="task-15-readme-mcp-connection-guide-tool-count-gemini-interop">Task 15: README + MCP connection guide (tool count, Gemini interop)</h3>
+<p><strong>Files:</strong>
+- Modify: <code>README.md:20</code> and the "Available MCP Tools" table at <code>:139</code>; the MCP connection guide under <code>docs/</code></p>
+<ul>
+<li>[ ] <strong>Step 1:</strong> Update <code>README.md:20</code> <code>"15 MCP Tools"</code> -&gt; the current count (22) and refresh the <code>:139</code> tool table to the full inventory.</li>
+<li>[ ] <strong>Step 2:</strong> In the MCP connection guide, add a Gemini hosted-MCP section: a <code>name: "gnomad_link"</code> (snake_case) example (the server name is client-supplied; dashes are rejected by Gemini), a note that the server serves Streamable HTTP, and an <code>allowed_tools</code> example selecting a focused sub-set (&lt;=10-20) for Gemini agents. Document the tool categories and that deferred-loading/tool-search mitigates the 22-vs-10-20 gap.</li>
+<li>[ ] <strong>Step 3:</strong> <code>make ci-local</code>; commit.</li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>README.md<span class="w"> </span>docs/
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;docs: refresh tool count to 22; add Gemini hosted-MCP connection guidance&quot;</span>
+</code></pre></div>
+<h3 id="task-16-final-scorecard-milestone-check">Task 16: Final scorecard + milestone check</h3>
+<ul>
+<li>[ ] <strong>Step 1:</strong> Run <code>make eval-ci</code>; capture the final scorecard.</li>
+<li>[ ] <strong>Step 2:</strong> Confirm the "9.5" bar (spec): compare-bug correctness = pass; envelope-conformance = 100%; measured token reduction; zero regressions; total &gt;= 9.4.</li>
+<li>[ ] <strong>Step 3:</strong> Update <code>docs/superpowers/eval-baseline-2026-05-31.md</code> with the before/after totals. <code>make ci-local</code> green. Commit.</li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>docs/superpowers/eval-baseline-2026-05-31.md
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;docs(eval): final 9.5 scorecard (before/after)&quot;</span>
+</code></pre></div>
+<p><strong>Phase 5 acceptance:</strong> docs accurate; final scorecard &gt;= 9.4; <code>make ci-local</code> green.</p>
+<hr />
+<h2 id="self-review">Self-Review</h2>
+<ul>
+<li><strong>Spec coverage:</strong> P1 covers finding #1 (Tasks 1-4). P2 builds the harness (Tasks 5-6). P3 covers findings #3+#4 (Tasks 7-11). P4 covers finding #5 + minimal mode (Tasks 12-13). P5 covers findings #2+#6 + README #9 + Gemini interop (Tasks 14-16). All spec sections mapped.</li>
+<li><strong>No placeholders:</strong> exact files, line numbers, code, and commands throughout; field lists for minimal projections reference the spec's Phase-4 table (defined, not "TBD").</li>
+<li><strong>Type consistency:</strong> <code>select_build_variant_id(record, target_build)</code> used identically in Tasks 1-2; <code>cmd(...)</code>/<code>for_variant(...)</code> from <code>next_commands.py</code> used in Tasks 7-9; <code>McpErrorContext.query</code> added in Task 10 and consumed in <code>_fallback_for</code>.</li>
+<li><strong>Open execution-time reads:</strong> the harness fixtures (Task 5) and minimal projections (Task 12) require reading the corresponding shaping modules for exact field plumbing — the spec's Phase-4 table and the Success-envelope contract fix the contract so no invention is needed.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.sections", "content.code.copy", "search.suggest"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

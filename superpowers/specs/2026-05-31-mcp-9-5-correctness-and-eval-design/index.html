@@ -1,0 +1,1156 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="MCP server bridging the gnomAD database to AI applications.">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>gnomAD Link MCP -> 9.5/10: Correctness, Contract Consistency, and an Eval Harness — Design - gnomAD-Link</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#gnomad-link-mcp-9510-correctness-contract-consistency-and-an-eval-harness-design" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="gnomAD-Link" class="md-header__button md-logo" aria-label="gnomAD-Link" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            gnomAD-Link
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              gnomAD Link MCP -&gt; 9.5/10: Correctness, Contract Consistency, and an Eval Harness — Design
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/berntpopp/gnomad-link" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="gnomAD-Link" class="md-nav__button md-logo" aria-label="gnomAD-Link" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    gnomAD-Link
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/berntpopp/gnomad-link" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data & provenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../MCP_CONNECTION_GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP connection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#motivation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Motivation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Motivation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lineage-what-is-new-vs-residual" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lineage (what is new vs residual)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#findings-independently-re-verified-against-source-2026-05-31" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Findings — independently re-verified against source (2026-05-31)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#research-grounding-anthropic-google" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Research grounding (Anthropic + Google)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design-principles-invariants-carried-from-g1-g10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design principles / invariants (carried from G1-G10)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-1-fix-the-high-correctness-bug-ship-first" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1 — Fix the HIGH correctness bug (ship first)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#success-envelope-contract-referenced-by-phases-2-4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Success-envelope contract (referenced by Phases 2-4)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-2-eval-harness-baseline-scorecard-the-gate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2 — Eval harness + baseline scorecard (the gate)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 2 — Eval harness + baseline scorecard (the gate)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#2a-deterministic-ci-eval-the-gate-wired-into-ci-local" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2a. Deterministic CI eval (the gate; wired into ci-local)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2b-agentic-eval-optional-manual-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2b. Agentic eval (optional; manual / integration)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-3-contract-consistency-finish-g5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3 — Contract consistency (finish G5)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-4-token-efficiency-measured-against-phase-2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4 — Token efficiency (measured against Phase 2)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 4 — Token efficiency (measured against Phase 2)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#4a-response_modeminimal-per-tool-not-generic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4a. response_mode='minimal' — per-tool, not generic
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4b-svmito-compact-trimming-domain-specific-helpers-do-not-reuse-snv-filter_populations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4b. SV/mito compact trimming — domain-specific helpers (do NOT reuse SNV filter_populations)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-5-docs-gemini-interop-polish" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 5 — Docs + Gemini interop (polish)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#definition-of-95-measured-not-asserted" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Definition of "9.5" (measured, not asserted)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#risks-open-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Risks / open questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="gnomad-link-mcp-9510-correctness-contract-consistency-and-an-eval-harness-design">gnomAD Link MCP -&gt; 9.5/10: Correctness, Contract Consistency, and an Eval Harness — Design</h1>
+<blockquote>
+<p>Historical record</p>
+</blockquote>
+<p>Status: draft
+Date: 2026-05-31
+Owner: gnomAD Link MCP</p>
+<h2 id="motivation">Motivation</h2>
+<p>Two fresh LLM-consumer reviews scored the server after the <code>F1-F6</code> and <code>G1-G10</code>
+quality pushes had already landed:</p>
+<ul>
+<li>A consuming LLM rated it <strong>~8.9/10</strong> (response design 10, self-doc 10,
+  discoverability 9; dinged token efficiency 8 for compact-but-not-minimal
+  payloads and deferred-schema round-trips).</li>
+<li>A senior-tester pass over all 22 tools scored <strong>~8.1/10</strong> and surfaced one
+  <strong>HIGH correctness bug</strong> plus five consistency/efficiency/doc nits.</li>
+</ul>
+<p>This spec takes the server from "very good" to a measured <strong>&gt;=9.4/10</strong> by (1)
+fixing the one real correctness defect, (2) standing up the eval harness that
+prior pushes never built so further gains are <em>measured not asserted</em>, and (3)
+closing the residual contract-consistency and token-efficiency gaps that survive
+from earlier rounds.</p>
+<h3 id="lineage-what-is-new-vs-residual">Lineage (what is new vs residual)</h3>
+<ul>
+<li><strong>HIGH bug is NEW, and is a direct miss from <code>F1</code>.</strong> <code>F1</code> (commit bb86db9)
+  fixed GRCh38&lt;-&gt;GRCh37 direction handling in the <strong>standalone</strong> <code>liftover_variant</code>
+  (<code>coordinates.py:75-79</code>, resolve-by-<code>reference_genome</code>). It did <strong>not</strong> update
+  the <strong>second, hand-rolled copy</strong> inside <code>compare_variant_across_datasets</code>
+  (<code>comparison.py:71</code>), which still hardcodes the wrong field. Phase 1 removes the
+  duplication so the two paths cannot diverge again.</li>
+<li><strong>Contract-consistency work is RESIDUAL after <code>G5</code>.</strong> <code>G5</code> added
+  <code>_meta.next_commands</code> to several success paths (search_genes, liftover,
+  get_region, specialty) but left <code>resolve_variant_id</code>/<code>search_variants</code> on a
+  prose <code>next_steps</code> array and never added it to <code>get_variant_details</code>/
+  <code>get_structural_variant</code>/<code>get_gene_variants</code>. Phase 3 finishes G5.</li>
+<li><strong>Eval harness is NET-NEW.</strong> No prior plan (<code>F1-F6</code>, <code>G1-G10</code>, reliability,
+  ergonomics) built an agentic tool-eval harness. This is the highest-leverage
+  <em>process</em> gap and the gate for Phases 3-5.</li>
+<li><strong><code>minimal</code> mode is NET-NEW</strong> and additive on top of <code>G7</code>'s existing
+  <code>compare</code> <code>compact</code> mode.</li>
+</ul>
+<h2 id="findings-independently-re-verified-against-source-2026-05-31">Findings — independently re-verified against source (2026-05-31)</h2>
+<p>White-box confirmation (not just trusting the tester transcript); two of the
+tester's findings were corrected:</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Sev</th>
+<th>Verdict</th>
+<th>Source-of-truth</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>HIGH</td>
+<td><strong>CONFIRMED + root-caused</strong></td>
+<td><code>comparison.py:71</code> reads <code>item["liftover"].variant_id</code> (always GRCh38) instead of resolving by build like <code>coordinates.py:75-79</code>. For the r2_1 (GRCh37) leg this echoes the GRCh38 input -&gt; r2_1 queried with a GRCh38 coord -&gt; 404 -&gt; false <code>present:false</code>. <strong>The existing test masks it</strong>: <code>tests/unit/mcp/test_compare_variant.py</code> stubs the liftover record with <code>source</code>/<code>liftover</code> inverted vs the real API and vs <code>LiftoverResult</code> (<code>liftover_models.py</code>).</td>
+</tr>
+<tr>
+<td>2</td>
+<td>MED</td>
+<td><strong>CORRECTED -&gt; doc-only</strong></td>
+<td><code>compare</code> does <strong>not</strong> fan out concurrently: the dataset loop is sequential (<code>comparison.py:139-173</code>) and one <code>variant</code> query returns exome+genome together. The <code>rate_limited</code> came from N concurrent <code>compare</code> calls each making ~4 <em>sequential</em> upstream calls, saturating the 5-slot semaphore (<code>base_client.py:118-119</code>, <code>config.py:42</code>). Fix is a capabilities note, not code.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>MED</td>
+<td><strong>CONFIRMED (nuance)</strong></td>
+<td><code>resolve_variant_id</code>/<code>search_variants</code> emit prose <code>next_steps</code> (<code>search.py:258-262</code>, <code>:340-342</code>); <code>get_variant_details</code> (<code>variants.py:216-224</code>), <code>get_structural_variant</code> (<code>specialty.py:83</code>), <code>get_gene_variants</code> (<code>genes.py:187</code>) omit <code>next_commands</code> on success; <code>get_mitochondrial_variant</code>/<code>get_transcript_details</code> emit it only conditionally (<code>specialty.py:139-143</code>, <code>:199-203</code>).</td>
+</tr>
+<tr>
+<td>4</td>
+<td>LOW</td>
+<td><strong>CONFIRMED</strong></td>
+<td><code>errors.py:146-147</code> returns <code>("search_genes", None)</code> -&gt; <code>mcp_tool_error</code> renders <code>arguments: {}</code> (<code>:402-403</code>); <code>search_genes</code> requires <code>query</code>, so the fallback is not directly executable.</td>
+</tr>
+<tr>
+<td>5</td>
+<td>LOW</td>
+<td><strong>CONFIRMED (nuance)</strong></td>
+<td>SV (<code>sv_shaping.py:22-52</code>) and mito (<code>heteroplasmy.py:66-99</code>) <em>do</em> trim their histograms, but neither trims zero-AC or <code>_XX</code>/<code>_XY</code> sex-split population rows (no call into <code>population_shaping.filter_populations</code>). <strong>Mito rows have no plain <code>ac</code> (only <code>ac_het</code>/<code>ac_hom</code>, <code>mitochondrial_models.py:12-14</code>)</strong>, so SNV trimming cannot be reused as-is (Phase 4b). SV <code>rmi</code> is an upstream-native code, not a remap bug — there is no SV population-normalization layer.</td>
+</tr>
+<tr>
+<td>6</td>
+<td>LOW</td>
+<td><strong>CONFIRMED</strong></td>
+<td><code>metadata.py:40</code> docstring says "Returns &lt;2kB"; the payload's own <code>token_cost_hints</code> says "~7kB" (<code>resources.py:105</code>). The <code>~7kB</code> figure is accurate.</td>
+</tr>
+</tbody>
+</table>
+<p>Already-handled (no action): <code>READ_ONLY_OPEN_WORLD</code> tool annotations are set
+(e.g. <code>comparison.py:85</code>), satisfying the Anthropic/MCP <code>readOnlyHint</code>/
+<code>openWorldHint</code> guidance.</p>
+<h2 id="research-grounding-anthropic-google">Research grounding (Anthropic + Google)</h2>
+<p>Distilled from official sources (URLs below). The dimensions both vendors
+converge on, and how this spec maps to them:</p>
+<ul>
+<li><strong>Anthropic — "Writing effective tools for agents"</strong>: return only high-signal
+  fields; consolidate multi-step ops; <em>evaluate tools with realistic multi-call
+  tasks and iterate</em> (the explicit "prototype -&gt; evaluate -&gt; collaborate" loop).
+  -&gt; Phases 2 (eval harness), 4 (minimal mode).</li>
+<li><strong>Anthropic — "Define tools" / context engineering</strong>: contract consistency;
+  errors must be actionable and steer recovery (retry vs reformulate). -&gt; Phases 3.</li>
+<li><strong>MCP spec (2025-11-25)</strong>: tool-execution errors carry self-correctable
+  feedback; provide <code>outputSchema</code> and conform; honest annotations. -&gt; Phase 3.</li>
+<li><strong>Google — Gemini function-calling best practices</strong>: keep the active tool set
+  to <strong>10-20</strong>; specific high-level tools beat generic ones; structured error
+  dicts with a human-readable message. <strong>Hosted-MCP naming forbids <code>-</code>; use
+  <code>snake_case</code> server names.</strong> Streamable HTTP only (not SSE). -&gt; Phase 5.</li>
+<li><strong>Google — ADK evaluation</strong>: score both <strong>trajectory</strong> (which tools, what
+  order: EXACT/IN_ORDER/ANY_ORDER) and <strong>final-response quality</strong>; probabilistic,
+  not deterministic pass/fail. -&gt; Phase 2 harness design.</li>
+</ul>
+<p>Sources (verified 2026-05-31):</p>
+<ul>
+<li>https://www.anthropic.com/engineering/writing-tools-for-agents</li>
+<li>https://www.anthropic.com/engineering/code-execution-with-mcp</li>
+<li>https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents</li>
+<li>https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools</li>
+<li>https://modelcontextprotocol.io/specification/2025-11-25/server/tools</li>
+<li>https://ai.google.dev/gemini-api/docs/function-calling</li>
+<li>https://ai.google.dev/gemini-api/docs/interactions (remote MCP: Streamable HTTP only; snake_case server names)</li>
+<li>https://google.github.io/adk-docs/evaluate/criteria/</li>
+</ul>
+<h2 id="design-principles-invariants-carried-from-g1-g10">Design principles / invariants (carried from G1-G10)</h2>
+<ul>
+<li><strong>Additive only.</strong> New enum values, new <code>_meta</code> keys; never break a tool name
+  or remove a response field. Deprecated fields (<code>next_steps</code>, <code>reference_genome</code>)
+  remain one release with a deprecation note.</li>
+<li><strong>&lt;=600 LOC per module.</strong> New logic lands in new small modules; <code>shaping.py</code>
+  (563) and <code>errors.py</code> (515) are near the cap and must not grow past it.</li>
+<li><strong>No live gnomAD calls in default CI.</strong> Deterministic fixtures by default;
+  live paths are <code>integration</code>-marked.</li>
+<li><strong>No new runtime dependencies; research-use scope only; no destructive tools.</strong></li>
+<li><strong><code>make ci-local</code> green at every phase boundary.</strong></li>
+</ul>
+<h2 id="phase-1-fix-the-high-correctness-bug-ship-first">Phase 1 — Fix the HIGH correctness bug (ship first)</h2>
+<p><strong>Goal:</strong> <code>compare_variant_across_datasets</code> reports the truth for the GRCh37
+<code>gnomad_r2_1</code> leg.</p>
+<p>Changes:</p>
+<ol>
+<li><strong>Extract one shared liftover-field resolver.</strong> New tiny pure helper exported
+   from <code>gnomad_link/mcp/tools/coordinates.py</code> (246 LOC, ample headroom):
+   <code>resolve_target_variant_id(records, target_build) -&gt; str | None</code> that iterates
+   <code>("source", "liftover")</code> and returns the entry whose <code>reference_genome ==
+   target_build</code>. This is the <em>existing correct logic</em> from <code>coordinates.py:75-79</code>,
+   lifted to one place and imported by <code>comparison.py</code>.</li>
+<li><strong><code>coordinates.py</code></strong> standalone path calls the helper (behavior identical;
+   guarded by existing liftover tests).</li>
+<li><strong><code>comparison.py:_resolve_r2_1_id</code></strong> calls the helper with
+   <code>target_build="GRCh37"</code>, replacing the hardcoded <code>item["liftover"]</code> read.</li>
+<li><strong>Correct the masking fixtures</strong> in <code>tests/unit/mcp/test_compare_variant.py</code>
+   so <code>source</code>=GRCh37 / <code>liftover</code>=GRCh38 matches <code>LiftoverResult</code> and the real
+   API. Cross-check <code>test_liftover_build_note.py</code> (already uses correct
+   semantics).</li>
+</ol>
+<p>Tests:</p>
+<ul>
+<li><strong>Regression (deterministic, must fail before / pass after):</strong> stub liftover
+  with <em>correct</em> ordering; assert the r2_1 leg is <code>present:true</code> with the lifted
+  GRCh37 id, and <code>build_note</code> carries an id <strong>distinct from the GRCh38 input</strong>.</li>
+<li><strong>Integration (<code>integration</code>-marked):</strong> live <code>compare</code> of HFE C282Y
+  <code>6-26092913-G-A</code> -&gt; r2_1 <code>present:true</code> via <code>6-26093141-G-A</code> (exome AC ~8,344,
+  AF ~0.033).</li>
+</ul>
+<p>Acceptance: regression red-&gt;green; <code>make ci-local</code> green; live integration
+confirms r2_1 presence.</p>
+<h2 id="success-envelope-contract-referenced-by-phases-2-4">Success-envelope contract (referenced by Phases 2-4)</h2>
+<p>Defined here once so the harness's conformance dimension and Phase 3 have a
+single source of truth. Today every success/error envelope is merged with
+<code>_provenance_meta</code> in <code>run_mcp_tool</code> (<code>errors.py:484-491</code>); the canonical
+<strong>success</strong> envelope after this work is:</p>
+<ul>
+<li><strong>Top level:</strong> the tool-specific payload, plus a <code>headline: str</code> on every
+  headline tool (see Phase 4 table). <code>success</code> is implicit (no <code>error</code> key).</li>
+<li><strong><code>_meta</code> (always present):</strong></li>
+<li><code>unsafe_for_clinical_use: true</code> (<code>_BASE_META</code>, <code>errors.py:43-46</code>)</li>
+<li><code>gnomad_release: &lt;GNOMAD_DATA_RELEASE&gt;</code></li>
+<li><code>dataset</code> + <code>reference_genome</code> when the call is dataset-scoped
+    (<code>_DATASET_BUILD</code>, <code>errors.py:100-106</code>)</li>
+<li><code>clinvar_release_date: str | null</code> (nullable; from <code>clinvar_date_cache</code>)</li>
+<li><code>next_commands: [{tool, arguments}]</code> — <strong>structured, non-empty, executable</strong>
+    (Phase 3 makes this universal on success; <code>arguments</code> must be directly
+    callable, never <code>{}</code>)</li>
+<li><strong>Truncation (when rows dropped):</strong> a <code>truncated</code> (or <code>truncated_payload</code>)
+  block naming what was dropped and a <code>to_restore</code> hint (e.g.
+  <code>response_mode='compact'</code>/<code>'full'</code> or the specific include_* toggle).</li>
+<li><strong>Deprecated fields</strong> (<code>next_steps</code>, <code>reference_genome</code> param echo) may appear
+  for one release, each carrying a <code>_meta.deprecated_*</code> note.</li>
+</ul>
+<p>The harness's <strong>envelope-conformance</strong> dimension asserts this contract per tool.</p>
+<h2 id="phase-2-eval-harness-baseline-scorecard-the-gate">Phase 2 — Eval harness + baseline scorecard (the gate)</h2>
+<p><strong>Goal:</strong> score the server the way the LLM reviewers did, so Phases 3-5 show
+measured deltas. <strong>Two distinct harnesses</strong> (they are not the same tool):</p>
+<h3 id="2a-deterministic-ci-eval-the-gate-wired-into-ci-local">2a. Deterministic CI eval (the gate; wired into <code>ci-local</code>)</h3>
+<ul>
+<li>Layout: <strong><code>tests/eval/</code></strong> (under the single <code>tests/</code> root per AGENTS.md).</li>
+<li>Scripted, in-process MCP tool calls against <strong>recorded fixtures using
+  <code>respx</code></strong> (already a dev dependency, <code>pyproject.toml:52</code>) plus canned JSON.
+  <strong>No new dependency</strong> — do not introduce <code>vcrpy</code>/cassettes.</li>
+<li>Scores three deterministic dimensions per scenario:</li>
+<li><strong>Trajectory</strong> — the expected tool set/order (EXACT / IN_ORDER / ANY_ORDER)
+     for a scripted call sequence.</li>
+<li><strong>Token cost</strong> — measured serialized payload bytes per call/scenario (the
+     metric Phase 4 must move).</li>
+<li><strong>Envelope conformance</strong> — asserts the Success-envelope contract above
+     (<code>headline</code> present where promised, structured non-empty <code>next_commands</code>,
+     provenance + <code>unsafe_for_clinical_use</code>).</li>
+<li>Emits a <strong>scorecard report</strong> (per-dimension + total) and commits a baseline
+  snapshot.</li>
+<li><strong>Wiring:</strong> add a fast <code>make eval-ci</code> target and add it to the <code>ci-local</code>
+  target (currently <code>format-check lint-ci lint-loc typecheck-fast test-fast</code>),
+  since it is the Phase 3-5 gate. Must stay fast (fixture replay, no network).</li>
+</ul>
+<h3 id="2b-agentic-eval-optional-manual-integration">2b. Agentic eval (optional; manual / <code>integration</code>)</h3>
+<ul>
+<li>A real-model agent loop (LLM + tool calls) over the scenarios, scoring
+  <strong>final-answer quality</strong> (LLM-as-judge / rubric, per Google ADK
+  <code>final_response_match</code>) and <strong>live trajectory</strong>. Replays against the real
+  gnomAD + ClinVar API.</li>
+<li><strong>Never in default CI</strong> — <code>integration</code>-marked / <code>make eval-live</code>; run for
+  release validation only. Requires model credentials, so it is opt-in.</li>
+</ul>
+<p>Scenarios (both harnesses), realistic and grounded in known biology:</p>
+<ul>
+<li>Carrier frequency for <strong>HFE</strong> (gene-level summation path).</li>
+<li>Compare <strong>C282Y</strong> across r4/r3/r2_1 (covers the Phase-1 fix).</li>
+<li>Retrieve <strong>research evidence (ClinVar + gnomAD context) for m.3243A&gt;G</strong>
+  (mito tool) — evidence retrieval, <strong>not</strong> a clinical/pathogenicity verdict.</li>
+<li><strong>G6PD V68M</strong> XL carrier rate (afr female-carrier ~0.262 / affected-male ~0.130).</li>
+<li><strong>GRIN2B</strong> LoF count (<code>stop_gained</code> filter vs <code>obs_lof</code>).</li>
+</ul>
+<p>The 8 reviewer dimensions map onto the Anthropic-10 / Google-14 rubrics; 2a
+produces the <em>true deterministic</em> baseline (prior ~8.1-8.9 are qualitative).</p>
+<p>Acceptance: <code>make eval-ci</code> runs deterministically inside <code>ci-local</code> and emits a
+baseline scorecard; <code>make eval-live</code> validated once against gnomAD.</p>
+<h2 id="phase-3-contract-consistency-finish-g5">Phase 3 — Contract consistency (finish G5)</h2>
+<p><strong>Goal:</strong> one envelope contract — structured <code>_meta.next_commands</code> on every
+success and executable fallback args on every error.</p>
+<p>Changes:</p>
+<ol>
+<li>New small <code>gnomad_link/mcp/next_commands.py</code> with typed builder helpers so
+   every tool constructs <code>next_commands</code> identically.</li>
+<li><strong>Convert</strong> <code>resolve_variant_id</code> + <code>search_variants</code> prose <code>next_steps</code> -&gt;
+   structured <code>_meta.next_commands</code> (top hit -&gt; <code>get_variant_frequencies</code>); keep
+   <code>next_steps</code> as a <strong>deprecated</strong> field one release (additive, non-breaking).</li>
+<li><strong>Add</strong> <code>next_commands</code> to <code>get_variant_details</code> (-&gt; <code>get_clinvar_variant_details</code>
+   / <code>compare_variant_across_datasets</code>), <code>get_structural_variant</code>, and
+   <code>get_gene_variants</code>; make <code>get_mitochondrial_variant</code> / <code>get_transcript_details</code>
+   emit it <strong>unconditionally</strong> (sensible default chain when gene context absent).</li>
+<li><strong>Executable error fallbacks:</strong> add <code>query: str | None</code> to <code>McpErrorContext</code>
+   (<code>errors.py:53-63</code>); populate it in <code>resolve_variant_id</code>/<code>search_variants</code>;
+   change <code>_fallback_for</code> (<code>errors.py:146-147</code>) to return
+   <code>("search_genes", {"query": context.query})</code> when present.</li>
+<li>Update the capabilities contract text so the "<code>next_commands</code> on success and
+   error" claim is true (<code>resources.py:226-230</code>).</li>
+</ol>
+<p>Tests: per-tool envelope-shape assertions; the harness's <strong>envelope-conformance</strong>
+dimension goes to 100%.</p>
+<h2 id="phase-4-token-efficiency-measured-against-phase-2">Phase 4 — Token efficiency (measured against Phase 2)</h2>
+<p><strong>Goal:</strong> a genuinely minimal mode for top-line questions, and SV/mito compact
+parity with SNV trimming. All additive; default behavior unchanged.</p>
+<h3 id="4a-response_modeminimal-per-tool-not-generic">4a. <code>response_mode='minimal'</code> — per-tool, not generic</h3>
+<p>Correction to the original draft: <code>get_variant_frequencies</code> (<code>variants.py:48</code>)
+currently has <strong>no</strong> <code>response_mode</code> param (the one at <code>:163</code> belongs to
+<code>get_variant_details</code>), and "global AC/AN/AF/popmax" does <strong>not</strong> map to gene
+tools (genes have no AF). So <code>minimal</code> is defined <strong>per tool</strong>, reading each
+tool's existing headline-source fields. <code>get_variant_details</code> is <strong>excluded</strong>
+(it is the deliberately-detailed tool; its own docstring already steers
+allele-count-only callers to <code>get_variant_frequencies</code>).</p>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th><code>response_mode</code> today</th>
+<th><code>minimal</code> returns (+ <code>_meta</code>)</th>
+<th>omits</th>
+<th>restore</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>get_variant_frequencies</code></td>
+<td><strong>none -&gt; add</strong> <code>compact\|full\|minimal</code> (default <code>compact</code> = today's behavior)</td>
+<td><code>headline</code> + <code>summary{overall_af, max_pop, max_pop_af}</code> + <code>major_consequence</code></td>
+<td>exome/genome per-pop arrays</td>
+<td><code>response_mode='compact'</code></td>
+</tr>
+<tr>
+<td><code>compute_carrier_frequency</code></td>
+<td><code>compact\|full</code> -&gt; +<code>minimal</code></td>
+<td><code>headline</code> + <code>global{carrier_rate, affected_rate, Wilson CI}</code> + inheritance</td>
+<td>per-population rows, full citations</td>
+<td><code>response_mode='compact'</code></td>
+</tr>
+<tr>
+<td><code>compute_gene_carrier_frequency</code></td>
+<td><code>compact\|full</code> -&gt; +<code>minimal</code></td>
+<td><code>headline</code> + <code>global{carrier_one_in,...}</code> + <code>contributing_variants.count</code></td>
+<td>per-population rows, contributing-variant list</td>
+<td><code>response_mode='compact'</code></td>
+</tr>
+<tr>
+<td><code>get_gene_details</code></td>
+<td><code>compact\|full</code> -&gt; +<code>minimal</code></td>
+<td><code>headline</code> + <code>symbol</code>/<code>gene_id</code> + <code>gnomad_constraint{pli, oe_lof}</code> + coords</td>
+<td>transcripts, full constraint matrix</td>
+<td><code>response_mode='compact'</code></td>
+</tr>
+<tr>
+<td><code>get_gene_summary</code></td>
+<td><code>compact\|full</code> -&gt; +<code>minimal</code></td>
+<td><code>headline</code> + top-line constraint + variant/ClinVar counts</td>
+<td>per-category breakdowns</td>
+<td><code>response_mode='compact'</code></td>
+</tr>
+<tr>
+<td><code>compare_variant_across_datasets</code></td>
+<td><code>compact\|full</code> -&gt; +<code>minimal</code></td>
+<td><code>headline</code> + per-dataset <code>present</code> + global AF per dataset</td>
+<td><code>per_population_af_deltas</code> detail, raw rows</td>
+<td><code>response_mode='compact'</code></td>
+</tr>
+</tbody>
+</table>
+<p>Every <code>minimal</code> payload keeps the full <code>_meta</code> block (provenance + non-empty
+<code>next_commands</code>) and the inline research-use safety flag — minimal must not drop
+the groundability guardrail. Implemented in a <strong>new</strong>
+<code>gnomad_link/mcp/minimal_shaping.py</code> so <code>shaping.py</code> (563 LOC) stays under cap.</p>
+<h3 id="4b-svmito-compact-trimming-domain-specific-helpers-do-not-reuse-snv-filter_populations">4b. SV/mito compact trimming — domain-specific helpers (do NOT reuse SNV <code>filter_populations</code>)</h3>
+<p>SNV <code>population_shaping.filter_populations</code> keys on <code>ac</code>, but the row shapes
+differ, so naive reuse is wrong:</p>
+<ul>
+<li><strong>Mito</strong> rows (<code>mitochondrial_models.py:12-14</code>) have <strong>no <code>ac</code></strong> — only <code>an</code>,
+  <code>ac_het</code>, <code>ac_hom</code>. A new <code>mito</code> projection treats a row as empty only when
+  <code>ac_het == 0 and ac_hom == 0</code>; it also drops <code>_XX</code>/<code>_XY</code> sex-split rows and
+  all-zero haplogroup rows. (<code>population_shaping.is_sex_split</code> is reusable for
+  the sex-split test only.)</li>
+<li><strong>SV</strong> rows (<code>structural_variant_models.py</code>) have <code>ac</code>/<code>an</code> plus
+  <code>homozygote_count</code>/<code>hemizygote_count</code>. A new <code>sv</code> projection drops zero-<code>ac</code>
+  and <code>_XX</code>/<code>_XY</code> rows <strong>while preserving</strong> hom/hemi counts on kept rows.</li>
+</ul>
+<p>Both emit a <code>truncated</code> block and corrected <code>token_cost_hints</code>. <code>rmi</code> (SV
+population code) is <strong>upstream-native</strong>: document it in capabilities; do <strong>not</strong>
+silently remap to <code>remaining</code> (optional explicit map is future-only).</p>
+<p>Tests: per-tool <code>minimal</code> shape assertions; SV and mito trimming assertions
+(including the mito <code>ac_het</code>/<code>ac_hom</code> zero rule); the harness's <strong>token-cost</strong>
+dimension shows a measured reduction for top-line scenarios.</p>
+<h2 id="phase-5-docs-gemini-interop-polish">Phase 5 — Docs + Gemini interop (polish)</h2>
+<p>Changes:</p>
+<ol>
+<li><code>metadata.py:40</code> docstring "Returns &lt;2kB" -&gt; "Returns ~7kB" (match
+   <code>resources.py:105</code>).</li>
+<li><code>resources.py</code> concurrency note: state that <code>compare_variant_across_datasets</code>
+   issues <strong>~4 sequential</strong> upstream calls per invocation, so N concurrent
+   <code>compare</code> calls consume N slots continuously (corrects the prior "fan-out"
+   theory; complements the existing <code>internal_fanout</code> note for
+   <code>compute_gene_carrier_frequency</code>).</li>
+<li><strong>Gemini interop (docs-first).</strong> The remote-MCP server <strong>name is supplied by
+   the Gemini client request/config</strong>, so the server cannot "provide an alias"
+   itself. Action is documentation in the MCP connection guide: show a
+   <code>name: "gnomad_link"</code> (snake_case) example for hosted-MCP clients that reject
+   <code>-</code>, note Streamable-HTTP-only (the server already serves MCP HTTP), and add
+   an <strong><code>allowed_tools</code> example</strong> that selects a focused sub-set so a Gemini
+   agent's active tool set stays within the 10-20 guidance instead of relying on
+   client-side ToolSearch.</li>
+<li><strong>README + docs tool-count refresh.</strong> <code>README.md:20</code> still says "15 MCP
+   Tools" while capabilities and this spec say 22. Update <code>README.md</code> (count +
+   the "Available MCP Tools" table at <code>:139</code>) and the MCP connection guide to
+   the current inventory. Document the tool categories and that
+   deferred-loading/tool-search mitigates the 22-vs-10-20 gap. <strong>Explicit
+   non-goal</strong> to consolidate/rename tools now — renames break the stable-name
+   contract.</li>
+</ol>
+<h2 id="definition-of-95-measured-not-asserted">Definition of "9.5" (measured, not asserted)</h2>
+<p>Pass the milestone when the Phase-2 harness reports:</p>
+<ul>
+<li>Phase-1 <strong>compare-bug correctness = pass</strong> (r2_1 leg present for C282Y).</li>
+<li><strong>Envelope-conformance dimension = 100%</strong> across all scored tools.</li>
+<li>A <strong>measured token reduction</strong> on top-line scenarios from <code>minimal</code> mode.</li>
+<li><strong>Zero regressions</strong> vs the committed baseline scorecard.</li>
+<li>Total <strong>&gt;= 9.4/10</strong>, <code>make ci-local</code> green.</li>
+</ul>
+<h2 id="non-goals">Non-goals</h2>
+<ul>
+<li>No tool renames or removals; no clinical-decision-support features; no new
+  destructive tools; no broadened Ruff/mypy ignores.</li>
+<li>No re-ranking fix for the <code>GRIN</code>-prefix gene-search omission (upstream gnomAD
+  autocomplete limitation; already documented in <code>F4</code>).</li>
+<li>No tool-count consolidation (future consideration only).</li>
+</ul>
+<h2 id="risks-open-questions">Risks / open questions</h2>
+<ul>
+<li><strong>Fixture fidelity (Phase 2):</strong> recorded <code>respx</code> fixtures can drift from live
+  gnomAD. Mitigation: a schema-drift check already exists
+  (<code>get_gnomad_diagnostics</code>); <code>make eval-live</code> (2b) re-validates before release.</li>
+<li><strong><code>minimal</code> mode surface (Phase 4):</strong> must not let "minimal" drop the
+  groundability guardrail — the research-use safety flag and short citation
+  pointer stay inline (consistent with the ergonomics spec's guardrail).</li>
+<li><strong><code>shaping.py</code> headroom:</strong> at 563/600; Phase 4 must not push it over — hence
+  the new <code>minimal_shaping.py</code>.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.sections", "content.code.copy", "search.suggest"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,1076 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="MCP server bridging the gnomAD database to AI applications.">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>gnomAD Query Cookbook - gnomAD-Link</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#gnomad-query-cookbook" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="gnomAD-Link" class="md-header__button md-logo" aria-label="gnomAD-Link" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            gnomAD-Link
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              gnomAD Query Cookbook
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/berntpopp/gnomad-link" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="gnomAD-Link" class="md-nav__button md-logo" aria-label="gnomAD-Link" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    gnomAD-Link
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/berntpopp/gnomad-link" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data & provenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../MCP_CONNECTION_GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP connection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#ready-to-use-query-recipes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🍳 Ready-to-Use Query Recipes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🍳 Ready-to-Use Query Recipes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#population-genetics-queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Population Genetics Queries
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Population Genetics Queries">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get-variant-with-all-population-frequencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Get Variant with All Population Frequencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#find-rare-variants-in-a-gene" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Find Rare Variants in a Gene
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clinical-genetics-queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Clinical Genetics Queries
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Clinical Genetics Queries">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get-complete-clinical-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Get Complete Clinical Information
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-gene-constraint-for-disease-gene-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Get Gene Constraint for Disease Gene List
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#structural-variant-queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Structural Variant Queries
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Structural Variant Queries">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get-structural-variants-in-a-region" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Get Structural Variants in a Region
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#research-queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Research Queries
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Research Queries">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#compare-frequencies-across-datasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compare Frequencies Across Datasets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-mitochondrial-variant-with-haplogroups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Get Mitochondrial Variant with Haplogroups
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#advanced-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Advanced Patterns
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#batch-query-multiple-variants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Batch Query Multiple Variants
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-variant-with-coverage-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Get Variant with Coverage Information
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#utility-queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Utility Queries
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Utility Queries">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get-all-available-datasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Get All Available Datasets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#check-variant-co-occurrence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Check Variant Co-occurrence
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#query-tips" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📝 Query Tips
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔗 Related Documentation
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="gnomad-query-cookbook">gnomAD Query Cookbook</h1>
+<h2 id="ready-to-use-query-recipes">🍳 Ready-to-Use Query Recipes</h2>
+<h3 id="population-genetics-queries">Population Genetics Queries</h3>
+<h4 id="get-variant-with-all-population-frequencies">Get Variant with All Population Frequencies</h4>
+<div class="highlight"><pre><span></span><code><span class="k">query</span><span class="w"> </span><span class="nf">GetVariantPopulations</span><span class="p">(</span><span class="nv">$variantId</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">!,</span><span class="w"> </span><span class="nv">$dataset</span><span class="p">:</span><span class="w"> </span><span class="nc">DatasetId</span><span class="p">!)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">variant</span><span class="p">(</span><span class="n">variantId</span><span class="p">:</span><span class="w"> </span><span class="nv">$variantId</span><span class="p">,</span><span class="w"> </span><span class="n">dataset</span><span class="p">:</span><span class="w"> </span><span class="nv">$dataset</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">variant_id</span>
+<span class="w">    </span><span class="n">reference_genome</span>
+
+<span class="w">    </span><span class="c"># Overall frequencies</span>
+<span class="w">    </span><span class="n">genome</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="n">af</span>
+<span class="w">      </span><span class="n">ac</span>
+<span class="w">      </span><span class="n">an</span>
+<span class="w">      </span><span class="n">ac_hom</span>
+<span class="w">      </span><span class="n">ac_hemi</span>
+
+<span class="w">      </span><span class="c"># Population breakdown</span>
+<span class="w">      </span><span class="n">populations</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">id</span>
+<span class="w">        </span><span class="n">af</span>
+<span class="w">        </span><span class="n">ac</span>
+<span class="w">        </span><span class="n">an</span>
+<span class="w">        </span><span class="n">ac_hom</span>
+<span class="w">        </span><span class="n">ac_hemi</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c"># Exome frequencies (if available)</span>
+<span class="w">    </span><span class="n">exome</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="n">af</span>
+<span class="w">      </span><span class="n">populations</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">id</span>
+<span class="w">        </span><span class="n">af</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h4 id="find-rare-variants-in-a-gene">Find Rare Variants in a Gene</h4>
+<div class="highlight"><pre><span></span><code><span class="k">query</span><span class="w"> </span><span class="nf">FindRareVariants</span><span class="p">(</span><span class="nv">$gene</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">!,</span><span class="w"> </span><span class="nv">$dataset</span><span class="p">:</span><span class="w"> </span><span class="nc">DatasetId</span><span class="p">!)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">variant_search</span><span class="p">(</span><span class="n">query</span><span class="p">:</span><span class="w"> </span><span class="nv">$gene</span><span class="p">,</span><span class="w"> </span><span class="n">dataset</span><span class="p">:</span><span class="w"> </span><span class="nv">$dataset</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">variant_id</span>
+<span class="w">    </span><span class="n">af</span>
+<span class="w">    </span><span class="n">consequence</span>
+<span class="w">    </span><span class="n">hgvsp</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c"># Then filter client-side for af &lt; 0.001</span>
+</code></pre></div>
+<h3 id="clinical-genetics-queries">Clinical Genetics Queries</h3>
+<h4 id="get-complete-clinical-information">Get Complete Clinical Information</h4>
+<div class="highlight"><pre><span></span><code><span class="k">query</span><span class="w"> </span><span class="nf">GetClinicalData</span><span class="p">(</span><span class="nv">$variantId</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">!,</span><span class="w"> </span><span class="nv">$dataset</span><span class="p">:</span><span class="w"> </span><span class="nc">DatasetId</span><span class="p">!,</span><span class="w"> </span><span class="nv">$referenceGenome</span><span class="p">:</span><span class="w"> </span><span class="nc">ReferenceGenomeId</span><span class="p">!)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c"># gnomAD data</span>
+<span class="w">  </span><span class="n">variant</span><span class="p">(</span><span class="n">variantId</span><span class="p">:</span><span class="w"> </span><span class="nv">$variantId</span><span class="p">,</span><span class="w"> </span><span class="n">dataset</span><span class="p">:</span><span class="w"> </span><span class="nv">$dataset</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">variant_id</span>
+<span class="w">    </span><span class="n">rsid</span>
+<span class="w">    </span><span class="n">genome</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">af</span><span class="w"> </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">transcript_consequences</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="n">gene_symbol</span>
+<span class="w">      </span><span class="n">consequence</span>
+<span class="w">      </span><span class="n">hgvsc</span>
+<span class="w">      </span><span class="n">hgvsp</span>
+<span class="w">      </span><span class="n">polyphen_prediction</span>
+<span class="w">      </span><span class="n">sift_prediction</span>
+<span class="w">      </span><span class="n">lof</span>
+<span class="w">      </span><span class="n">lof_filter</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="c"># ClinVar data</span>
+<span class="w">  </span><span class="n">clinvar_variant</span><span class="p">(</span><span class="n">variant_id</span><span class="p">:</span><span class="w"> </span><span class="nv">$variantId</span><span class="p">,</span><span class="w"> </span><span class="n">reference_genome</span><span class="p">:</span><span class="w"> </span><span class="nv">$referenceGenome</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">clinical_significance</span>
+<span class="w">    </span><span class="n">review_status</span>
+<span class="w">    </span><span class="n">last_evaluated</span>
+
+<span class="w">    </span><span class="n">conditions</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="n">name</span>
+<span class="w">      </span><span class="n">medgen_id</span>
+<span class="w">      </span><span class="n">omim_id</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">submissions</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="n">clinical_significance</span>
+<span class="w">      </span><span class="n">review_status</span>
+<span class="w">      </span><span class="n">submitter_name</span>
+<span class="w">      </span><span class="n">conditions</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">name</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h4 id="get-gene-constraint-for-disease-gene-list">Get Gene Constraint for Disease Gene List</h4>
+<div class="highlight"><pre><span></span><code><span class="k">query</span><span class="w"> </span><span class="nf">GetConstraintScores</span><span class="p">(</span><span class="nv">$genes</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="nb">String</span><span class="p">!]!,</span><span class="w"> </span><span class="nv">$referenceGenome</span><span class="p">:</span><span class="w"> </span><span class="nc">ReferenceGenomeId</span><span class="p">!)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nl">gene1</span><span class="p">:</span><span class="w"> </span><span class="n">gene</span><span class="p">(</span><span class="n">gene_symbol</span><span class="p">:</span><span class="w"> </span><span class="nv">$genes</span><span class="err">[0]</span><span class="p">,</span><span class="w"> </span><span class="n">reference_genome</span><span class="p">:</span><span class="w"> </span><span class="nv">$referenceGenome</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">...</span><span class="n">GeneConstraint</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="nl">gene2</span><span class="p">:</span><span class="w"> </span><span class="n">gene</span><span class="p">(</span><span class="n">gene_symbol</span><span class="p">:</span><span class="w"> </span><span class="nv">$genes</span><span class="err">[1]</span><span class="p">,</span><span class="w"> </span><span class="n">reference_genome</span><span class="p">:</span><span class="w"> </span><span class="nv">$referenceGenome</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">...</span><span class="n">GeneConstraint</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="c"># Repeat for each gene...</span>
+<span class="p">}</span>
+
+<span class="k">fragment</span><span class="w"> </span><span class="nf">GeneConstraint</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="nc">Gene</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">symbol</span>
+<span class="w">  </span><span class="n">gnomad_constraint</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">pLI</span>
+<span class="w">    </span><span class="n">oe_lof</span>
+<span class="w">    </span><span class="n">oe_lof_lower</span>
+<span class="w">    </span><span class="n">oe_lof_upper</span>
+<span class="w">    </span><span class="n">oe_mis</span>
+<span class="w">    </span><span class="n">oe_mis_lower</span>
+<span class="w">    </span><span class="n">oe_mis_upper</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h3 id="structural-variant-queries">Structural Variant Queries</h3>
+<h4 id="get-structural-variants-in-a-region">Get Structural Variants in a Region</h4>
+<div class="highlight"><pre><span></span><code><span class="k">query</span><span class="w"> </span><span class="nf">GetSVsInRegion</span><span class="p">(</span><span class="nv">$chrom</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">!,</span><span class="w"> </span><span class="nv">$start</span><span class="p">:</span><span class="w"> </span><span class="nb">Int</span><span class="p">!,</span><span class="w"> </span><span class="nv">$stop</span><span class="p">:</span><span class="w"> </span><span class="nb">Int</span><span class="p">!,</span><span class="w"> </span><span class="nv">$dataset</span><span class="p">:</span><span class="w"> </span><span class="nc">StructuralVariantDatasetId</span><span class="p">!)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">region</span><span class="p">(</span><span class="n">chrom</span><span class="p">:</span><span class="w"> </span><span class="nv">$chrom</span><span class="p">,</span><span class="w"> </span><span class="n">start</span><span class="p">:</span><span class="w"> </span><span class="nv">$start</span><span class="p">,</span><span class="w"> </span><span class="n">stop</span><span class="p">:</span><span class="w"> </span><span class="nv">$stop</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">structural_variants</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span><span class="w"> </span><span class="nv">$dataset</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="n">variant_id</span>
+<span class="w">      </span><span class="n">chrom</span>
+<span class="w">      </span><span class="n">pos</span>
+<span class="w">      </span><span class="n">end</span>
+<span class="w">      </span><span class="n">length</span>
+<span class="w">      </span><span class="n">type</span>
+<span class="w">      </span><span class="n">populations</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">id</span>
+<span class="w">        </span><span class="n">af</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h3 id="research-queries">Research Queries</h3>
+<h4 id="compare-frequencies-across-datasets">Compare Frequencies Across Datasets</h4>
+<div class="highlight"><pre><span></span><code><span class="k">query</span><span class="w"> </span><span class="nf">CompareDatasets</span><span class="p">(</span><span class="nv">$variantId</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">!)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nl">v4</span><span class="p">:</span><span class="w"> </span><span class="n">variant</span><span class="p">(</span><span class="n">variantId</span><span class="p">:</span><span class="w"> </span><span class="nv">$variantId</span><span class="p">,</span><span class="w"> </span><span class="n">dataset</span><span class="p">:</span><span class="w"> </span><span class="no">gnomad_r4</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">genome</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">af</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="nl">v3</span><span class="p">:</span><span class="w"> </span><span class="n">variant</span><span class="p">(</span><span class="n">variantId</span><span class="p">:</span><span class="w"> </span><span class="nv">$variantId</span><span class="p">,</span><span class="w"> </span><span class="n">dataset</span><span class="p">:</span><span class="w"> </span><span class="no">gnomad_r3</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">genome</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">af</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="nl">v2</span><span class="p">:</span><span class="w"> </span><span class="n">variant</span><span class="p">(</span><span class="n">variantId</span><span class="p">:</span><span class="w"> </span><span class="nv">$variantId</span><span class="p">,</span><span class="w"> </span><span class="n">dataset</span><span class="p">:</span><span class="w"> </span><span class="no">gnomad_r2_1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">genome</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">af</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h4 id="get-mitochondrial-variant-with-haplogroups">Get Mitochondrial Variant with Haplogroups</h4>
+<div class="highlight"><pre><span></span><code><span class="k">query</span><span class="w"> </span><span class="nf">GetMitoVariant</span><span class="p">(</span><span class="nv">$variantId</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">!,</span><span class="w"> </span><span class="nv">$dataset</span><span class="p">:</span><span class="w"> </span><span class="nc">DatasetId</span><span class="p">!)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">mitochondrial_variant</span><span class="p">(</span><span class="n">variant_id</span><span class="p">:</span><span class="w"> </span><span class="nv">$variantId</span><span class="p">,</span><span class="w"> </span><span class="n">dataset</span><span class="p">:</span><span class="w"> </span><span class="nv">$dataset</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">variant_id</span>
+
+<span class="w">    </span><span class="c"># Overall frequencies</span>
+<span class="w">    </span><span class="n">ac_hom</span>
+<span class="w">    </span><span class="n">ac_het</span>
+<span class="w">    </span><span class="n">an</span>
+<span class="w">    </span><span class="n">af_hom</span>
+<span class="w">    </span><span class="n">af_het</span>
+
+<span class="w">    </span><span class="c"># Haplogroup distribution</span>
+<span class="w">    </span><span class="n">haplogroups</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="n">id</span>
+<span class="w">      </span><span class="n">ac_hom</span>
+<span class="w">      </span><span class="n">ac_het</span>
+<span class="w">      </span><span class="n">an</span>
+<span class="w">      </span><span class="n">af_hom</span>
+<span class="w">      </span><span class="n">af_het</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c"># Population distribution</span>
+<span class="w">    </span><span class="n">populations</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="n">id</span>
+<span class="w">      </span><span class="n">ac_hom</span>
+<span class="w">      </span><span class="n">ac_het</span>
+<span class="w">      </span><span class="n">an</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h3 id="advanced-patterns">Advanced Patterns</h3>
+<h4 id="batch-query-multiple-variants">Batch Query Multiple Variants</h4>
+<div class="highlight"><pre><span></span><code><span class="k">query</span><span class="w"> </span><span class="nf">BatchVariants</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nl">var1</span><span class="p">:</span><span class="w"> </span><span class="n">variant</span><span class="p">(</span><span class="n">variantId</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1-55516888-G-A&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">dataset</span><span class="p">:</span><span class="w"> </span><span class="no">gnomad_r4</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">...</span><span class="n">VariantInfo</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="nl">var2</span><span class="p">:</span><span class="w"> </span><span class="n">variant</span><span class="p">(</span><span class="n">variantId</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2-234567890-C-T&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">dataset</span><span class="p">:</span><span class="w"> </span><span class="no">gnomad_r4</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">...</span><span class="n">VariantInfo</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="nl">var3</span><span class="p">:</span><span class="w"> </span><span class="n">variant</span><span class="p">(</span><span class="n">variantId</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;3-123456789-A-G&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">dataset</span><span class="p">:</span><span class="w"> </span><span class="no">gnomad_r4</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">...</span><span class="n">VariantInfo</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">fragment</span><span class="w"> </span><span class="nf">VariantInfo</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="nc">VariantDetails</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">variant_id</span>
+<span class="w">  </span><span class="n">genome</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">af</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="n">transcript_consequences</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">gene_symbol</span>
+<span class="w">    </span><span class="n">consequence</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h4 id="get-variant-with-coverage-information">Get Variant with Coverage Information</h4>
+<div class="highlight"><pre><span></span><code><span class="k">query</span><span class="w"> </span><span class="nf">GetVariantWithCoverage</span><span class="p">(</span><span class="nv">$variantId</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">!,</span><span class="w"> </span><span class="nv">$dataset</span><span class="p">:</span><span class="w"> </span><span class="nc">DatasetId</span><span class="p">!)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">variant</span><span class="p">(</span><span class="n">variantId</span><span class="p">:</span><span class="w"> </span><span class="nv">$variantId</span><span class="p">,</span><span class="w"> </span><span class="n">dataset</span><span class="p">:</span><span class="w"> </span><span class="nv">$dataset</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">variant_id</span>
+<span class="w">    </span><span class="n">genome</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">af</span><span class="w"> </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c"># Coverage at this position</span>
+<span class="w">    </span><span class="n">coverage</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="n">genome</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">mean</span>
+<span class="w">        </span><span class="n">median</span>
+<span class="w">        </span><span class="n">over_20</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h3 id="utility-queries">Utility Queries</h3>
+<h4 id="get-all-available-datasets">Get All Available Datasets</h4>
+<div class="highlight"><pre><span></span><code><span class="k">query</span><span class="w"> </span><span class="nf">GetDatasets</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">meta</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">datasets</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="n">gnomad_r4</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">label</span>
+<span class="w">        </span><span class="n">reference_genome</span>
+<span class="w">        </span><span class="n">sample_count</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">      </span><span class="n">gnomad_r3</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">label</span>
+<span class="w">        </span><span class="n">reference_genome</span>
+<span class="w">        </span><span class="n">sample_count</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">      </span><span class="n">gnomad_r2_1</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">label</span>
+<span class="w">        </span><span class="n">reference_genome</span>
+<span class="w">        </span><span class="n">sample_count</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h4 id="check-variant-co-occurrence">Check Variant Co-occurrence</h4>
+<div class="highlight"><pre><span></span><code><span class="k">query</span><span class="w"> </span><span class="nf">CheckCooccurrence</span><span class="p">(</span><span class="nv">$variant1</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">!,</span><span class="w"> </span><span class="nv">$variant2</span><span class="p">:</span><span class="w"> </span><span class="nb">String</span><span class="p">!,</span><span class="w"> </span><span class="nv">$dataset</span><span class="p">:</span><span class="w"> </span><span class="nc">DatasetId</span><span class="p">!)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">variant_cooccurrence</span><span class="p">(</span>
+<span class="w">    </span><span class="n">variants</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="nv">$variant1</span><span class="p">,</span><span class="w"> </span><span class="nv">$variant2</span><span class="p">]</span>
+<span class="w">    </span><span class="n">dataset</span><span class="p">:</span><span class="w"> </span><span class="nv">$dataset</span>
+<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">variant_ids</span>
+<span class="w">    </span><span class="n">genotype_counts</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="n">genotype</span>
+<span class="w">      </span><span class="n">count</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h2 id="query-tips">📝 Query Tips</h2>
+<ol>
+<li><strong>Use Fragments</strong> for repeated structures</li>
+<li><strong>Alias Fields</strong> when querying multiple items</li>
+<li><strong>Request Only Needed Fields</strong> to improve performance</li>
+<li><strong>Handle Null Results</strong> - not all variants exist in all datasets</li>
+<li><strong>Check Rate Limits</strong> - implement appropriate delays</li>
+</ol>
+<h2 id="related-documentation">🔗 Related Documentation</h2>
+<ul>
+<li><a href="../gnomad_graphql_api_reference/">API Reference</a></li>
+<li><a href="../gnomad_type_reference/">Type Reference</a></li>
+<li><a href="../gnomad_quick_start/">Quick Start Guide</a></li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "content.code.copy", "search.suggest"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

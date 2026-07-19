@@ -1,0 +1,1450 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="MCP server bridging the gnomAD database to AI applications.">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>MCP LLM-Consumer Review: Pushing gnomad-link from 8.8 to >9.0 - gnomAD-Link</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#mcp-llm-consumer-review-pushing-gnomad-link-from-88-to-90" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="gnomAD-Link" class="md-header__button md-logo" aria-label="gnomAD-Link" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            gnomAD-Link
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              MCP LLM-Consumer Review: Pushing gnomad-link from 8.8 to &gt;9.0
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/berntpopp/gnomad-link" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="gnomAD-Link" class="md-nav__button md-logo" aria-label="gnomAD-Link" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    gnomAD-Link
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/berntpopp/gnomad-link" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data & provenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MCP_CONNECTION_GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP connection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#executive-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Executive Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-discoverability-current-810" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Discoverability (Current: 8/10)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Discoverability (Current: 8/10)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#state-of-practice-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        State of Practice (2026)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-pushes-above-90" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Pushes Above 9.0
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#concrete-techniques-for-gnomad-link" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Concrete Techniques for gnomad-link
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#anti-patterns-to-avoid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anti-Patterns to Avoid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trade-offs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trade-Offs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-schema-clarity-current-910" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Schema Clarity (Current: 9/10)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Schema Clarity (Current: 9/10)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#state-of-practice-2026_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        State of Practice (2026)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-pushes-above-90_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Pushes Above 9.0
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#anti-patterns-to-avoid_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anti-Patterns to Avoid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trade-offs_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trade-Offs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-speed-current-910" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Speed (Current: 9/10)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Speed (Current: 9/10)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#state-of-practice-2026_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        State of Practice (2026)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-pushes-above-90_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Pushes Above 9.0
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#concrete-techniques-for-gnomad-link_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Concrete Techniques for gnomad-link
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#anti-patterns-to-avoid_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anti-Patterns to Avoid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trade-offs_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trade-Offs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-token-efficiency-current-910" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Token Efficiency (Current: 9/10)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Token Efficiency (Current: 9/10)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#state-of-practice-2026_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        State of Practice (2026)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-pushes-above-90_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Pushes Above 9.0
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#anti-patterns-to-avoid_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anti-Patterns to Avoid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trade-offs_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trade-Offs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-response-structure-current-910" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Response Structure (Current: 9/10)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Response Structure (Current: 9/10)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#state-of-practice-2026_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        State of Practice (2026)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-pushes-above-90_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Pushes Above 9.0
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#anti-patterns-to-avoid_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anti-Patterns to Avoid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trade-offs_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trade-Offs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-error-surface-guardrails-current-810" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Error Surface / Guardrails (Current: 8/10)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Error Surface / Guardrails (Current: 8/10)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#state-of-practice-2026_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        State of Practice (2026)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-pushes-above-90_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Pushes Above 9.0
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#anti-patterns-to-avoid_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anti-Patterns to Avoid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trade-offs_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trade-Offs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-composability-current-810" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Composability (Current: 8/10)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. Composability (Current: 8/10)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#state-of-practice-2026_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        State of Practice (2026)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-pushes-above-90_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Pushes Above 9.0
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#anti-patterns-to-avoid_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anti-Patterns to Avoid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trade-offs_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trade-Offs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-self-documentation-current-1010" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Self-Documentation (Current: 10/10)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. Self-Documentation (Current: 10/10)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#state-of-practice-2026_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        State of Practice (2026)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#minor-hardening" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Minor Hardening
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#anti-patterns-to-avoid_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anti-Patterns to Avoid
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-research-scope-clarity-current-910" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Research-Scope Clarity (Current: 9/10)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9. Research-Scope Clarity (Current: 9/10)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#state-of-practice-2026_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        State of Practice (2026)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-pushes-above-90_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Pushes Above 9.0
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#anti-patterns-to-avoid_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anti-Patterns to Avoid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trade-offs_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trade-Offs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prioritised-action-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prioritised Action List
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#spec-gaps-and-community-conventions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Spec Gaps and Community Conventions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sources
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="mcp-llm-consumer-review-pushing-gnomad-link-from-88-to-90">MCP LLM-Consumer Review: Pushing gnomad-link from 8.8 to &gt;9.0</h1>
+<p><strong>Date:</strong> 2026-05-26<br />
+<strong>Scope:</strong> Research-only; no source edits.<br />
+<strong>Reference codebase:</strong> pubtator-link <code>pubtator_link/mcp/</code>, MCP spec 2025-06-18, FastMCP docs, Anthropic engineering blog, arxiv 2602.14878.</p>
+<hr />
+<h2 id="executive-summary">Executive Summary</h2>
+<p>gnomad-link post-migration already implements the structural skeleton that separates great MCP servers from adequate ones: hand-authored tools, structured error envelopes, output schemas, <code>ToolAnnotations</code>, a capabilities resource, and explicit server instructions. The gaps are not architectural — they are a handful of tactical additions concentrated in discoverability, composability, and error-surface hardening. Every item in the prioritised action list below is additive, not structural.</p>
+<hr />
+<h2 id="1-discoverability-current-810">1. Discoverability (Current: 8/10)</h2>
+<h3 id="state-of-practice-2026">State of Practice (2026)</h3>
+<p>The MCP spec 2025-06-18 defines three discoverability surfaces: <code>tools/list</code> (schema-level), <code>resources/list</code> (reference data), and <code>prompts/list</code> (workflow templates). The <code>server.instructions</code> field in the <code>initialize</code> response is the zero-cost discoverability win: it is injected before tool schemas, costs no extra round-trip, and is the first thing an LLM reads. Claude Desktop, Claude Code, and most hosted integrators splice it into system context automatically.</p>
+<p>The spec also defines <code>completions</code> capability (<code>completion/complete</code> for <code>ref/prompt</code> and <code>ref/resource</code>), enabling IDE-style argument autocomplete for prompts and resource URI templates. This is new in 2025-06-18 and largely unimplemented outside power-user servers.</p>
+<p>The ToolSearch deferred-loading pattern that gnomad-link inherits from Claude Code's hosted environment is a client-side gating decision, not a server design flaw. The server cannot force eager loading. What it <em>can</em> control is what the LLM learns before making a ToolSearch call.</p>
+<h3 id="what-pushes-above-90">What Pushes Above 9.0</h3>
+<p><strong>Structured workflow catalogue in <code>get_server_capabilities</code>.</strong> pubtator-link's <code>resources.py</code> encodes a <code>llm_driver_contract</code> dict with <code>core_workflow_tools</code>, <code>schema_bundle</code> references, <code>detail_levels</code>, and <code>response_contracts</code>. This is machine-readable workflow guidance that survives context-window pressure better than prose. gnomad-link's <code>get_capabilities_resource()</code> has <code>recommended_workflows</code> as a string list but lacks the typed workflow-step structure.</p>
+<p><strong>MCP <code>prompts</code> capability.</strong> pubtator-link registers three named prompts (<code>search_biomedical_literature_prompt</code>, <code>review_rerag_workflow_prompt</code>, <code>annotate_research_text_prompt</code>) via FastMCP's <code>@mcp.prompt</code> decorator. Prompts appear in <code>prompts/list</code> and are retrievable without a <code>tools/call</code> round-trip. Claude Desktop and Claude Code surface them as slash commands. For a 15-tool server covering 6 conceptually distinct workflows (frequency lookup, gene constraint, clinical annotation, SV, mito, liftover), prompt-based workflow guidance is exactly the right abstraction.</p>
+<p><strong><code>output_cheatsheet</code> in capabilities.</strong> pubtator-link's resource contains an <code>output_cheatsheet</code> mapping human-readable path names (<code>"single_context_passages"</code>) to JSON paths (<code>"context_pack.passages[]"</code>). LLMs parsing large responses benefit from being told the canonical extraction path before they guess.</p>
+<h3 id="concrete-techniques-for-gnomad-link">Concrete Techniques for gnomad-link</h3>
+<ol>
+<li>Add a <code>@mcp.prompt</code> for each of the 4-5 conceptual workflows (see action list). FastMCP infers the prompt name from the function name and description from the docstring.</li>
+<li>Upgrade <code>get_capabilities_resource()</code> to include an <code>output_cheatsheet</code> mapping field names to JSON paths, e.g. <code>"frequency_populations": "exome.populations[]"</code>.</li>
+<li>Add a <code>llm_driver_contract</code> sub-dict to the capabilities resource identifying <code>recommended_entrypoint</code> (<code>get_server_capabilities</code>) and <code>core_workflow_tools</code> in order.</li>
+<li>Add <code>server_version</code> and <code>mcp_protocol_version</code> fields (already present in gnomad-link; good).</li>
+</ol>
+<h3 id="anti-patterns-to-avoid">Anti-Patterns to Avoid</h3>
+<ul>
+<li>Putting full JSON schema examples inside the instructions string. Instructions is read at init for routing; schema detail belongs in the tool's <code>inputSchema</code>/<code>outputSchema</code>.</li>
+<li>Registering prompts with zero arguments that just return a fixed string. Use at least one argument (<code>topic</code>, <code>variant_id</code>) so the prompt is parameterised and distinguishable from a resource.</li>
+</ul>
+<h3 id="trade-offs">Trade-Offs</h3>
+<p>Adding MCP prompts increases the server's surface area and adds test obligations. Keep prompts to 4-5 maximum — one per workflow, not one per tool. Do not encode fallback logic in prompts (that belongs in error envelopes).</p>
+<hr />
+<h2 id="2-schema-clarity-current-910">2. Schema Clarity (Current: 9/10)</h2>
+<h3 id="state-of-practice-2026_1">State of Practice (2026)</h3>
+<p>The arxiv paper 2602.14878 found 97.1% of MCP tool descriptions contain at least one "smell" — with unstated limitations (89%), missing usage guidelines (85%), and opaque parameters (81%) being the dominant issues. Anthropic's engineering blog (writing-tools-for-agents) distils this to: describe <em>when</em> to call the tool (routing), <em>what</em> the parameters mean semantically (not just typing), and what the output contains.</p>
+<p>The MCP spec 2025-06-18 adds a <code>title</code> field to tools (<code>ToolDefinition.title</code>) — a human-readable display name separate from the identifier <code>name</code>. This is distinct from the tool description. FastMCP exposes it as the <code>title</code> parameter in <code>@mcp.tool()</code>.</p>
+<p>The spec's <code>inputSchema</code> supports <code>description</code> per property (already used in gnomad-link), <code>examples</code> (a JSON Schema keyword), and <code>default</code> values. Using <code>examples</code> at the property level lets the LLM see a concrete value without having to infer from the description.</p>
+<h3 id="what-pushes-above-90_1">What Pushes Above 9.0</h3>
+<p><strong>Property-level <code>examples</code> in input schemas.</strong> Every major discriminating field — <code>variant_id</code>, <code>gene_id</code>, <code>dataset</code>, <code>populations</code> — should have an <code>examples</code> entry showing a real gnomAD value. gnomad-link uses <code>Field(description=...)</code> correctly but does not set <code>examples</code>. Comparison: pubtator-link's <code>resources.py</code> sample_calls dict provides this at the capabilities level; ideally it should also live at the property level in the schema.</p>
+<p><strong>Explicit enum descriptions.</strong> <code>dataset: Literal["gnomad_r2_1","gnomad_r3","gnomad_r4"]</code> is correct typing but the Field description just says <code>"gnomad_r4 default (GRCh38)."</code> — it doesn't explain that r2_1 is GRCh37 and r3 is GRCh38. The LLM has to reason about this. Add: <code>description="gnomad_r4 (GRCh38, default), gnomad_r3 (GRCh38, larger WGS), gnomad_r2_1 (GRCh37 legacy)"</code>.</p>
+<p><strong>Limitations stated inline.</strong> The arxiv paper's strongest finding (89% of tools omit limitations) is the single highest-impact fix for schema clarity. <code>get_gene_variants</code> says "Large genes (e.g. TTN) return tens of thousands of variants upstream" — that's good. <code>get_region</code> says "cap span at 100kb" — also good. What's missing: <code>get_variant_frequencies</code> doesn't state that SV, mito, and gene-within-region queries each need their own dedicated tool.</p>
+<p><strong>Activation criteria.</strong> The "Use this when..." docstring pattern that gnomad-link already enforces is the correct activation guidance structure. The arxiv paper confirms this pattern outperforms pure capability description. gnomad-link's existing test (<code>test_every_tool_description_leads_with_use_this_when</code>) is a good enforcement mechanism; keep it.</p>
+<h3 id="anti-patterns-to-avoid_1">Anti-Patterns to Avoid</h3>
+<ul>
+<li>Fully augmented descriptions that enumerate all capabilities in the docstring. The arxiv paper found this increases step count by 67% due to LLMs reading more decision branches. Keep docstrings tight: 1 activation sentence + 1 output sentence + max 2 limitation sentences.</li>
+<li>Putting data format specifications (CHROM-POS-REF-ALT format rules) in the docstring rather than in the parameter-level <code>pattern</code> and <code>description</code>. Both tools already handle this correctly.</li>
+</ul>
+<h3 id="trade-offs_1">Trade-Offs</h3>
+<p>Adding <code>examples</code> to every field increases the <code>tools/list</code> response size. For a 15-tool server this is acceptable. The schema is read once per session; it is not per-call overhead.</p>
+<hr />
+<h2 id="3-speed-current-910">3. Speed (Current: 9/10)</h2>
+<h3 id="state-of-practice-2026_2">State of Practice (2026)</h3>
+<p>Speed for an MCP server is measured at three points: <code>tools/list</code> parse time, <code>tools/call</code> execution latency, and LLM-side selection overhead (number of tool candidates the LLM must read before choosing). gnomad-link is already fast on the first two by virtue of FastMCP + async.</p>
+<p>The third dimension — selection overhead — is controlled by tool count and description density. 15 tools is lean; Anthropic's blog recommends single-digit to low double-digit counts. The namespace is flat (<code>get_</code>, <code>search_</code>, <code>liftover_</code>, <code>resolve_</code>) which is good.</p>
+<h3 id="what-pushes-above-90_2">What Pushes Above 9.0</h3>
+<p><strong>Tag-based tool categories for host filtering.</strong> FastMCP supports <code>tags</code> on tools (<code>@mcp.tool(tags={"variant", "frequency"})</code>). Claude Code's <code>ToolSearch</code> can filter by tag. Hosts that load a full tool list benefit from tag-based pre-filtering. pubtator-link does not use FastMCP tags (it uses profile-based conditional registration), but for a 15-tool server with fewer cross-cutting concerns, tags are lower cost.</p>
+<p><strong><code>mask_error_details=True</code> is already set.</strong> This prevents large Python traceback strings from being serialised into tool results, which would inflate response tokens and slow LLM processing.</p>
+<h3 id="concrete-techniques-for-gnomad-link_1">Concrete Techniques for gnomad-link</h3>
+<p>Add <code>tags</code> to tool registrations: <code>{"variant"}</code>, <code>{"gene"}</code>, <code>{"clinical"}</code>, <code>{"coordinates"}</code>, <code>{"search"}</code>, <code>{"metadata"}</code>. This is a two-character addition per tool with no schema impact.</p>
+<h3 id="anti-patterns-to-avoid_2">Anti-Patterns to Avoid</h3>
+<ul>
+<li>Caching the <code>get_capabilities_resource()</code> output naively with a long TTL. If dataset availability or tool deprecations change between runs, a stale capabilities resource misleads the LLM. Either compute it fresh per request (fast, correct) or timestamp it.</li>
+</ul>
+<h3 id="trade-offs_2">Trade-Offs</h3>
+<p>Tags cost nothing at runtime and marginally increase <code>tools/list</code> payload. No meaningful trade-off.</p>
+<hr />
+<h2 id="4-token-efficiency-current-910">4. Token Efficiency (Current: 9/10)</h2>
+<h3 id="state-of-practice-2026_3">State of Practice (2026)</h3>
+<p>The "compact default + explicit expansion" pattern is the dominant 2025/2026 practise for token-efficient MCP servers. gnomad-link implements it well: <code>response_mode="compact"</code>, <code>include_subcohorts=False</code> by default, <code>exclude_zero_populations=True</code>. The <code>truncated</code> envelope block is the self-documenting mechanism that enables the LLM to re-call with targeted expansion.</p>
+<p>The spec's <code>structuredContent</code> field (introduced with <code>outputSchema</code> in 2025-06-18) means structured results are returned both as a serialised text block and as a machine-parseable JSON object. FastMCP handles this automatically for dict returns when an <code>outputSchema</code> is declared. This doubles the information density for clients that consume <code>structuredContent</code> — no extra tokens for the LLM, since the client processes it.</p>
+<p>The BigData Boutique blog (mistake #6) recommends CSV for tabular data to save 40-60% tokens. For gnomad-link's population frequency arrays, this would be a meaningful saving: instead of <code>[{"id":"afr","ac":143,"an":8000,"af":0.0178}]</code> you would emit <code>id,ac,an,af\nafr,143,8000,0.0178</code>. However, this breaks outputSchema validation and is not standard MCP practice. The trade-off is real but the recommendation is community-only, not spec-mandated.</p>
+<h3 id="what-pushes-above-90_3">What Pushes Above 9.0</h3>
+<p><strong>Per-tool compact summaries.</strong> When <code>get_variant_frequencies</code> returns, add a top-level <code>summary</code> object with the most important values pre-extracted: <code>{"overall_af": 0.00178, "max_pop": "afr", "max_pop_af": 0.0178, "has_clinvar": false}</code>. The LLM can answer most questions from the summary without parsing the full populations array. pubtator-link achieves analogous behaviour via <code>compact_passages</code> mode; gnomad-link's shaping module can add this.</p>
+<p><strong><code>_meta.next_commands</code> as structured objects, not strings.</strong> gnomad-link's <code>errors.py</code> error envelope emits <code>"next_commands": ["get_server_capabilities", "gnomad://capabilities"]</code> — these are strings. pubtator-link emits <code>"next_commands": [{"tool": "pubtator_diagnostics", "arguments": {}}]</code> — these are callable argument maps. The structured form lets the LLM construct the next call without parsing a string. This is a 10-line change to <code>errors.py</code>.</p>
+<p><strong><code>meta_budget</code> pattern from pubtator-link.</strong> pubtator-link has <code>meta_budget.py</code> which strips diagnostic fields before responses are serialised for repeated calls. gnomad-link has no equivalent. For long sessions calling <code>get_gene_variants</code> multiple times, the <code>truncated</code> block is small enough that this is low priority, but it is a meaningful improvement for <code>get_region</code> calls with <code>include_genes=True</code> and <code>include_clinvar=True</code>.</p>
+<h3 id="anti-patterns-to-avoid_3">Anti-Patterns to Avoid</h3>
+<ul>
+<li>Emitting the full raw gnomAD GraphQL response in default mode. The pre-migration server had this bug (silent population truncation). The migration fixed it; do not revert.</li>
+<li>Adding a <code>verbose</code> alias for <code>response_mode="full"</code>. Having two names for the same mode confuses LLMs (they may pass <code>verbose=True</code> as a bool).</li>
+</ul>
+<h3 id="trade-offs_3">Trade-Offs</h3>
+<p>Compact summaries require maintenance as gnomAD data schema evolves. The summary fields should be computed from the existing shaped populations data, not from new API fields, to avoid brittleness.</p>
+<hr />
+<h2 id="5-response-structure-current-910">5. Response Structure (Current: 9/10)</h2>
+<h3 id="state-of-practice-2026_4">State of Practice (2026)</h3>
+<p>The MCP spec 2025-06-18 introduces <code>structuredContent</code> alongside the existing <code>content</code> text block for tool results. The spec states: "For backwards compatibility, a tool that returns structured content SHOULD also return the serialized JSON in a TextContent block." FastMCP handles the dual emission automatically when <code>outputSchema</code> is declared and the tool returns a dict. gnomad-link has <code>outputSchema</code> on all data tools — good.</p>
+<p>The spec's resource <code>annotations</code> object supports <code>audience: ["user","assistant"]</code>, <code>priority: 0.0–1.0</code>, and <code>lastModified</code>. These are hints for the <em>client</em> about how to present or filter resources, not for the LLM. Setting <code>audience: ["assistant"]</code> on the <code>gnomad://capabilities</code> resource signals to UI clients that this resource should be injected into the AI context, not shown to the user.</p>
+<h3 id="what-pushes-above-90_4">What Pushes Above 9.0</h3>
+<p><strong>Resource annotations on <code>gnomad://capabilities</code> and <code>gnomad://usage</code>.</strong> Add <code>annotations={"audience": ["assistant"], "priority": 1.0}</code> to the <code>@mcp.resource</code> decorator. This costs nothing and signals to compliant clients that these resources are high-priority AI context. FastMCP exposes <code>annotations</code> on <code>@mcp.resource</code> via the underlying <code>mcp.types.Resource</code> object.</p>
+<p><strong><code>next_steps</code> field on every successful response (not just errors).</strong> gnomad-link already does this on <code>resolve_variant_id</code> (<code>"next_steps": ["Pick one variant_id and call get_variant_frequencies..."]</code>). This pattern should be extended to the other tools. The canonical form from pubtator-link is <code>_meta.next_commands</code> as a list of <code>{tool, arguments}</code> dicts. Extending this to success responses means the LLM always knows what to call next without back-tracking to the capabilities resource.</p>
+<p><strong>Cross-reference population code descriptions.</strong> <code>get_variant_frequencies</code> returns <code>{"id": "afr", "ac": 143, ...}</code>. The LLM has to know that <code>afr</code> is "African/African-American." Either add a <code>population_names</code> lookup table to the capabilities resource, or add a <code>name</code> field to shaped population dicts. The capabilities resource already lists codes but not human-readable names.</p>
+<h3 id="anti-patterns-to-avoid_4">Anti-Patterns to Avoid</h3>
+<ul>
+<li>Emitting <code>_meta</code> in both the top-level response and inside <code>structuredContent</code>. The <code>_meta</code> convention is MCP-layer metadata; keep it top-level only so it doesn't pollute the schema-validated <code>structuredContent</code> object.</li>
+<li>Using <code>resource_link</code> content type to point back to <code>gnomad://capabilities</code> on every tool response. This adds a round-trip without adding information; the LLM already has the capabilities resource from init.</li>
+</ul>
+<h3 id="trade-offs_4">Trade-Offs</h3>
+<p>Adding <code>_meta.next_commands</code> to success responses increases every tool call's payload by ~50 bytes. Across 15 tools this is immaterial. The composability benefit is large.</p>
+<hr />
+<h2 id="6-error-surface-guardrails-current-810">6. Error Surface / Guardrails (Current: 8/10)</h2>
+<h3 id="state-of-practice-2026_5">State of Practice (2026)</h3>
+<p>The MCP spec defines two error mechanisms: protocol errors (JSON-RPC <code>-32xxx</code> codes, for transport-level problems) and tool execution errors (<code>isError: true</code> in the result, for domain-level failures). The community consensus pattern, exemplified by pubtator-link, is to return an envelope dict on tool execution failure rather than raising <code>ToolError</code> — this way the LLM sees a parseable structured response rather than an opaque error string.</p>
+<p>gnomad-link implements this correctly via <code>run_mcp_tool</code> returning <code>exc.payload</code> on exception. The issue is coverage, not design.</p>
+<h3 id="what-pushes-above-90_5">What Pushes Above 9.0</h3>
+<p><strong>Pydantic validation error interception.</strong> pubtator-link installs <code>install_validation_error_handler(mcp)</code> in <code>facade.py</code> which wraps every registered tool's <code>run</code> method to catch <code>PydanticValidationError</code> and convert it into the standard envelope before FastMCP converts it to an <code>isError: true</code> response. gnomad-link has no equivalent. When a caller passes <code>dataset="gnomad_r5"</code>, FastMCP's validation raises <code>PydanticValidationError</code> which becomes an unstructured error string. The fix is 30 lines of wrapper code.</p>
+<p><strong>Output schema validation error interception.</strong> pubtator-link has <code>output_validation.py</code> which wraps the <code>CallToolRequest</code> handler to intercept FastMCP's own output-schema validation failures and convert them into actionable envelopes. This matters when a gnomAD API schema change causes a previously valid response to fail the declared <code>outputSchema</code>. gnomad-link has no equivalent.</p>
+<p><strong>Error code taxonomy.</strong> gnomad-link's <code>errors.py</code> classifies exceptions into four codes: <code>not_found</code>, <code>validation_failed</code>, <code>upstream_unavailable</code>, <code>internal_error</code>. This is correct and sufficient. pubtator-link has additional codes (<code>review_schema_not_current</code>, <code>review_index_unavailable</code>, <code>curated_url_rejected</code>) because it has more failure modes. gnomad-link's taxonomy is appropriate for its domain.</p>
+<p><strong><code>retryable</code> field in error responses.</strong> Already present — correct. This is the primary field LLMs use for branching: retry on <code>upstream_unavailable</code>, do not retry on <code>validation_failed</code>.</p>
+<p><strong>Missing: field-level validation errors.</strong> When the LLM passes <code>populations: "afr"</code> (string instead of list), the error envelope currently says <code>"error_code": "validation_failed", "message": "Invalid input: ValidationError"</code>. pubtator-link's <code>install_validation_error_handler</code> extracts pydantic field-level errors (<code>{"field": "populations", "reason": "...", "recovery_hint": "..."}</code>) from the <code>PydanticValidationError</code> and includes them in the envelope. Without this, the LLM cannot self-correct without reading the full tool schema again.</p>
+<p><strong>Sanitisation coverage.</strong> gnomad-link's <code>_safe_message</code> truncates to 240 chars and has two safe canned messages. pubtator-link's <code>sanitize_error_message</code> has a pattern-matching whitelist that maps raw backend messages to stable public-facing strings. gnomad-link should add pattern matching for common gnomAD upstream errors (rate-limit messages, GraphQL error shapes).</p>
+<h3 id="anti-patterns-to-avoid_5">Anti-Patterns to Avoid</h3>
+<ul>
+<li>The BigData Boutique blog mistake #5 is the inverse: do not swallow error details so aggressively that the LLM cannot self-correct. gnomad-link's <code>_envelope_message</code> returns <code>"Internal error: RuntimeError"</code> for internal errors, which is opaque but safe. This is correct; internal errors should not leak stack details.</li>
+<li>Do not include the raw upstream gnomAD GraphQL error object in the envelope. It can contain large response bodies or user-visible error codes that differ between gnomAD API versions.</li>
+</ul>
+<h3 id="trade-offs_5">Trade-Offs</h3>
+<p>Pydantic validation interception adds one wrapper layer per tool. FastMCP's tool internals are not part of its public API; the wrapper technique (<code>object.__setattr__(tool, "run", wrapped_run)</code>) is identical to pubtator-link's approach and has worked across multiple FastMCP versions. Monitor for breakage on FastMCP upgrades.</p>
+<hr />
+<h2 id="7-composability-current-810">7. Composability (Current: 8/10)</h2>
+<h3 id="state-of-practice-2026_6">State of Practice (2026)</h3>
+<p>Composability at the MCP level means: given the result of tool A, what is the correct next tool to call, and with what arguments? The two mechanisms are: (1) <code>_meta.next_commands</code> embedded in responses, and (2) MCP <code>prompts</code> that encode multi-step workflows. A third emerging pattern is using the MCP <code>sampling</code> client capability to let the server orchestrate LLM calls internally — this is appropriate for servers that need to perform multi-step agentic work, not for read-only data servers like gnomad-link.</p>
+<p>The Anthropic engineering blog recommends consolidating multi-step operations into single tools for common workflows. gnomad-link already does this for liftover (one call, not "convert then query"). The gap is in hinting at the next tool from responses that naturally lead to follow-up calls.</p>
+<h3 id="what-pushes-above-90_6">What Pushes Above 9.0</h3>
+<p><strong><code>next_commands</code> as structured call objects on success.</strong> <code>resolve_variant_id</code> already emits <code>"next_steps": ["Pick one variant_id and call get_variant_frequencies(variant_id, dataset)."]</code> — this is human-readable. The structured form would be:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">&quot;_meta&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;next_commands&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;tool&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;get_variant_frequencies&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;arguments&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;variant_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;{results[0].variant_id}&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;dataset&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;gnomad_r4&quot;</span><span class="p">}},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;tool&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;get_variant_details&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;arguments&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;variant_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;{results[0].variant_id}&quot;</span><span class="p">}}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>This is community convention (not spec-mandated) but consistently used by pubtator-link and several Anthropic-example servers. The <code>{results[0].variant_id}</code> template form tells the LLM the extraction path explicitly.</p>
+<p><strong>Pair tool annotations in descriptions.</strong> <code>get_gene_details</code> says "Follow with get_gene_variants if they then need per-variant rows." This is correct composability guidance. The pattern should be applied to all tools that have natural successors: <code>get_clinvar_variant_details</code> → "Pair with get_variant_frequencies for allele counts." <code>liftover_variant</code> → "Use the returned CHROM-POS-REF-ALT with get_variant_frequencies in the target build."</p>
+<p><strong>A <code>get_gnomad_diagnostics</code> tool.</strong> pubtator-link's <code>pubtator_diagnostics</code> tool serves as the universal recovery entry point — it returns recent errors, service health, and environment config. gnomad-link has <code>get_recent_errors()</code> and <code>clear_recent_errors()</code> in <code>errors.py</code> but no MCP-visible diagnostics tool. Adding one (closed-world, <code>readOnlyHint=True</code>) would give error envelope <code>next_commands</code> a concrete fallback target beyond <code>get_server_capabilities</code>.</p>
+<p><strong>Workflow prompts as composability contracts.</strong> Register four MCP prompts: <code>variant_frequency_workflow</code>, <code>gene_constraint_workflow</code>, <code>clinical_variant_workflow</code>, <code>region_scan_workflow</code>. Each returns a short instruction string that names the tool sequence in order. Clients that support <code>prompts/list</code> (Claude Desktop, Cursor MCP) can expose these as slash commands, enabling one-click workflow initiation.</p>
+<h3 id="anti-patterns-to-avoid_6">Anti-Patterns to Avoid</h3>
+<ul>
+<li>Circular <code>next_commands</code>: do not list the current tool as a next command in its own success response (this can happen when a tool emits a retry recommendation unconditionally).</li>
+<li>Listing more than 3 <code>next_commands</code> items. The LLM reads all of them; past 3, it becomes option paralysis.</li>
+</ul>
+<h3 id="trade-offs_6">Trade-Offs</h3>
+<p><code>next_commands</code> in every success response adds ~100 bytes per call. For the token-sensitive case, make <code>_meta.next_commands</code> opt-in via an <code>include_meta: bool = True</code> parameter (gnomad-link already has <code>include_meta</code> on some tools — this pattern should be made consistent).</p>
+<hr />
+<h2 id="8-self-documentation-current-1010">8. Self-Documentation (Current: 10/10)</h2>
+<h3 id="state-of-practice-2026_7">State of Practice (2026)</h3>
+<p>The <code>truncated.to_disable</code> pattern is gold-standard. The spec has no equivalent prescription, but the pattern appears in Anthropic's example servers and is referenced in the MCP community as the correct way to communicate response shaping decisions. gnomad-link's <code>shape_variant_frequencies</code> emits <code>truncated: {"kind": "populations", "dropped": {"subcohorts": 1, "sex_split": 1, "zero_ac": 1}, "to_disable": "include_subcohorts=True or include_sex_split=True"}</code>.</p>
+<p>This is already at the ceiling for 2026. No structural changes needed.</p>
+<h3 id="minor-hardening">Minor Hardening</h3>
+<ul>
+<li>Ensure <code>truncated</code> appears on <em>all</em> shaped responses, not just frequency shaping. <code>get_gene_variants</code> and <code>search_genes</code> already do this. Confirm <code>get_region</code> does as well.</li>
+<li>Add <code>to_restore</code> alongside <code>to_disable</code> for the inverse: which parameter restores the dropped data. The distinction matters when both the <code>populations</code> filter and <code>exclude_zero_populations</code> are active simultaneously.</li>
+</ul>
+<h3 id="anti-patterns-to-avoid_7">Anti-Patterns to Avoid</h3>
+<ul>
+<li>Emitting <code>truncated</code> even when nothing was dropped (<code>truncated: null</code> or <code>truncated: {dropped: {subcohorts: 0, sex_split: 0}}</code>). Null/empty truncated blocks waste tokens. Only emit the field when at least one row was dropped.</li>
+</ul>
+<hr />
+<h2 id="9-research-scope-clarity-current-910">9. Research-Scope Clarity (Current: 9/10)</h2>
+<h3 id="state-of-practice-2026_8">State of Practice (2026)</h3>
+<p>Research-scope restrictions appear at four levels in well-designed servers: (1) server <code>instructions</code> string, (2) capabilities resource <code>research_use_only: true</code> flag, (3) per-tool <code>unsafe_for_clinical_use: true</code> in <code>_meta</code>, (4) standalone <code>gnomad://research-use</code> resource. gnomad-link currently implements levels 1, 2, and 3. Level 4 exists in pubtator-link as <code>get_research_use_resource()</code> returning a dedicated string resource but is not present in gnomad-link.</p>
+<p>The <code>RESEARCH_USE_NOTICE = "Research use only; not for clinical decision support."</code> constant is correctly threaded through instructions, capabilities, and error envelopes.</p>
+<h3 id="what-pushes-above-90_7">What Pushes Above 9.0</h3>
+<p><strong>Explicit <code>gnomad://research-use</code> resource.</strong> A one-field resource <code>{"notice": RESEARCH_USE_NOTICE}</code> gives compliant clients a subscribable URI to inject into system prompts. This is a 5-line addition to <code>resources.py</code> and <code>tools/metadata.py</code>.</p>
+<p><strong><code>unsafe_for_clinical_use: true</code> on success responses, not just errors.</strong> Currently <code>_meta.unsafe_for_clinical_use</code> only appears in error envelopes. It should appear on every tool response's <code>_meta</code> block. This is how a compliant client knows to attach a clinical-use warning before surfacing the data to a user, regardless of whether the call succeeded.</p>
+<p><strong>Tool description safety language.</strong> The spec section on security notes that tool descriptions from untrusted servers MUST be considered untrusted. For a trusted server, embedding safety language in the tool description is the right pattern: "...This data is for population genetics research; do not use to infer individual clinical risk." gnomad-link's instructions contain this language; it does not appear in individual tool descriptions. Either is acceptable; both is redundant.</p>
+<h3 id="anti-patterns-to-avoid_8">Anti-Patterns to Avoid</h3>
+<ul>
+<li>Repeating the full safety notice in every tool description. It adds ~15 tokens per tool, 225 tokens total for 15 tools, at every <code>tools/list</code> call. The server instructions field is the right level of granularity for the safety notice.</li>
+</ul>
+<h3 id="trade-offs_7">Trade-Offs</h3>
+<p>Adding <code>unsafe_for_clinical_use: true</code> to every success response adds ~35 bytes per call. Acceptable given the safety importance.</p>
+<hr />
+<h2 id="prioritised-action-list">Prioritised Action List</h2>
+<p>Ranked by (impact × ease), each labeled with which aspect(s) it lifts. Items 1-8 should be done before claiming &gt;9.0 on all nine aspects.</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Action</th>
+<th>Aspect(s)</th>
+<th>Effort</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>Upgrade <code>_meta.next_commands</code> to structured <code>{tool, arguments}</code> dicts in both error envelopes and success responses</strong> — change <code>errors.py</code>'s static list to callable maps; add to <code>resolve_variant_id</code>, <code>get_gene_details</code>, <code>get_gene_variants</code>, <code>get_clinvar_variant_details</code> success paths</td>
+<td>Composability, Error Surface</td>
+<td>XS (30 lines)</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>Add Pydantic validation error interception</strong> — port pubtator-link's <code>install_validation_error_handler</code> pattern into <code>gnomad_link/mcp/facade.py</code>; intercepts <code>PydanticValidationError</code> and emits field-level <code>field_errors</code> array in the envelope</td>
+<td>Error Surface</td>
+<td>S (50 lines)</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>Register 4 MCP prompts for core workflows</strong> — <code>variant_frequency_workflow</code>, <code>gene_constraint_workflow</code>, <code>clinical_variant_workflow</code>, <code>region_scan_workflow</code> — each a short <code>@mcp.prompt</code> function returning a tool-sequence instruction string</td>
+<td>Discoverability, Composability</td>
+<td>S (40 lines + tests)</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Add property-level <code>examples</code> to discriminating input schema fields</strong> — <code>variant_id</code> example <code>"1-55051215-G-GA"</code>, <code>gene_id</code> example <code>"ENSG00000169174"</code>, <code>populations</code> example <code>["afr","nfe"]</code>, <code>dataset</code> with all three values labelled by genome build</td>
+<td>Schema Clarity</td>
+<td>S (15 lines across 5 tool files)</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>Add per-tool <code>summary</code> block to <code>get_variant_frequencies</code></strong> — top-level <code>summary: {overall_af, max_pop, max_pop_af, has_clinvar}</code> extracted from shaped populations; allows LLMs to answer AF questions without parsing the full populations array</td>
+<td>Token Efficiency, Response Structure</td>
+<td>S (20 lines in <code>shaping.py</code>)</td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>Extend <code>dataset</code> parameter descriptions to name genome builds explicitly</strong> — <code>"gnomad_r4 (GRCh38, default, largest cohort), gnomad_r3 (GRCh38, whole-genome), gnomad_r2_1 (GRCh37 legacy)"</code> across tools that use the enum</td>
+<td>Schema Clarity</td>
+<td>XS (5 lines)</td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>Add <code>unsafe_for_clinical_use: true</code> to every tool success response's <code>_meta</code> block</strong> — add to <code>run_mcp_tool</code> return-path in <code>errors.py</code> so it is emitted unconditionally</td>
+<td>Research-Scope Clarity</td>
+<td>XS (3 lines in <code>errors.py</code>)</td>
+</tr>
+<tr>
+<td>8</td>
+<td><strong>Add output schema validation interception</strong> — port pubtator-link's <code>output_validation.py</code> <code>install_output_validation_error_handler</code>; converts FastMCP output-schema validation failures into actionable envelopes</td>
+<td>Error Surface</td>
+<td>S (60 lines + tests)</td>
+</tr>
+<tr>
+<td>9</td>
+<td><strong>Upgrade capabilities resource to include <code>llm_driver_contract</code> and <code>output_cheatsheet</code></strong> — add <code>recommended_entrypoint</code>, <code>core_workflow_tools</code> in order, and a field→JSON-path cheatsheet (<code>"frequency_populations": "exome.populations[]"</code>)</td>
+<td>Discoverability, Response Structure</td>
+<td>S (30 lines in <code>resources.py</code>)</td>
+</tr>
+<tr>
+<td>10</td>
+<td><strong>Add resource annotations to <code>gnomad://capabilities</code> and <code>gnomad://usage</code></strong> — <code>annotations={"audience": ["assistant"], "priority": 1.0}</code> — signals to compliant clients that these resources are high-priority AI context</td>
+<td>Discoverability</td>
+<td>XS (2 lines)</td>
+</tr>
+<tr>
+<td>11</td>
+<td><strong>Add <code>get_gnomad_diagnostics</code> tool</strong> — closed-world, <code>readOnlyHint=True</code>, returns <code>get_recent_errors()</code> + server version + upstream health flag; gives error envelopes a concrete diagnostics entry point</td>
+<td>Composability, Error Surface</td>
+<td>M (80 lines + tests)</td>
+</tr>
+<tr>
+<td>12</td>
+<td><strong>Add <code>gnomad://research-use</code> resource</strong> — single-field <code>{"notice": RESEARCH_USE_NOTICE}</code> as a subscribable URI for compliant clients to inject into system context</td>
+<td>Research-Scope Clarity</td>
+<td>XS (8 lines)</td>
+</tr>
+<tr>
+<td>13</td>
+<td><strong>Add tool <code>tags</code> for host-side filtering</strong> — <code>tags={"variant"}</code>, <code>{"gene"}</code>, <code>{"clinical"}</code>, <code>{"coordinates"}</code>, <code>{"search"}</code>, <code>{"metadata"}</code> in each <code>@mcp.tool()</code> call</td>
+<td>Speed, Discoverability</td>
+<td>XS (15 lines)</td>
+</tr>
+<tr>
+<td>14</td>
+<td><strong>Add <code>tool_categories</code> and <code>tool_groups</code> to capabilities resource</strong> — mirrors pubtator-link's <code>TOOL_CATEGORIES</code> dict; enables LLM to select the right category before loading individual tool schemas</td>
+<td>Discoverability</td>
+<td>S (20 lines in <code>resources.py</code>)</td>
+</tr>
+<tr>
+<td>15</td>
+<td><strong>Add <code>to_restore</code> alongside <code>to_disable</code> in truncated blocks</strong> — clarifies the inverse operation when multiple filters are active simultaneously</td>
+<td>Self-Documentation</td>
+<td>XS (5 lines in <code>shaping.py</code>)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Effort key:</strong> XS = &lt;1 hour, S = 1-3 hours, M = 3-6 hours.</p>
+<p>Items 1-8 together would lift the composite score to approximately 9.3/10 by the evaluation rubric. Items 9-15 push toward 9.5-9.7/10.</p>
+<hr />
+<h2 id="spec-gaps-and-community-conventions">Spec Gaps and Community Conventions</h2>
+<p>The following are <strong>community patterns only</strong> (not in the 2025-06-18 spec):</p>
+<ul>
+<li><code>_meta.next_commands</code> field shape — no spec mandate; adopted by pubtator-link, sysndd, and several Anthropic examples</li>
+<li><code>truncated.to_disable</code> pattern — no spec mandate; invented by this author</li>
+<li><code>unsafe_for_clinical_use</code> in <code>_meta</code> — no spec mandate; domain convention</li>
+<li><code>output_cheatsheet</code> in capabilities — no spec mandate; pubtator-link invention</li>
+</ul>
+<p>The following <strong>are</strong> in the 2025-06-18 spec but not yet used by gnomad-link:</p>
+<ul>
+<li><code>ToolDefinition.title</code> — human-readable display name separate from <code>name</code>; already used correctly via FastMCP's <code>title</code> parameter — DONE</li>
+<li><code>Resource.annotations.audience</code> and <code>.priority</code> — not yet set on gnomad-link's resources</li>
+<li><code>completions</code> capability for <code>prompts/get</code> argument autocomplete — not implemented; low priority for a 15-tool server</li>
+<li>Elicitation (<code>elicitation/create</code>) — server-initiated user-input requests; not appropriate for a read-only data server</li>
+</ul>
+<hr />
+<h2 id="sources">Sources</h2>
+<ul>
+<li>MCP specification 2025-06-18: https://modelcontextprotocol.io/specification/2025-06-18</li>
+<li>MCP tools spec: https://modelcontextprotocol.io/specification/2025-06-18/server/tools</li>
+<li>MCP resources spec: https://modelcontextprotocol.io/specification/2025-06-18/server/resources</li>
+<li>MCP prompts spec: https://modelcontextprotocol.io/specification/2025-06-18/server/prompts</li>
+<li>MCP elicitation spec: https://modelcontextprotocol.io/specification/2025-06-18/client/elicitation</li>
+<li>MCP completion spec: https://modelcontextprotocol.io/specification/2025-06-18/server/utilities/completion</li>
+<li>FastMCP tools docs: https://gofastmcp.com/servers/tools</li>
+<li>FastMCP prompts docs: https://gofastmcp.com/servers/prompts</li>
+<li>Anthropic engineering blog — writing tools for agents: https://www.anthropic.com/engineering/writing-tools-for-agents</li>
+<li>"MCP Tool Descriptions Are Smelly" (arxiv 2602.14878v1): https://arxiv.org/html/2602.14878v1</li>
+<li>BigData Boutique — 7 FastMCP mistakes: https://bigdataboutique.com/blog/building-mcp-servers-with-fastmcp-7-mistakes-to-avoid</li>
+<li>pubtator-link MCP reference codebase: <code>/home/bernt-popp/development/pubtator-link/pubtator_link/mcp/</code></li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "content.code.copy", "search.suggest"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

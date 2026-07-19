@@ -1,0 +1,1555 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="MCP server bridging the gnomAD database to AI applications.">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>MCP Facade Polish Implementation Plan - gnomAD-Link</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#mcp-facade-polish-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="gnomAD-Link" class="md-header__button md-logo" aria-label="gnomAD-Link" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            gnomAD-Link
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              MCP Facade Polish Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/berntpopp/gnomad-link" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="gnomAD-Link" class="md-nav__button md-logo" aria-label="gnomAD-Link" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    gnomAD-Link
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/berntpopp/gnomad-link" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data & provenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../MCP_CONNECTION_GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP connection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pre-flight-reading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pre-Flight Reading
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#invariants-must-hold-across-every-task" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Invariants (must hold across every task)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#final-tool-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Final Tool Surface
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-a-consistency-hardening" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase A — Consistency Hardening
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase A — Consistency Hardening">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-a1-propagate-truncatedto_disable-to_restore-to-remaining-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task A1: Propagate truncated.{to_disable, to_restore} to remaining tools
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-a2-cross-link-_metanext_commands-on-get_variant_frequencies-clinvar" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task A2: Cross-link _meta.next_commands on get_variant_frequencies → ClinVar
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-a3-tighten-variant-id-schema-regex-across-all-variant-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task A3: Tighten variant ID schema regex across all variant tools
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-a4-add-response_modecompact-to-get_gene_details-and-canonical-transcript-projection-to-get_variant_details" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task A4: Add response_mode=compact to get_gene_details and canonical-transcript projection to get_variant_details
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-a5-mitochondrial-alias-normalization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task A5: Mitochondrial alias normalization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-a6-search_genes-match_quality-ranking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task A6: search_genes match_quality ranking
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-b-smart-server-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase B — Smart Server Behavior
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase B — Smart Server Behavior">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-b1-build-mismatch-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task B1: Build-mismatch detection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-b2-freshness-metadata-_metagnomad_release-on-every-response" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task B2: Freshness metadata _meta.gnomad_release on every response
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-b3-clinvar-submissions-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task B3: ClinVar submissions summary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-b4-enrich-resolve_variant_id-rename-liftover_variantreference_genome-source_genome" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task B4: Enrich resolve_variant_id + rename liftover_variant.reference_genome → source_genome
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-d-polish" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase D — Polish
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase D — Polish">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-d1-token-cost-hints-in-tool-docstrings-capabilities-sync-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task D1: Token-cost hints in tool docstrings + capabilities sync test
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-d2-deprecate-get_clinvar_meta-fold-its-data-into-get_server_capabilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task D2: Deprecate get_clinvar_meta; fold its data into get_server_capabilities
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#done-criteria" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Done Criteria
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope-deferred" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of Scope (deferred)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="mcp-facade-polish-implementation-plan">MCP Facade Polish Implementation Plan</h1>
+<blockquote>
+<p>Historical record</p>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development to implement this plan task-by-task. Steps use checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Close the 12 remaining gaps identified in <code>docs/mcp-llm-consumer-review.md</code> and the second-pass deep audit against the committed feat branch. After this plan ships, every tool in the suite follows the same shape conventions the headline <code>get_variant_frequencies</code> tool already obeys (truncated metadata with <code>to_disable</code>/<code>to_restore</code>, cross-link <code>next_commands</code>, structured summaries, response_mode for heavy payloads), and the server actively prevents the highest-leverage silent failure mode (coordinate-build / dataset mismatch).</p>
+<p><strong>Architecture:</strong> Surgical edits on top of the hand-authored facade landed by <code>2026-05-25-mcp-facade-migration.md</code>. No new top-level packages; new behavior layers onto existing modules (<code>gnomad_link/mcp/shaping.py</code>, <code>gnomad_link/mcp/tools/*.py</code>, <code>gnomad_link/mcp/errors.py</code>, <code>gnomad_link/mcp/resources.py</code>). No new tools (Phase C in the review is deferred). Service layer gets one helper for build-mismatch detection.</p>
+<p><strong>Tech Stack:</strong> Python 3.12, FastMCP (already wired), Pydantic v2 (<code>Annotated</code> + <code>Field</code> + <code>model_validator</code>), pytest, pytest-asyncio, Ruff, mypy.</p>
+<p><strong>Standards reference:</strong>
+- Anthropic MCP spec 2025-06-18 (ToolAnnotations, output schemas, resource audiences, structured errors).
+- Google AIP-157 (partial responses / FieldMask) for response_mode.
+- Google AIP-217 (unreachable resources) for build-mismatch detection.
+- Google AIP-132 (list pagination) for ClinVar submissions limit.</p>
+<hr />
+<h2 id="pre-flight-reading">Pre-Flight Reading</h2>
+<p>Before starting Task A1, the executor must read these files (already in repo):</p>
+<ul>
+<li><code>gnomad_link/mcp/shaping.py</code> — pattern source for <code>to_disable</code>/<code>to_restore</code> truncation</li>
+<li><code>gnomad_link/mcp/tools/variants.py</code> — headline tool implementation</li>
+<li><code>gnomad_link/mcp/tools/genes.py</code> — gene tool implementation</li>
+<li><code>gnomad_link/mcp/tools/clinvar.py</code> — ClinVar tool implementation</li>
+<li><code>gnomad_link/mcp/tools/search.py</code> — search/resolve tool implementation</li>
+<li><code>gnomad_link/mcp/tools/coordinates.py</code> — region + liftover implementation</li>
+<li><code>gnomad_link/mcp/tools/specialty.py</code> — SV/mitochondrial/transcript implementation</li>
+<li><code>gnomad_link/mcp/errors.py</code> — <code>run_mcp_tool</code>, <code>McpErrorContext</code>, structured envelopes</li>
+<li><code>gnomad_link/mcp/resources.py</code> — capabilities resource shape</li>
+<li><code>gnomad_link/services/frequency_service.py</code> — service wrappers</li>
+<li><code>gnomad_link/models/variant_models.py</code> — Pydantic response models</li>
+<li><code>docs/mcp-llm-consumer-review.md</code> — review with 15 action items</li>
+</ul>
+<hr />
+<h2 id="invariants-must-hold-across-every-task">Invariants (must hold across every task)</h2>
+<ul>
+<li>Each task must be a single atomic commit on <code>feat/mcp-facade-migration</code>. Commit subject in the form: <code>feat(mcp): &lt;one-line summary&gt;</code> or <code>refactor(mcp): ...</code> or <code>chore(mcp): ...</code>.</li>
+<li>Every task starts with a failing test (TDD). Step 1 of every task is "write the failing test first".</li>
+<li>No raise of <code>.loc-allowlist</code> ceilings. If a module approaches 600 lines, split per project rule.</li>
+<li>No widening of mypy / ruff ignore lists. Fix the underlying issue.</li>
+<li>No new live integration tests in <code>tests/unit/</code>. Live tests go to <code>tests/integration/</code> only.</li>
+<li><code>make ci-local</code> must pass at the end of every task.</li>
+<li>Existing MCP tool names and response shapes do not change in a breaking way. New fields are additive; deprecations carry <code>_meta.deprecated</code>.</li>
+<li>Research-use safety meta (<code>_meta.unsafe_for_clinical_use: True</code>) is preserved on every success and error response (already injected by <code>run_mcp_tool</code>; do not remove).</li>
+</ul>
+<hr />
+<h2 id="final-tool-surface">Final Tool Surface</h2>
+<p>No new tools. No removed tools. Existing 16 tools gain richer behavior:</p>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Phase A</th>
+<th>Phase B</th>
+<th>Phase D</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>get_variant_frequencies</code></td>
+<td>+ <code>next_commands</code> → ClinVar (A2)</td>
+<td>+ build_mismatch precheck (B1) + freshness (B2)</td>
+<td>+ token-cost hint (D1)</td>
+</tr>
+<tr>
+<td><code>get_variant_details</code></td>
+<td>+ tightened schema (A3) + truncated (A1) + canonical_transcript (A4)</td>
+<td>+ freshness (B2)</td>
+<td>+ token-cost hint (D1)</td>
+</tr>
+<tr>
+<td><code>get_gene_details</code></td>
+<td>+ response_mode=compact (A4) + truncated (A1)</td>
+<td>+ freshness (B2)</td>
+<td>+ token-cost hint (D1)</td>
+</tr>
+<tr>
+<td><code>get_gene_variants</code></td>
+<td>unchanged</td>
+<td>+ freshness (B2)</td>
+<td>unchanged</td>
+</tr>
+<tr>
+<td><code>get_clinvar_variant_details</code></td>
+<td>+ truncated (A1)</td>
+<td>+ submissions summary + pagination (B3) + freshness (B2)</td>
+<td>unchanged</td>
+</tr>
+<tr>
+<td><code>get_clinvar_meta</code></td>
+<td>unchanged</td>
+<td>+ freshness (B2)</td>
+<td>+ deprecation alias notice (D2)</td>
+</tr>
+<tr>
+<td><code>liftover_variant</code></td>
+<td>unchanged</td>
+<td>+ <code>source_genome</code> param rename with alias (B4)</td>
+<td>unchanged</td>
+</tr>
+<tr>
+<td><code>get_structural_variant</code></td>
+<td>+ tightened schema (A3)</td>
+<td>+ freshness (B2)</td>
+<td>+ token-cost hint (D1)</td>
+</tr>
+<tr>
+<td><code>get_mitochondrial_variant</code></td>
+<td>+ alias normalization (A5)</td>
+<td>+ freshness (B2)</td>
+<td>unchanged</td>
+</tr>
+<tr>
+<td><code>get_region</code></td>
+<td>+ tightened schema (A3)</td>
+<td>+ freshness (B2)</td>
+<td>unchanged</td>
+</tr>
+<tr>
+<td><code>get_transcript_details</code></td>
+<td>unchanged</td>
+<td>+ freshness (B2)</td>
+<td>unchanged</td>
+</tr>
+<tr>
+<td><code>search_genes</code></td>
+<td>+ match_quality ranking (A6)</td>
+<td>unchanged</td>
+<td>+ token-cost hint (D1)</td>
+</tr>
+<tr>
+<td><code>resolve_variant_id</code></td>
+<td>unchanged</td>
+<td>+ <code>{gene, consequence, af}</code> enrichment (B4)</td>
+<td>unchanged</td>
+</tr>
+<tr>
+<td><code>search_variants</code> (alias)</td>
+<td>unchanged</td>
+<td>+ same enrichment via delegate (B4)</td>
+<td>unchanged</td>
+</tr>
+<tr>
+<td><code>get_server_capabilities</code></td>
+<td>unchanged</td>
+<td>+ clinvar_release_date + gnomad_release (D2)</td>
+<td>+ capabilities sync test (D1)</td>
+</tr>
+<tr>
+<td><code>get_gnomad_diagnostics</code></td>
+<td>unchanged</td>
+<td>unchanged</td>
+<td>unchanged</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="phase-a-consistency-hardening">Phase A — Consistency Hardening</h2>
+<h3 id="task-a1-propagate-truncatedto_disable-to_restore-to-remaining-tools">Task A1: Propagate <code>truncated.{to_disable, to_restore}</code> to remaining tools</h3>
+<p><strong>Files:</strong>
+- Modify: <code>gnomad_link/mcp/shaping.py</code>
+- Modify: <code>gnomad_link/mcp/tools/variants.py</code>
+- Modify: <code>gnomad_link/mcp/tools/genes.py</code>
+- Modify: <code>gnomad_link/mcp/tools/clinvar.py</code>
+- Create: <code>tests/unit/mcp/test_truncated_propagation.py</code></p>
+<ul>
+<li>[ ] <strong>Step 1: Write failing tests</strong></li>
+</ul>
+<p>Create <code>tests/unit/mcp/test_truncated_propagation.py</code> with:</p>
+<ul>
+<li><code>test_variant_details_compact_emits_truncated_when_transcripts_dropped</code> — feed a raw payload with 50 transcript_consequences and assert the compact-mode response includes <code>truncated.kind == "transcript_consequences"</code>, <code>truncated.dropped</code> count, and <code>truncated.to_restore == "response_mode='full'"</code>.</li>
+<li><code>test_gene_details_compact_emits_truncated_when_present</code> — feed a raw <code>Gene</code> dict with <code>transcripts</code> and <code>exons</code> arrays; assert compact-mode strips them and emits <code>truncated.kind == "gene_payload"</code> with <code>to_restore == "response_mode='full'"</code>.</li>
+<li><code>test_clinvar_submissions_emit_truncated_when_capped</code> — feed a payload with 30 submissions; assert the response includes <code>truncated.kind == "submissions"</code>, <code>truncated.dropped == 25</code> (default cap = 5 for the test), and <code>truncated.to_disable == "raise submissions_limit (max 200)"</code>.</li>
+</ul>
+<p>Run <code>make test-unit</code> and confirm all three fail.</p>
+<ul>
+<li>[ ] <strong>Step 2: Add shaping helpers</strong></li>
+</ul>
+<p>In <code>gnomad_link/mcp/shaping.py</code>, add:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">shape_gene_details_compact</span><span class="p">(</span><span class="n">raw</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Project a Gene payload to constraint + canonical transcript + coordinates.</span>
+
+<span class="sd">    Drops heavy arrays (transcripts, exons, alt_transcripts) and emits a</span>
+<span class="sd">    truncated block so the LLM can request the full payload with response_mode=&#39;full&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">heavy_keys</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;transcripts&quot;</span><span class="p">,</span> <span class="s2">&quot;exons&quot;</span><span class="p">,</span> <span class="s2">&quot;alt_transcripts&quot;</span><span class="p">}</span>
+    <span class="n">dropped</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">heavy_keys</span> <span class="k">if</span> <span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">)}</span>
+    <span class="n">compact</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">raw</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">heavy_keys</span><span class="p">}</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">dropped</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+        <span class="n">compact</span><span class="p">[</span><span class="s2">&quot;truncated&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;gene_payload&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;dropped&quot;</span><span class="p">:</span> <span class="n">dropped</span><span class="p">,</span>
+            <span class="s2">&quot;to_disable&quot;</span><span class="p">:</span> <span class="s2">&quot;response_mode=&#39;full&#39; returns the full payload&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;to_restore&quot;</span><span class="p">:</span> <span class="s2">&quot;response_mode=&#39;full&#39;&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="k">return</span> <span class="n">compact</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">shape_clinvar_submissions</span><span class="p">(</span>
+    <span class="n">payload</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">submissions_limit</span><span class="p">:</span> <span class="nb">int</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Cap submissions[] and emit truncated metadata. Mutates a copy of payload.&quot;&quot;&quot;</span>
+    <span class="n">submissions</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;submissions&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">submissions</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">submissions_limit</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">payload</span>
+    <span class="n">capped</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+    <span class="n">capped</span><span class="p">[</span><span class="s2">&quot;submissions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">submissions</span><span class="p">[:</span><span class="n">submissions_limit</span><span class="p">]</span>
+    <span class="n">capped</span><span class="p">[</span><span class="s2">&quot;truncated&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;submissions&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;dropped&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">submissions</span><span class="p">)</span> <span class="o">-</span> <span class="n">submissions_limit</span><span class="p">,</span>
+        <span class="s2">&quot;filter&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;submissions_limit&quot;</span><span class="p">:</span> <span class="n">submissions_limit</span><span class="p">},</span>
+        <span class="s2">&quot;to_disable&quot;</span><span class="p">:</span> <span class="s2">&quot;raise submissions_limit (max 200)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;to_restore&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;submissions_limit=</span><span class="si">{</span><span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">submissions</span><span class="p">),</span><span class="w"> </span><span class="mi">200</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">capped</span>
+</code></pre></div>
+<p>Also extend <code>shape_variant_details_compact(raw, *, max_transcripts=10)</code> so it accepts an optional <code>max_transcripts</code> int. When <code>len(raw['transcript_consequences']) &gt; max_transcripts</code>, keep the first <code>max_transcripts</code> (canonical-transcript filter handled in Task A4) and emit <code>truncated.kind == "transcript_consequences"</code> with <code>to_restore == "response_mode='full'"</code>.</p>
+<ul>
+<li>
+<p>[ ] <strong>Step 3: Wire shaping into tools</strong></p>
+</li>
+<li>
+<p>In <code>gnomad_link/mcp/tools/genes.py</code> <code>get_gene_details</code>, add a <code>response_mode: Literal["compact","full"] = "compact"</code> param and dispatch through <code>shape_gene_details_compact</code> when compact.</p>
+</li>
+<li>In <code>gnomad_link/mcp/tools/clinvar.py</code> <code>get_clinvar_variant_details</code>, add a <code>submissions_limit: int = 25</code> param (Field with <code>ge=1, le=200</code>), and pass payload through <code>shape_clinvar_submissions</code> before emitting.</li>
+<li>
+<p><code>variants.py</code> already calls <code>shape_variant_details_compact</code>; just pass <code>max_transcripts=10</code> from a new optional param <code>max_transcripts: int = 10</code> (Field with <code>ge=1, le=200</code>).</p>
+</li>
+<li>
+<p>[ ] <strong>Step 4: Verify</strong></p>
+</li>
+</ul>
+<p>Run <code>make ci-local</code>. All three new tests pass. Existing tests still green.</p>
+<ul>
+<li>[ ] <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git add gnomad_link/mcp/shaping.py gnomad_link/mcp/tools/variants.py gnomad_link/mcp/tools/genes.py gnomad_link/mcp/tools/clinvar.py tests/unit/mcp/test_truncated_propagation.py
+git commit -m &quot;feat(mcp): propagate truncated.to_disable/to_restore to variant_details, gene_details, clinvar&quot;
+</code></pre></div>
+<hr />
+<h3 id="task-a2-cross-link-_metanext_commands-on-get_variant_frequencies-clinvar">Task A2: Cross-link <code>_meta.next_commands</code> on <code>get_variant_frequencies</code> → ClinVar</h3>
+<p><strong>Files:</strong>
+- Modify: <code>gnomad_link/mcp/tools/variants.py</code>
+- Modify: <code>tests/unit/mcp/test_frequency_shaping.py</code> (or new test file)</p>
+<ul>
+<li>[ ] <strong>Step 1: Write failing test</strong></li>
+</ul>
+<p>Add <code>test_get_variant_frequencies_emits_next_commands_to_clinvar</code> to <code>tests/unit/mcp/test_frequency_shaping.py</code>. Use the existing in-process FastMCP client setup pattern from <code>test_mcp_facade_surface.py</code>. Stub the service to return a minimal VariantFrequencyResponse. Assert the result includes <code>_meta.next_commands</code> containing a dict <code>{"tool": "get_clinvar_variant_details", "arguments": {"variant_id": &lt;same id&gt;, "reference_genome": "GRCh38"}}</code>.</p>
+<ul>
+<li>[ ] <strong>Step 2: Implement</strong></li>
+</ul>
+<p>In <code>gnomad_link/mcp/tools/variants.py</code> <code>get_variant_frequencies</code>, after <code>shape_variant_frequencies(...)</code> returns the dict, attach:</p>
+<div class="highlight"><pre><span></span><code><span class="n">shaped</span><span class="p">[</span><span class="s2">&quot;_meta&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="o">**</span><span class="p">(</span><span class="n">shaped</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;_meta&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}),</span>
+    <span class="s2">&quot;next_commands&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;tool&quot;</span><span class="p">:</span> <span class="s2">&quot;get_clinvar_variant_details&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;arguments&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;variant_id&quot;</span><span class="p">:</span> <span class="n">variant_id</span><span class="p">,</span>
+                <span class="s2">&quot;reference_genome&quot;</span><span class="p">:</span> <span class="s2">&quot;GRCh38&quot;</span> <span class="k">if</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;gnomad_r3&quot;</span><span class="p">,</span> <span class="s2">&quot;gnomad_r4&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;GRCh37&quot;</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">},</span>
+    <span class="p">],</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>Note: <code>run_mcp_tool</code> merges <code>_meta.unsafe_for_clinical_use</code> on top of whatever the tool returns; placing <code>next_commands</code> here is preserved.</p>
+<ul>
+<li>[ ] <strong>Step 3: Verify + commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>make ci-local
+git commit -m &quot;feat(mcp): cross-link get_variant_frequencies to ClinVar via _meta.next_commands&quot;
+</code></pre></div>
+<hr />
+<h3 id="task-a3-tighten-variant-id-schema-regex-across-all-variant-tools">Task A3: Tighten variant ID schema regex across all variant tools</h3>
+<p><strong>Files:</strong>
+- Modify: <code>gnomad_link/mcp/tools/variants.py</code>
+- Modify: <code>gnomad_link/mcp/tools/coordinates.py</code>
+- Modify: <code>gnomad_link/mcp/tools/specialty.py</code> (SV only; mitochondrial handled in A5)
+- Modify: <code>tests/unit/mcp/test_mcp_errors.py</code></p>
+<p>The current pattern is <code>r"^[^'\"]+$"</code> which only blocks quote injection. Replace with full grammar:</p>
+<div class="highlight"><pre><span></span><code><span class="n">_VARIANT_ID_PATTERN</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;^([1-9]|1\d|2[0-2]|X|Y|MT?)-\d+-[ACGT]+-[ACGT]+$&quot;</span>
+</code></pre></div>
+<p>This rejects malformed input pre-network with a structured <code>validation_failed</code> envelope (already handled by <code>install_validation_error_handler</code>).</p>
+<ul>
+<li>[ ] <strong>Step 1: Failing test</strong></li>
+</ul>
+<p>In <code>tests/unit/mcp/test_mcp_errors.py</code>, add <code>test_get_variant_frequencies_rejects_malformed_id</code>: call the tool with <code>variant_id="not-a-variant"</code>. Assert the response is <code>{success: False, error_code: "validation_failed", field_errors: [{field: "variant_id", reason: &lt;substring "pattern"&gt;}]}</code>.</p>
+<p>Also add <code>test_get_variant_frequencies_rejects_mitochondrial_id</code>: call with <code>variant_id="M-7497-G-A"</code> against <code>get_variant_frequencies</code>. Assert validation_failed (because mito belongs in <code>get_mitochondrial_variant</code>). Use <code>MT-</code> form to test both M/MT — both should fail for the autosomal tool.</p>
+<ul>
+<li>[ ] <strong>Step 2: Implement</strong></li>
+</ul>
+<p>Add the constant at module level in <code>variants.py</code>. Apply <code>pattern=_VARIANT_ID_PATTERN</code> to:
+- <code>get_variant_frequencies.variant_id</code>
+- <code>get_variant_details.variant_id</code></p>
+<p>Apply to <code>liftover_variant.source_variant_id</code> in <code>coordinates.py</code> (same pattern; both builds use the same grammar).</p>
+<p>For <code>get_structural_variant.variant_id</code> in <code>specialty.py</code>, define a separate pattern: <code>r"^(DEL|DUP|INS|INV|BND|CPX|CTX|MCNV)_chr([1-9]|1\d|2[0-2]|X|Y|M)_\w+$"</code>. Use case-insensitive via <code>Annotated[..., Field(pattern=...)]</code> with the SV grammar.</p>
+<ul>
+<li>[ ] <strong>Step 3: Verify + commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>make ci-local
+git commit -m &quot;refactor(mcp): tighten variant_id schemas to CHROM-POS-REF-ALT grammar&quot;
+</code></pre></div>
+<hr />
+<h3 id="task-a4-add-response_modecompact-to-get_gene_details-and-canonical-transcript-projection-to-get_variant_details">Task A4: Add <code>response_mode=compact</code> to <code>get_gene_details</code> and canonical-transcript projection to <code>get_variant_details</code></h3>
+<p><strong>Note:</strong> Task A1 already adds <code>response_mode</code> to <code>get_gene_details</code> via <code>shape_gene_details_compact</code>. This task layers canonical-transcript filtering on <code>get_variant_details.shape_variant_details_compact</code>.</p>
+<p><strong>Files:</strong>
+- Modify: <code>gnomad_link/mcp/shaping.py</code>
+- Modify: <code>tests/unit/mcp/test_truncated_propagation.py</code> (already exists from A1)</p>
+<ul>
+<li>[ ] <strong>Step 1: Failing test</strong></li>
+</ul>
+<p>Add <code>test_compact_keeps_canonical_transcript_first</code>: feed a payload where <code>transcript_consequences</code> includes one item with <code>canonical: True</code> (or <code>mane_select: "NM_xxx"</code>) somewhere in the middle of the list. Assert the compact output's first transcript is the canonical/MANE one.</p>
+<p>Add <code>test_compact_falls_back_to_first_protein_coding</code>: feed a payload with no canonical flag but with <code>biotype: "protein_coding"</code> on one item. Assert that item is first.</p>
+<ul>
+<li>[ ] <strong>Step 2: Implement</strong></li>
+</ul>
+<p>In <code>gnomad_link/mcp/shaping.py</code>, extend <code>shape_variant_details_compact</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_rank_transcript</span><span class="p">(</span><span class="n">tx</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+    <span class="c1"># Lower tuple == higher priority. Stable sort across ties.</span>
+    <span class="k">if</span> <span class="n">tx</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;canonical&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">tx</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mane_select&quot;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">tx</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;biotype&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;protein_coding&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">shape_variant_details_compact</span><span class="p">(</span>
+    <span class="n">raw</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">max_transcripts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="o">...</span>  <span class="c1"># existing keep-set filter</span>
+    <span class="n">txs</span> <span class="o">=</span> <span class="n">compact</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;transcript_consequences&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">txs</span><span class="p">:</span>
+        <span class="n">ranked</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">txs</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">item</span><span class="p">:</span> <span class="p">(</span><span class="n">_rank_transcript</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="n">compact</span><span class="p">[</span><span class="s2">&quot;transcript_consequences&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">tx</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">tx</span> <span class="ow">in</span> <span class="n">ranked</span><span class="p">[:</span><span class="n">max_transcripts</span><span class="p">]]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">txs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">max_transcripts</span><span class="p">:</span>
+            <span class="n">compact</span><span class="p">[</span><span class="s2">&quot;truncated&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;transcript_consequences&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;dropped&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">txs</span><span class="p">)</span> <span class="o">-</span> <span class="n">max_transcripts</span><span class="p">,</span>
+                <span class="s2">&quot;filter&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;max_transcripts&quot;</span><span class="p">:</span> <span class="n">max_transcripts</span><span class="p">},</span>
+                <span class="s2">&quot;to_disable&quot;</span><span class="p">:</span> <span class="s2">&quot;response_mode=&#39;full&#39; returns every transcript&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;to_restore&quot;</span><span class="p">:</span> <span class="s2">&quot;response_mode=&#39;full&#39;&quot;</span><span class="p">,</span>
+            <span class="p">}</span>
+    <span class="k">return</span> <span class="n">compact</span>
+</code></pre></div>
+<ul>
+<li>[ ] <strong>Step 3: Verify + commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>make ci-local
+git commit -m &quot;feat(mcp): canonical-transcript-first projection in get_variant_details compact mode&quot;
+</code></pre></div>
+<hr />
+<h3 id="task-a5-mitochondrial-alias-normalization">Task A5: Mitochondrial alias normalization</h3>
+<p><strong>Files:</strong>
+- Modify: <code>gnomad_link/mcp/tools/specialty.py</code>
+- Modify: <code>tests/unit/mcp/test_mcp_facade_surface.py</code> (or dedicated specialty test file)</p>
+<ul>
+<li>[ ] <strong>Step 1: Failing test</strong></li>
+</ul>
+<p>Create <code>tests/unit/mcp/test_specialty_aliases.py</code>. Add <code>test_mitochondrial_accepts_chrM_alias</code>, <code>test_mitochondrial_accepts_MT_alias</code>, <code>test_mitochondrial_accepts_chrMT_alias</code>: stub the service to capture the variant_id it receives; call with <code>chrM-7497-G-A</code>, <code>MT-7497-G-A</code>, <code>chrMT-7497-G-A</code>. Assert the service is called with <code>M-7497-G-A</code> in every case.</p>
+<ul>
+<li>[ ] <strong>Step 2: Implement</strong></li>
+</ul>
+<p>In <code>gnomad_link/mcp/tools/specialty.py</code> <code>get_mitochondrial_variant</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">_MITO_PREFIX_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;^(chr)?(M|MT)-&quot;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_normalize_mito_id</span><span class="p">(</span><span class="n">variant_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">_MITO_PREFIX_RE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">&quot;M-&quot;</span><span class="p">,</span> <span class="n">variant_id</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div>
+<p>Pattern relaxes to <code>r"^(chr)?(M|MT)-\d+-[ACGT]+-[ACGT]+$"</code> (case-insensitive via <code>re.IGNORECASE</code> would require a model_validator; simpler: extend the regex with both cases). Normalize inside <code>call()</code> before passing to <code>service.get_mitochondrial_variant</code>.</p>
+<ul>
+<li>[ ] <strong>Step 3: Verify + commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>make ci-local
+git commit -m &quot;feat(mcp): accept chrM/MT/chrMT aliases on get_mitochondrial_variant&quot;
+</code></pre></div>
+<hr />
+<h3 id="task-a6-search_genes-match_quality-ranking">Task A6: <code>search_genes</code> match_quality ranking</h3>
+<p><strong>Files:</strong>
+- Modify: <code>gnomad_link/mcp/tools/search.py</code>
+- Modify: <code>gnomad_link/models/gene_models.py</code> (add <code>match_quality</code> Literal field to <code>GeneSearchResult</code>)
+- Modify: <code>tests/unit/mcp/test_mcp_facade_surface.py</code> (or new test)</p>
+<ul>
+<li>[ ] <strong>Step 1: Failing test</strong></li>
+</ul>
+<p>Create <code>tests/unit/mcp/test_search_ranking.py</code>. Stub the service to return three <code>GeneSearchResult</code>-shaped dicts for query <code>"BRCA1"</code>: one with <code>symbol="BRCA1"</code>, one with <code>gene_id="ENSG00000012048"</code>, one with <code>symbol="BRCA1P1"</code> (pseudogene). Assert:
+- All three returned in <code>results</code>.
+- First result has <code>match_quality == "exact_symbol"</code>.
+- Second has <code>match_quality == "exact_ensembl_id"</code> if query was the Ensembl ID, else <code>"prefix"</code>.
+- Third has <code>match_quality == "prefix"</code> (BRCA1 is a prefix of BRCA1P1).</p>
+<p>Add a second test for substring matches (query <code>"BRC"</code> matching <code>BRCA2</code>): assert <code>match_quality == "substring"</code>.</p>
+<ul>
+<li>[ ] <strong>Step 2: Implement</strong></li>
+</ul>
+<p>In <code>gnomad_link/models/gene_models.py</code>, add to <code>GeneSearchResult</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">match_quality</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;exact_symbol&quot;</span><span class="p">,</span> <span class="s2">&quot;exact_ensembl_id&quot;</span><span class="p">,</span> <span class="s2">&quot;prefix&quot;</span><span class="p">,</span> <span class="s2">&quot;substring&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</code></pre></div>
+<p>In <code>gnomad_link/mcp/tools/search.py</code> <code>search_genes</code>, after the service returns hits and before truncation, compute <code>match_quality</code> per result against the (upper-cased) query, then sort by <code>(rank, original_index)</code> where rank is 0 for exact_symbol, 1 for exact_ensembl_id, 2 for prefix, 3 for substring. Helper:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_rank_gene_hit</span><span class="p">(</span><span class="n">hit</span><span class="p">:</span> <span class="n">GeneSearchResult</span><span class="p">,</span> <span class="n">query_upper</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+    <span class="n">sym</span> <span class="o">=</span> <span class="p">(</span><span class="n">hit</span><span class="o">.</span><span class="n">symbol</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+    <span class="n">gid</span> <span class="o">=</span> <span class="p">(</span><span class="n">hit</span><span class="o">.</span><span class="n">gene_id</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">sym</span> <span class="o">==</span> <span class="n">query_upper</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;exact_symbol&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">gid</span> <span class="o">==</span> <span class="n">query_upper</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;exact_ensembl_id&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">sym</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">query_upper</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;prefix&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;substring&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>Tag each hit with <code>match_quality = _rank_gene_hit(hit, q)[1]</code>.</p>
+<ul>
+<li>[ ] <strong>Step 3: Verify + commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>make ci-local
+git commit -m &quot;feat(mcp): rank search_genes hits with match_quality and exact-symbol-first ordering&quot;
+</code></pre></div>
+<hr />
+<h2 id="phase-b-smart-server-behavior">Phase B — Smart Server Behavior</h2>
+<h3 id="task-b1-build-mismatch-detection">Task B1: Build-mismatch detection</h3>
+<p>This is the single highest-leverage feature in the entire review. When a caller hits <code>get_variant_frequencies("17-7577121-G-A", dataset="gnomad_r4")</code>, the position is a GRCh37 coordinate but the dataset is GRCh38 — silently returns 404. Detect this pre-network and return a structured <code>build_mismatch</code> envelope pointing to <code>liftover_variant</code>.</p>
+<p><strong>Files:</strong>
+- Create: <code>gnomad_link/mcp/build_check.py</code>
+- Modify: <code>gnomad_link/mcp/tools/variants.py</code>
+- Modify: <code>gnomad_link/mcp/tools/coordinates.py</code> (for <code>get_region</code>)
+- Modify: <code>gnomad_link/mcp/errors.py</code> (add <code>build_mismatch</code> to <code>_classify</code>)
+- Create: <code>tests/unit/mcp/test_build_mismatch.py</code></p>
+<ul>
+<li>[ ] <strong>Step 1: Failing tests</strong></li>
+</ul>
+<p><code>test_get_variant_frequencies_detects_grch37_against_r4</code>: call with <code>variant_id="17-7577121-G-A", dataset="gnomad_r4"</code>. Assert <code>error_code == "build_mismatch"</code>, <code>retryable == False</code>, <code>fallback_tool == "liftover_variant"</code>, <code>fallback_args == {"source_variant_id": "17-7577121-G-A", "reference_genome": "GRCh37"}</code>, recovery contains "liftover" or "GRCh37".</p>
+<p><code>test_get_variant_frequencies_passes_through_grch38_against_r4</code>: call with <code>variant_id="17-7676154-G-A"</code> (TP53 GRCh38 position). Assert no build_mismatch; service is called.</p>
+<p><code>test_no_build_check_on_r2_1</code>: r2_1 is the GRCh37 dataset; calls should bypass the check.</p>
+<p><code>test_build_check_skipped_on_unknown_chrom</code>: variant id <code>chrM-1555-A-G</code> (mitochondrial) should not trigger a build-mismatch on <code>gnomad_r4</code> because mito coords are build-stable.</p>
+<ul>
+<li>[ ] <strong>Step 2: Implement detection</strong></li>
+</ul>
+<p>Create <code>gnomad_link/mcp/build_check.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="sd">&quot;&quot;&quot;Heuristic build-mismatch detection for CHROM-POS variant IDs.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="c1"># GRCh38 chromosome lengths (1-based, inclusive). From ENCODE/UCSC reference.</span>
+<span class="c1"># Source: https://www.ncbi.nlm.nih.gov/grc/human/data</span>
+<span class="n">_GRCH38_LENGTHS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;1&quot;</span><span class="p">:</span> <span class="mi">248_956_422</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">:</span> <span class="mi">242_193_529</span><span class="p">,</span> <span class="s2">&quot;3&quot;</span><span class="p">:</span> <span class="mi">198_295_559</span><span class="p">,</span> <span class="s2">&quot;4&quot;</span><span class="p">:</span> <span class="mi">190_214_555</span><span class="p">,</span>
+    <span class="s2">&quot;5&quot;</span><span class="p">:</span> <span class="mi">181_538_259</span><span class="p">,</span> <span class="s2">&quot;6&quot;</span><span class="p">:</span> <span class="mi">170_805_979</span><span class="p">,</span> <span class="s2">&quot;7&quot;</span><span class="p">:</span> <span class="mi">159_345_973</span><span class="p">,</span> <span class="s2">&quot;8&quot;</span><span class="p">:</span> <span class="mi">145_138_636</span><span class="p">,</span>
+    <span class="s2">&quot;9&quot;</span><span class="p">:</span> <span class="mi">138_394_717</span><span class="p">,</span> <span class="s2">&quot;10&quot;</span><span class="p">:</span> <span class="mi">133_797_422</span><span class="p">,</span> <span class="s2">&quot;11&quot;</span><span class="p">:</span> <span class="mi">135_086_622</span><span class="p">,</span> <span class="s2">&quot;12&quot;</span><span class="p">:</span> <span class="mi">133_275_309</span><span class="p">,</span>
+    <span class="s2">&quot;13&quot;</span><span class="p">:</span> <span class="mi">114_364_328</span><span class="p">,</span> <span class="s2">&quot;14&quot;</span><span class="p">:</span> <span class="mi">107_043_718</span><span class="p">,</span> <span class="s2">&quot;15&quot;</span><span class="p">:</span> <span class="mi">101_991_189</span><span class="p">,</span> <span class="s2">&quot;16&quot;</span><span class="p">:</span> <span class="mi">90_338_345</span><span class="p">,</span>
+    <span class="s2">&quot;17&quot;</span><span class="p">:</span> <span class="mi">83_257_441</span><span class="p">,</span> <span class="s2">&quot;18&quot;</span><span class="p">:</span> <span class="mi">80_373_285</span><span class="p">,</span> <span class="s2">&quot;19&quot;</span><span class="p">:</span> <span class="mi">58_617_616</span><span class="p">,</span> <span class="s2">&quot;20&quot;</span><span class="p">:</span> <span class="mi">64_444_167</span><span class="p">,</span>
+    <span class="s2">&quot;21&quot;</span><span class="p">:</span> <span class="mi">46_709_983</span><span class="p">,</span> <span class="s2">&quot;22&quot;</span><span class="p">:</span> <span class="mi">50_818_468</span><span class="p">,</span> <span class="s2">&quot;X&quot;</span><span class="p">:</span> <span class="mi">156_040_895</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">:</span> <span class="mi">57_227_415</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">_GRCH37_LENGTHS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;1&quot;</span><span class="p">:</span> <span class="mi">249_250_621</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">:</span> <span class="mi">243_199_373</span><span class="p">,</span> <span class="s2">&quot;3&quot;</span><span class="p">:</span> <span class="mi">198_022_430</span><span class="p">,</span> <span class="s2">&quot;4&quot;</span><span class="p">:</span> <span class="mi">191_154_276</span><span class="p">,</span>
+    <span class="s2">&quot;5&quot;</span><span class="p">:</span> <span class="mi">180_915_260</span><span class="p">,</span> <span class="s2">&quot;6&quot;</span><span class="p">:</span> <span class="mi">171_115_067</span><span class="p">,</span> <span class="s2">&quot;7&quot;</span><span class="p">:</span> <span class="mi">159_138_663</span><span class="p">,</span> <span class="s2">&quot;8&quot;</span><span class="p">:</span> <span class="mi">146_364_022</span><span class="p">,</span>
+    <span class="s2">&quot;9&quot;</span><span class="p">:</span> <span class="mi">141_213_431</span><span class="p">,</span> <span class="s2">&quot;10&quot;</span><span class="p">:</span> <span class="mi">135_534_747</span><span class="p">,</span> <span class="s2">&quot;11&quot;</span><span class="p">:</span> <span class="mi">135_006_516</span><span class="p">,</span> <span class="s2">&quot;12&quot;</span><span class="p">:</span> <span class="mi">133_851_895</span><span class="p">,</span>
+    <span class="s2">&quot;13&quot;</span><span class="p">:</span> <span class="mi">115_169_878</span><span class="p">,</span> <span class="s2">&quot;14&quot;</span><span class="p">:</span> <span class="mi">107_349_540</span><span class="p">,</span> <span class="s2">&quot;15&quot;</span><span class="p">:</span> <span class="mi">102_531_392</span><span class="p">,</span> <span class="s2">&quot;16&quot;</span><span class="p">:</span> <span class="mi">90_354_753</span><span class="p">,</span>
+    <span class="s2">&quot;17&quot;</span><span class="p">:</span> <span class="mi">81_195_210</span><span class="p">,</span> <span class="s2">&quot;18&quot;</span><span class="p">:</span> <span class="mi">78_077_248</span><span class="p">,</span> <span class="s2">&quot;19&quot;</span><span class="p">:</span> <span class="mi">59_128_983</span><span class="p">,</span> <span class="s2">&quot;20&quot;</span><span class="p">:</span> <span class="mi">63_025_520</span><span class="p">,</span>
+    <span class="s2">&quot;21&quot;</span><span class="p">:</span> <span class="mi">48_129_895</span><span class="p">,</span> <span class="s2">&quot;22&quot;</span><span class="p">:</span> <span class="mi">51_304_566</span><span class="p">,</span> <span class="s2">&quot;X&quot;</span><span class="p">:</span> <span class="mi">155_270_560</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">:</span> <span class="mi">59_373_566</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">likely_build</span><span class="p">(</span><span class="n">chrom</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">pos</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return &#39;GRCh37&#39;, &#39;GRCh38&#39;, or None if ambiguous/unknown.</span>
+
+<span class="sd">    The heuristic uses the chromosome-length cutoff that uniquely identifies the</span>
+<span class="sd">    build. For chromosomes where the lengths overlap (almost all), we return None</span>
+<span class="sd">    and let the upstream call proceed. Only positions in the GRCh37-only or</span>
+<span class="sd">    GRCh38-only tail return a definitive build.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">chrom</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;chr&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="s2">&quot;MT&quot;</span><span class="p">,</span> <span class="s2">&quot;GL&quot;</span><span class="p">,</span> <span class="s2">&quot;KI&quot;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>  <span class="c1"># mito and unplaced are build-stable enough</span>
+    <span class="k">if</span> <span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_GRCH38_LENGTHS</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">pos</span> <span class="o">&gt;</span> <span class="n">_GRCH38_LENGTHS</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="ow">and</span> <span class="n">pos</span> <span class="o">&lt;=</span> <span class="n">_GRCH37_LENGTHS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;GRCh37&quot;</span>
+    <span class="k">if</span> <span class="n">pos</span> <span class="o">&gt;</span> <span class="n">_GRCH37_LENGTHS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="n">pos</span> <span class="o">&lt;=</span> <span class="n">_GRCH38_LENGTHS</span><span class="p">[</span><span class="n">c</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="s2">&quot;GRCh38&quot;</span>
+    <span class="k">return</span> <span class="kc">None</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">dataset_build</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="s2">&quot;GRCh37&quot;</span> <span class="k">if</span> <span class="n">dataset</span> <span class="o">==</span> <span class="s2">&quot;gnomad_r2_1&quot;</span> <span class="k">else</span> <span class="s2">&quot;GRCh38&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">detect_mismatch</span><span class="p">(</span><span class="n">variant_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return mismatched-build name if detected, else None.&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">chrom</span><span class="p">,</span> <span class="n">pos_s</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">variant_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">pos_s</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">inferred</span> <span class="o">=</span> <span class="n">likely_build</span><span class="p">(</span><span class="n">chrom</span><span class="p">,</span> <span class="n">pos</span><span class="p">)</span>
+    <span class="n">expected</span> <span class="o">=</span> <span class="n">dataset_build</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">inferred</span> <span class="ow">and</span> <span class="n">inferred</span> <span class="o">!=</span> <span class="n">expected</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">inferred</span>
+    <span class="k">return</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Add new exception class to <code>gnomad_link/mcp/errors.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BuildMismatchError</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raised when a variant ID&#39;s coordinate clearly belongs to a different build.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variant_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">inferred_build</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variant_id</span> <span class="o">=</span> <span class="n">variant_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inferred_build</span> <span class="o">=</span> <span class="n">inferred_build</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span> <span class="o">=</span> <span class="n">dataset</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Variant </span><span class="si">{</span><span class="n">variant_id</span><span class="si">}</span><span class="s2"> appears to use </span><span class="si">{</span><span class="n">inferred_build</span><span class="si">}</span><span class="s2"> coordinates &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;but dataset </span><span class="si">{</span><span class="n">dataset</span><span class="si">}</span><span class="s2"> uses </span><span class="si">{</span><span class="n">_classify_dataset_build</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
+</code></pre></div>
+<p>Extend <code>_classify</code> in <code>errors.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">exc</span><span class="p">,</span> <span class="n">BuildMismatchError</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s2">&quot;build_mismatch&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;liftover_variant&quot;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s2">&quot;source_variant_id&quot;</span><span class="p">:</span> <span class="n">exc</span><span class="o">.</span><span class="n">variant_id</span><span class="p">,</span>
+        <span class="s2">&quot;reference_genome&quot;</span><span class="p">:</span> <span class="n">exc</span><span class="o">.</span><span class="n">inferred_build</span><span class="p">,</span>
+    <span class="p">}</span>
+</code></pre></div>
+<p>Extend <code>_recovery_text</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="s2">&quot;build_mismatch&quot;</span><span class="p">:</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="s2">&quot;Variant coordinates appear to use a different reference build than &quot;</span>
+        <span class="s2">&quot;the requested dataset. Run liftover_variant to convert, or switch dataset.&quot;</span>
+    <span class="p">)</span>
+</code></pre></div>
+<ul>
+<li>[ ] <strong>Step 3: Wire into tools</strong></li>
+</ul>
+<p>In <code>variants.py</code> <code>get_variant_frequencies.call</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">mismatched</span> <span class="o">=</span> <span class="n">detect_mismatch</span><span class="p">(</span><span class="n">variant_id</span><span class="p">,</span> <span class="n">dataset</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">mismatched</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="n">BuildMismatchError</span><span class="p">(</span><span class="n">variant_id</span><span class="p">,</span> <span class="n">mismatched</span><span class="p">,</span> <span class="n">dataset</span><span class="p">)</span>
+</code></pre></div>
+<p>Same in <code>get_variant_details.call</code>. In <code>coordinates.py</code> <code>get_region.call</code>, derive <code>pos = start</code> and reuse the same check.</p>
+<ul>
+<li>[ ] <strong>Step 4: Verify + commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>make ci-local
+git commit -m &quot;feat(mcp): detect coordinate-build vs dataset mismatch pre-network&quot;
+</code></pre></div>
+<hr />
+<h3 id="task-b2-freshness-metadata-_metagnomad_release-on-every-response">Task B2: Freshness metadata <code>_meta.gnomad_release</code> on every response</h3>
+<p><strong>Files:</strong>
+- Modify: <code>gnomad_link/mcp/errors.py</code> (extend <code>run_mcp_tool</code>)
+- Modify: <code>gnomad_link/mcp/resources.py</code> (cache the release string)
+- Create: <code>tests/unit/mcp/test_freshness_meta.py</code></p>
+<ul>
+<li>[ ] <strong>Step 1: Failing test</strong></li>
+</ul>
+<p><code>test_every_success_response_carries_gnomad_release</code>: parametrize over a handful of tool names; for each, stub the service and assert the result's <code>_meta.gnomad_release</code> matches the expected constant (<code>"4.1.0"</code> until upstream tells us otherwise — we ship a hardcoded constant, then upgrade to dynamic lookup in a separate task).</p>
+<p><code>test_error_envelopes_also_carry_gnomad_release</code>: trigger a validation error; assert <code>_meta.gnomad_release</code> is present.</p>
+<ul>
+<li>[ ] <strong>Step 2: Implement</strong></li>
+</ul>
+<p>Add a constant in <code>gnomad_link/mcp/resources.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">GNOMAD_DATA_RELEASE</span> <span class="o">=</span> <span class="s2">&quot;4.1.0&quot;</span>  <span class="c1"># gnomAD v4.1.0 (released 2024-11)</span>
+</code></pre></div>
+<p>In <code>gnomad_link/mcp/errors.py</code>, extend <code>_RESEARCH_USE_META</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gnomad_link.mcp.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">GNOMAD_DATA_RELEASE</span>
+
+<span class="n">_BASE_META</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;unsafe_for_clinical_use&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s2">&quot;gnomad_release&quot;</span><span class="p">:</span> <span class="n">GNOMAD_DATA_RELEASE</span><span class="p">,</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>Replace existing <code>_RESEARCH_USE_META</code> references with <code>_BASE_META</code> everywhere in <code>errors.py</code> (success path in <code>run_mcp_tool</code>, <code>mcp_tool_error</code>, <code>mcp_validation_tool_error</code>).</p>
+<ul>
+<li>[ ] <strong>Step 3: Verify + commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>make ci-local
+git commit -m &quot;feat(mcp): inject _meta.gnomad_release on every tool response&quot;
+</code></pre></div>
+<hr />
+<h3 id="task-b3-clinvar-submissions-summary">Task B3: ClinVar submissions summary</h3>
+<p>Note: Task A1 added <code>submissions_limit</code> and <code>truncated</code>. This task adds the structured <code>summary</code> aggregation.</p>
+<p><strong>Files:</strong>
+- Modify: <code>gnomad_link/mcp/shaping.py</code>
+- Modify: <code>gnomad_link/mcp/tools/clinvar.py</code>
+- Modify: <code>tests/unit/mcp/test_truncated_propagation.py</code> (extend existing tests)</p>
+<ul>
+<li>[ ] <strong>Step 1: Failing test</strong></li>
+</ul>
+<p><code>test_clinvar_emits_submissions_summary</code>: stub the service to return a payload with submissions like:
+<div class="highlight"><pre><span></span><code><span class="p">[</span>
+    <span class="p">{</span><span class="s2">&quot;clinical_significance&quot;</span><span class="p">:</span> <span class="s2">&quot;Pathogenic&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;clinical_significance&quot;</span><span class="p">:</span> <span class="s2">&quot;Pathogenic&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;clinical_significance&quot;</span><span class="p">:</span> <span class="s2">&quot;Likely pathogenic&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;clinical_significance&quot;</span><span class="p">:</span> <span class="s2">&quot;Uncertain significance&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;clinical_significance&quot;</span><span class="p">:</span> <span class="s2">&quot;Benign&quot;</span><span class="p">},</span>
+<span class="p">]</span>
+</code></pre></div>
+Assert the response includes <code>summary == {"pathogenic": 2, "likely_pathogenic": 1, "uncertain": 1, "likely_benign": 0, "benign": 1, "other": 0, "conflict": True, "total": 5}</code>.</p>
+<p>Conflict logic: True if both <code>pathogenic</code>/<code>likely_pathogenic</code> ≥ 1 AND <code>benign</code>/<code>likely_benign</code> ≥ 1.</p>
+<ul>
+<li>[ ] <strong>Step 2: Implement</strong></li>
+</ul>
+<p>In <code>gnomad_link/mcp/shaping.py</code>, add:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_classify_clinical_significance</span><span class="p">(</span><span class="n">sig</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">sig</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;other&quot;</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">if</span> <span class="s2">&quot;pathogenic&quot;</span> <span class="ow">in</span> <span class="n">s</span> <span class="ow">and</span> <span class="s2">&quot;likely&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;likely_pathogenic&quot;</span>
+    <span class="k">if</span> <span class="s2">&quot;pathogenic&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;pathogenic&quot;</span>
+    <span class="k">if</span> <span class="s2">&quot;benign&quot;</span> <span class="ow">in</span> <span class="n">s</span> <span class="ow">and</span> <span class="s2">&quot;likely&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;likely_benign&quot;</span>
+    <span class="k">if</span> <span class="s2">&quot;benign&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;benign&quot;</span>
+    <span class="k">if</span> <span class="s2">&quot;uncertain&quot;</span> <span class="ow">in</span> <span class="n">s</span> <span class="ow">or</span> <span class="s2">&quot;vus&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;uncertain&quot;</span>
+    <span class="k">return</span> <span class="s2">&quot;other&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">summarize_clinvar_submissions</span><span class="p">(</span><span class="n">submissions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;pathogenic&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;likely_pathogenic&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;uncertain&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+              <span class="s2">&quot;likely_benign&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;benign&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;other&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">submissions</span><span class="p">:</span>
+        <span class="n">counts</span><span class="p">[</span><span class="n">_classify_clinical_significance</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;clinical_significance&quot;</span><span class="p">))]</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">pathogenic_side</span> <span class="o">=</span> <span class="n">counts</span><span class="p">[</span><span class="s2">&quot;pathogenic&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">counts</span><span class="p">[</span><span class="s2">&quot;likely_pathogenic&quot;</span><span class="p">]</span>
+    <span class="n">benign_side</span> <span class="o">=</span> <span class="n">counts</span><span class="p">[</span><span class="s2">&quot;benign&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">counts</span><span class="p">[</span><span class="s2">&quot;likely_benign&quot;</span><span class="p">]</span>
+    <span class="n">counts</span><span class="p">[</span><span class="s2">&quot;conflict&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pathogenic_side</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">benign_side</span> <span class="o">&gt;</span> <span class="mi">0</span>
+    <span class="n">counts</span><span class="p">[</span><span class="s2">&quot;total&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">submissions</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">counts</span>
+</code></pre></div>
+<p>In <code>clinvar.py</code> <code>get_clinvar_variant_details.call</code>, after the existing model_dump, before <code>shape_clinvar_submissions</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">payload</span><span class="p">[</span><span class="s2">&quot;summary&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">summarize_clinvar_submissions</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;submissions&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[])</span>
+</code></pre></div>
+<ul>
+<li>[ ] <strong>Step 3: Verify + commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>make ci-local
+git commit -m &quot;feat(mcp): aggregate ClinVar submissions into pathogenic/benign/uncertain summary&quot;
+</code></pre></div>
+<hr />
+<h3 id="task-b4-enrich-resolve_variant_id-rename-liftover_variantreference_genome-source_genome">Task B4: Enrich <code>resolve_variant_id</code> + rename <code>liftover_variant.reference_genome</code> → <code>source_genome</code></h3>
+<p>Two related polish items in one commit. Both touch the search/coordinates surface.</p>
+<p><strong>Files:</strong>
+- Modify: <code>gnomad_link/mcp/tools/search.py</code>
+- Modify: <code>gnomad_link/mcp/tools/coordinates.py</code>
+- Modify: <code>gnomad_link/models/variant_models.py</code> (extend <code>VariantSearchResult</code> with optional fields)
+- Modify: <code>tests/unit/mcp/test_mcp_facade_surface.py</code>
+- Create: <code>tests/unit/mcp/test_resolve_enrichment.py</code></p>
+<ul>
+<li>[ ] <strong>Step 1: Failing tests</strong></li>
+</ul>
+<p><code>test_resolve_variant_id_enriches_with_gene_and_consequence</code>: stub <code>service.search_variants</code> to return <code>["1-55051215-G-GA"]</code>. Stub <code>service.get_variant_frequencies</code> for that ID to return a response with <code>gene_symbol="PCSK9"</code>, <code>major_consequence="frameshift_variant"</code>, <code>exome.af=0.0001</code>. Call <code>resolve_variant_id(query="rs11591147")</code>. Assert results contains <code>{"variant_id": "1-55051215-G-GA", "gene_symbol": "PCSK9", "major_consequence": "frameshift_variant", "af": 0.0001}</code>.</p>
+<p><code>test_resolve_variant_id_enrich_disabled_returns_ids_only</code>: call with <code>enrich=False</code>. Assert results have only <code>variant_id</code>.</p>
+<p><code>test_resolve_variant_id_enrichment_failure_does_not_block</code>: stub the enrichment call to raise. Assert the response still includes results with <code>variant_id</code> only and a <code>_meta.enrichment_partial: True</code>.</p>
+<p><code>test_liftover_variant_accepts_source_genome_alias</code>: call with <code>source_genome="GRCh37"</code> instead of <code>reference_genome="GRCh37"</code>. Assert the same behavior. Add <code>test_liftover_variant_emits_deprecation_meta_for_old_name</code>: call with <code>reference_genome="GRCh37"</code>. Assert <code>_meta.deprecated_params: {"reference_genome": "Use source_genome; will be removed in next release."}</code>.</p>
+<ul>
+<li>[ ] <strong>Step 2: Implement</strong></li>
+</ul>
+<p>Extend <code>VariantSearchResult</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">VariantSearchResult</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">variant_id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">gene_symbol</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">major_consequence</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">af</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</code></pre></div>
+<p>In <code>search.py</code> <code>resolve_variant_id</code>, add <code>enrich: bool = True</code> param (default True per the review). After getting <code>raw</code> IDs, for the top <code>min(limit, 5)</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">enriched</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">errors</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="k">for</span> <span class="n">vid</span> <span class="ow">in</span> <span class="n">raw</span><span class="p">[:</span><span class="n">limit</span><span class="p">]:</span>
+    <span class="n">item</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;variant_id&quot;</span><span class="p">:</span> <span class="n">vid</span><span class="p">}</span>
+    <span class="k">if</span> <span class="n">enrich</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">freq</span> <span class="o">=</span> <span class="k">await</span> <span class="n">service</span><span class="o">.</span><span class="n">get_variant_frequencies</span><span class="p">(</span><span class="n">vid</span><span class="p">,</span> <span class="n">dataset</span><span class="p">)</span>
+            <span class="n">item</span><span class="p">[</span><span class="s2">&quot;gene_symbol&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">freq</span><span class="o">.</span><span class="n">gene_symbol</span>
+            <span class="n">item</span><span class="p">[</span><span class="s2">&quot;major_consequence&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">freq</span><span class="o">.</span><span class="n">major_consequence</span>
+            <span class="n">af</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">freq</span><span class="o">.</span><span class="n">exome</span><span class="p">:</span>
+                <span class="n">af</span> <span class="o">=</span> <span class="p">(</span><span class="n">freq</span><span class="o">.</span><span class="n">exome</span><span class="o">.</span><span class="n">allele_count</span> <span class="o">/</span> <span class="n">freq</span><span class="o">.</span><span class="n">exome</span><span class="o">.</span><span class="n">allele_number</span><span class="p">)</span> <span class="k">if</span> <span class="n">freq</span><span class="o">.</span><span class="n">exome</span><span class="o">.</span><span class="n">allele_number</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">af</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">freq</span><span class="o">.</span><span class="n">genome</span><span class="p">:</span>
+                <span class="n">af</span> <span class="o">=</span> <span class="p">(</span><span class="n">freq</span><span class="o">.</span><span class="n">genome</span><span class="o">.</span><span class="n">allele_count</span> <span class="o">/</span> <span class="n">freq</span><span class="o">.</span><span class="n">genome</span><span class="o">.</span><span class="n">allele_number</span><span class="p">)</span> <span class="k">if</span> <span class="n">freq</span><span class="o">.</span><span class="n">genome</span><span class="o">.</span><span class="n">allele_number</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">item</span><span class="p">[</span><span class="s2">&quot;af&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">af</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">errors</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">enriched</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;results&quot;</span><span class="p">:</span> <span class="n">enriched</span><span class="p">,</span> <span class="s2">&quot;returned&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">enriched</span><span class="p">),</span> <span class="s2">&quot;next_steps&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">...</span><span class="p">]}</span>
+<span class="k">if</span> <span class="n">errors</span><span class="p">:</span>
+    <span class="n">payload</span><span class="p">[</span><span class="s2">&quot;_meta&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;enrichment_partial&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;enrichment_failures&quot;</span><span class="p">:</span> <span class="n">errors</span><span class="p">}</span>
+<span class="k">return</span> <span class="n">payload</span>
+</code></pre></div>
+<p>Apply the same change to the <code>search_variants</code> deprecated alias.</p>
+<p>In <code>coordinates.py</code> <code>liftover_variant</code>, add <code>source_genome: Annotated[Literal["GRCh37", "GRCh38"] | None, Field(...)] = None</code>. Keep <code>reference_genome: ... = None</code> (was required; now optional with same Literal). At runtime:</p>
+<div class="highlight"><pre><span></span><code><span class="n">build</span> <span class="o">=</span> <span class="n">source_genome</span> <span class="ow">or</span> <span class="n">reference_genome</span>
+<span class="k">if</span> <span class="n">build</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Provide source_genome (or legacy reference_genome).&quot;</span><span class="p">)</span>
+<span class="n">results</span> <span class="o">=</span> <span class="k">await</span> <span class="n">service</span><span class="o">.</span><span class="n">liftover_variant</span><span class="p">(</span><span class="n">source_variant_id</span><span class="p">,</span> <span class="n">build</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">=</span> <span class="p">{</span><span class="o">...</span><span class="p">}</span>
+<span class="k">if</span> <span class="n">source_genome</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">reference_genome</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">payload</span><span class="p">[</span><span class="s2">&quot;_meta&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;deprecated_params&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;reference_genome&quot;</span><span class="p">:</span> <span class="s2">&quot;Use source_genome; will be removed in next release.&quot;</span><span class="p">},</span>
+    <span class="p">}</span>
+</code></pre></div>
+<ul>
+<li>[ ] <strong>Step 3: Verify + commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>make ci-local
+git commit -m &quot;feat(mcp): enrich resolve_variant_id with gene/consequence/af and rename liftover param&quot;
+</code></pre></div>
+<hr />
+<h2 id="phase-d-polish">Phase D — Polish</h2>
+<h3 id="task-d1-token-cost-hints-in-tool-docstrings-capabilities-sync-test">Task D1: Token-cost hints in tool docstrings + capabilities sync test</h3>
+<p><strong>Files:</strong>
+- Modify: every <code>gnomad_link/mcp/tools/*.py</code> (docstrings only)
+- Modify: <code>gnomad_link/mcp/resources.py</code> (extend capabilities with <code>token_cost_hints</code>)
+- Modify: <code>tests/unit/mcp/test_mcp_facade_surface.py</code></p>
+<ul>
+<li>[ ] <strong>Step 1: Failing test</strong></li>
+</ul>
+<p><code>test_capabilities_resource_lists_token_cost_hints</code>: assert the capabilities resource exposes a <code>token_cost_hints</code> dict keyed by tool name with byte-range strings (e.g. <code>"get_variant_frequencies": "~2-4kB"</code>).</p>
+<p><code>test_capabilities_tools_match_facade_tools</code> (lock the sync): build a real <code>create_gnomad_mcp(...)</code> and assert <code>set(get_capabilities_resource()["tools"]) == set(mcp._tool_manager._tools.keys())</code>. This guards against drift.</p>
+<ul>
+<li>[ ] <strong>Step 2: Implement</strong></li>
+</ul>
+<p>In each tool's docstring (one-liner), append a token estimate after the existing description, e.g. for <code>get_variant_frequencies</code>: <code>... Returns ~2-4kB.</code>. Suggested estimates:
+- get_variant_frequencies: ~2-4kB
+- get_variant_details: compact ~3kB, full up to ~50kB
+- get_gene_details: compact ~2kB, full up to ~30kB
+- get_gene_variants: ~5-50kB depending on limit
+- get_clinvar_variant_details: ~3-15kB depending on submissions_limit
+- get_clinvar_meta: &lt;1kB
+- search_genes: ~1-3kB
+- resolve_variant_id: ~1-5kB (enrichment dependent)
+- liftover_variant: &lt;1kB
+- get_region: ~5-50kB
+- get_transcript_details: ~5-15kB
+- get_structural_variant: ~1-3kB
+- get_mitochondrial_variant: ~2-4kB
+- get_server_capabilities: &lt;2kB
+- get_gnomad_diagnostics: &lt;1kB</p>
+<p>In <code>resources.py</code>, add <code>token_cost_hints</code> dict to <code>get_capabilities_resource()</code> mirroring the same values.</p>
+<ul>
+<li>[ ] <strong>Step 3: Verify + commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>make ci-local
+git commit -m &quot;chore(mcp): add token-cost hints to tool docstrings + lock tools/capabilities sync&quot;
+</code></pre></div>
+<hr />
+<h3 id="task-d2-deprecate-get_clinvar_meta-fold-its-data-into-get_server_capabilities">Task D2: Deprecate <code>get_clinvar_meta</code>; fold its data into <code>get_server_capabilities</code></h3>
+<p><strong>Files:</strong>
+- Modify: <code>gnomad_link/mcp/tools/clinvar.py</code>
+- Modify: <code>gnomad_link/mcp/tools/metadata.py</code>
+- Modify: <code>gnomad_link/mcp/resources.py</code>
+- Modify: <code>tests/unit/mcp/test_mcp_facade_surface.py</code></p>
+<ul>
+<li>[ ] <strong>Step 1: Failing test</strong></li>
+</ul>
+<p><code>test_capabilities_includes_clinvar_release_date</code>: assert <code>get_capabilities_resource()</code> returns a <code>clinvar_release_date</code> key (string or null) and <code>gnomad_release</code> key (the constant from B2).</p>
+<p><code>test_get_clinvar_meta_is_deprecated</code>: call <code>get_clinvar_meta()</code>. Assert response includes <code>_meta.deprecated: True</code> and <code>_meta.use_instead: "get_server_capabilities"</code>.</p>
+<ul>
+<li>[ ] <strong>Step 2: Implement</strong></li>
+</ul>
+<p>In <code>clinvar.py</code>, in <code>get_clinvar_meta.call</code>, attach:</p>
+<div class="highlight"><pre><span></span><code><span class="n">result</span><span class="p">[</span><span class="s2">&quot;_meta&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="o">**</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;_meta&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}),</span>
+    <span class="s2">&quot;deprecated&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s2">&quot;use_instead&quot;</span><span class="p">:</span> <span class="s2">&quot;get_server_capabilities&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;removal_release&quot;</span><span class="p">:</span> <span class="s2">&quot;next minor&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>In <code>resources.py</code> <code>get_capabilities_resource()</code>, add <code>"clinvar_release_date": None</code> (placeholder until a startup probe is added — separate task) and <code>"gnomad_release": GNOMAD_DATA_RELEASE</code>.</p>
+<p>In <code>get_server_capabilities</code> (metadata.py), the tool already wraps <code>get_capabilities_resource</code> so it inherits automatically.</p>
+<ul>
+<li>[ ] <strong>Step 3: Verify + commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>make ci-local
+git commit -m &quot;chore(mcp): deprecate get_clinvar_meta in favor of get_server_capabilities&quot;
+</code></pre></div>
+<hr />
+<h2 id="done-criteria">Done Criteria</h2>
+<ul>
+<li>[ ] Every task above commits cleanly on <code>feat/mcp-facade-migration</code>.</li>
+<li>[ ] <code>make ci-local</code> green at end of every task and at the end of the plan.</li>
+<li>[ ] <code>tests/unit/mcp/test_mcp_facade_surface.py::test_capabilities_tools_match_facade_tools</code> locks tools/capabilities sync.</li>
+<li>[ ] No new <code>.loc-allowlist</code> entries; no new ruff/mypy ignores.</li>
+<li>[ ] The 16-tool surface unchanged in name and signature (except for deprecation-aliased liftover param).</li>
+<li>[ ] <code>docs/mcp-llm-consumer-review.md</code> action items 1-12 marked done in a follow-up doc edit (outside scope of this plan, but the executor should note it for the user).</li>
+</ul>
+<hr />
+<h2 id="out-of-scope-deferred">Out of Scope (deferred)</h2>
+<p>Phase C from the review (five new tools: <code>get_coverage</code>, <code>compare_variant_across_datasets</code>, <code>compute_carrier_frequency</code>, <code>get_gene_summary</code>, <code>search_structural_variants</code>) is intentionally not in this plan. Each of those is a new tool with its own service surface and warrants a separate planning pass.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.sections", "content.code.copy", "search.suggest"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
