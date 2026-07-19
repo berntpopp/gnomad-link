@@ -204,7 +204,7 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
             Field(description="Drop populations with allele_count == 0 from each variant."),
         ] = True,
     ) -> dict[str, Any]:
-        """Use this when a caller wants per-variant rows inside a gene. Large genes (e.g. TTN) return tens of thousands of variants upstream; this tool caps at 500 and exposes consequence/AF/AC filters. Each variant's population breakdown is trimmed (drops subcohort, sex-split, and zero-AC rows; set include_populations=False to drop the arrays entirely for a ~30% leaner scan); the projection is described once in `population_projection`. Returns a `truncated` block whenever the cap fires. Returns ~5-45kB at the default limit=100 (lower the limit or set include_populations=False to shrink)."""
+        """Use this when a caller wants per-variant rows for an Ensembl gene. Caps large results at 500; consequence/AF/AC filters and include_populations control payload size. Reports cap use in `truncated` and describes retained population fields in `population_projection`. Returns ~5-45kB at the default limit=100."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()
