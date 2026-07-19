@@ -1,5 +1,7 @@
 # MCP 10/10 Deep Audit — Execution Plan
 
+> Historical record
+
 Source: research-backed multi-agent audit (workflow `wkw6p12ov`, 72 agents):
 4 best-practice research agents -> 10 dimension reviewers -> adversarial
 verification of every finding -> synthesis. 56 findings confirmed real and not

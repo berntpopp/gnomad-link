@@ -108,7 +108,7 @@ def register_gene_carrier_tools(
             int, Field(ge=1, le=200, description="Cap on contributing variants in compact mode.")
         ] = 25,
     ) -> dict[str, Any]:
-        """Use this when a caller needs the GENE-level autosomal-recessive carrier frequency (all qualifying pathogenic variants summed), not a single variant. This is ONE efficient server-side computation over the whole gene (a single variants query plus, only when include_conflicting_clinvar=True, batched ClinVar submission lookups) — call it once per gene; do NOT loop over variants yourself. Pass a gene symbol (e.g. CFTR) or Ensembl gene ID (ENSG...). Mirrors the gnomad-carrier-frequency calculator: LoF-HC + missense/other with ClinVar P/LP (>= star threshold), per-population + global carrier frequency via GCR (homozygote exclusion) by default, with genetic and Bayesian prevalence. Leads with a one-line `headline` so you can answer without parsing the tree, and carries provenance (short citations + a gnomad://citations pointer in compact mode; full citations with response_mode='full'). Toggle filters, method, penetrance, and quality exclusions. Research use only; not clinical decision support. Returns ~4-30kB (gene/limit dependent)."""
+        """Use this when a caller needs gene-level autosomal-recessive carrier frequency across qualifying pathogenic variants, not a single variant. Run this server-side computation once per gene; do not loop over variants. Returns global and per-population carrier frequency, genetic and Bayesian prevalence, a headline, provenance, and contributing variants. Research use only; not clinical decision support. Returns ~4-30kB (gene/limit dependent)."""
 
         gene_id, gene_symbol = split_gene(gene)
 

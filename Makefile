@@ -1,4 +1,4 @@
-.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc lint-readme typecheck typecheck-fast typecheck-stop typecheck-fresh test test-fast test-unit test-cov test-all check ci-local precommit clean dev run-dev run-prod docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config eval-ci eval-live
+.PHONY: help install lock upgrade sync format format-check lint lint-ci lint-fix lint-loc lint-readme typecheck typecheck-fast typecheck-stop typecheck-fresh test test-fast test-unit test-contract-truth test-cov test-all check ci-local precommit clean dev run-dev run-prod docker-build docker-up docker-down docker-logs docker-prod-config docker-npm-config eval-ci eval-live
 
 .DEFAULT_GOAL := help
 
@@ -80,6 +80,9 @@ test-fast: ## Run deterministic unit tests in parallel with pytest-xdist
 test-unit: ## Run unit tests in parallel
 	uv run pytest tests/unit -q -n auto
 
+test-contract-truth: ## Check documentation against the live MCP tool registry
+	uv run pytest tests/conformance/test_contract_truth_v1.py -q
+
 test-integration: ## Run live integration tests against the gnomAD API
 	uv run pytest tests/integration -q
 
@@ -96,7 +99,7 @@ eval-live: ## Run agentic/live eval against real gnomAD (manual)
 
 check: format lint ## Format and lint
 
-ci-local: format-check lint-ci lint-loc lint-readme typecheck-fast test-fast eval-ci ## Run fast local CI-equivalent checks
+ci-local: format-check lint-ci lint-loc lint-readme typecheck-fast test-fast test-contract-truth eval-ci ## Run fast local CI-equivalent checks
 
 precommit: ci-local ## Run checks expected before commit
 

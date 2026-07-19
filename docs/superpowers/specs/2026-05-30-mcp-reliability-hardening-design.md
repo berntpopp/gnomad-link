@@ -1,5 +1,7 @@
 # MCP Reliability Hardening — Design Spec
 
+> Historical record
+
 Date: 2026-05-30
 Branch: `feat/mcp-reliability-hardening`
 Status: in progress

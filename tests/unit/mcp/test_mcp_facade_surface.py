@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import json
 import re
-from typing import Any
+from typing import Any, get_args
 
 import pytest
 
@@ -41,6 +42,18 @@ EXPECTED_RESOURCE_URIS = {
     "gnomad://reference",
     "gnomad://citations",
 }
+
+MAX_SERVER_SURFACE_TOKENS = 10_000
+MAX_TOOL_DEFINITION_TOKENS = 1_200
+# Router-reviewed normalized baseline: 40,741 JSON chars / 10,185 tokens.
+# Removing only the two target description values leaves this stable remainder.
+REVIEWED_NORMALIZED_NON_TARGET_CHARS = 39_108
+REVIEWED_NORMALIZED_BEFORE_TOKENS = 10_185
+
+
+def _surface_tokens(value: object) -> int:
+    """Match the fleet surface gate's deterministic chars/4 estimate."""
+    return len(json.dumps(value)) // 4
 
 
 @pytest.mark.asyncio
@@ -108,6 +121,183 @@ async def test_every_data_tool_suppresses_output_schema(fake_service_factory) ->
     for name in EXPECTED_DATA_TOOLS:
         schema = tools_by_name[name].output_schema
         assert schema is None, f"{name} should not advertise output_schema"
+
+
+@pytest.mark.asyncio
+async def test_live_facade_fits_tool_surface_budgets(fake_service_factory) -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    mcp = create_gnomad_mcp(service_factory=fake_service_factory)
+    advertised = [
+        tool.to_mcp_tool().model_dump(mode="json", by_alias=True, exclude_none=True)
+        for tool in await mcp.list_tools()
+    ]
+
+    assert _surface_tokens(advertised) <= MAX_SERVER_SURFACE_TOKENS
+    assert {
+        tool["name"]: _surface_tokens(tool)
+        for tool in advertised
+        if _surface_tokens(tool) > MAX_TOOL_DEFINITION_TOKENS
+    } == {}
+
+
+@pytest.mark.asyncio
+async def test_reviewed_normalized_baseline_projection_fits_budget(
+    fake_service_factory,
+) -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    tools = {
+        tool.name: tool
+        for tool in await create_gnomad_mcp(service_factory=fake_service_factory).list_tools()
+    }
+    target_description_chars = sum(
+        len(json.dumps(tools[name].description))
+        for name in ("compute_gene_carrier_frequency", "get_gene_variants")
+    )
+    projected_tokens = (REVIEWED_NORMALIZED_NON_TARGET_CHARS + target_description_chars) // 4
+
+    assert REVIEWED_NORMALIZED_BEFORE_TOKENS > MAX_SERVER_SURFACE_TOKENS
+    assert projected_tokens == 9_964
+    assert projected_tokens <= MAX_SERVER_SURFACE_TOKENS
+
+
+@pytest.mark.asyncio
+async def test_high_cost_gene_tools_preserve_their_schema_contract(fake_service_factory) -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+    from gnomad_link.mcp.tools.genes import GeneVariantConsequence
+
+    tools = {
+        tool.name: tool
+        for tool in await create_gnomad_mcp(service_factory=fake_service_factory).list_tools()
+    }
+    carrier = tools["compute_gene_carrier_frequency"]
+    variants = tools["get_gene_variants"]
+
+    assert set(carrier.parameters["properties"]) == {
+        "gene",
+        "dataset",
+        "include_lof_hc",
+        "include_missense",
+        "include_clinvar",
+        "clinvar_star_threshold",
+        "include_conflicting_clinvar",
+        "conflicting_threshold",
+        "method",
+        "penetrance",
+        "exclude_high_af",
+        "exclude_high_hom",
+        "exclude_gnomad_filtered",
+        "exclude_genomes_only",
+        "response_mode",
+        "top_variants_limit",
+    }
+    assert carrier.parameters["required"] == ["gene"]
+    assert carrier.parameters["properties"]["gene"]["examples"] == ["CFTR"]
+    assert carrier.parameters["properties"]["dataset"]["enum"] == [
+        "gnomad_r2_1",
+        "gnomad_r3",
+        "gnomad_r4",
+    ]
+    assert carrier.parameters["properties"]["method"]["enum"] == [
+        "hom_exclusion",
+        "hwe",
+        "simplified",
+    ]
+    assert carrier.parameters["properties"]["response_mode"]["enum"] == [
+        "compact",
+        "full",
+        "minimal",
+    ]
+
+    assert set(variants.parameters["properties"]) == {
+        "gene_id",
+        "dataset",
+        "limit",
+        "consequence",
+        "max_af",
+        "min_ac",
+        "include_populations",
+        "include_subcohorts",
+        "include_sex_split",
+        "exclude_zero_populations",
+    }
+    assert variants.parameters["required"] == ["gene_id"]
+    assert variants.parameters["properties"]["gene_id"]["examples"] == ["ENSG00000169174"]
+    assert variants.parameters["properties"]["dataset"]["examples"] == ["gnomad_r4"]
+    consequence_schema = variants.parameters["properties"]["consequence"]
+    assert consequence_schema["anyOf"][0]["enum"] == list(get_args(GeneVariantConsequence))
+
+    for tool in (carrier, variants):
+        assert tool.output_schema is None
+        assert all(schema.get("description") for schema in tool.parameters["properties"].values())
+        assert tool.annotations is not None
+        assert tool.annotations.readOnlyHint is True
+        assert tool.annotations.destructiveHint is False
+        assert tool.annotations.idempotentHint is True
+        assert tool.annotations.openWorldHint is True
+
+
+@pytest.mark.asyncio
+async def test_high_cost_gene_descriptions_route_without_losing_reference_contracts(
+    fake_service_factory,
+) -> None:
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+    from gnomad_link.mcp.resources import (
+        get_capabilities_resource,
+        get_reference_resource,
+    )
+
+    tools = {
+        tool.name: tool
+        for tool in await create_gnomad_mcp(service_factory=fake_service_factory).list_tools()
+    }
+    carrier_description = tools["compute_gene_carrier_frequency"].description or ""
+    variants_description = tools["get_gene_variants"].description or ""
+
+    assert carrier_description.startswith("Use this when")
+    assert "gene-level autosomal-recessive carrier frequency" in carrier_description
+    assert "not a single variant" in carrier_description
+    assert "once per gene; do not loop over variants" in carrier_description
+    assert "global and per-population carrier frequency" in carrier_description
+    assert "Research use only; not clinical decision support." in carrier_description
+    assert "Returns ~4-30kB" in carrier_description
+
+    assert variants_description.startswith("Use this when")
+    assert "per-variant rows" in variants_description
+    assert "Caps large results at 500" in variants_description
+    assert "consequence/AF/AC filters" in variants_description
+    assert "include_populations control payload size" in variants_description
+    assert "`truncated`" in variants_description
+    assert "`population_projection`" in variants_description
+    assert "Returns ~5-45kB" in variants_description
+
+    capabilities = get_capabilities_resource()
+    assert (
+        "gene symbol -> compute_gene_carrier_frequency (gene-level recessive carrier rate)"
+        in capabilities["recommended_workflows"]
+    )
+    assert capabilities["token_cost_hints"]["compute_gene_carrier_frequency"] == (
+        "~4-30kB (gene/limit dependent)"
+    )
+    assert capabilities["token_cost_hints"]["get_gene_variants"] == (
+        "~5-45kB at limit=100 (include_populations=False ~30% leaner)"
+    )
+    assert (
+        "get_region capped at 100kb span; get_gene_variants capped at 500 rows."
+        in capabilities["limitations"]
+    )
+    assert (
+        "compute_gene_carrier_frequency batches ClinVar"
+        in capabilities["concurrency"]["internal_fanout"]
+    )
+    assert "single required `gene`" in capabilities["parameter_conventions"]["gene"]
+    assert "Research use only" in capabilities["limitations"][-1]
+
+    reference = get_reference_resource()
+    assert {"truncated", "population_projection"} <= set(
+        reference["truncation_contract"]["surface_keys"]
+    )
 
 
 @pytest.mark.asyncio

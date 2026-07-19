@@ -1,5 +1,7 @@
 # Phase C — Five New MCP Tools (Design Spec)
 
+> Historical record
+
 Status: approved design, pre-plan
 Date: 2026-05-26
 Pairs with plan: `docs/superpowers/plans/2026-05-26-phase-c-new-tools.md`

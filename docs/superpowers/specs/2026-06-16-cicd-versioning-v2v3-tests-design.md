@@ -1,5 +1,7 @@
 # CI/CD, Sibling-Aligned Release/Versioning, and v2/v3 Test Coverage — Design
 
+> Historical record
+
 Status: draft
 Date: 2026-06-16
 Owner: gnomAD Link

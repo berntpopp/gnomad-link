@@ -1,5 +1,7 @@
 # MCP 10/10 LLM-Ergonomics — Plan
 
+> Historical record
+
 Spec: ../specs/2026-05-30-mcp-10-of-10-llm-ergonomics-design.md
 
 ## Tasks

@@ -68,9 +68,9 @@ surface an agent can trust. Research use only; not for clinical decision support
   Benign, Uncertain-significance and Conflicting classifications are no longer
   false-positives.
 - **Recovery `next_commands` are callable under the collapsed identifiers**:
-  emitters that pointed at `search_structural_variants(region=…)`,
-  `get_gene_details(dataset=…)`, or `search_structural_variants({})` now use the
-  required `target` / `gene` surface or a callable discovery fallback.
+  emitters now use `search_structural_variants(target=…)`,
+  `get_gene_details(gene=…)`, or a callable discovery fallback instead of stale
+  `region` / `dataset` keys and empty argument objects.
 - **The output-schema-validation error envelope keeps its `structuredContent`**
   (it previously nulled it on the `isError` result).
 - **`get_gene_summary` compact mode no longer drops `pext.regions` silently**: it

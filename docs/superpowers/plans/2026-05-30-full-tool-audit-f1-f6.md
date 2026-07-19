@@ -1,5 +1,7 @@
 # Full-Tool Audit Response (F1-F6) — Plan
 
+> Historical record
+
 Source: an LLM consumer's 22-tool live audit (8.3/10) with six findings.
 Status: implemented (commit bb86db9); ci-local green (429 unit tests).
 

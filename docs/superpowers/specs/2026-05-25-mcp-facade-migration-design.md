@@ -1,5 +1,7 @@
 # gnomAD Link MCP Facade Migration Design
 
+> Historical record
+
 ## Context
 
 `gnomad-link` currently exposes MCP tools through `FastMCP.from_fastapi()` in

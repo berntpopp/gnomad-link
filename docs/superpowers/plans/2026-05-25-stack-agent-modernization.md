@@ -1,5 +1,7 @@
 # Stack And Agent Modernization Implementation Plan
 
+> Historical record
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Align `gnomad-link` with the modern Python, `uv`, and multi-agent conventions used by `pubtator-link` and `genereviews-link`.

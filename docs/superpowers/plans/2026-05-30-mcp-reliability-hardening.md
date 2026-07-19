@@ -1,5 +1,7 @@
 # MCP Reliability Hardening — Execution Plan
 
+> Historical record
+
 Date: 2026-05-30
 Spec: `docs/superpowers/specs/2026-05-30-mcp-reliability-hardening-design.md`
 

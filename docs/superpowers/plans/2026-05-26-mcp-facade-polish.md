@@ -1,5 +1,7 @@
 # MCP Facade Polish Implementation Plan
 
+> Historical record
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Close the 12 remaining gaps identified in `docs/mcp-llm-consumer-review.md` and the second-pass deep audit against the committed feat branch. After this plan ships, every tool in the suite follows the same shape conventions the headline `get_variant_frequencies` tool already obeys (truncated metadata with `to_disable`/`to_restore`, cross-link `next_commands`, structured summaries, response_mode for heavy payloads), and the server actively prevents the highest-leverage silent failure mode (coordinate-build / dataset mismatch).
