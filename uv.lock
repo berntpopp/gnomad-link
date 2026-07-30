@@ -898,7 +898,7 @@ wheels = [
 
 [[package]]
 name = "gnomad-link"
-version = "9.0.1"
+version = "9.0.2"
 source = { editable = "." }
 dependencies = [
     { name = "asgi-correlation-id" },
