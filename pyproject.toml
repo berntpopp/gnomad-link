@@ -79,7 +79,12 @@ line-length = 100
 target-version = "py312"
 
 [tool.ruff.lint]
-extend-select = [
+# `select` (not `extend-select`): ruff 0.16 grew its implicit default rule set from
+# 59 to 413 rules, so `extend-select` would silently enforce ~350 rules this repo
+# never opted into. The list below already supersets the pre-0.16 default (E4/E7/E9
+# + F) via its wholesale "E" and "F" entries, so the enforced policy is unchanged --
+# this pins the policy, not the tool.
+select = [
     "E",
     "W",
     "F",
