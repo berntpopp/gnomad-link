@@ -4,6 +4,37 @@ All notable changes to gnomad-link are documented here.
 
 ## [Unreleased]
 
+## [9.0.1] - 2026-07-30
+
+Consolidated Dependabot sweep. No MCP tool, schema, or response shape changed; the
+runtime dependency bumps are patch/minor and the rest is CI tooling and the development
+toolchain. Research use only; not for clinical decision support.
+
+### Changed
+
+- Bumped runtime dependencies `fastapi` 0.139.0 -> 0.141.1, `fastmcp` 3.4.4 -> 3.4.5,
+  `typer` 0.26.8 -> 0.27.0 and `prometheus-client` 0.25.0 -> 0.26.0. `fastapi` resolves
+  above Dependabot's proposed 0.140.13; as elsewhere in this project the declared floor
+  is set to the locked version.
+- Bumped development dependencies `ruff` 0.15.21 -> 0.16.0, `pre-commit` 4.6.0 -> 4.6.1
+  and `mkdocs-material` 9.7.6 -> 9.7.7.
+- **Ruff's lint rule set is now declared in full (`select`) instead of extending Ruff's
+  defaults (`extend-select`).** Ruff 0.16.0 grew its implicit default set from 59 to 413
+  rules, which would otherwise have turned an upstream default change into this repo's
+  lint policy (52 new findings, none of them a decision made here). The declared list is
+  a superset of Ruff's pre-0.16 default (`E4`/`E7`/`E9` + `F`) via its wholesale `E` and
+  `F` entries, so the enforced policy is unchanged; adopting the new rule families stays a
+  deliberate decision rather than a side effect of a dependency bump.
+- Bumped pinned GitHub Actions: `actions/checkout` 7.0.0 -> 7.0.1, `actions/setup-python`
+  v6 -> 7.0.0, `astral-sh/setup-uv` 8.3.2 -> 9.0.0. Every SHA-pinned action in
+  `.github/workflows` — not only the bumped ones — was re-verified against the upstream
+  tag refs, so each trailing `# vX.Y.Z` comment names the release its SHA actually is.
+  Neither major bump affects this repo: `setup-python` v7 drops the unused `pip-install`
+  input, and `setup-uv` v9 flips a `prune-cache` default that was never set here.
+- Bumped the `python:3.14-slim` base image digest `d3400aa` -> `cea0e60` in
+  `docker/Dockerfile`, verified against the live registry manifest.
+- Regenerated `CITATION.cff`, which had drifted to 8.0.5 while the package was at 9.0.0.
+
 ## [9.0.0] - 2026-07-15
 
 MCP contract hardening: honest error envelopes, honest pagination, and a tool
