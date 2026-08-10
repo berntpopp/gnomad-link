@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "gnomad-link"
-version = "9.0.2"
+version = "9.0.3"
 description = "A unified server providing REST API and MCP interfaces for gnomAD allele frequency data."
 readme = "README.md"
 authors = [{ name = "Bernt Popp" }]
@@ -25,7 +25,7 @@ classifiers = [
 ]
 dependencies = [
     "fastapi>=0.141.1,<1.0.0",
-    "uvicorn[standard]>=0.51.0,<1.0.0",
+    "uvicorn[standard]>=0.52.1,<1.0.0",
     "pydantic>=2.11.0,<3.0.0",
     "pydantic-settings>=2.14.2,<3.0.0",
     "gql[aiohttp]>=4.0.0,<5.0.0",
@@ -50,7 +50,7 @@ dev = [
     "pytest-mock>=3.14.0,<4.0.0",
     "pytest-xdist>=3.6.0,<4.0.0",
     "respx>=0.22.0,<1.0.0",
-    "ruff>=0.16.0,<1.0.0",
+    "ruff>=0.16.1,<1.0.0",
     "mypy>=2.3.0,<3.0.0",
     "pre-commit>=4.6.1,<5.0.0",
 ]

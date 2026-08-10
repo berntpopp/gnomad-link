@@ -4,6 +4,29 @@ All notable changes to gnomad-link are documented here.
 
 ## [Unreleased]
 
+## [9.0.3] - 2026-08-10
+
+Security dependency maintenance. No MCP tool, schema, response shape, or production
+source changed. Research use only; not for clinical decision support.
+
+### Changed
+
+- Updated the locked transitive dependency `cryptography` 49.0.0 -> 50.0.0 and
+  `aiohttp` 3.14.1 -> 3.14.3. Their public interfaces used by gnomAD Link remain
+  compatible across the supported Python 3.12 and shipped Python 3.14 runtimes.
+- Updated Uvicorn to 0.52.1 and Ruff to the current 0.16.x release, and re-pinned
+  both reusable container workflows to the reviewed `genefoundry-router` v0.7.4
+  commit.
+- Added compatibility regressions covering a PKCS#7 enveloped-data round-trip with an
+  X.509 recipient and the real GQL/`aiohttp` chunked-response path used by the GraphQL
+  transport.
+
+### Notes
+
+- The release version is 9.0.3 because `v9.0.2` already identifies commit `1d69e67`.
+  Reusing that tag for the dependency candidate would not identify the candidate source
+  and is rejected by the release preflight.
+
 ## [9.0.2] - 2026-07-30
 
 CI now exercises the interpreter this project actually ships. No runtime code, MCP
