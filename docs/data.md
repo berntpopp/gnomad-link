@@ -9,7 +9,7 @@ unauthenticated — there is no API key, and no data-build step: this server shi
 proxy in front of a live upstream.
 
 The current upstream release is stamped in every MCP response's `_meta`
-(`GNOMAD_DATA_RELEASE`, gnomAD **4.1.0**), so a caller can always cite the exact
+(`GNOMAD_DATA_RELEASE`, gnomAD **4.1.1**), so a caller can always cite the exact
 data version behind a claim. The ClinVar release date served by gnomAD is fetched
 live and surfaced by `get_server_capabilities` (and by the deprecated
 `get_clinvar_meta`).
