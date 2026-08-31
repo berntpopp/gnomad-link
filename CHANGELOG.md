@@ -4,6 +4,10 @@ All notable changes to gnomad-link are documented here.
 
 ## [Unreleased]
 
+## [9.0.4] - 2026-08-31
+
+- Re-pinned the Python base image and all CI workflow dependencies to reviewed immutable revisions.
+
 ## [9.0.3] - 2026-08-10
 
 Security dependency maintenance. No MCP tool, schema, response shape, or production
