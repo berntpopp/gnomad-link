@@ -13,9 +13,10 @@ from gnomad_link.mcp.clinvar_date_cache import get_cached_clinvar_release_date
 RESEARCH_USE_NOTICE = "Research use only; not for clinical decision support."
 
 # Current gnomAD upstream release. Surfaced in every MCP response's `_meta`
-# so LLM callers can cite the precise data version. v4.1.0 was released
-# 2024-11; bump this constant when upstream revs.
-GNOMAD_DATA_RELEASE = "4.1.0"
+# so LLM callers can cite the precise data version. v4.1.1 is the current
+# gnomAD v4 release served by the live GraphQL contract; bump this constant
+# when upstream revs.
+GNOMAD_DATA_RELEASE = "4.1.1"
 
 
 def _server_version() -> str:

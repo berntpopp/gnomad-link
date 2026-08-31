@@ -44,7 +44,7 @@ async def test_get_variant_frequencies_success_carries_gnomad_release() -> None:
     assert payload.get("error_code") != "validation_failed", payload
     meta = payload.get("_meta") or {}
     assert meta.get("gnomad_release") == GNOMAD_DATA_RELEASE
-    assert meta.get("gnomad_release") == "4.1.0"
+    assert meta.get("gnomad_release") == "4.1.1"
     # The pre-existing research-use flag must survive.
     assert meta.get("unsafe_for_clinical_use") is True
 
@@ -65,7 +65,7 @@ async def test_validation_error_carries_gnomad_release() -> None:
     assert payload.get("error_code") == "invalid_input"
     meta = payload.get("_meta") or {}
     assert meta.get("gnomad_release") == GNOMAD_DATA_RELEASE
-    assert meta.get("gnomad_release") == "4.1.0"
+    assert meta.get("gnomad_release") == "4.1.1"
     assert meta.get("unsafe_for_clinical_use") is True
 
 
@@ -88,7 +88,7 @@ async def test_build_mismatch_error_carries_gnomad_release() -> None:
     assert payload.get("error_subtype") == "build_mismatch", payload
     meta = payload.get("_meta") or {}
     assert meta.get("gnomad_release") == GNOMAD_DATA_RELEASE
-    assert meta.get("gnomad_release") == "4.1.0"
+    assert meta.get("gnomad_release") == "4.1.1"
     assert meta.get("unsafe_for_clinical_use") is True
 
 
@@ -103,4 +103,4 @@ async def test_get_server_capabilities_carries_gnomad_release() -> None:
 
     meta = payload.get("_meta") or {}
     assert meta.get("gnomad_release") == GNOMAD_DATA_RELEASE
-    assert meta.get("gnomad_release") == "4.1.0"
+    assert meta.get("gnomad_release") == "4.1.1"

@@ -98,7 +98,7 @@ identity (`serverInfo.name`) is `gnomad-link`.
 ## Data & provenance
 
 Served live from the public gnomAD GraphQL API — no local database, no bundle, no
-API key. The upstream release (gnomAD 4.1.0) is stamped in every response's
+API key. The upstream release (gnomAD 4.1.1) is stamped in every response's
 `_meta`, and the ClinVar release date is read live from gnomAD. `gnomad_r4`
 (GRCh38) is the default dataset; `gnomad_r2_1` is GRCh37, so a variant id only
 means something alongside its build.

@@ -4,6 +4,9 @@ All notable changes to gnomad-link are documented here.
 
 ## [Unreleased]
 
+- Updated the reported live gnomAD data provenance from 4.1.0 to 4.1.1 after
+  verifying the current GraphQL gene, variant, constraint, and coverage contract.
+
 ## [9.0.4] - 2026-08-31
 
 - Re-pinned the Python base image and all CI workflow dependencies to reviewed immutable revisions.
