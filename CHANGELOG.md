@@ -7,6 +7,11 @@ All notable changes to gnomad-link are documented here.
 - Updated the reported live gnomAD data provenance from 4.1.0 to 4.1.1 after
   verifying the current GraphQL gene, variant, constraint, and coverage contract.
 
+## [9.0.5] - 2026-09-02
+
+- Deploy: declare the image's numeric uid:gid in docker/docker-compose.npm.yml so the fleet
+  controller can deploy the service; a guard test keeps `user` out of the release Compose files.
+
 ## [9.0.4] - 2026-08-31
 
 - Re-pinned the Python base image and all CI workflow dependencies to reviewed immutable revisions.

@@ -99,6 +99,30 @@ Useful focused commands:
 - Keep Docker production hardening in Compose overlays and keep the default
   image command on the unified FastAPI host plus MCP HTTP.
 
+## Fleet Deploy Contract
+
+- `docker/docker-compose.npm.yml` is the file the GeneFoundry fleet controller
+  (`strato_v6_docker_npm`, `scripts/utils/deployment_preflight.py`) renders and
+  validates. Every service there declares `user: "<uid>:<gid>"` numerically —
+  this image's own value from `docker/Dockerfile` (currently `10001:10001`),
+  never copied from a sibling `-link` repo; uid/gid differ per image.
+- `user` must NOT appear in the Compose files listed in `container-release.json`
+  (`docker-compose.yml`, `docker-compose.prod.yml`); the shared release gate
+  (`container_release.py validate-compose`, `ALLOWED_SERVICE_KEYS`) forbids it
+  there.
+- Guard tests: `tests/unit/docker/test_docker_compose.py` —
+  `test_npm_overlay_declares_numeric_user_for_every_service` and
+  `test_release_compose_files_never_declare_user`.
+- Release checklist this repo enforces: bump `pyproject.toml` `version` by one
+  PATCH, `uv lock`, add a `CHANGELOG.md` heading `## [x.y.z] - YYYY-MM-DD`,
+  update `CITATION.cff`'s `version:` field only — it is a GENERATED file
+  (`make citation-write` in `genefoundry-router`); no test in this repo pins
+  `date-released` to the CHANGELOG or a literal, so leave it untouched unless a
+  future test asserts otherwise — then tag `vx.y.z` and approve the `release`
+  GitHub Environment gate via
+  `gh api repos/berntpopp/gnomad-link/actions/runs/<id>/pending_deployments`
+  (it can gate twice; `status: waiting` is the gate, not a slow build).
+
 ## Agentic Development
 
 - Start by reading the relevant route, service, model, GraphQL query, and test

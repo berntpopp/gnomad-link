@@ -55,6 +55,32 @@ the external NPM network. In Nginx Proxy Manager, proxy to:
 
 The public MCP endpoint is then available at `https://your-domain.example/mcp`.
 
+### Fleet Deploy Contract
+
+`docker-compose.npm.yml` is the file the GeneFoundry fleet controller
+(`strato_v6_docker_npm`) renders and deploys — it never builds from source. The
+`gnomad-link` service there declares `user: "10001:10001"`, this image's own
+uid:gid from `docker/Dockerfile`, because the controller's runtime observer
+proves the effective uid from `/proc` and refuses a service with no numeric
+`user`. The release Compose files named in `container-release.json`
+(`docker-compose.yml`, `docker-compose.prod.yml`) must NOT declare `user`; the
+shared release gate forbids it there. `tests/unit/docker/test_docker_compose.py`
+guards both invariants.
+
+To self-check a rendered Compose stack against the controller's own projection
+logic before deploying (run from a checkout of `strato_v6_docker_npm`):
+
+```bash
+docker compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml \
+  -f docker/docker-compose.npm.yml config --format json > /tmp/gnomad-link-rendered.json
+uv run python -c "
+import sys, json; sys.path.insert(0, 'scripts')
+from utils.deployment_preflight import canonical_projection
+p = canonical_projection(json.load(open('/tmp/gnomad-link-rendered.json')), project='gnomad-link')
+for n, s in p['services'].items(): print(n, 'user=', s.get('user'))
+print('PROJECTION OK')"
+```
+
 ## Environment
 
 Notable variables:
