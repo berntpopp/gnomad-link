@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import re
 from pathlib import Path
 
 import yaml
@@ -11,6 +13,23 @@ DEV = Path("docker/docker-compose.dev.yml").read_text(encoding="utf-8")
 PROD = Path("docker/docker-compose.prod.yml").read_text(encoding="utf-8")
 NPM = Path("docker/docker-compose.npm.yml").read_text(encoding="utf-8")
 DOCKER_ENV = Path(".env.docker.example").read_text(encoding="utf-8")
+
+NUMERIC_USER_RE = re.compile(r"^[1-9][0-9]*:[1-9][0-9]*$")
+
+
+class _TagTolerantLoader(yaml.SafeLoader):
+    """A SafeLoader that tolerates Compose's custom merge tags (``!reset``,
+    ``!override``, ...) by resolving scalar nodes to their plain value and
+    everything else to ``None``, since only the ``user`` key's presence and
+    value matter to the guard tests below."""
+
+
+_TagTolerantLoader.add_multi_constructor(
+    "!",
+    lambda loader, _suffix, node: (
+        loader.construct_scalar(node) if isinstance(node, yaml.ScalarNode) else None
+    ),
+)
 
 
 def test_base_compose_runs_unified_http_mcp_service() -> None:
@@ -82,3 +101,38 @@ def test_docker_env_template_matches_compose_contract() -> None:
     assert "MCP_HOST=0.0.0.0" in DOCKER_ENV
     assert "MCP_PATH=/mcp" in DOCKER_ENV
     assert "NPM_NETWORK_NAME=npm_default" in DOCKER_ENV
+
+
+def test_npm_overlay_declares_numeric_user_for_every_service() -> None:
+    """The fleet controller's deploy contract wants every service in the
+    deployed overlay to declare a numeric non-root ``user`` (its runtime
+    observer proves the effective uid from /proc); the release gate below
+    forbids the same key in the release Compose files."""
+    # _TagTolerantLoader subclasses yaml.SafeLoader and only adds tolerance for
+    # Compose's own custom tags (!reset, !override); it never gains the unsafe
+    # arbitrary-object constructors ruff's S506 warns about.
+    compose = yaml.load(NPM, Loader=_TagTolerantLoader)  # noqa: S506
+    services = compose["services"]
+    assert services, "docker-compose.npm.yml should declare at least one service"
+    for name, svc in services.items():
+        user = svc.get("user")
+        assert user is not None, f"{name} does not declare a numeric user"
+        assert NUMERIC_USER_RE.match(str(user)), (
+            f"{name} user={user!r} is not numeric non-root (expected uid:gid)"
+        )
+
+
+def test_release_compose_files_never_declare_user() -> None:
+    """`container-release.json` names the Compose files the release gate
+    validates; none of them may declare `user` — the deployed uid:gid lives
+    only in the NPM overlay that the fleet controller renders on top."""
+    release_config = json.loads(Path("container-release.json").read_text(encoding="utf-8"))
+    compose_files = release_config["service"]["compose_files"]
+    assert compose_files, "container-release.json should list compose files"
+    for compose_file in compose_files:
+        text = Path(compose_file).read_text(encoding="utf-8")
+        compose = yaml.load(text, Loader=_TagTolerantLoader)  # noqa: S506
+        for name, svc in compose["services"].items():
+            assert "user" not in svc, (
+                f"{compose_file}: service {name} declares user; the release gate forbids it"
+            )
