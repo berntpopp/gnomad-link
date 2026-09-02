@@ -113,6 +113,16 @@ Useful focused commands:
 - Guard tests: `tests/unit/docker/test_docker_compose.py` —
   `test_npm_overlay_declares_numeric_user_for_every_service` and
   `test_release_compose_files_never_declare_user`.
+- `container-release.json` declares `deployed_compose_files` (the full
+  base+prod+npm list, in overlay order) so the shared reusable workflow's
+  `validate-deployed-overlay` gate (`container_release.py
+  validate-deployed-overlay`) checks the file set the controller actually
+  deploys, not the release-only `compose_files`. `container-release.yml` and
+  `container-ci.yml` both pin their shared workflow at `genefoundry-router`
+  `v0.8.5` (`31ea81cee5475fc3655c047c63a89739948f99a9`) -- both must move
+  together, since both validate `container-release.json` against the same
+  `ReleaseConfig` pydantic schema (`extra="forbid"`); bumping only one leaves
+  the other rejecting `deployed_compose_files` as an unknown field.
 - Release checklist this repo enforces: bump `pyproject.toml` `version` by one
   PATCH, `uv lock`, add a `CHANGELOG.md` heading `## [x.y.z] - YYYY-MM-DD`,
   update `CITATION.cff`'s `version:` field only — it is a GENERATED file
