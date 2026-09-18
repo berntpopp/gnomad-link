@@ -4,6 +4,10 @@ All notable changes to gnomad-link are documented here.
 
 ## [Unreleased]
 
+## [9.0.6] - 2026-09-18
+
+- Consolidated Dependabot dependency updates and security maintenance.
+- Updated reusable workflows to `genefoundry-router` v0.9.1 and updated action pins.
 - Updated the reported live gnomAD data provenance from 4.1.0 to 4.1.1 after
   verifying the current GraphQL gene, variant, constraint, and coverage contract.
 
