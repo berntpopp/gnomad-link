@@ -10,21 +10,18 @@ def test_release_dependencies_use_reviewed_immutable_pins() -> None:
         "python:3.14-slim@sha256:cae66f2ef0ec51a9891263eeee7f987dacf0a9879e8aa9353d5606e0530619a5"
         in (ROOT / "docker/Dockerfile").read_text()
     )
-    assert (
-        "apt-get install -y --only-upgrade --no-install-recommends"
-        in (ROOT / "docker/Dockerfile").read_text()
-    )
+    assert "apt-get update && apt-get upgrade -y" in (ROOT / "docker/Dockerfile").read_text()
     assert "/opt/venv/lib/python3.14/site-packages/pip" in (ROOT / "docker/Dockerfile").read_text()
     assert (
-        "astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d"
+        "astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4"
         in (ROOT / ".github/workflows/ci.yml").read_text()
     )
     assert (
-        "_container-ci.yml@31ea81cee5475fc3655c047c63a89739948f99a9"
+        "_container-ci.yml@adfc1cffed6530d6453c9dbb40be5f4c5884b8a2"
         in (ROOT / ".github/workflows/container-ci.yml").read_text()
     )
     assert (
-        "_container-release.yml@31ea81cee5475fc3655c047c63a89739948f99a9"
+        "_container-release.yml@adfc1cffed6530d6453c9dbb40be5f4c5884b8a2"
         in (ROOT / ".github/workflows/container-release.yml").read_text()
     )
 
