@@ -4,6 +4,13 @@ All notable changes to gnomad-link are documented here.
 
 ## [Unreleased]
 
+## [9.0.7] - 2026-10-03
+
+- Update PyJWT to 2.15.0, AnyIO to 4.14.2, virtualenv to 21.7.13, and urllib3 to 2.8.0.
+- Consolidate the open grouped Python dependency and GitHub Actions targets.
+- Refresh the pinned Python 3.14 base image and router v0.9.3 reusable container workflows.
+
+
 ## [9.0.6] - 2026-09-18
 
 - Consolidated Dependabot dependency updates and security maintenance.
