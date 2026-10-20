@@ -4,6 +4,14 @@ All notable changes to gnomad-link are documented here.
 
 ## [Unreleased]
 
+### Security
+
+- Raise the `mcp[cli]` floor to `>=1.30.0` so a fresh resolve cannot pick a version affected by the StreamableHTTP session-exhaustion advisory.
+
+### Changed
+
+- Dependabot no longer proposes `mcp` major updates (fastmcp caps `mcp<2.0`).
+
 ## [9.0.8] - 2026-10-20
 
 ### Security
