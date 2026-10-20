@@ -4,6 +4,18 @@ All notable changes to gnomad-link are documented here.
 
 ## [Unreleased]
 
+## [9.0.8] - 2026-10-20
+
+### Security
+
+- Upgrade aiohttp to 3.14.5 (fixes high-severity advisories; yarl to 1.25.1 as required by aiohttp 3.14.4+), multidict to 6.9.1, and mcp to 1.30.0 (Dependabot alerts #46-#50).
+
+### Changed
+
+- Update the Python dependency group (fastapi, mypy, orjson, pydantic, pydantic-core, ruff, typer, typing-extensions, typing-inspection, librt, ast-serialize).
+- Update GitHub Actions pins: setup-uv v10.3.0, upload-artifact v7.0.2, codeql-action v4.38.3.
+- Move reusable container workflows to `genefoundry-router` v0.10.4.
+
 ## [9.0.7] - 2026-10-03
 
 - Update PyJWT to 2.15.0, AnyIO to 4.14.2, virtualenv to 21.7.13, and urllib3 to 2.8.0.
