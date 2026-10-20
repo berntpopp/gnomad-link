@@ -328,7 +328,7 @@ class BaseGnomadClient:
         else:
             await self._transport.close()
 
-    async def __aenter__(self) -> "BaseGnomadClient":
+    async def __aenter__(self) -> BaseGnomadClient:
         """Async context manager entry."""
         return self
 
