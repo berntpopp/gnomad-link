@@ -119,7 +119,7 @@ Useful focused commands:
   validate-deployed-overlay`) checks the file set the controller actually
   deploys, not the release-only `compose_files`. `container-release.yml` and
   `container-ci.yml` both pin their shared workflow at `genefoundry-router`
-  `v0.9.1` (`adfc1cffed6530d6453c9dbb40be5f4c5884b8a2`) -- both must move
+  `v0.10.4` (`88b565f1b6047f47fd58138cbf041994bb137c03`) -- both must move
   together, since both validate `container-release.json` against the same
   `ReleaseConfig` pydantic schema (`extra="forbid"`); bumping only one leaves
   the other rejecting `deployed_compose_files` as an unknown field.
