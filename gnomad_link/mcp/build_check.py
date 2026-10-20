@@ -99,7 +99,7 @@ def detect_variant_id_mismatch(variant_id: str, dataset: str) -> str | None:
     try:
         chrom, pos_s, _, _ = variant_id.split("-", 3)
         pos = int(pos_s)
-    except (ValueError, AttributeError):
+    except ValueError, AttributeError:
         return None
     inferred = likely_build(chrom, pos)
     if inferred and inferred != dataset_build(dataset):

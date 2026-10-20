@@ -1,6 +1,6 @@
 # gnomad-link
 
-[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Python 3.14+](https://img.shields.io/badge/python-3.14%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![CI](https://github.com/berntpopp/gnomad-link/actions/workflows/ci.yml/badge.svg)](https://github.com/berntpopp/gnomad-link/actions/workflows/ci.yml)
 [![Conformance](https://github.com/berntpopp/gnomad-link/actions/workflows/conformance.yml/badge.svg)](https://github.com/berntpopp/gnomad-link/actions/workflows/conformance.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -39,7 +39,7 @@ The server is hosted — no install, no data build:
 claude mcp add --transport http gnomad-link https://gnomad-link.genefoundry.org/mcp
 ```
 
-To run it locally (Python 3.12+, [uv](https://github.com/astral-sh/uv)):
+To run it locally (Python 3.14+, [uv](https://github.com/astral-sh/uv)):
 
 ```bash
 uv sync --group dev

@@ -139,7 +139,7 @@ query b {
             query = loader.load_query("circular_a", "common")
             # If it doesn't raise, check it at least has the base query
             assert "query a" in query
-        except (RecursionError, FileNotFoundError):
+        except RecursionError, FileNotFoundError:
             # Circular import detected or prevented - this is also acceptable
             pass
 

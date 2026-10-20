@@ -89,7 +89,7 @@ Useful focused commands:
 - Use `uv` for dependency management; do not use direct `pip` installs.
 - Use modern Python typing: `list[str]`, `dict[str, int]`, `str | None`.
 - Format and lint Python with Ruff.
-- Type check with mypy targeting Python 3.12.
+- Type check with mypy targeting Python 3.14.
 - Keep MCP tool behavior covered by unit tests; keep service behavior covered
   by unit tests.
 - Keep GraphQL query changes paired with tests for query loading or affected

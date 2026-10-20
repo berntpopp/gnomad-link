@@ -21,7 +21,7 @@ class ServerConfig:
     log_level: str = "INFO"
 
     @classmethod
-    def from_env(cls) -> "ServerConfig":
+    def from_env(cls) -> ServerConfig:
         """Create configuration from environment variables."""
         return cls(
             transport=settings.MCP_TRANSPORT,

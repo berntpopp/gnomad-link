@@ -11,6 +11,7 @@ All notable changes to gnomad-link are documented here.
 ### Changed
 
 - Dependabot no longer proposes `mcp` major updates (fastmcp caps `mcp<2.0`).
+- Unify on Python 3.14 (`requires-python`, tooling, CI single-version matrix, router reusable workflows v0.10.5); cancel superseded PR runs; Dependabot no longer proposes Python minor jumps.
 
 ## [9.0.8] - 2026-10-20
 
