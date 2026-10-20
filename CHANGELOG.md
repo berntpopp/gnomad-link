@@ -4,8 +4,11 @@ All notable changes to gnomad-link are documented here.
 
 ## [Unreleased]
 
+## [9.0.9] - 2026-10-20
+
 ### Security
 
+- certifi 2026.10.19: drops emSign root CAs whose intermediate CA keys were compromised (critical).
 - Raise the `mcp[cli]` floor to `>=1.30.0` so a fresh resolve cannot pick a version affected by the StreamableHTTP session-exhaustion advisory.
 
 ### Changed
