@@ -42,7 +42,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     MCP_PATH=/mcp \
     TMPDIR=/tmp/gnomad-link
 
-RUN apt-get update && apt-get upgrade -y \
+RUN mkdir -p "$TMPDIR" && apt-get update && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
