@@ -4,6 +4,11 @@ All notable changes to gnomad-link are documented here.
 
 ## [Unreleased]
 
+## [9.0.11] - 2026-11-11
+
+### Security
+- Fleet dependency sweep: fastmcp floor >=3.4.10 (3.4.11 locked); joserfc 1.8.0, opentelemetry-api 1.45.2, filelock 4.2.10, virtualenv 21.15.6 (clears all open Dependabot alerts); GitHub Actions pins bumped (setup-python v7.1.0, setup-uv v10.3.3, codeql-action v4.39.1).
+
 ## [9.0.10] - 2026-10-28
 
 ### Security

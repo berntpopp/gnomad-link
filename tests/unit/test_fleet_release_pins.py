@@ -13,7 +13,7 @@ def test_release_dependencies_use_reviewed_immutable_pins() -> None:
     assert "apt-get update && apt-get upgrade -y" in (ROOT / "docker/Dockerfile").read_text()
     assert "/opt/venv/lib/python3.14/site-packages/pip" in (ROOT / "docker/Dockerfile").read_text()
     assert (
-        "astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884"
+        "astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2"
         in (ROOT / ".github/workflows/ci.yml").read_text()
     )
     assert (
