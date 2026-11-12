@@ -1,5 +1,7 @@
 """Pydantic models for variant frequency data."""
 
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -75,6 +77,14 @@ class VariantFrequencyResponse(BaseModel):
     major_consequence: str | None = Field(
         None,
         description="VEP major_consequence from the canonical transcript consequence, when present.",
+    )
+    faf95: dict[str, dict[str, Any]] | None = Field(
+        None,
+        description=(
+            "gnomAD filtering allele frequency (95% CI lower bound) at the grpmax "
+            "genetic ancestry group, keyed by exome/genome/joint: {grpmax, grpmax_pop}. "
+            "Sources without a computed faf95 are omitted."
+        ),
     )
 
     @property

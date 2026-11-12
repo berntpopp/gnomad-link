@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from typing import Annotated, Any, Literal
 
@@ -10,10 +11,12 @@ from pydantic import Field
 
 from gnomad_link.mcp.af import preferred_overall_af
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
-from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
+from gnomad_link.mcp.errors import McpErrorContext, ToolInputError, run_mcp_tool
 from gnomad_link.mcp.next_commands import for_variant
+from gnomad_link.mcp.patterns import MITO_VARIANT_ID_PATTERN, normalize_mito_variant_id
 from gnomad_link.models import GeneSearchResult
 from gnomad_link.services import FrequencyService
+from gnomad_link.services.frequency_service import _pick_canonical_annotation
 
 _RANK_ORDER = {
     "exact_symbol": 0,
@@ -24,6 +27,23 @@ _RANK_ORDER = {
 
 # Cap second-pass enrichment cost: only fetch frequencies for the first N hits.
 _ENRICHMENT_CAP = 5
+
+_MITO_ID_RE = re.compile(MITO_VARIANT_ID_PATTERN)
+_MITO_NEXT_STEPS = [
+    "Call get_mitochondrial_variant(variant_id, dataset) for homoplasmic/heteroplasmic "
+    "frequencies; get_variant_frequencies does not serve chrM.",
+]
+
+
+def _resolver_context(tool_name: str, query: str) -> McpErrorContext:
+    """Error context; a chrM query carries its normalized id so errors route to mito."""
+    q = query.strip()
+    mito_id = normalize_mito_variant_id(q).upper() if _MITO_ID_RE.fullmatch(q) else None
+    return McpErrorContext(tool_name=tool_name, query=query, variant_id=mito_id)
+
+
+def _is_mito(results: list[dict[str, Any]]) -> bool:
+    return bool(results) and results[0].get("variant_type") == "mitochondrial"
 
 
 async def _enrich_variant_id(
@@ -63,6 +83,8 @@ async def _resolve_and_enrich(
     honest ``total_count`` / ``has_more`` instead of making 5 candidates at
     ``limit=1`` look like 1.
     """
+    if _MITO_ID_RE.fullmatch(query.strip()):
+        return await _resolve_mito(service, query=query.strip(), dataset=dataset, enrich=enrich)
     raw = await service.search_variants(query, dataset)
     total_available = len(raw)
     ids = raw[:limit]
@@ -78,6 +100,39 @@ async def _resolve_and_enrich(
                 enrichment_failures += 1
         results.append(item)
     return results, enrichment_failures, total_available
+
+
+async def _resolve_mito(
+    service: FrequencyService, *, query: str, dataset: str, enrich: bool
+) -> tuple[list[dict[str, Any]], int, int]:
+    """Resolve a chrM id via the dedicated mitochondrial endpoint (#127).
+
+    gnomAD's variant_search does not index mitochondrial variants, so passing an
+    M-/MT- id through it yields an empty success that reads as "absent". An absent
+    mito id raises not_found from the mitochondrial lookup instead.
+    """
+    if dataset == "gnomad_r2_1":
+        raise ToolInputError(
+            "gnomad_r2_1 has no mitochondrial variants; use dataset gnomad_r4 or "
+            "gnomad_r3, or call get_mitochondrial_variant."
+        )
+    vid = normalize_mito_variant_id(query).upper()
+    raw = await service.get_mitochondrial_variant(vid, dataset)
+    mv = raw.get("mitochondrial_variant", raw) or {}
+    item: dict[str, Any] = {
+        "variant_id": mv.get("variant_id") or vid,
+        "variant_type": "mitochondrial",
+    }
+    an = mv.get("an")
+    if enrich:
+        gene_symbol, consequence = _pick_canonical_annotation(mv.get("transcript_consequences"))
+        item.update(gene_symbol=gene_symbol, major_consequence=consequence)
+        if an:
+            item["af_hom"] = (mv.get("ac_hom") or 0) / an
+            item["af_het"] = (mv.get("ac_het") or 0) / an
+        # A failing site reads as AF 0.0; surface why (e.g. "No passing genotype").
+        item["filters"] = mv.get("filters") or []
+    return [item], 0, 1
 
 
 def _classify_gene_match(hit: GeneSearchResult, query_upper: str) -> str:
@@ -202,7 +257,7 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
             Field(
                 min_length=3,
                 max_length=100,
-                description="rsID, CHROM-POS-REF-ALT, or 'CHROM:POS'.",
+                description="rsID, CHROM-POS-REF-ALT, 'CHROM:POS', or a chrM id (M-POS-REF-ALT).",
                 examples=["rs80357906"],
             ),
         ],
@@ -226,7 +281,7 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
             ),
         ] = True,
     ) -> dict[str, Any]:
-        """Use this when the caller only has an rsID, partial coordinates, or text fragment and needs to obtain a canonical gnomAD variant id. With enrich=True (default) the top hits include gene_symbol, major_consequence, and AF so the caller can rank candidates without a follow-up call. Returns ~1-5kB (enrichment dependent)."""
+        """Use this when the caller only has an rsID, partial coordinates, or text fragment and needs to obtain a canonical gnomAD variant id. With enrich=True (default) the top hits include gene_symbol, major_consequence, and AF so the caller can rank candidates without a follow-up call. Mitochondrial ids (M-/MT-/chrM-POS-REF-ALT) resolve via the gnomAD mitochondrial dataset (gnomad_r4/r3 only) with af_hom/af_het; follow up with get_mitochondrial_variant. Returns ~1-5kB (enrichment dependent)."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()
@@ -245,7 +300,9 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
                 # limit=1 never look like 1 (honest pagination).
                 "total_count": total_available,
                 "has_more": total_available > len(results),
-                "next_steps": [
+                "next_steps": _MITO_NEXT_STEPS
+                if _is_mito(results)
+                else [
                     "Pick one variant_id and call get_variant_frequencies(variant_id, dataset).",
                     "Or call get_variant_details(variant_id, dataset) for annotations.",
                 ],
@@ -269,7 +326,7 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
         return await run_mcp_tool(
             "resolve_variant_id",
             call,
-            context=McpErrorContext(tool_name="resolve_variant_id", query=query),
+            context=_resolver_context("resolve_variant_id", query),
         )
 
     @mcp.tool(
@@ -285,7 +342,7 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
             Field(
                 min_length=3,
                 max_length=100,
-                description="rsID, CHROM-POS-REF-ALT, or 'CHROM:POS'.",
+                description="rsID, CHROM-POS-REF-ALT, 'CHROM:POS', or a chrM id (M-POS-REF-ALT).",
                 examples=["rs80357906"],
             ),
         ],
@@ -334,7 +391,9 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
                 "returned": len(results),
                 "total_count": total_available,
                 "has_more": total_available > len(results),
-                "next_steps": [
+                "next_steps": _MITO_NEXT_STEPS
+                if _is_mito(results)
+                else [
                     "Pick one variant_id and call get_variant_frequencies(variant_id, dataset).",
                 ],
                 "_meta": meta,
@@ -350,5 +409,5 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
         return await run_mcp_tool(
             "search_variants",
             call,
-            context=McpErrorContext(tool_name="search_variants", query=query),
+            context=_resolver_context("search_variants", query),
         )

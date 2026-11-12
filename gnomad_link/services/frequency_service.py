@@ -220,6 +220,14 @@ class FrequencyService:
             data.get("transcript_consequences")
         )
 
+        # gnomAD's faf95 "popmax" is the grpmax filtering AF: computed over the
+        # continental groups only (no ami/asj/fin/mid/remaining).
+        faf95 = {
+            src: {"grpmax": faf["popmax"], "grpmax_pop": faf.get("popmax_population")}
+            for src in ("exome", "genome", "joint")
+            if (faf := (data.get(src) or {}).get("faf95") or {}).get("popmax") is not None
+        }
+
         return VariantFrequencyResponse(
             variant_id=variant_id,
             dataset=dataset,
@@ -227,6 +235,7 @@ class FrequencyService:
             genome=genome_data,
             gene_symbol=gene_symbol,
             major_consequence=major_consequence,
+            faf95=faf95 or None,
         )
 
     async def get_gene(

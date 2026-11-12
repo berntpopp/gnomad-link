@@ -4,6 +4,23 @@ All notable changes to gnomad-link are documented here.
 
 ## [Unreleased]
 
+## [9.1.0] - 2026-11-12
+
+### Added
+- `get_variant_frequencies` `summary.faf95.{exome,genome,joint}` = `{grpmax, grpmax_pop}`: gnomAD's
+  filtering allele frequency (95% CI lower bound at grpmax, continental groups only), at every
+  response mode including minimal -- the ClinGen/Whiffin frequency comparator (#125).
+- `resolve_variant_id` / `search_variants` resolve mitochondrial ids (`M-`/`MT-`/`chrM-POS-REF-ALT`)
+  through the gnomAD mitochondrial dataset, returning `af_hom`/`af_het`, gene, consequence, and
+  `filters`, with follow-ups routed to `get_mitochondrial_variant` (#127).
+
+### Fixed
+- chrM ids no longer return an empty success from `resolve_variant_id`; an absent id is `not_found`
+  with mitochondrial recovery guidance, and `gnomad_r2_1` is an explicit `invalid_input` (#127).
+- `summary.max_pop` / `top_enriched_population` never report the `remaining` catch-all group (#125).
+- `get_mitochondrial_variant`'s `get_region` follow-up echoes the requested dataset instead of
+  hardcoding `gnomad_r4`.
+
 ## [9.0.11] - 2026-11-11
 
 ### Security

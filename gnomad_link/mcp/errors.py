@@ -35,22 +35,19 @@ logger = logging.getLogger(__name__)
 RECENT_MCP_ERROR_LIMIT = 50
 _RECENT_ERRORS: deque[dict[str, Any]] = deque(maxlen=RECENT_MCP_ERROR_LIMIT)
 
-# Schema-drift events live in a separate, smaller ring so LLM callers can
-# distinguish business errors (the general ring) from infrastructure events
-# such as upstream payloads no longer matching our declared output_schema.
+# Schema-drift events live in a separate, smaller ring so LLM callers can tell
+# business errors from infrastructure events (upstream vs output_schema drift).
 RECENT_SCHEMA_DRIFT_LIMIT = 25
 _RECENT_SCHEMA_DRIFT: deque[dict[str, Any]] = deque(maxlen=RECENT_SCHEMA_DRIFT_LIMIT)
 
-# Base `_meta` block merged into every success and error envelope. The
-# `gnomad_release` value lets LLM callers cite the upstream data version
-# alongside the research-use disclaimer.
+# Base `_meta` merged into every envelope; `gnomad_release` lets LLM callers cite
+# the upstream data version alongside the research-use disclaimer.
 _BASE_META = {
     "unsafe_for_clinical_use": True,
     "gnomad_release": GNOMAD_DATA_RELEASE,
 }
 
-# Fallback tool used in validation and output-validation error envelopes.
-# Points to get_diagnostics for rich health context on error recovery.
+# Fallback tool for validation/output-validation envelopes (rich health context).
 _FALLBACK_TOOL = "get_diagnostics"
 
 # Response-Envelope Standard v1: `error_code` is a CLOSED enum of exactly six
@@ -155,6 +152,10 @@ def _safe_message(exc: BaseException) -> str:
     return sanitize_message(text)
 
 
+def _is_mito(context: McpErrorContext) -> bool:
+    return (context.variant_id or "").startswith("M-")
+
+
 def _fallback_for(context: McpErrorContext) -> tuple[str, dict[str, Any] | None]:
     """Resolve the context-appropriate resolver tool for not_found / invalid_input.
 
@@ -162,6 +163,10 @@ def _fallback_for(context: McpErrorContext) -> tuple[str, dict[str, Any] | None]
     search_genes, and everything else at the discovery entrypoint. fallback_args
     are populated from context so the LLM gets a ready-to-call next step.
     """
+    # M-POS-REF-ALT ids (the resolver sets variant_id for one) are only served by
+    # get_mitochondrial_variant: never route them to the resolver or gene search.
+    if context.tool_name == "get_mitochondrial_variant" or _is_mito(context):
+        return "get_server_capabilities", None
     # A failing variant resolver almost always received a gene symbol / free
     # text; point it at gene search rather than circularly back at itself.
     if context.tool_name in {"resolve_variant_id", "search_variants"}:
@@ -180,11 +185,6 @@ def _fallback_for(context: McpErrorContext) -> tuple[str, dict[str, Any] | None]
         seed = context.query or context.gene_symbol or context.gene_id
         if seed:
             return "search_genes", {"query": seed}
-        return "get_server_capabilities", None
-    # M-POS-REF-ALT ids are NOT resolvable by resolve_variant_id (SNV/indel
-    # only), so a mito not_found must not route there; point at capabilities for
-    # the valid mitochondrial datasets instead.
-    if context.tool_name == "get_mitochondrial_variant":
         return "get_server_capabilities", None
     if context.variant_id:
         return "resolve_variant_id", {"query": context.variant_id}
@@ -268,7 +268,7 @@ def _recovery_text(error_code: str, fallback_tool: str | None, tool_name: str | 
                 "Identifier well-formed but absent in the requested dataset. This is a "
                 "reformulate, not a retry: mitochondrial variants are in gnomad_r4 "
                 "(default) and gnomad_r3 only -- not gnomad_r2_1. Confirm the "
-                "M-POS-REF-ALT id and dataset."
+                "M-POS-REF-ALT id (REF must match the rCRS base at POS) and dataset."
             )
         resolver = fallback_tool or "resolve_variant_id"
         return (
@@ -462,7 +462,8 @@ def mcp_tool_error(exc: BaseException, context: McpErrorContext) -> McpToolError
     liftover_cmd = liftover_recovery_command(
         internal_code, fallback_tool, variant_id=context.variant_id, dataset=context.dataset
     )
-    recovery = _recovery_text(internal_code, fallback_tool, context.tool_name)
+    tool_for_text = "get_mitochondrial_variant" if _is_mito(context) else context.tool_name
+    recovery = _recovery_text(internal_code, fallback_tool, tool_for_text)
     if liftover_cmd is not None:
         next_commands.append(liftover_cmd)
         recovery += (
