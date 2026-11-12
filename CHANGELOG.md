@@ -4,6 +4,15 @@ All notable changes to gnomad-link are documented here.
 
 ## [Unreleased]
 
+## [9.1.1] - 2026-11-12
+
+### Fixed
+- A mitochondrial id (`M-`/`MT-`/`chrM-POS-REF-ALT`) sent to an autosomal variant tool
+  (`get_variant_frequencies`, `get_variant_details`, `compute_carrier_frequency`,
+  `compare_variant_across_datasets`, `get_coverage`) now returns `invalid_input` explaining the id is
+  mitochondrial, with `fallback_tool`/first `next_commands` = `get_mitochondrial_variant` and the same id,
+  instead of a regex error pointing at `get_diagnostics`.
+
 ## [9.1.0] - 2026-11-12
 
 ### Added

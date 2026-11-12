@@ -25,6 +25,12 @@ from gnomad_link.api import (
 )
 from gnomad_link.config import settings
 from gnomad_link.mcp.clinvar_date_cache import get_cached_clinvar_release_date
+from gnomad_link.mcp.mito_redirect import (
+    MITO_RECOVERY,
+    MITO_TOOL,
+    MitoIdRedirectError,
+    redirect_validation_payload,
+)
 from gnomad_link.mcp.recovery import DATASET_BUILD as _DATASET_BUILD
 from gnomad_link.mcp.recovery import liftover_recovery_command
 from gnomad_link.mcp.resources import GNOMAD_DATA_RELEASE
@@ -143,12 +149,8 @@ def _provenance_meta(context: McpErrorContext | None = None) -> dict[str, Any]:
 
 def _safe_message(exc: BaseException) -> str:
     text = str(exc) or exc.__class__.__name__
-    # Strip the fence's forbidden control/zero-width/bidi/NUL code points and cap
-    # length (240): a caller-visible message must never carry code points a
-    # hostile upstream (or a caller-influenced 4xx/5xx body) could smuggle in.
-    # Upstream response bodies are additionally severed at the GraphQL client, so
-    # this closes the residual code-point surface for every message path that
-    # returns a raw exception string.
+    # Strip forbidden control/zero-width/bidi/NUL code points and cap length (240):
+    # a caller-visible message must never carry code points hostile upstream text could smuggle.
     return sanitize_message(text)
 
 
@@ -171,11 +173,7 @@ def _fallback_for(context: McpErrorContext) -> tuple[str, dict[str, Any] | None]
     # text; point it at gene search rather than circularly back at itself.
     if context.tool_name in {"resolve_variant_id", "search_variants"}:
         return "search_genes", ({"query": context.query} if context.query else None)
-    # Structural-variant ids (DEL_chr1_..., BND_chr12_...) are NOT resolvable by
-    # resolve_variant_id (SNV/indel only). search_structural_variants needs a
-    # required `target` we do not have here, so a bare call would be uncallable;
-    # steer to capabilities (always callable) and let the recovery prose name the
-    # SV-search path.
+    # SV ids are not resolvable by resolve_variant_id; steer to capabilities (always callable).
     if context.tool_name == "get_structural_variant":
         return "get_server_capabilities", None
     if context.tool_name == "search_structural_variants":
@@ -205,6 +203,8 @@ def _classify(
     an identical call may later succeed; false means it never will.
     """
 
+    if isinstance(exc, MitoIdRedirectError):
+        return "invalid_input", False, MITO_TOOL, {"variant_id": exc.variant_id}
     if isinstance(exc, DataNotFoundError):
         tool, args = _fallback_for(context)
         return "not_found", False, tool, args
@@ -276,6 +276,8 @@ def _recovery_text(error_code: str, fallback_tool: str | None, tool_name: str | 
             "reformulate, not a retry: try a different dataset (gnomad_r4 default; "
             f"r3/r2_1 for older builds) or call {resolver} to verify the identifier."
         )
+    if error_code == "invalid_input" and fallback_tool == MITO_TOOL:
+        return MITO_RECOVERY
     if error_code == "invalid_input":
         resolver = fallback_tool or "get_server_capabilities"
         return (
@@ -330,7 +332,7 @@ def _envelope_message(exc: BaseException, error_code: str) -> str:
     if error_code == "build_mismatch":
         # The constructed message is already safe and informative for callers.
         return _safe_message(exc)
-    if isinstance(exc, ToolInputError):
+    if isinstance(exc, ToolInputError | MitoIdRedirectError):
         # Developer-authored guard string (static or parameter NAMES only, no user
         # values), so it is safe to surface verbatim instead of redacting.
         return _safe_message(exc)
@@ -382,6 +384,7 @@ def mcp_validation_tool_error(
             **_provenance_meta(),
         },
     }
+    redirect_validation_payload(payload, list(exc.errors()))
     return McpToolError(payload)
 
 
@@ -452,10 +455,7 @@ def mcp_tool_error(exc: BaseException, context: McpErrorContext) -> McpToolError
     # specific, actionable recovery — only the wire `error_code` is normalised.
     internal_code, retryable, fallback_tool, fallback_args = _classify(exc, context)
     wire_code = to_wire_error_code(internal_code)
-    # next_commands must agree with the classified fallback: prepend the
-    # task-advancing resolver when there is one, keeping diagnostics as the
-    # secondary entry. For retryable codes fallback_tool is already diagnostics,
-    # so the guard collapses to a single diagnostics entry (retry, not switch).
+    # next_commands agree with the fallback: task-advancing resolver first, diagnostics second.
     next_commands: list[dict[str, Any]] = []
     if fallback_tool and fallback_tool != _FALLBACK_TOOL:
         next_commands.append({"tool": fallback_tool, "arguments": fallback_args or {}})

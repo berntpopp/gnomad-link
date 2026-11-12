@@ -17,6 +17,8 @@ from gnomad_link.mcp.build_check import (
 from gnomad_link.mcp.coverage_shaping import shape_coverage_payload
 from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, ToolInputError, run_mcp_tool
 from gnomad_link.mcp.headline import coverage_headline
+from gnomad_link.mcp.mito_redirect import MitoIdRedirectError
+from gnomad_link.mcp.patterns import as_mito_variant_id
 from gnomad_link.mcp.shaping import cap_region_span
 from gnomad_link.services import FrequencyService
 
@@ -48,6 +50,8 @@ def _classify_coverage_target(
         return None, None, None, target
     if _REGION_RE.fullmatch(target):
         return None, None, target, None
+    if mito_id := as_mito_variant_id(target):
+        raise MitoIdRedirectError(mito_id)
     if _VARIANT_SHAPE_RE.fullmatch(target):
         raise ToolInputError(
             "target is variant-shaped but not a valid CHROM-POS-REF-ALT (autosomes, "
