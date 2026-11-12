@@ -16,6 +16,7 @@ from gnomad_link.mcp.next_commands import for_variant
 from gnomad_link.mcp.patterns import MITO_VARIANT_ID_PATTERN, normalize_mito_variant_id
 from gnomad_link.models import GeneSearchResult
 from gnomad_link.services import FrequencyService
+from gnomad_link.services.frequency_service import _pick_canonical_annotation
 
 _RANK_ORDER = {
     "exact_symbol": 0,
@@ -116,9 +117,15 @@ async def _resolve_mito(
         "variant_type": "mitochondrial",
     }
     an = mv.get("an")
-    if enrich and an:
-        item["af_hom"] = (mv.get("ac_hom") or 0) / an
-        item["af_het"] = (mv.get("ac_het") or 0) / an
+    if enrich:
+        gene_symbol, consequence = _pick_canonical_annotation(mv.get("transcript_consequences"))
+        item.update(gene_symbol=gene_symbol, major_consequence=consequence)
+        if an:
+            item["af_hom"] = (mv.get("ac_hom") or 0) / an
+            item["af_het"] = (mv.get("ac_het") or 0) / an
+        if mv.get("filters"):
+            # A failing site reads as AF 0.0; surface why (e.g. "No passing genotype").
+            item["filters"] = mv["filters"]
     return [item], 0, 1
 
 

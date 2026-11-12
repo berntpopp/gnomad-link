@@ -48,7 +48,7 @@ def _sv_next_commands(shaped: dict[str, Any]) -> list[dict[str, Any]]:
     ]
 
 
-def _mito_fallback_next_commands(shaped: dict[str, Any]) -> list[dict[str, Any]]:
+def _mito_fallback_next_commands(shaped: dict[str, Any], dataset: str) -> list[dict[str, Any]]:
     """Fallback follow-ups for a mitochondrial variant with no gene symbol.
 
     Prefers a position-anchored get_region on the mito contig when a numeric
@@ -57,7 +57,7 @@ def _mito_fallback_next_commands(shaped: dict[str, Any]) -> list[dict[str, Any]]
 
     pos = shaped.get("pos")
     if isinstance(pos, int):
-        return [cmd("get_region", region=f"M-{pos}-{pos + 1}", dataset="gnomad_r4")]
+        return [cmd("get_region", region=f"M-{pos}-{pos + 1}", dataset=dataset)]
     return [cmd("get_server_capabilities")]
 
 
@@ -174,7 +174,7 @@ def register_specialty_tools(
                 ]
             else:
                 shaped.setdefault("_meta", {})["next_commands"] = _mito_fallback_next_commands(
-                    shaped
+                    shaped, dataset
                 )
             return {
                 "headline": mitochondrial_variant_headline(shaped, dataset=dataset),

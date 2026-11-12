@@ -30,6 +30,10 @@ class _MitoStub:
                 "an": 56424,
                 "ac_hom": 10,
                 "ac_het": 2,
+                "filters": ["npg"],
+                "transcript_consequences": [
+                    {"canonical": True, "gene_symbol": "MT-TF", "major_consequence": "non_coding"}
+                ],
             }
         }
 
@@ -54,6 +58,8 @@ async def test_mito_query_resolves_via_mitochondrial_endpoint(tool: str, query: 
     assert first["variant_type"] == "mitochondrial"
     assert first["af_hom"] == pytest.approx(10 / 56424)
     assert first["af_het"] == pytest.approx(2 / 56424)
+    assert first["gene_symbol"] == "MT-TF"
+    assert first["filters"] == ["npg"]
     nxt = payload["_meta"]["next_commands"]
     assert nxt[0] == {
         "tool": "get_mitochondrial_variant",
