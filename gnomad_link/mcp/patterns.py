@@ -26,6 +26,14 @@ def normalize_mito_variant_id(variant_id: str) -> str:
     return _MITO_PREFIX_RE.sub("M-", variant_id, count=1)
 
 
+def as_mito_variant_id(value: object) -> str | None:
+    """Canonical ``M-POS-REF-ALT`` if ``value`` is a mitochondrial id (any alias), else None."""
+
+    if isinstance(value, str) and re.fullmatch(MITO_VARIANT_ID_PATTERN, value.strip()):
+        return normalize_mito_variant_id(value.strip()).upper()
+    return None
+
+
 def split_gene(gene: str) -> tuple[str | None, str | None]:
     """Return ``(gene_id, gene_symbol)`` for a single collapsed gene identifier.
 
