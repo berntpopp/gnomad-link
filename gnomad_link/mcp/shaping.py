@@ -90,13 +90,6 @@ def _top_enriched_population(
     return best
 
 
-def _overall_af(
-    exome: dict[str, Any] | None, genome: dict[str, Any] | None
-) -> tuple[float | None, str | None]:
-    """Compute the preferred overall AF and label which source supplied it."""
-    return preferred_overall_af(exome, genome)
-
-
 def shape_variant_frequencies(
     response: VariantFrequencyResponse | dict[str, Any],
     *,
@@ -130,7 +123,7 @@ def shape_variant_frequencies(
         "genome": genome,
     }
     top = _top_enriched_population(exome, genome)
-    overall, overall_source = _overall_af(exome, genome)
+    overall, overall_source = preferred_overall_af(exome, genome)
     if top is not None or overall is not None or response.faf95:
         summary: dict[str, Any] = {}
         if top is not None:
