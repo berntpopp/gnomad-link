@@ -88,7 +88,7 @@ def register_variant_tools(
             ),
         ] = "compact",
     ) -> dict[str, Any]:
-        """Use this when a caller has a fully-resolved CHROM-POS-REF-ALT id and needs allele counts/frequencies per population. Pair with get_clinvar_variant_details for clinical context. Compact defaults trim subcohort and zero-AC rows; toggle the boolean flags to expand, or use response_mode='full' for the most-inclusive breakdown or response_mode='minimal' for just the headline + overall/max-pop summary. Returns a `truncated` block when filters drop rows so the LLM can re-call with explicit overrides. Returns ~2-4kB (minimal ~0.6kB)."""
+        """Use this when a caller has a fully-resolved CHROM-POS-REF-ALT id and needs allele counts/frequencies per population. Pair with get_clinvar_variant_details for clinical context. Compact defaults trim subcohort and zero-AC rows; toggle the boolean flags to expand, or use response_mode='full' for the most-inclusive breakdown or response_mode='minimal' for just the headline + overall/max-pop summary. summary.max_pop_af is the raw highest-AF ancestry group (may be bottlenecked asj/fin; never 'remaining') and is NOT the filtering AF: use summary.faf95.{exome,genome,joint}.grpmax (gnomAD faf95 at grpmax, continental groups only; kept in minimal mode) as the ClinGen/Whiffin comparator. Returns a `truncated` block when filters drop rows so the LLM can re-call with explicit overrides. Returns ~2-4kB (minimal ~0.6kB)."""
 
         async def call() -> dict[str, Any]:
             validate_population_codes(populations)

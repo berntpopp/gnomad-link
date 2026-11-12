@@ -58,7 +58,8 @@ def register_workflow_prompts(mcp: FastMCP) -> None:
             "canonical transcript, and coordinates.\n"
             "3. Call get_gene_variants(gene_id='<resolved_id>', consequence='frameshift_variant') "
             "to review loss-of-function variants. Raise limit or relax filters as needed.\n"
-            "4. The summary.max_pop_af field in frequencies shows population enrichment.\n"
+            "4. The summary.max_pop_af field in frequencies shows population enrichment; "
+            "compare against summary.faf95 (filtering AF) for frequency-based filtering.\n"
             "Research use only; not for clinical decision support."
         ).replace("{gene_symbol}", gene_symbol)
 

@@ -6,9 +6,11 @@ query variant($variantId: String!, $dataset: DatasetId!) {
         flags
         exome {
             ...FrequencyFields
+            faf95 { popmax popmax_population }
         }
         genome {
             ...FrequencyFields
+            faf95 { popmax popmax_population }
         }
         transcript_consequences {
             canonical

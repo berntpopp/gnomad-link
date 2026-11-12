@@ -71,6 +71,8 @@ def _top_enriched_population(
 
     Restricted to BASE_POPULATION_CODES so subcohorts, sex-split, and other rows
     cannot win the summary slot — keeps the field interpretable for the LLM.
+    ``remaining`` is a catch-all of unassigned samples, not an ancestry group, so
+    it never wins either (#125).
     """
 
     best: dict[str, Any] | None = None
@@ -78,7 +80,7 @@ def _top_enriched_population(
         if not source:
             continue
         for pop in source.get("populations", []):
-            if pop["id"] not in BASE_POPULATION_CODES:
+            if pop["id"] not in BASE_POPULATION_CODES or pop["id"] == "remaining":
                 continue
             af = pop.get("af")
             if af is None:
@@ -129,7 +131,7 @@ def shape_variant_frequencies(
     }
     top = _top_enriched_population(exome, genome)
     overall, overall_source = _overall_af(exome, genome)
-    if top is not None or overall is not None:
+    if top is not None or overall is not None or response.faf95:
         summary: dict[str, Any] = {}
         if top is not None:
             summary["top_enriched_population"] = top
@@ -138,6 +140,9 @@ def shape_variant_frequencies(
         if overall is not None:
             summary["overall_af"] = overall
             summary["overall_af_source"] = overall_source
+        if response.faf95:
+            # The ClinGen/Whiffin comparator; max_pop_af is a raw point estimate.
+            summary["faf95"] = response.faf95
         # has_clinvar is not knowable from frequency data alone; emit a
         # self-describing sentinel pointing at the tool that can answer it
         # rather than an opaque null the LLM cannot ground on.
