@@ -17,6 +17,9 @@ def cmd(tool: str, **arguments: Any) -> dict[str, Any]:
 
 def for_variant(variant_id: str, dataset: str) -> list[dict[str, Any]]:
     """Standard follow-ups for a resolved variant: frequencies then ClinVar."""
+    if variant_id.startswith("M-"):
+        # chrM ids are not served by get_variant_frequencies / ClinVar tools.
+        return [cmd("get_mitochondrial_variant", variant_id=variant_id, dataset=dataset)]
     return [
         cmd("get_variant_frequencies", variant_id=variant_id, dataset=dataset),
         cmd("get_clinvar_variant_details", variant_id=variant_id),

@@ -11,7 +11,19 @@ GENE_SYMBOL_PATTERN = r"^[A-Za-z0-9._-]{1,32}$"
 REGION_TARGET_PATTERN = r"^(chr)?([1-9]|1[0-9]|2[0-2]|X|Y|M|MT)-\d+-\d+$"
 VARIANT_TARGET_PATTERN = r"^(chr)?([1-9]|1\d|2[0-2]|X|Y|MT?)-\d+-[ACGT]+-[ACGT]+$"
 
+# Accept canonical `M-` plus `chrM-`, `MT-`, `chrMT-` (case-insensitive) aliases
+# at schema validation time; tools normalize to canonical `M-` before invoking
+# the service.
+MITO_VARIANT_ID_PATTERN = r"^(?:chr)?(?:M|MT|m|mt)-\d+-[ACGTacgt]+-[ACGTacgt]+$"
+_MITO_PREFIX_RE = re.compile(r"^(?:chr)?(?:MT?)-", re.IGNORECASE)
+
 _GENE_ID_RE = re.compile(GENE_ID_PATTERN)
+
+
+def normalize_mito_variant_id(variant_id: str) -> str:
+    """Normalize chrM/MT/chrMT prefixes to canonical M-."""
+
+    return _MITO_PREFIX_RE.sub("M-", variant_id, count=1)
 
 
 def split_gene(gene: str) -> tuple[str | None, str | None]:
