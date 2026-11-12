@@ -85,3 +85,22 @@ async def test_mito_query_on_r2_1_is_explicit_invalid_input() -> None:
     assert payload["error_code"] == "invalid_input"
     assert "mitochondrial" in payload["message"]
     assert stub.mito_calls == []
+
+
+@pytest.mark.asyncio
+async def test_absent_mito_id_is_not_found_without_gene_search_fallback() -> None:
+    from gnomad_link.api import DataNotFoundError
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    class _Absent(_MitoStub):
+        async def get_mitochondrial_variant(self, variant_id: str, dataset: str) -> dict[str, Any]:
+            raise DataNotFoundError("not found")
+
+    mcp = create_gnomad_mcp(service_factory=lambda: _Absent())
+    result = await mcp.call_tool("resolve_variant_id", {"query": "chrM-16569-A-T"})
+    payload = result.structured_content or {}
+
+    assert payload["error_code"] == "not_found"
+    assert payload["fallback_tool"] == "get_server_capabilities"
+    assert "rCRS" in payload["recovery"]
+    assert all(c["tool"] != "search_genes" for c in payload["_meta"]["next_commands"])

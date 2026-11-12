@@ -35,6 +35,13 @@ _MITO_NEXT_STEPS = [
 ]
 
 
+def _resolver_context(tool_name: str, query: str) -> McpErrorContext:
+    """Error context; a chrM query carries its normalized id so errors route to mito."""
+    q = query.strip()
+    mito_id = normalize_mito_variant_id(q).upper() if _MITO_ID_RE.fullmatch(q) else None
+    return McpErrorContext(tool_name=tool_name, query=query, variant_id=mito_id)
+
+
 def _is_mito(results: list[dict[str, Any]]) -> bool:
     return bool(results) and results[0].get("variant_type") == "mitochondrial"
 
@@ -123,9 +130,8 @@ async def _resolve_mito(
         if an:
             item["af_hom"] = (mv.get("ac_hom") or 0) / an
             item["af_het"] = (mv.get("ac_het") or 0) / an
-        if mv.get("filters"):
-            # A failing site reads as AF 0.0; surface why (e.g. "No passing genotype").
-            item["filters"] = mv["filters"]
+        # A failing site reads as AF 0.0; surface why (e.g. "No passing genotype").
+        item["filters"] = mv.get("filters") or []
     return [item], 0, 1
 
 
@@ -320,7 +326,7 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
         return await run_mcp_tool(
             "resolve_variant_id",
             call,
-            context=McpErrorContext(tool_name="resolve_variant_id", query=query),
+            context=_resolver_context("resolve_variant_id", query),
         )
 
     @mcp.tool(
@@ -403,5 +409,5 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
         return await run_mcp_tool(
             "search_variants",
             call,
-            context=McpErrorContext(tool_name="search_variants", query=query),
+            context=_resolver_context("search_variants", query),
         )
