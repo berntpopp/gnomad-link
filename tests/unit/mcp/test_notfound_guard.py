@@ -1,6 +1,6 @@
 """FastMCP-core not-found reflection guard, driven through the REAL MCP surface.
 
-FastMCP core (pinned ``>=3.4.4,<4.0.0``) reflects the caller's OWN requested tool
+FastMCP core (pinned ``>=4.2.2,<5.0.0``) reflects the caller's OWN requested tool
 name / resource URI / prompt name back to the caller (and to logs) BEFORE any
 backend middleware runs. On this stack the probe (pristine ``origin/main``) found:
 
@@ -44,7 +44,7 @@ from gnomad_link.mcp.facade import create_gnomad_mcp
 from gnomad_link.mcp.untrusted_content import FORBIDDEN_CODEPOINTS
 from mcp.shared.memory import create_client_server_memory_streams
 from mcp.shared.message import SessionMessage
-from mcp.types import INVALID_PARAMS, JSONRPCMessage, JSONRPCRequest
+from mcp.types import INVALID_PARAMS, JSONRPCNotification, JSONRPCRequest
 
 # Shared fleet hostile corpus (spec §6): bidi override (U+202E) + zero-width
 # space (U+200B) + NUL + instruction prose.
@@ -301,24 +301,48 @@ async def _raw_read_resource_error(uri: str) -> tuple[mcp_types.JSONRPCError | N
                         server_read,
                         server_write,
                         init_options,
-                        stateless=True,  # start Initialized: skip the handshake
                         raise_exceptions=False,
                     )
 
                 task_group.start_soon(_run)
+                # SDK v2 dropped ``stateless=True``; do the legacy handshake first so
+                # the request reaches the resources/read handler.
+                await client_write.send(
+                    SessionMessage(
+                        message=JSONRPCRequest(
+                            jsonrpc="2.0",
+                            id=0,
+                            method="initialize",
+                            params={
+                                "protocolVersion": "2025-06-18",
+                                "capabilities": {},
+                                "clientInfo": {"name": "hostile", "version": "0"},
+                            },
+                        )
+                    )
+                )
+                with anyio.fail_after(5):
+                    await client_read.receive()
+                await client_write.send(
+                    SessionMessage(
+                        message=JSONRPCNotification(
+                            jsonrpc="2.0", method="notifications/initialized", params={}
+                        )
+                    )
+                )
                 request = JSONRPCRequest(
                     jsonrpc="2.0",
                     id=1,
                     method="resources/read",
                     params={"uri": uri},
                 )
-                await client_write.send(SessionMessage(message=JSONRPCMessage(request)))
+                await client_write.send(SessionMessage(message=request))
                 with anyio.fail_after(5):
                     for _ in range(8):
                         message = await client_read.receive()
                         if isinstance(message, Exception):
                             raise message
-                        candidate = message.message.root
+                        candidate = message.message  # SDK v2: plain union
                         if isinstance(candidate, mcp_types.JSONRPCError):
                             root = candidate
                             break

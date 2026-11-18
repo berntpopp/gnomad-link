@@ -17,6 +17,7 @@ import json
 from typing import Any
 
 import pytest
+from fastmcp import Client
 
 import mcp.types
 
@@ -120,16 +121,11 @@ async def _invoke(mcp_instance: Any, tool_name: str, arguments: dict[str, Any]) 
     content dict from the resulting CallToolResult; if no structuredContent
     is present, decodes the first text content as JSON.
     """
-    handler = mcp_instance._mcp_server.request_handlers[mcp.types.CallToolRequest]
-    request = mcp.types.CallToolRequest(
-        method="tools/call",
-        params=mcp.types.CallToolRequestParams(name=tool_name, arguments=arguments),
-    )
-    result = await handler(request)
-    call_result = result.root if hasattr(result, "root") else result
+    async with Client(mcp_instance) as client:
+        call_result = await client.call_tool_mcp(tool_name, arguments)
     assert isinstance(call_result, mcp.types.CallToolResult)
-    if call_result.structuredContent is not None:
-        return dict(call_result.structuredContent)
+    if call_result.structured_content is not None:
+        return dict(call_result.structured_content)
     if call_result.content:
         first = call_result.content[0]
         text = getattr(first, "text", None)
