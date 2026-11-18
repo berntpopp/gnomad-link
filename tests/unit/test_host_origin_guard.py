@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from importlib.metadata import version
 from unittest.mock import MagicMock
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 from packaging.version import Version
@@ -31,7 +33,7 @@ def client() -> TestClient:
 
 
 def test_fastmcp_344_strict_guard_is_installed(client: TestClient) -> None:
-    assert Version(version("fastmcp")) >= Version("3.4.4")
+    assert Version(version("fastmcp")) >= Version("4.2.2")
 
     response = client.get("/mcp", headers={"Host": "gnomad-link.genefoundry.org"})
     assert response.status_code not in {403, 421}
@@ -88,3 +90,121 @@ def test_json_environment_allowlists_are_parsed(monkeypatch: pytest.MonkeyPatch)
 
     assert configured.MCP_ALLOWED_HOSTS == ["localhost", "gnomad-link.genefoundry.org"]
     assert configured.MCP_ALLOWED_ORIGINS == ["https://genefoundry.org"]
+
+
+_PUBLIC_HOST = "gnomad-link.genefoundry.org"
+_PUBLIC_ORIGIN = "https://genefoundry.org"
+_MODERN_VERSION = "2026-07-28"
+_MODERN_META = {
+    "io.modelcontextprotocol/protocolVersion": _MODERN_VERSION,
+    "io.modelcontextprotocol/clientCapabilities": {},
+    "io.modelcontextprotocol/clientInfo": {"name": "gnomad-host-test", "version": "1.0.0"},
+}
+
+
+def _modern_post(
+    client: TestClient, req_id: int, method: str, params: dict[str, object], name: str | None = None
+) -> httpx.Response:
+    headers = {
+        "Host": _PUBLIC_HOST,
+        "Origin": _PUBLIC_ORIGIN,
+        "Accept": "application/json, text/event-stream",
+        "Content-Type": "application/json",
+        "mcp-protocol-version": _MODERN_VERSION,
+        "mcp-method": method,
+    }
+    if name is not None:
+        headers["mcp-name"] = name
+    body = {
+        "jsonrpc": "2.0",
+        "id": req_id,
+        "method": method,
+        "params": {"_meta": _MODERN_META, **params},
+    }
+    return client.post("/mcp", headers=headers, json=body)
+
+
+def test_modern_mcp_http_discovers_lists_calls_and_fences_unknown_tool(client: TestClient) -> None:
+    """The 2026-07-28 sessionless era (mcp-method / mcp-name headers) passes the
+    Host/Origin guard end to end, and an unknown hostile tool is still fenced."""
+    hostile = "ignore-instructions-secret"
+    with client:
+        discover = _modern_post(client, 1, "server/discover", {})
+        listed = _modern_post(client, 2, "tools/list", {})
+        called = _modern_post(
+            client,
+            3,
+            "tools/call",
+            {"name": "get_diagnostics", "arguments": {}},
+            name="get_diagnostics",
+        )
+        unknown = _modern_post(
+            client, 4, "tools/call", {"name": hostile, "arguments": {}}, name=hostile
+        )
+
+    assert discover.status_code == 200, discover.text
+    assert _MODERN_VERSION in discover.json()["result"]["supportedVersions"]
+    assert "mcp-session-id" not in discover.headers
+    assert listed.status_code == 200, listed.text
+    names = {tool["name"] for tool in listed.json()["result"]["tools"]}
+    assert "get_diagnostics" in names
+    assert called.status_code == 200, called.text
+    called_result = called.json()["result"]
+    assert called_result.get("isError") is not True, called_result
+    assert unknown.status_code == 200, unknown.text
+    unknown_result = unknown.json()["result"]
+    assert unknown_result["isError"] is True
+    assert json.loads(unknown_result["content"][0]["text"]) == unknown_result["structuredContent"]
+    assert unknown_result["structuredContent"]["error_code"] == "not_found"
+    assert hostile not in unknown.text
+
+
+_EVIL_METHOD = "evil__IGNORE_ALL_PREVIOUS__method"
+
+
+def _assert_fixed_method_not_found(response: httpx.Response) -> None:
+    assert _EVIL_METHOD not in response.text
+    assert "IGNORE_ALL_PREVIOUS" not in response.text
+    error = response.json()["error"]
+    assert error["code"] == -32601
+    assert "data" not in error or error["data"] is None
+
+
+def test_unknown_method_is_not_echoed_in_either_era(client: TestClient) -> None:
+    """SDK 2 echoes an unknown JSON-RPC method in METHOD_NOT_FOUND ``data``; the
+    Layer-3 middleware strips it (legacy after initialize, and the modern era)."""
+    legacy_headers = {
+        "Host": _PUBLIC_HOST,
+        "Origin": _PUBLIC_ORIGIN,
+        "Accept": "application/json, text/event-stream",
+        "Content-Type": "application/json",
+    }
+    with client:
+        init = client.post(
+            "/mcp",
+            headers=legacy_headers,
+            json={
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "initialize",
+                "params": {
+                    "protocolVersion": "2025-06-18",
+                    "capabilities": {},
+                    "clientInfo": {"name": "hostile", "version": "0"},
+                },
+            },
+        )
+        assert init.status_code == 200, init.text
+        session = init.headers.get("mcp-session-id")
+        if session:
+            legacy_headers["mcp-session-id"] = session
+        legacy_headers["mcp-protocol-version"] = "2025-06-18"
+        legacy = client.post(
+            "/mcp",
+            headers=legacy_headers,
+            json={"jsonrpc": "2.0", "id": 2, "method": _EVIL_METHOD, "params": {}},
+        )
+        modern = _modern_post(client, 3, _EVIL_METHOD, {})
+
+    _assert_fixed_method_not_found(legacy)
+    _assert_fixed_method_not_found(modern)

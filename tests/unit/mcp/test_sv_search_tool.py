@@ -209,4 +209,4 @@ async def test_tool_is_registered_with_variant_tag_and_open_world() -> None:
     tool = tools_by_name["search_structural_variants"]
     assert tool.tags == {"variant", "search"}
     assert tool.annotations is not None
-    assert tool.annotations.openWorldHint is True
+    assert tool.annotations.open_world_hint is True

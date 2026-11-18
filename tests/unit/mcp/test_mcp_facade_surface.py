@@ -93,10 +93,10 @@ async def test_every_data_tool_has_read_only_open_world_annotations(fake_service
     for name in EXPECTED_DATA_TOOLS:
         ann = tools_by_name[name].annotations
         assert ann is not None, f"{name} missing annotations"
-        assert ann.readOnlyHint is True, f"{name} not read-only"
-        assert ann.destructiveHint is False, f"{name} marked destructive"
-        assert ann.idempotentHint is True, f"{name} not idempotent"
-        assert ann.openWorldHint is True, f"{name} should be open-world"
+        assert ann.read_only_hint is True, f"{name} not read-only"
+        assert ann.destructive_hint is False, f"{name} marked destructive"
+        assert ann.idempotent_hint is True, f"{name} not idempotent"
+        assert ann.open_world_hint is True, f"{name} should be open-world"
 
 
 @pytest.mark.asyncio
@@ -108,7 +108,7 @@ async def test_capabilities_tool_is_open_world(fake_service_factory) -> None:
     ann = tools_by_name["get_server_capabilities"].annotations
 
     assert ann is not None
-    assert ann.openWorldHint is True
+    assert ann.open_world_hint is True
 
 
 @pytest.mark.asyncio
@@ -232,10 +232,10 @@ async def test_high_cost_gene_tools_preserve_their_schema_contract(fake_service_
         assert tool.output_schema is None
         assert all(schema.get("description") for schema in tool.parameters["properties"].values())
         assert tool.annotations is not None
-        assert tool.annotations.readOnlyHint is True
-        assert tool.annotations.destructiveHint is False
-        assert tool.annotations.idempotentHint is True
-        assert tool.annotations.openWorldHint is True
+        assert tool.annotations.read_only_hint is True
+        assert tool.annotations.destructive_hint is False
+        assert tool.annotations.idempotent_hint is True
+        assert tool.annotations.open_world_hint is True
 
 
 @pytest.mark.asyncio
@@ -362,7 +362,7 @@ async def test_get_diagnostics_returns_health_and_recent_errors(
     tool = tools_by_name["get_diagnostics"]
     # Must be closed-world (local health data, no upstream call)
     assert tool.annotations is not None
-    assert tool.annotations.openWorldHint is False
+    assert tool.annotations.open_world_hint is False
 
 
 @pytest.mark.asyncio
@@ -373,8 +373,8 @@ async def test_diagnostics_tool_is_closed_world(fake_service_factory) -> None:
     tools_by_name = {tool.name: tool for tool in await mcp.list_tools()}
     ann = tools_by_name["get_diagnostics"].annotations
     assert ann is not None
-    assert ann.openWorldHint is False
-    assert ann.readOnlyHint is True
+    assert ann.open_world_hint is False
+    assert ann.read_only_hint is True
 
 
 @pytest.mark.asyncio

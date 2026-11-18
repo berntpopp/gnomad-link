@@ -12,6 +12,7 @@ import json
 from typing import Any
 
 import pytest
+from fastmcp import Client
 
 import mcp.types
 from gnomad_link.mcp.sv_shaping import shape_structural_variant
@@ -160,16 +161,11 @@ class _SVStub:
 
 async def _invoke(mcp_instance: Any, tool: str, arguments: dict[str, Any]) -> dict[str, Any]:
     """Route through the SDK lowlevel handler so output-schema validation runs."""
-    handler = mcp_instance._mcp_server.request_handlers[mcp.types.CallToolRequest]
-    request = mcp.types.CallToolRequest(
-        method="tools/call",
-        params=mcp.types.CallToolRequestParams(name=tool, arguments=arguments),
-    )
-    result = await handler(request)
-    call_result = result.root if hasattr(result, "root") else result
+    async with Client(mcp_instance) as client:
+        call_result = await client.call_tool_mcp(tool, arguments)
     assert isinstance(call_result, mcp.types.CallToolResult)
-    if call_result.structuredContent is not None:
-        return dict(call_result.structuredContent)
+    if call_result.structured_content is not None:
+        return dict(call_result.structured_content)
     if call_result.content:
         text = getattr(call_result.content[0], "text", None)
         if isinstance(text, str):

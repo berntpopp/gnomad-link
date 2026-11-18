@@ -4,6 +4,22 @@ All notable changes to gnomad-link are documented here.
 
 ## [Unreleased]
 
+## [9.2.0] - 2026-11-18
+
+### Changed
+
+- Upgrade FastMCP 3.4 → 4.2.2 and MCP SDK 1.x → 2.x; supports the 2026-07-28 sessionless
+  protocol era alongside the legacy handshake.
+- Not-found guard Layer 3 (protocol backstop) and the output-validation interceptor are ported
+  to `get_request_handler`/`add_request_handler` (SDK 2 removed `request_handlers`); the
+  resource/prompt backstop raises `MCPError(INVALID_PARAMS)` so callers keep `-32602`.
+- Security: SDK 2 echoes an unknown JSON-RPC method name in the METHOD_NOT_FOUND error `data`
+  (both eras); a low-level middleware now strips it (fixed `-32601 Method not found`), and the
+  log scrub covers the SDK 2 runner/dispatcher lines (`mcp.server.runner`) that echo the method.
+- `httpx2`/`httpcore2` loggers pinned to WARNING alongside `httpx`/`httpcore`.
+- Tests: a modern-era `server/discover` → `tools/list` → `tools/call` test through the
+  Host/Origin guard.
+
 ## [9.1.2] - 2026-11-13
 
 ### Changed
