@@ -92,7 +92,7 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
             ),
         ] = "compact",
     ) -> dict[str, Any]:
-        """Use this when a caller has a gene id or symbol and needs constraint scores (pLI/oe_lof), canonical transcript, and basic coordinates. Follow with get_gene_variants if they then need per-variant rows. Returns compact ~2kB, full up to ~30kB."""
+        """Use this when a caller has a gene id or symbol and needs constraint scores (pLI/oe_lof), canonical transcript, and basic coordinates (chrom/start/stop only: gnomAD has no cytogenetic band; that is HGNC `location`, via hgnc_resolve_symbol). Follow with get_gene_variants if they then need per-variant rows. Returns compact ~2kB, full up to ~30kB."""
 
         gene_id, gene_symbol = split_gene(gene)
 
@@ -122,10 +122,11 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
                     "tool": "get_gene_variants",
                     "arguments": {"gene_id": resolved_id},
                 }
-                result["_meta"] = {
-                    **existing_meta,
-                    "next_commands": [*existing_next, variants_cmd],
-                }
+                next_cmds = [*existing_next, variants_cmd]
+                if result.get("symbol"):
+                    # gnomAD has no cytogenetic band; HGNC `location` does (cross-server, #138).
+                    next_cmds.append(cmd("hgnc_resolve_symbol", query=result["symbol"]))
+                result["_meta"] = {**existing_meta, "next_commands": next_cmds}
             if response_mode == "minimal":
                 return project_gene_details_minimal(result)
             return result
