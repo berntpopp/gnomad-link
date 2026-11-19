@@ -4,6 +4,14 @@ All notable changes to gnomad-link are documented here.
 
 ## [Unreleased]
 
+## [9.2.1] - 2026-11-19
+
+### Fixed
+
+- `get_gene_details` now points to the cytogenetic band instead of leaving agents to guess it:
+  `_meta.next_commands` gains `hgnc_resolve_symbol(query=<symbol>)` (HGNC `location`), and the
+  description states gnomAD returns coordinates only (#138).
+
 ## [9.2.0] - 2026-11-18
 
 ### Changed

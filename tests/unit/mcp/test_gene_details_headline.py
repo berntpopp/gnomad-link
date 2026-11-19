@@ -47,3 +47,15 @@ async def test_get_gene_details_leads_with_constraint_headline() -> None:
     assert headline == (
         "PCSK9 (ENSG00000169174): pLI 0.004, LoF o/e 0.83; 1:55039447-55064852 (GRCh38)."
     )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mode", ["compact", "minimal", "full"])
+async def test_get_gene_details_points_to_hgnc_for_cytoband(mode: str) -> None:
+    """gnomAD has coordinates only; the cytogenetic band lives in HGNC `location` (#138)."""
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    mcp = create_gnomad_mcp(service_factory=lambda: _StubGeneService(_pcsk9()))
+    result = await mcp.call_tool("get_gene_details", {"gene": "PCSK9", "response_mode": mode})
+    cmds = (result.structured_content or {})["_meta"]["next_commands"]
+    assert {"tool": "hgnc_resolve_symbol", "arguments": {"query": "PCSK9"}} in cmds
