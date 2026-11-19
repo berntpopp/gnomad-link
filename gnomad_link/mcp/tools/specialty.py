@@ -100,7 +100,7 @@ def register_specialty_tools(
             ),
         ] = "compact",
     ) -> dict[str, Any]:
-        """Use this when a caller has a gnomAD structural variant id (deletions, duplications, inversions, translocations/BND, complex/CPX, MCNV). SV ids come from search_structural_variants (search a gene/region first); they are NOT resolvable by resolve_variant_id, which is SNV/indel only. For SNVs/indels use get_variant_frequencies instead. Compact (default) drops heavy histograms + the duplicated flat gene list and emits a `truncated` block; response_mode='full' returns everything. Returns compact ~2-5kB; full ~10-20kB (histograms + populations)."""
+        """Use this when a caller has a gnomAD structural variant id (DEL, DUP, INV, BND, CPX, MCNV); returns its type, coordinates, length, AC/AN/AF, and populations. SV ids come from search_structural_variants (search a gene/region first); they are NOT resolvable by resolve_variant_id, which is SNV/indel only. For SNVs/indels use get_variant_frequencies instead. Compact (default) drops heavy histograms + the duplicated flat gene list and emits a `truncated` block; response_mode='full' returns everything. Returns compact ~2-5kB; full ~10-20kB (histograms + populations)."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()
@@ -156,7 +156,7 @@ def register_specialty_tools(
             Field(description="Keep zero-count bins in heteroplasmy_distribution histograms."),
         ] = False,
     ) -> dict[str, Any]:
-        """Use this when a caller has a mitochondrial variant id (M-POS-REF-ALT). Mitochondrial ploidy and heteroplasmy fields are returned; for autosomal variants use get_variant_frequencies. By default zero-count heteroplasmy bins are trimmed and a `truncated.kind=heteroplasmy_zeros` block reports the count; set `include_heteroplasmy_zeros=True` to keep them. Returns ~2-4kB."""
+        """Use this when a caller has a mitochondrial variant id (M-POS-REF-ALT); returns its ploidy and heteroplasmy fields. For autosomal variants use get_variant_frequencies. By default zero-count heteroplasmy bins are trimmed and a `truncated.kind=heteroplasmy_zeros` block reports the count; set `include_heteroplasmy_zeros=True` to keep them. Returns ~2-4kB."""
 
         normalized = normalize_mito_variant_id(variant_id)
 
@@ -222,7 +222,7 @@ def register_specialty_tools(
             ),
         ] = True,
     ) -> dict[str, Any]:
-        """Use this when a caller has an Ensembl transcript id and needs exon structure and (by default) a compact GTEx tissue-expression summary for that transcript. GTEx is sourced via the gene path; the lookup is best-effort, so exon structure is returned even if expression is unavailable. For gene-level info use get_gene_details. Returns ~3-8kB (set include_expression=False to skip GTEx)."""
+        """Use this when a caller has an Ensembl transcript id; returns its exon structure and (by default) a compact GTEx tissue-expression summary. GTEx is sourced via the gene path; the lookup is best-effort, so exon structure is returned even if expression is unavailable. For gene-level info use get_gene_details. Returns ~3-8kB (set include_expression=False to skip GTEx)."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()

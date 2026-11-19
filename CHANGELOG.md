@@ -4,6 +4,10 @@ All notable changes to gnomad-link are documented here.
 
 ## [Unreleased]
 
+## [9.2.3] - 2026-11-19
+
+- Tool descriptions lead with what each tool returns (D1, Tool-Schema Documentation v1.1).
+
 ## [9.2.2] - 2026-11-19
 
 ### Fixed

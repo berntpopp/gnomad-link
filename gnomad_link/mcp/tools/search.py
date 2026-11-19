@@ -179,7 +179,7 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
             Field(ge=1, le=50, description="Max matches returned."),
         ] = 25,
     ) -> dict[str, Any]:
-        """Use this when a caller has a fuzzy gene query (symbol, alias, partial name). Follow with get_gene_details for full constraint metrics. Note: gnomAD's gene autocomplete returns a bounded set and may omit exact members of a large gene family for a SHORT prefix (e.g. 'GRIN' does not return GRIN1/GRIN2B). If an expected gene is missing, query its FULL symbol (e.g. 'GRIN1') or call get_gene_details/get_gene_summary directly. Returns ~1-3kB."""
+        """Use this when a caller has a fuzzy gene query (symbol, alias, partial name); returns ranked matches with symbol, ensembl_id, and match_quality. Follow with get_gene_details for full constraint metrics. Note: gnomAD's gene autocomplete returns a bounded set and may omit exact members of a large gene family for a SHORT prefix (e.g. 'GRIN' does not return GRIN1/GRIN2B). If an expected gene is missing, query its FULL symbol (e.g. 'GRIN1') or call get_gene_details/get_gene_summary directly. Returns ~1-3kB."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()
@@ -281,7 +281,7 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
             ),
         ] = True,
     ) -> dict[str, Any]:
-        """Use this when the caller only has an rsID, partial coordinates, or text fragment and needs to obtain a canonical gnomAD variant id. With enrich=True (default) the top hits include gene_symbol, major_consequence, and AF so the caller can rank candidates without a follow-up call. Mitochondrial ids (M-/MT-/chrM-POS-REF-ALT) resolve via the gnomAD mitochondrial dataset (gnomad_r4/r3 only) with af_hom/af_het; follow up with get_mitochondrial_variant. Returns ~1-5kB (enrichment dependent)."""
+        """Use this when the caller only has an rsID, partial coordinates, or text fragment; returns candidate canonical gnomAD variant ids. With enrich=True (default) the top hits include gene_symbol, major_consequence, and AF so the caller can rank candidates without a follow-up call. Mitochondrial ids (M-/MT-/chrM-POS-REF-ALT) resolve via the gnomAD mitochondrial dataset (gnomad_r4/r3 only) with af_hom/af_het; follow up with get_mitochondrial_variant. Returns ~1-5kB (enrichment dependent)."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()
@@ -366,7 +366,7 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
             ),
         ] = True,
     ) -> dict[str, Any]:
-        """Use this when a caller uses the legacy tool name -- deprecated alias for resolve_variant_id. Mirrors the same enrichment behaviour; will be removed in the next release. Returns ~1-5kB (deprecated alias)."""
+        """Use this when a caller uses the legacy tool name -- deprecated alias for resolve_variant_id; returns the same candidates. Mirrors the same enrichment behaviour; will be removed in the next release. Returns ~1-5kB (deprecated alias)."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()

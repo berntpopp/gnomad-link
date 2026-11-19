@@ -92,7 +92,7 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
             ),
         ] = "compact",
     ) -> dict[str, Any]:
-        """Use this when a caller has a gene id or symbol and needs constraint scores (pLI/oe_lof), canonical transcript, and basic coordinates (chrom/start/stop only: gnomAD has no cytogenetic band; that is HGNC `location`, via hgnc_resolve_symbol). Follow with get_gene_variants if they then need per-variant rows. Returns compact ~2kB, full up to ~30kB."""
+        """Use this when a caller has a gene id or symbol; returns constraint scores (pLI/oe_lof), canonical transcript, and basic coordinates (chrom/start/stop only: gnomAD has no cytogenetic band; that is HGNC `location`, via hgnc_resolve_symbol). Follow with get_gene_variants if they then need per-variant rows. Returns compact ~2kB, full up to ~30kB."""
 
         gene_id, gene_symbol = split_gene(gene)
 
@@ -205,7 +205,7 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
             Field(description="Drop populations with allele_count == 0 from each variant."),
         ] = True,
     ) -> dict[str, Any]:
-        """Use this when a caller wants per-variant rows for an Ensembl gene. Caps large results at 500; consequence/AF/AC filters and include_populations control payload size. Reports cap use in `truncated` and describes retained population fields in `population_projection`. Returns ~5-45kB at the default limit=100."""
+        """Use this when a caller wants per-variant rows for an Ensembl gene; returns each variant's id, consequence, HGVS, and AC/AN/AF. Caps large results at 500; consequence/AF/AC filters and include_populations control payload size. Reports cap use in `truncated` and describes retained population fields in `population_projection`. Returns ~5-45kB at the default limit=100."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()

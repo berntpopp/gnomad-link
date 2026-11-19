@@ -112,7 +112,7 @@ def register_coverage_tools(
             ),
         ] = 2_000,
     ) -> dict[str, Any]:
-        """Use this when a caller needs gnomAD read-depth coverage for a gene, region, or single variant. Pass ONE target — a gene symbol, Ensembl gene ID, region (chr-start-stop), or variant (CHROM-POS-REF-ALT) — and the scope is auto-detected. Gene/region return per-position bins plus a {mean_coverage, fraction_over_20} summary; variant returns scalar coverage. Compact mode trims each bin and caps bin count. Returns ~3-40kB compact (bin-count dependent), larger with response_mode='full'."""
+        """Use this when a caller needs gnomAD read-depth coverage for a gene, region, or single variant; returns per-position bins plus a {mean_coverage, fraction_over_20} summary, or scalar coverage for a variant. Pass ONE target — a gene symbol, Ensembl gene ID, region (chr-start-stop), or variant (CHROM-POS-REF-ALT) — and the scope is auto-detected. Compact mode trims each bin and caps bin count. Returns ~3-40kB compact (bin-count dependent), larger with response_mode='full'."""
 
         async def call() -> dict[str, Any]:
             # Classify INSIDE call() so a coordinate-shaped-but-invalid target

@@ -59,7 +59,7 @@ def register_clinvar_tools(
             ),
         ] = "compact",
     ) -> dict[str, Any]:
-        """Use this when a caller needs ClinVar clinical significance, review status, gold stars, or submissions for a single variant id. Complementary to get_variant_frequencies for clinical workflows. compact (default) drops per-submission provenance bookkeeping; response_mode='full' keeps it. Returns ~2-8kB compact, larger with full or a high submissions_limit."""
+        """Use this when a caller has a single variant id; returns its ClinVar clinical significance, review status, gold stars, and submissions. Complementary to get_variant_frequencies for clinical workflows. compact (default) drops per-submission provenance bookkeeping; response_mode='full' keeps it. Returns ~2-8kB compact, larger with full or a high submissions_limit."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()
@@ -108,7 +108,7 @@ def register_clinvar_tools(
         tags={"clinical"},
     )
     async def get_clinvar_meta() -> dict[str, Any]:
-        """Use this when a caller only needs the ClinVar release date or revision currently served by gnomAD -- cheaper than full capabilities. Returns <1kB. DEPRECATED: prefer get_server_capabilities."""
+        """Use this when a caller only needs the ClinVar release served by gnomAD; returns its release date, cheaper than full capabilities. Returns <1kB. DEPRECATED: prefer get_server_capabilities."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()

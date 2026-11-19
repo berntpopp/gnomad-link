@@ -100,7 +100,7 @@ def register_sv_search_tools(
             Field(description="compact projects each row to a fixed key-set; full is reserved."),
         ] = "compact",
     ) -> dict[str, Any]:
-        """Use this when a caller wants the list of structural variants overlapping a gene or region. Pass ONE target — a gene symbol, Ensembl gene ID, or region (CHROM-START-STOP) — and the scope is auto-detected. SV variant_id values are OPAQUE (e.g. DEL_19_1), NOT CHROM-POS-REF-ALT, so no SNV id grammar is applied; fetch a single SV by id with get_structural_variant. sv_dataset is the DISTINCT structural-variant dataset enum (gnomad_sv_r4=GRCh38 default, gnomad_sv_r2_1=GRCh37), not the SNV dataset. Type/length filters are applied client-side. An empty match is a success with returned=0, not an error. Returns ~3-30kB (limit-dependent)."""
+        """Use this when a caller wants structural variants overlapping a gene or region; returns SV rows (id, type, position, length, AC/AN/AF). Pass ONE target — a gene symbol, Ensembl gene ID, or region (CHROM-START-STOP) — and the scope is auto-detected. SV variant_id values are OPAQUE (e.g. DEL_19_1), NOT CHROM-POS-REF-ALT, so no SNV id grammar is applied; fetch a single SV by id with get_structural_variant. sv_dataset is the DISTINCT structural-variant dataset enum (gnomad_sv_r4=GRCh38 default, gnomad_sv_r2_1=GRCh37), not the SNV dataset. Type/length filters are applied client-side. An empty match is a success with returned=0, not an error. Returns ~3-30kB (limit-dependent)."""
 
         async def call() -> dict[str, Any]:
             # Classify INSIDE call() so a region-shaped-but-invalid target raises
