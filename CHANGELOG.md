@@ -4,6 +4,18 @@ All notable changes to gnomad-link are documented here.
 
 ## [Unreleased]
 
+## [9.3.0] - 2026-11-19
+
+### Added
+
+- `get_variant_frequencies` and `get_variant_details` accept a dbSNP rsID as `variant_id`
+  (genefoundry-router#319). It is converted in-tool with the same gnomAD lookup behind
+  `resolve_variant_id`, and the response echoes
+  `resolved_from: {input, form: "rsid", resolved_to}`. A multi-allelic rsID returns
+  `ambiguous_query` with `candidates` (never a guess); an unknown rsID returns `not_found`.
+  Both point `_meta.next_commands` at `resolve_variant_id`. HGVS is still rejected: gnomAD's
+  variant search does not convert it.
+
 ## [9.2.3] - 2026-11-19
 
 - Tool descriptions lead with what each tool returns (D1, Tool-Schema Documentation v1.1).
