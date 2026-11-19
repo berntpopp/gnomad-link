@@ -52,6 +52,9 @@ _RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 504})
 _MAX_ATTEMPTS = 5
 _BACKOFF_BASE_SECONDS = 0.5
 _BACKOFF_MAX_SECONDS = 20.0
+# Upper bound on an honoured upstream Retry-After, so one header cannot park a
+# tool call past the caller's own timeout.
+_RETRY_AFTER_CAP_SECONDS = 30.0
 
 
 class GnomadApiError(Exception):
@@ -91,6 +94,21 @@ def _is_retryable_transport_error(exc: BaseException) -> bool:
     return isinstance(exc, (TransportClosed, TimeoutError))
 
 
+def _retry_after_seconds(exc: BaseException) -> float | None:
+    """Capped upstream Retry-After (delta-seconds) from a gql transport error.
+
+    gql chains the aiohttp ClientResponseError (which carries the response
+    headers) as ``__cause__``. ponytail: the HTTP-date form is ignored and falls
+    back to jittered backoff; parse it if the Broad API ever sends one.
+    """
+    headers = getattr(exc.__cause__, "headers", None)
+    value = headers.get("Retry-After") if headers else None
+    try:
+        return min(max(int(value), 0), _RETRY_AFTER_CAP_SECONDS) if value else None
+    except ValueError:
+        return None
+
+
 class BaseGnomadClient:
     """Base client for gnomAD GraphQL API."""
 
@@ -114,6 +132,8 @@ class BaseGnomadClient:
         # Persistent reconnecting session, opened on first use. The client is
         # built by a sync factory so __init__ cannot await connect_async.
         self._session: Any = None
+        # Loop time before which no request may hit upstream (shared Retry-After).
+        self._cooldown_until = 0.0
         self._connect_lock = asyncio.Lock()
         limit = settings.GNOMAD_MAX_CONCURRENCY if max_concurrency is None else max_concurrency
         self._semaphore = asyncio.Semaphore(max(1, limit))
@@ -130,7 +150,13 @@ class BaseGnomadClient:
         if self._session is None:
             async with self._connect_lock:
                 if self._session is None:
-                    self._session = await self._client.connect_async(reconnecting=True)
+                    # retry_execute=False: _execute_with_retry is the ONLY retry
+                    # layer. gql's default inner 5-try retry nested inside ours
+                    # (25 POSTs per call on a persistent 429) while holding the
+                    # concurrency slot and ignoring Retry-After.
+                    self._session = await self._client.connect_async(
+                        reconnecting=True, retry_execute=False
+                    )
         return self._session
 
     async def _acquire_slot(self, *, timeout: float | None = None) -> None:
@@ -171,6 +197,12 @@ class BaseGnomadClient:
         for attempt in range(_MAX_ATTEMPTS):
             try:
                 session = await self._ensure_session()
+                if self._cooldown_until:
+                    # Honour a Retry-After another request received: the limit
+                    # is per egress IP, not per request.
+                    pause = self._cooldown_until - loop.time()
+                    if pause > 0:
+                        await asyncio.sleep(pause)
                 queue_wait_remaining = max(0.0, queue_wait_deadline - loop.time())
                 await self._acquire_slot(timeout=queue_wait_remaining)
                 try:
@@ -185,7 +217,12 @@ class BaseGnomadClient:
                     raise
                 # Full jitter de-synchronizes a concurrent burst's retries; this is
                 # backoff timing, not a security primitive.
-                await asyncio.sleep(random.uniform(0, min(delay, _BACKOFF_MAX_SECONDS)))  # noqa: S311
+                wait = random.uniform(0, min(delay, _BACKOFF_MAX_SECONDS))  # noqa: S311
+                retry_after = _retry_after_seconds(exc)
+                if retry_after is not None:
+                    wait = max(wait, retry_after)
+                    self._cooldown_until = max(self._cooldown_until, loop.time() + retry_after)
+                await asyncio.sleep(wait)
                 delay = min(delay * 2, _BACKOFF_MAX_SECONDS)
         raise GnomadApiError("retry loop exhausted")  # pragma: no cover - guard
 

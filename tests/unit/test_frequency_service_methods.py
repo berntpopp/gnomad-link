@@ -64,3 +64,36 @@ async def test_service_methods_delegate(
 
     getattr(client, client_method).assert_awaited_once_with(*args)
     assert result == {"ok": True}
+
+
+@pytest.mark.asyncio
+async def test_search_genes_is_cached_but_errors_are_not(service_with_stub_client) -> None:
+    """Issue #140: repeated gene searches hit upstream once; a failure is not cached."""
+    service, client = service_with_stub_client
+    hit = {"ensembl_id": "ENSG00000169174", "symbol": "PCSK9"}
+    client.search_genes.side_effect = [RuntimeError("429"), [hit]]
+
+    with pytest.raises(RuntimeError):
+        await service.search_genes("PCSK9", "GRCh38")
+    first = await service.search_genes("PCSK9", "GRCh38")
+    second = await service.search_genes("PCSK9", "GRCh38")
+
+    assert first == second and first[0].symbol == "PCSK9"
+    assert client.search_genes.await_count == 2  # the error, then ONE cached fetch
+
+
+@pytest.mark.asyncio
+async def test_cache_ttl_minutes_is_applied() -> None:
+    """Issue #140: CACHE_TTL_MINUTES was dead config; cached entries now expire."""
+    import asyncio
+
+    client = AsyncMock()
+    client.search_genes.return_value = [{"ensembl_id": "ENSG1", "symbol": "X"}]
+    service = FrequencyService(client=client, cache_ttl_minutes=0.0005)  # type: ignore[arg-type]
+
+    await service.search_genes("X")
+    await service.search_genes("X")
+    assert client.search_genes.await_count == 1  # hit within the TTL
+    await asyncio.sleep(0.1)  # TTL is 30 ms
+    await service.search_genes("X")
+    assert client.search_genes.await_count == 2  # expired -> refetched

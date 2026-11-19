@@ -4,6 +4,17 @@ All notable changes to gnomad-link are documented here.
 
 ## [Unreleased]
 
+## [9.2.2] - 2026-11-19
+
+### Fixed
+
+- Upstream 429s from the Broad gnomAD API (#140): our retry layer is now the only one
+  (gql's inner 5-try retry ran nested inside it while holding the concurrency slot, so one
+  call could make up to 25 POSTs). A `Retry-After` on 429/503 is honoured (capped at 30 s) and
+  shared across the client, so concurrent requests also wait.
+- `CACHE_TTL_MINUTES` is now applied to the variant/gene caches (it was ignored), and
+  `search_genes` results are TTL-cached. Errors are still never cached.
+
 ## [9.2.1] - 2026-11-19
 
 ### Fixed
