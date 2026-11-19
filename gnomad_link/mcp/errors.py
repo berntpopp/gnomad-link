@@ -23,7 +23,6 @@ from gnomad_link.api import (
     RateLimitedError,
     UpstreamInputError,
 )
-from gnomad_link.config import settings
 from gnomad_link.mcp.clinvar_date_cache import get_cached_clinvar_release_date
 from gnomad_link.mcp.mito_redirect import (
     MITO_RECOVERY,
@@ -287,11 +286,10 @@ def _recovery_text(error_code: str, fallback_tool: str | None, tool_name: str | 
             "into the required id."
         )
     if error_code == "rate_limited":
-        floor = settings.GNOMAD_QUEUE_WAIT_TIMEOUT
         return (
-            "Upstream rate limit (HTTP 429) or local concurrency saturation. Safe to "
-            f"retry after backing off exponentially (start around {floor}s) and reduce "
-            "the number of concurrent calls to this server."
+            "Upstream rate limit (HTTP 429) or local request-rate/concurrency saturation. "
+            "Wait retry_after_seconds, then retry the same call (back off further if it "
+            "repeats) and reduce the number of concurrent calls to this server."
         )
     if error_code == "validation_failed":
         return (
@@ -491,6 +489,8 @@ def mcp_tool_error(exc: BaseException, context: McpErrorContext) -> McpToolError
     # widening the wire enum (e.g. build_mismatch -> invalid_input on the wire).
     if internal_code != wire_code:
         payload["error_subtype"] = internal_code
+    if isinstance(exc, RateLimitedError):
+        payload["retry_after_seconds"] = exc.retry_after_seconds
     return McpToolError(payload)
 
 

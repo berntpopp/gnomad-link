@@ -89,7 +89,7 @@ async def test_cache_ttl_minutes_is_applied() -> None:
 
     client = AsyncMock()
     client.search_genes.return_value = [{"ensembl_id": "ENSG1", "symbol": "X"}]
-    service = FrequencyService(client=client, cache_ttl_minutes=0.0005)  # type: ignore[arg-type]
+    service = FrequencyService(client=client, gene_search_cache_ttl_minutes=0.0005)  # type: ignore[arg-type]
 
     await service.search_genes("X")
     await service.search_genes("X")

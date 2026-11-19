@@ -5,14 +5,17 @@ lazily under a double-checked lock and reused across all concurrent tasks. The
 one-shot ``Client.execute_async`` connects AND closes the shared transport on
 every call, so two concurrent calls race into ``TransportAlreadyConnected``; a
 single connected aiohttp session is safe for concurrent ``execute`` and gives
-true HTTP parallelism. An ``asyncio.Semaphore`` bounds burst pressure on the
-upstream rate limiter and a jittered retry layer absorbs residual 429s and
+true HTTP parallelism. A token bucket paces the request RATE (the upstream
+limit is per IP per minute), an ``asyncio.Semaphore`` bounds in-flight requests,
+and a jittered retry layer with a shared 429 cooldown absorbs residual 429s and
 transient transport faults.
 """
 
 import asyncio
 import logging
+import math
 import random
+import time
 from typing import Any
 
 from gql import Client, gql
@@ -82,9 +85,17 @@ class UpstreamInputError(GnomadApiError):
 
 
 class RateLimitedError(GnomadApiError):
-    """Upstream rate-limited the request (HTTP 429) after retries (retryable)."""
+    """Upstream rate-limited the request (HTTP 429) after retries (retryable).
 
-    pass
+    ``retry_after_seconds`` is the whole-second wait surfaced to the caller; it
+    defaults to the 429 cooldown when the raise site has no better estimate.
+    """
+
+    def __init__(self, message: str, *, retry_after_seconds: float | None = None):
+        super().__init__(message)
+        if retry_after_seconds is None:
+            retry_after_seconds = settings.GNOMAD_RATE_LIMIT_COOLDOWN
+        self.retry_after_seconds = max(1, math.ceil(retry_after_seconds))
 
 
 def _is_retryable_transport_error(exc: BaseException) -> bool:
@@ -107,6 +118,20 @@ def _retry_after_seconds(exc: BaseException) -> float | None:
         return min(max(int(value), 0), _RETRY_AFTER_CAP_SECONDS) if value else None
     except ValueError:
         return None
+
+
+def _rate_limit_headers(exc: BaseException) -> dict[str, str]:
+    """Rate-related response headers of a 429, for operator logs only.
+
+    Header values come from the upstream or its load balancer, never from the
+    caller; the response BODY is deliberately not read (see _execute_doc).
+    """
+    headers = getattr(exc.__cause__, "headers", None) or {}
+    return {
+        str(name): str(value)[:100]
+        for name, value in headers.items()
+        if "ratelimit" in name.lower().replace("-", "") or name.lower() == "retry-after"
+    }
 
 
 class BaseGnomadClient:
@@ -134,6 +159,12 @@ class BaseGnomadClient:
         self._session: Any = None
         # Loop time before which no request may hit upstream (shared Retry-After).
         self._cooldown_until = 0.0
+        # Token bucket (GCRA): one request per interval after a burst. The limit
+        # is per egress IP, so the state is shared by every request.
+        rpm = settings.GNOMAD_MAX_REQUESTS_PER_MINUTE
+        self._rate_interval = 60.0 / rpm if rpm > 0 else 0.0
+        self._rate_burst_tolerance = self._rate_interval * (max(1, settings.GNOMAD_RATE_BURST) - 1)
+        self._rate_tat = 0.0  # loop time at which the bucket is full again
         self._connect_lock = asyncio.Lock()
         limit = settings.GNOMAD_MAX_CONCURRENCY if max_concurrency is None else max_concurrency
         self._semaphore = asyncio.Semaphore(max(1, limit))
@@ -180,16 +211,38 @@ class BaseGnomadClient:
                 "Retry with exponential backoff or fan out fewer calls at once."
             ) from exc
 
-    async def _execute_with_retry(
-        self, query_doc: Any, variables: dict[str, Any]
-    ) -> dict[str, Any]:
-        """Execute one document with bounded concurrency + jittered retry.
+    def _reserve_send_time(self, now: float, queue_wait_deadline: float) -> tuple[float, float]:
+        """Take a rate token; return (seconds to wait, cooldown part of that wait).
 
-        The semaphore is acquired per attempt (released during backoff sleep so
-        other requests proceed). Only transient transport faults retry; GraphQL
-        business errors (TransportQueryError) propagate immediately for the
-        caller to classify. A saturated queue raises RateLimitedError, which is
-        NOT retried here (fast backpressure) and propagates for classification.
+        GNOMAD_RATE_BURST requests go out immediately, then one per
+        60/GNOMAD_MAX_REQUESTS_PER_MINUTE seconds. A shared 429 cooldown holds
+        every request back and is NOT charged to the queue-wait budget (upstream
+        imposed it); a pacing wait that would overrun the budget raises a
+        retryable RateLimitedError without taking a token (fast backpressure).
+        """
+        cooldown = max(0.0, self._cooldown_until - now)
+        send_at = max(now + cooldown, self._rate_tat - self._rate_burst_tolerance)
+        if send_at > queue_wait_deadline + cooldown:
+            raise RateLimitedError(
+                "Local request-rate limit saturated "
+                f"(max {settings.GNOMAD_MAX_REQUESTS_PER_MINUTE} upstream requests per minute). "
+                "Retry after retry_after_seconds or fan out fewer calls at once.",
+                retry_after_seconds=send_at - now,
+            )
+        self._rate_tat = max(self._rate_tat, send_at) + self._rate_interval
+        return send_at - now, cooldown
+
+    async def _execute_with_retry(
+        self, query_doc: Any, variables: dict[str, Any], name: str = "raw"
+    ) -> dict[str, Any]:
+        """Execute one document with paced, bounded concurrency + jittered retry.
+
+        A rate token and the semaphore are taken per attempt (the slot is
+        released during backoff sleep so other requests proceed). Only transient
+        transport faults retry; GraphQL business errors (TransportQueryError)
+        propagate immediately for the caller to classify. A saturated queue
+        raises RateLimitedError, which is NOT retried here (fast backpressure)
+        and propagates for classification.
         """
         delay = _BACKOFF_BASE_SECONDS
         loop = asyncio.get_running_loop()
@@ -197,31 +250,63 @@ class BaseGnomadClient:
         for attempt in range(_MAX_ATTEMPTS):
             try:
                 session = await self._ensure_session()
-                if self._cooldown_until:
-                    # Honour a Retry-After another request received: the limit
-                    # is per egress IP, not per request.
-                    pause = self._cooldown_until - loop.time()
-                    if pause > 0:
-                        await asyncio.sleep(pause)
-                queue_wait_remaining = max(0.0, queue_wait_deadline - loop.time())
+                # Pacing plus any shared 429 cooldown: the limit is per egress
+                # IP, not per request.
+                now = loop.time()
+                pause, cooldown = self._reserve_send_time(now, queue_wait_deadline)
+                queue_wait_deadline += cooldown
+                if pause > 0:
+                    await asyncio.sleep(pause)
+                queue_wait_remaining = max(0.0, queue_wait_deadline - now - pause)
                 await self._acquire_slot(timeout=queue_wait_remaining)
+                started = time.perf_counter()
+                outcome: int | str = "ok"
                 try:
                     result: dict[str, Any] = await session.execute(
                         query_doc, variable_values=variables
                     )
+                except BaseException as exc:
+                    outcome = getattr(exc, "code", None) or type(exc).__name__
+                    raise
                 finally:
                     self._semaphore.release()
+                    # Query NAME only: variables and bodies can carry caller text.
+                    logger.info(
+                        "gnomad_upstream_request query=%s outcome=%s attempt=%d duration_ms=%d",
+                        name,
+                        outcome,
+                        attempt + 1,
+                        (time.perf_counter() - started) * 1000,
+                    )
                 return result
             except (TransportServerError, TransportClosed, TimeoutError) as exc:
+                retry_after = _retry_after_seconds(exc)
+                if getattr(exc, "code", None) == 429:
+                    logger.warning(
+                        "gnomad_upstream_429 query=%s attempt=%d rate_headers=%s",
+                        name,
+                        attempt + 1,
+                        _rate_limit_headers(exc),
+                    )
+                    if retry_after is None:
+                        retry_after = float(settings.GNOMAD_RATE_LIMIT_COOLDOWN)
+                if retry_after is not None:
+                    # Stop the whole process sending until the window reopens,
+                    # then resume at the steady pace (bucket emptied: no burst).
+                    self._cooldown_until = max(self._cooldown_until, loop.time() + retry_after)
+                    self._rate_tat = max(
+                        self._rate_tat, self._cooldown_until + self._rate_burst_tolerance
+                    )
                 if not _is_retryable_transport_error(exc) or attempt == _MAX_ATTEMPTS - 1:
                     raise
                 # Full jitter de-synchronizes a concurrent burst's retries; this is
                 # backoff timing, not a security primitive.
                 wait = random.uniform(0, min(delay, _BACKOFF_MAX_SECONDS))  # noqa: S311
-                retry_after = _retry_after_seconds(exc)
                 if retry_after is not None:
                     wait = max(wait, retry_after)
-                    self._cooldown_until = max(self._cooldown_until, loop.time() + retry_after)
+                    # An upstream-imposed wait is not local queueing: keep the
+                    # queue-wait budget so the retry can outlast the cooldown.
+                    queue_wait_deadline += wait
                 await asyncio.sleep(wait)
                 delay = min(delay * 2, _BACKOFF_MAX_SECONDS)
         raise GnomadApiError("retry loop exhausted")  # pragma: no cover - guard
@@ -249,7 +334,7 @@ class BaseGnomadClient:
             query_string = self.query_loader.load_query(query_name, version)
             processed_vars = self.query_builder.process_variables(query_name, variables, version)
 
-            result = await self._execute_doc(gql(query_string), processed_vars)
+            result = await self._execute_doc(gql(query_string), processed_vars, query_name)
 
             # Check if data was found
             if query_name in result and result[query_name] is None:
@@ -292,14 +377,16 @@ class BaseGnomadClient:
                 "An unexpected error occurred while querying the gnomAD GraphQL API."
             ) from e
 
-    async def _execute_doc(self, query_doc: Any, variables: dict[str, Any]) -> dict[str, Any]:
+    async def _execute_doc(
+        self, query_doc: Any, variables: dict[str, Any], name: str = "raw"
+    ) -> dict[str, Any]:
         """Run a parsed document through the retry layer and classify faults.
 
         Shared by execute_query and execute_raw_query so the fault taxonomy (not
         found / invalid input / rate limited / upstream) lives in one place.
         """
         try:
-            return await self._execute_with_retry(query_doc, variables)
+            return await self._execute_with_retry(query_doc, variables, name)
         except TransportQueryError as e:
             if e.errors:
                 # The upstream ``errors[].message`` values are inspected ONLY to
@@ -341,7 +428,8 @@ class BaseGnomadClient:
             if e.code == 429:
                 # A 429 that survived the retry layer is a persistent rate limit.
                 raise RateLimitedError(
-                    "The gnomAD GraphQL API rate-limited the request (HTTP 429)."
+                    "The gnomAD GraphQL API rate-limited the request (HTTP 429).",
+                    retry_after_seconds=self._cooldown_until - asyncio.get_running_loop().time(),
                 ) from e
             raise GnomadApiError(
                 f"The gnomAD GraphQL API returned a server error (HTTP {e.code})."

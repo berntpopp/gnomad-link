@@ -4,6 +4,27 @@ All notable changes to gnomad-link are documented here.
 
 ## [Unreleased]
 
+## [9.3.1] - 2026-11-20
+
+### Fixed
+
+- Upstream 429s reaching callers under bursts (#146). Requests are now paced by a
+  token bucket (`GNOMAD_MAX_REQUESTS_PER_MINUTE`, default 20; `GNOMAD_RATE_BURST`,
+  default 5) in front of the concurrency cap, sharing the `GNOMAD_QUEUE_WAIT_TIMEOUT`
+  budget. A 429 without `Retry-After` now stops the whole client for
+  `GNOMAD_RATE_LIMIT_COOLDOWN` (default 15 s) and the retries wait it out. A
+  `rate_limited` error carries `retry_after_seconds`.
+- `get_variant_frequencies` on `not_found` looks the id up once in the other genome
+  build's dataset (#145). If it exists there the error names it (`found_in`) and puts the
+  re-call first in `_meta.next_commands`; if not, it says the id is in neither build.
+
+### Changed
+
+- Every upstream request is logged (`gnomad_upstream_request`: query name, outcome,
+  attempt, duration) and a 429 logs its rate-limit headers (`gnomad_upstream_429`).
+- `search_genes` results are cached for `GENE_SEARCH_CACHE_TTL_MINUTES` (default 1440)
+  instead of `CACHE_TTL_MINUTES`, in a cache of `CACHE_SIZE` entries (was a quarter).
+
 ## [9.3.0] - 2026-11-19
 
 ### Added
