@@ -241,6 +241,62 @@ class TestBaseGnomadClient:
         assert result == {"gene": {"symbol": "OK"}}
         assert execute.call_count == 2
 
+    @staticmethod
+    def _http_429(retry_after: str):
+        """A gql 429 chained to the aiohttp error that carries the headers."""
+        from aiohttp import ClientResponseError
+        from gql.transport.exceptions import TransportServerError
+
+        exc = TransportServerError("rate limited", 429)
+        exc.__cause__ = ClientResponseError(
+            None,  # type: ignore[arg-type]
+            (),
+            status=429,
+            headers={"Retry-After": retry_after},  # type: ignore[arg-type]
+        )
+        return exc
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(("header", "expected"), [("7", 7), ("999", 30.0)])
+    async def test_429_honours_retry_after_capped(self, client, monkeypatch, header, expected):
+        """Issue #140: a 429's Retry-After sets the wait (capped), not just jitter."""
+        sleep = AsyncMock()
+        monkeypatch.setattr(asyncio, "sleep", sleep)
+        execute = AsyncMock(side_effect=[self._http_429(header), {"gene": {"symbol": "OK"}}])
+        connect = AsyncMock(return_value=_FakeSession(execute=execute))
+
+        with (
+            patch.object(client.query_loader, "load_query", return_value="query { gene { id } }"),
+            patch.object(client.query_builder, "process_variables", return_value={}),
+            patch.object(client._client, "connect_async", new=connect),
+        ):
+            assert await client.execute_query("gene", {}) == {"gene": {"symbol": "OK"}}
+
+        # (sleep is mocked, so the clock does not advance past the shared cooldown
+        # and the retry waits it out again; only the first wait is the backoff.)
+        assert sleep.await_args_list[0].args == (expected,)
+        # gql's own inner retry is off: ours is the only retry layer.
+        connect.assert_awaited_once_with(reconnecting=True, retry_execute=False)
+
+    @pytest.mark.asyncio
+    async def test_retry_after_cooldown_is_shared(self, client, monkeypatch):
+        """Issue #140: another request's Retry-After also holds back the next request."""
+        sleep = AsyncMock()
+        monkeypatch.setattr(asyncio, "sleep", sleep)
+        execute = AsyncMock(return_value={"gene": {"symbol": "OK"}})
+        connect = AsyncMock(return_value=_FakeSession(execute=execute))
+        client._cooldown_until = asyncio.get_running_loop().time() + 5
+
+        with (
+            patch.object(client.query_loader, "load_query", return_value="query { gene { id } }"),
+            patch.object(client.query_builder, "process_variables", return_value={}),
+            patch.object(client._client, "connect_async", new=connect),
+        ):
+            await client.execute_query("gene", {})
+
+        sleep.assert_awaited_once()
+        assert 4 < sleep.await_args.args[0] <= 5
+
     @pytest.mark.asyncio
     async def test_retry_reuses_one_queue_wait_budget(self, client, monkeypatch):
         """Retries must share one GNOMAD_QUEUE_WAIT_TIMEOUT budget for slot waits."""

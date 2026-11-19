@@ -75,9 +75,13 @@ class FrequencyService:
         self.client = client or UnifiedGnomadClient()
         self.cache_ttl = timedelta(minutes=cache_ttl_minutes)
 
-        # Configure caching
-        self._get_variant_cached = alru_cache(maxsize=cache_size)(self._get_variant_impl)
-        self._get_gene_cached = alru_cache(maxsize=cache_size // 4)(self._get_gene_impl)
+        # Configure caching (async_lru never caches exceptions)
+        ttl = self.cache_ttl.total_seconds()
+        self._get_variant_cached = alru_cache(maxsize=cache_size, ttl=ttl)(self._get_variant_impl)
+        self._get_gene_cached = alru_cache(maxsize=cache_size // 4, ttl=ttl)(self._get_gene_impl)
+        self._search_genes_cached = alru_cache(maxsize=cache_size // 4, ttl=ttl)(
+            self._search_genes_impl
+        )
 
         # Track cache statistics
         self._cache_hits = 0
@@ -326,10 +330,16 @@ class FrequencyService:
             - Canonical transcript
 
         Note:
-            Results are not cached as search queries are typically unique.
+            Results are TTL-cached: agents repeat the same symbol lookups.
         """
-        results = await self.client.search_genes(query, reference_genome, dataset)
+        results = await self._search_genes_cached(query, reference_genome, dataset)
         return [GeneSearchResult(**item) for item in results]
+
+    async def _search_genes_impl(
+        self, query: str, reference_genome: str | None, dataset: str | None
+    ) -> list[dict[str, Any]]:
+        """Fetch gene search hits from the API (wrapped by the TTL cache)."""
+        return await self.client.search_genes(query, reference_genome, dataset)
 
     async def search_variants(self, query: str, dataset: str = "gnomad_r4") -> list[str]:
         """Search for variants by ID, rsID, or position.
@@ -428,6 +438,7 @@ class FrequencyService:
         """
         self._get_variant_cached.cache_clear()
         self._get_gene_cached.cache_clear()
+        self._search_genes_cached.cache_clear()
         self._cache_hits = 0
         self._cache_misses = 0
 
