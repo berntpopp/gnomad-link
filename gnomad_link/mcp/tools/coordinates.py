@@ -64,7 +64,7 @@ def register_coordinate_tools(
             ),
         ],
     ) -> dict[str, Any]:
-        """Use this when a caller has a variant id in one reference build and needs the equivalent id in the other. Works BOTH directions (GRCh37<->GRCh38); the converted coordinate is in each result's `target_variant_id` (and `target_reference_genome` names the build). Use this BEFORE calling frequency tools if the dataset and coordinate build do not match. Returns <1kB."""
+        """Use this when a caller has a variant id in one reference build; returns the equivalent id in the other. Works BOTH directions (GRCh37<->GRCh38); the converted coordinate is in each result's `target_variant_id` (and `target_reference_genome` names the build). Use this BEFORE calling frequency tools if the dataset and coordinate build do not match. Returns <1kB."""
 
         async def call() -> dict[str, Any]:
             build = source_genome
@@ -172,7 +172,7 @@ def register_coordinate_tools(
             Field(description="Project clinvar/gene rows to a compact key set."),
         ] = True,
     ) -> dict[str, Any]:
-        """Use this when a caller wants genes and/or ClinVar variants in a small region (<=100kb). Spans larger than 100kb are clamped and a `truncated` block reports it. Per-category caps (`max_clinvar_variants`, `max_genes`) keep payload bounded; surplus rows are summarised in a `truncated_payload` block. For per-variant SNV listings use get_gene_variants instead. Returns ~5-30kB at compact defaults; up to ~50kB with compact_rows=False."""
+        """Use this when a caller has a small region (<=100kb); returns the genes and/or ClinVar variants in it. Spans larger than 100kb are clamped and a `truncated` block reports it. Per-category caps (`max_clinvar_variants`, `max_genes`) keep payload bounded; surplus rows are summarised in a `truncated_payload` block. For per-variant SNV listings use get_gene_variants instead. Returns ~5-30kB at compact defaults; up to ~50kB with compact_rows=False."""
 
         async def call() -> dict[str, Any]:
             chrom, start_s, stop_s = region.removeprefix("chr").split("-")

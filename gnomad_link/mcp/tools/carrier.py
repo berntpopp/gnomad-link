@@ -343,7 +343,7 @@ def register_carrier_tools(
             ),
         ] = "compact",
     ) -> dict[str, Any]:
-        """Use this when a caller needs an estimated carrier/affected frequency derived from a single gnomAD allele frequency under Hardy-Weinberg assumptions for AR, AD, or X-linked inheritance. Pure local math on top of get_variant_frequencies; returns a one-line `headline`, Wilson 95% CIs, per-population breakdown, and provenance (short citations + a gnomad://citations pointer in compact mode; full citations with response_mode='full'). Estimates are research-use only, never clinical decision support. Returns ~2-4kB."""
+        """Use this when a caller needs a Hardy-Weinberg carrier/affected frequency estimate from a single gnomAD allele frequency (AR, AD, or X-linked); returns a one-line `headline`, Wilson 95% CIs, per-population breakdown, and provenance (short citations + a gnomad://citations pointer in compact mode; full citations with response_mode='full'). Pure local math on top of get_variant_frequencies. Estimates are research-use only, never clinical decision support. Returns ~2-4kB."""
 
         async def call() -> dict[str, Any]:
             validate_population_codes(populations)

@@ -88,7 +88,7 @@ def register_variant_tools(
             ),
         ] = "compact",
     ) -> dict[str, Any]:
-        """Use this when a caller has a fully-resolved CHROM-POS-REF-ALT id and needs allele counts/frequencies per population. Pair with get_clinvar_variant_details for clinical context. Compact defaults trim subcohort and zero-AC rows; toggle the boolean flags to expand, or use response_mode='full' for the most-inclusive breakdown or response_mode='minimal' for just the headline + overall/max-pop summary. summary.max_pop_af is the raw highest-AF ancestry group (may be bottlenecked asj/fin; never 'remaining') and is NOT the filtering AF: use summary.faf95.{exome,genome,joint}.grpmax (gnomAD faf95 at grpmax, continental groups only; kept in minimal mode; a source is omitted when gnomAD computed no faf95 for it, e.g. AC 0 there) as the ClinGen/Whiffin comparator. Returns a `truncated` block when filters drop rows so the LLM can re-call with explicit overrides. Returns ~2-4kB (minimal ~0.6kB)."""
+        """Use this when a caller has a fully-resolved CHROM-POS-REF-ALT id; returns a headline, exome/genome AC/AN/AF per population, and a summary (max_pop_af, faf95). Pair with get_clinvar_variant_details for clinical context. Compact defaults trim subcohort and zero-AC rows; toggle the boolean flags to expand, or use response_mode='full' for the most-inclusive breakdown or response_mode='minimal' for just the headline + overall/max-pop summary. summary.max_pop_af is the raw highest-AF ancestry group (may be bottlenecked asj/fin; never 'remaining') and is NOT the filtering AF: use summary.faf95.{exome,genome,joint}.grpmax (gnomAD faf95 at grpmax, continental groups only; kept in minimal mode; a source is omitted when gnomAD computed no faf95 for it, e.g. AC 0 there) as the ClinGen/Whiffin comparator. A `truncated` block reports rows dropped by filters. Returns ~2-4kB (minimal ~0.6kB)."""
 
         async def call() -> dict[str, Any]:
             validate_population_codes(populations)
@@ -203,7 +203,7 @@ def register_variant_tools(
             Field(description="Drop populations with allele_count == 0 (compact mode)."),
         ] = True,
     ) -> dict[str, Any]:
-        """Use this when a caller needs transcript consequences or in-silico predictors for a single variant id. This tool does NOT return ClinVar clinical significance — for that call get_clinvar_variant_details. Prefer get_variant_frequencies if only allele counts are needed; this tool returns the larger annotation payload. Compact trims the exome/genome population breakdown (drops subcohort, sex-split, and zero-AC rows; toggle the booleans to expand) and emits a `truncated` block per source. Returns compact ~3-6kB, full up to ~50kB."""
+        """Use this when a caller has a single variant id; returns transcript consequences, in-silico predictors, and exome/genome frequencies. This tool does NOT return ClinVar clinical significance — for that call get_clinvar_variant_details. Prefer get_variant_frequencies if only allele counts are needed. Compact trims the exome/genome population breakdown (drops subcohort, sex-split, and zero-AC rows; toggle the booleans to expand) and emits a `truncated` block per source. Returns compact ~3-6kB, full up to ~50kB."""
 
         async def call() -> dict[str, Any]:
             validate_population_codes(populations)

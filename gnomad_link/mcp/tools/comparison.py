@@ -112,7 +112,7 @@ def register_comparison_tools(
             ),
         ] = "compact",
     ) -> dict[str, Any]:
-        """Use this when a caller wants to see how one variant's allele frequencies shift across gnomAD releases (r4 vs r3 vs r2_1) and which populations diverge most. Datasets that lack the variant are marked present=false (partial success); the GRCh37 gnomad_r2_1 leg is auto-lifted from the GRCh38 id. Pair with get_clinvar_variant_details for clinical context. Compact (default) drops the per-dataset population arrays (comparison.per_population_af_deltas keeps the per-pop AFs); response_mode='full' returns the raw rows. Returns ~2-4kB compact, ~3-8kB full."""
+        """Use this when a caller wants one variant's allele frequencies across gnomAD releases (r4 vs r3 vs r2_1); returns per-dataset AFs and the most divergent populations. Datasets that lack the variant are marked present=false (partial success); the GRCh37 gnomad_r2_1 leg is auto-lifted from the GRCh38 id. Pair with get_clinvar_variant_details for clinical context. Compact (default) drops the per-dataset population arrays (comparison.per_population_af_deltas keeps the per-pop AFs); response_mode='full' returns the raw rows. Returns ~2-4kB compact, ~3-8kB full."""
 
         async def call() -> dict[str, Any]:
             validate_population_codes(populations)

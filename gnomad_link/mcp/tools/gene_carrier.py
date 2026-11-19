@@ -108,7 +108,7 @@ def register_gene_carrier_tools(
             int, Field(ge=1, le=200, description="Cap on contributing variants in compact mode.")
         ] = 25,
     ) -> dict[str, Any]:
-        """Use this when a caller needs gene-level autosomal-recessive carrier frequency across qualifying pathogenic variants, not a single variant. Run this server-side computation once per gene; do not loop over variants. Returns global and per-population carrier frequency, genetic and Bayesian prevalence, a headline, provenance, and contributing variants. Research use only; not clinical decision support. Returns ~4-30kB (gene/limit dependent)."""
+        """Use this when a caller needs gene-level autosomal-recessive carrier frequency across qualifying pathogenic variants, not a single variant; returns global and per-population carrier frequency, genetic and Bayesian prevalence, a headline, provenance, and contributing variants. Run this server-side computation once per gene; do not loop over variants. Research use only; not clinical decision support. Returns ~4-30kB (gene/limit dependent)."""
 
         gene_id, gene_symbol = split_gene(gene)
 
