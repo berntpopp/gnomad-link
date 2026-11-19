@@ -15,6 +15,7 @@ from gnomad_link.mcp.headline import variant_frequencies_headline
 from gnomad_link.mcp.minimal_shaping import project_variant_frequencies_minimal
 from gnomad_link.mcp.next_commands import for_variant
 from gnomad_link.mcp.population_shaping import validate_population_codes
+from gnomad_link.mcp.rsid import RSID_PATTERN, resolve_rsid
 from gnomad_link.mcp.shaping import (
     shape_variant_details_compact,
     shape_variant_frequencies,
@@ -25,6 +26,8 @@ from gnomad_link.services import FrequencyService
 # variants must go through get_mitochondrial_variant. Allele letters are upper
 # case A/C/G/T (no N, no IUPAC ambiguity codes — gnomAD does not return those).
 _AUTOSOMAL_VARIANT_ID_PATTERN = r"^([1-9]|1\d|2[0-2]|X|Y)-\d+-[ACGT]+-[ACGT]+$"
+# Same grammar, or a dbSNP rsID resolved in-tool via the resolve_variant_id lookup.
+_VARIANT_ID_OR_RSID_PATTERN = rf"^({_AUTOSOMAL_VARIANT_ID_PATTERN[1:-1]}|{RSID_PATTERN})$"
 
 
 def register_variant_tools(
@@ -41,10 +44,10 @@ def register_variant_tools(
         variant_id: Annotated[
             str,
             Field(
-                description="CHROM-POS-REF-ALT (e.g. 1-55051215-G-GA). Use M-POS-REF-ALT only with get_mitochondrial_variant.",
+                description="CHROM-POS-REF-ALT (e.g. 1-55051215-G-GA) or an rsID. Use M-POS-REF-ALT only with get_mitochondrial_variant.",
                 min_length=5,
                 max_length=200,
-                pattern=_AUTOSOMAL_VARIANT_ID_PATTERN,
+                pattern=_VARIANT_ID_OR_RSID_PATTERN,
                 examples=["1-55051215-G-GA", "17-7674232-G-A"],
             ),
         ],
@@ -88,17 +91,23 @@ def register_variant_tools(
             ),
         ] = "compact",
     ) -> dict[str, Any]:
-        """Use this when a caller has a fully-resolved CHROM-POS-REF-ALT id; returns a headline, exome/genome AC/AN/AF per population, and a summary (max_pop_af, faf95). Pair with get_clinvar_variant_details for clinical context. Compact defaults trim subcohort and zero-AC rows; toggle the boolean flags to expand, or use response_mode='full' for the most-inclusive breakdown or response_mode='minimal' for just the headline + overall/max-pop summary. summary.max_pop_af is the raw highest-AF ancestry group (may be bottlenecked asj/fin; never 'remaining') and is NOT the filtering AF: use summary.faf95.{exome,genome,joint}.grpmax (gnomAD faf95 at grpmax, continental groups only; kept in minimal mode; a source is omitted when gnomAD computed no faf95 for it, e.g. AC 0 there) as the ClinGen/Whiffin comparator. A `truncated` block reports rows dropped by filters. Returns ~2-4kB (minimal ~0.6kB)."""
+        """Use this when a caller has a CHROM-POS-REF-ALT id or rsID; returns a headline, exome/genome AC/AN/AF per population, and a summary (max_pop_af, faf95). Pair with get_clinvar_variant_details for clinical context. Compact defaults trim subcohort and zero-AC rows; toggle the boolean flags to expand, or use response_mode='full' for the most-inclusive breakdown or response_mode='minimal' for just the headline + overall/max-pop summary. summary.max_pop_af is the raw highest-AF ancestry group (may be bottlenecked asj/fin; never 'remaining') and is NOT the filtering AF: use summary.faf95.{exome,genome,joint}.grpmax (gnomAD faf95 at grpmax, continental groups only; kept in minimal mode; a source is omitted when gnomAD computed no faf95 for it, e.g. AC 0 there) as the ClinGen/Whiffin comparator. A `truncated` block reports rows dropped by filters. Returns ~2-4kB (minimal ~0.6kB)."""
+
+        ctx = McpErrorContext(
+            tool_name="get_variant_frequencies", variant_id=variant_id, dataset=dataset
+        )
 
         async def call() -> dict[str, Any]:
             validate_population_codes(populations)
-            inferred = detect_variant_id_mismatch(variant_id, dataset)
-            if inferred is not None:
-                raise BuildMismatchError(
-                    variant_id=variant_id, inferred_build=inferred, dataset=dataset
-                )
             service = service_factory()
-            response = await service.get_variant_frequencies(variant_id, dataset)
+            vid, resolved_from = await resolve_rsid(
+                service, variant_id, dataset, tool="get_variant_frequencies"
+            )
+            ctx.variant_id = vid
+            inferred = detect_variant_id_mismatch(vid, dataset)
+            if inferred is not None:
+                raise BuildMismatchError(variant_id=vid, inferred_build=inferred, dataset=dataset)
+            response = await service.get_variant_frequencies(vid, dataset)
             # response_mode='full' takes precedence over the explicit toggles and
             # asks for the most-inclusive breakdown; compact/minimal honor them.
             if response_mode == "full":
@@ -122,7 +131,7 @@ def register_variant_tools(
             clinvar_cmd: dict[str, Any] = {
                 "tool": "get_clinvar_variant_details",
                 "arguments": {
-                    "variant_id": variant_id,
+                    "variant_id": vid,
                     "reference_genome": "GRCh37" if dataset == "gnomad_r2_1" else "GRCh38",
                 },
             }
@@ -131,18 +140,12 @@ def register_variant_tools(
                 "next_commands": [*existing_next, clinvar_cmd],
             }
             if response_mode == "minimal":
-                return project_variant_frequencies_minimal(shaped)
+                shaped = project_variant_frequencies_minimal(shaped)
+            if resolved_from:
+                shaped["resolved_from"] = resolved_from
             return shaped
 
-        return await run_mcp_tool(
-            "get_variant_frequencies",
-            call,
-            context=McpErrorContext(
-                tool_name="get_variant_frequencies",
-                variant_id=variant_id,
-                dataset=dataset,
-            ),
-        )
+        return await run_mcp_tool("get_variant_frequencies", call, context=ctx)
 
     @mcp.tool(
         name="get_variant_details",
@@ -155,11 +158,11 @@ def register_variant_tools(
         variant_id: Annotated[
             str,
             Field(
-                description="CHROM-POS-REF-ALT id (e.g. 1-55051215-G-GA). "
+                description="CHROM-POS-REF-ALT id (e.g. 1-55051215-G-GA) or an rsID. "
                 "Use get_mitochondrial_variant for M-POS-REF-ALT.",
                 min_length=5,
                 max_length=200,
-                pattern=_AUTOSOMAL_VARIANT_ID_PATTERN,
+                pattern=_VARIANT_ID_OR_RSID_PATTERN,
                 examples=["1-55051215-G-GA"],
             ),
         ],
@@ -205,15 +208,21 @@ def register_variant_tools(
     ) -> dict[str, Any]:
         """Use this when a caller has a single variant id; returns transcript consequences, in-silico predictors, and exome/genome frequencies. This tool does NOT return ClinVar clinical significance — for that call get_clinvar_variant_details. Prefer get_variant_frequencies if only allele counts are needed. Compact trims the exome/genome population breakdown (drops subcohort, sex-split, and zero-AC rows; toggle the booleans to expand) and emits a `truncated` block per source. Returns compact ~3-6kB, full up to ~50kB."""
 
+        ctx = McpErrorContext(
+            tool_name="get_variant_details", variant_id=variant_id, dataset=dataset
+        )
+
         async def call() -> dict[str, Any]:
             validate_population_codes(populations)
-            inferred = detect_variant_id_mismatch(variant_id, dataset)
-            if inferred is not None:
-                raise BuildMismatchError(
-                    variant_id=variant_id, inferred_build=inferred, dataset=dataset
-                )
             service = service_factory()
-            raw = await service.get_variant(variant_id, dataset)
+            vid, resolved_from = await resolve_rsid(
+                service, variant_id, dataset, tool="get_variant_details"
+            )
+            ctx.variant_id = vid
+            inferred = detect_variant_id_mismatch(vid, dataset)
+            if inferred is not None:
+                raise BuildMismatchError(variant_id=vid, inferred_build=inferred, dataset=dataset)
+            raw = await service.get_variant(vid, dataset)
             # service.get_variant returns the GraphQL wrapper {"variant": {...}};
             # unwrap (like the SV/mito/region tools) before shaping. Guard against
             # a silent-empty success: an absent variant block is a not_found, not
@@ -222,7 +231,7 @@ def register_variant_tools(
             if not variant:
                 from gnomad_link.api.base_client import VariantNotFoundError
 
-                raise VariantNotFoundError(f"Variant {variant_id} not found in {dataset}")
+                raise VariantNotFoundError(f"Variant {vid} not found in {dataset}")
             if response_mode == "compact":
                 result = shape_variant_details_compact(
                     variant,
@@ -235,15 +244,9 @@ def register_variant_tools(
             else:
                 result = variant
             # Standard follow-ups: per-population frequencies, then ClinVar.
-            result.setdefault("_meta", {}).setdefault(
-                "next_commands", for_variant(variant_id, dataset)
-            )
+            result.setdefault("_meta", {}).setdefault("next_commands", for_variant(vid, dataset))
+            if resolved_from:
+                result["resolved_from"] = resolved_from
             return result
 
-        return await run_mcp_tool(
-            "get_variant_details",
-            call,
-            context=McpErrorContext(
-                tool_name="get_variant_details", variant_id=variant_id, dataset=dataset
-            ),
-        )
+        return await run_mcp_tool("get_variant_details", call, context=ctx)
