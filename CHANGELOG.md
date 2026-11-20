@@ -4,6 +4,13 @@ All notable changes to gnomad-link are documented here.
 
 ## [Unreleased]
 
+## [9.3.3] - 2026-11-20
+
+### Fixed
+
+- Enable `aiohttp` `trust_env=True` on `AIOHTTPTransport` so `HTTP_PROXY` / `HTTPS_PROXY` /
+  `NO_PROXY` environment variables apply to gnomAD GraphQL requests (#148).
+
 ## [9.3.1] - 2026-11-20
 
 ### Fixed
