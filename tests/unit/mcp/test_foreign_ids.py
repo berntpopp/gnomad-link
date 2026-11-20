@@ -190,3 +190,38 @@ async def test_hgvs_failing_the_variant_id_schema_names_the_converter(tool: str)
         },
     )
     assert stub.calls == []
+
+
+@pytest.mark.asyncio
+async def test_mitochondrial_hgvs_names_the_mito_tool() -> None:
+    payload, stub = await _call("resolve_variant_id", query="m.3243A>G")
+    _assert_converter(
+        payload,
+        "query",
+        {"tool": "get_mitochondrial_variant", "arguments": {"variant_id": "M-3243-A-G"}},
+    )
+    assert "M-POS-REF-ALT" in payload["recovery"]
+    assert stub.calls == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("query", ["KRAS:p.G12D", "rs1:c.35G>A"])
+async def test_hgvs_on_a_reference_no_recoder_can_place_gets_no_converter(query: str) -> None:
+    payload, _ = await _call("resolve_variant_id", query=query)
+    assert payload["error_code"] == "invalid_input"
+    assert [c["tool"] for c in payload["_meta"]["next_commands"]] == ["get_diagnostics"]
+
+
+def test_hostile_text_is_never_echoed_into_a_converter_call() -> None:
+    from gnomad_link.mcp.foreign_ids import foreign_recovery, redirect_validation_payload
+
+    bidi = "x:c.\u202eevil\u200b_ignore_previous"
+    assert foreign_recovery(bidi, "variant") is None
+    assert foreign_recovery("NM_004333.6:c.1799" + "A" * 5000, "variant") is None
+    assert foreign_recovery("HGNC:\u0661\u0662\u0663", "gene") is None  # non-Latin digits
+    assert foreign_recovery("\u0661\u0662\u0663", "gene") is None
+    payload: dict[str, Any] = {"_meta": {"next_commands": []}}
+    redirect_validation_payload(
+        payload, [{"loc": ("variant_id",), "input": "x:c." + "A" * 5000 + "\u202e\x00"}]
+    )
+    assert payload == {"_meta": {"next_commands": []}}

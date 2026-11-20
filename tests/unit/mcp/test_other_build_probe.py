@@ -50,14 +50,28 @@ async def test_not_found_names_the_other_build(asked: str, found: str, found_bui
     assert payload["error_code"] == "not_found"
     assert payload["found_in"] == {"dataset": found, "reference_genome": found_build}
     assert f"exists in {found} ({found_build})" in payload["message"]
-    recall = {"variant_id": "9-99694174-C-T", "dataset": found}
-    assert payload["fallback_tool"] == "get_variant_frequencies"
-    assert payload["fallback_args"] == recall
-    assert payload["_meta"]["next_commands"][0] == {
-        "tool": "get_variant_frequencies",
-        "arguments": recall,
+    assert f"only if your coordinates are on {found_build}" in payload["message"]
+    # The same id can be a different variant there: the re-call is never the
+    # fallback or the first step; it follows the liftover that checks the build.
+    assert payload["fallback_tool"] == "resolve_variant_id"
+    tools = [c["tool"] for c in payload["_meta"]["next_commands"]]
+    recall_at = tools.index("get_variant_frequencies")
+    assert recall_at == tools.index("compute_variant_liftover") + 1
+    assert payload["_meta"]["next_commands"][recall_at]["arguments"] == {
+        "variant_id": "9-99694174-C-T",
+        "dataset": found,
     }
     assert service.calls == [asked, found]  # exactly one extra lookup
+
+
+@pytest.mark.asyncio
+async def test_other_build_answer_is_cached_for_a_repeated_lookup() -> None:
+    service = _BuildAwareService(set())
+    await _call(service, "gnomad_r4")
+    payload = await _call(service, "gnomad_r4")
+
+    assert "in both builds" in payload["message"]
+    assert service.calls == ["gnomad_r4", "gnomad_r2_1", "gnomad_r4"]  # no second probe
 
 
 @pytest.mark.asyncio

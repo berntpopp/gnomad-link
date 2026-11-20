@@ -63,6 +63,10 @@ class Settings(BaseSettings):
     # Retry-After (a Retry-After is honoured instead, capped at 30 s). Four
     # retries of 15 s outlast a one-minute upstream window.
     GNOMAD_RATE_LIMIT_COOLDOWN: int = 15
+    # Max seconds ONE tool call may spend waiting on upstream (pacing, 429
+    # cooldowns, retry backoff) across all its requests, so a call answers
+    # rate_limited with retry_after_seconds before the caller's own timeout fires.
+    GNOMAD_CALL_WAIT_BUDGET: int = 40
 
     # Cache Configuration
     CACHE_SIZE: int = 1024  # Maximum number of variants to cache

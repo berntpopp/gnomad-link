@@ -20,12 +20,26 @@ VARIANT_FORMS = [
     "mitochondrial M-POS-REF-ALT (e.g. M-3243-A-G)",
 ]
 
+# Matched values are echoed into next_commands, so every pattern is ASCII-only
+# (no non-Latin digits, bidi or zero-width characters) and length-capped.
 # UniProt accessions are not detected: real symbols share the shape (P2RY12).
-_HGNC_CONVERTIBLE = re.compile(r"HGNC:\d+|[NX][MRP]_\d+(\.\d+)?", re.IGNORECASE)
-_NCBI_GENE = re.compile(r"(?:NCBIGene:)?(\d+)", re.IGNORECASE)
-_ENST = re.compile(r"ENST\d{11}(\.\d+)?", re.IGNORECASE)
-# HGVS: an optional reference, then a c./g./m./n./p./r. description.
-_HGVS = re.compile(r"(?:\S+:)?[cgmnpr]\.\S+")
+_FLAGS = re.IGNORECASE | re.ASCII
+_HGNC_CONVERTIBLE = re.compile(r"HGNC:\d{1,9}|[NX][MRP]_\d{6,12}(\.\d{1,3})?", _FLAGS)
+_NCBI_GENE = re.compile(r"(?:NCBIGene:)?(\d{1,12})", _FLAGS)
+_ENST = re.compile(r"ENST\d{11}(\.\d{1,3})?", _FLAGS)
+# HGVS: an optional reference, then a c./g./m./n./p./r. description that starts like one.
+_HGVS = re.compile(
+    r"(?:(?P<ref>[A-Za-z0-9_.()-]{1,40}):)?"
+    r"(?:[cgmnr]\.[0-9(*=?-]|p\.[A-Za-z(*=?])[A-Za-z0-9_>=?*+()\[\];-]{0,80}",
+    re.ASCII,
+)
+# References a recoder can place: RefSeq / LRG / Ensembl accessions or a chromosome.
+_HGVS_REFERENCE = re.compile(
+    r"[NX][CGMRTW]_\d{1,12}(\.\d{1,3})?(\([A-Za-z0-9_.-]{1,20}\))?|LRG_\d{1,6}(t\d{1,3})?"
+    r"|ENS[TG]\d{11}(\.\d{1,3})?|(chr)?([1-9]|1\d|2[0-2]|X|Y)",
+    _FLAGS,
+)
+_MITO_SNV = re.compile(r"(?:[A-Za-z0-9_.]{1,20}:)?m\.(\d{1,5})([ACGT])>([ACGT])", re.ASCII)
 
 
 def foreign_recovery(
@@ -36,16 +50,27 @@ def foreign_recovery(
         return None
     v = value.strip()
     if kind == "variant":
-        if not _HGVS.fullmatch(v):
+        hgvs = _HGVS.fullmatch(v)
+        if not hgvs:
             return None
         found: dict[str, Any] = {
             "message": "This is an HGVS expression; gnomAD does not convert HGVS.",
             "allowed_values": VARIANT_FORMS,
-            "recovery": "Not a retry: an HGVS expression needs a reference sequence "
+            "recovery": "Not a retry: an HGVS expression needs a reference sequence accession "
             "(e.g. NM_004333.6:c.1799T>A) to be converted to coordinates.",
             "command": None,
         }
-        if ":" in v:
+        if "m." in v and re.search(r"(^|:)m\.", v):
+            found["message"] = "This is a mitochondrial HGVS expression (m.)."
+            found["recovery"] = (
+                "Not a retry: call get_mitochondrial_variant with the M-POS-REF-ALT form "
+                "(m.3243A>G is M-3243-A-G)."
+            )
+            if snv := _MITO_SNV.fullmatch(v):
+                found["command"] = cmd(
+                    "get_mitochondrial_variant", variant_id="M-{}-{}-{}".format(*snv.groups())
+                )
+        elif _HGVS_REFERENCE.fullmatch(hgvs["ref"] or ""):
             args: dict[str, Any] = {"variants": [v], "fields": "vcf_string"}
             if dataset:
                 args["assembly"] = "GRCh37" if dataset == "gnomad_r2_1" else "GRCh38"

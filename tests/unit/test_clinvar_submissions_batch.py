@@ -7,6 +7,7 @@ size and the aliased-query builder without any network access.
 
 from __future__ import annotations
 
+import asyncio
 import re
 from typing import Any
 
@@ -100,3 +101,63 @@ async def test_submissions_batch_failed_chunk_is_best_effort(
     assert result == {}
     assert result.failed_chunks == 1
     assert result.failed_variant_ids == ["1-1-A-G"]
+
+
+@pytest.mark.asyncio
+async def test_chunks_go_out_one_at_a_time_and_stop_at_the_cap(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from gnomad_link.api.client import CLINVAR_SUBMISSIONS_MAX_CHUNKS
+
+    client = UnifiedGnomadClient()
+    in_flight = max_in_flight = calls = 0
+
+    async def fake_raw(
+        query_string: str, variables: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        nonlocal in_flight, max_in_flight, calls
+        in_flight, calls = in_flight + 1, calls + 1
+        max_in_flight = max(max_in_flight, in_flight)
+        await asyncio.sleep(0)
+        in_flight -= 1
+        return {}
+
+    monkeypatch.setattr(client, "execute_raw_query", fake_raw)
+    over = 30  # ids beyond the cap
+    ids = [f"1-{i}-A-G" for i in range(24 * CLINVAR_SUBMISSIONS_MAX_CHUNKS + over)]
+    result = await client.get_clinvar_submissions_batch(ids, "GRCh38")
+    await client.close()
+
+    assert max_in_flight == 1
+    assert calls == CLINVAR_SUBMISSIONS_MAX_CHUNKS
+    assert result.capped == over
+    assert result.failed_variant_ids == ids[-over:]
+
+
+@pytest.mark.asyncio
+async def test_a_rate_limited_chunk_stops_the_rest(monkeypatch: pytest.MonkeyPatch) -> None:
+    from gnomad_link.api import RateLimitedError
+
+    client = UnifiedGnomadClient()
+    calls = 0
+
+    async def fake_raw(
+        query_string: str, variables: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise RateLimitedError("budget spent")
+        ids = re.findall(r'variant_id: "([^"]+)"', query_string)
+        return {f"v{i}": {"variant_id": vid, "submissions": []} for i, vid in enumerate(ids)}
+
+    monkeypatch.setattr(client, "execute_raw_query", fake_raw)
+    ids = [f"1-{i}-A-G" for i in range(24 * 4)]
+    result = await client.get_clinvar_submissions_batch(ids, "GRCh38")
+    await client.close()
+
+    assert calls == 2  # chunks 3 and 4 are not sent
+    assert len(result) == 24
+    assert result.failed_chunks == 3
+    assert result.failed_variant_ids == ids[24:]
+    assert result.capped == 0

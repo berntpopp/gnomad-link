@@ -210,3 +210,13 @@ async def test_tool_is_registered_with_variant_tag_and_open_world() -> None:
     assert tool.tags == {"variant", "search"}
     assert tool.annotations is not None
     assert tool.annotations.open_world_hint is True
+
+
+@pytest.mark.asyncio
+async def test_no_response_mode_parameter_is_advertised() -> None:
+    """The rows are one fixed key-set: a response_mode that changes nothing is not offered."""
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    mcp = create_gnomad_mcp(service_factory=lambda: _SpySvService())
+    tools = {tool.name: tool for tool in await mcp.list_tools()}
+    assert "response_mode" not in tools["search_structural_variants"].parameters["properties"]

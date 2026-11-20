@@ -241,9 +241,7 @@ async def test_every_tool_description_leads_with_use_this_when(fake_service_fact
 def test_server_instructions_include_workflows_and_safety(fake_service_factory) -> None:
     from gnomad_link.mcp.facade import create_gnomad_mcp
 
-    instructions = (
-        create_gnomad_mcp(service_factory=fake_service_factory).instructions or ""
-    )
+    instructions = create_gnomad_mcp(service_factory=fake_service_factory).instructions or ""
 
     assert "Variant frequency" in instructions
     assert "get_server_capabilities" in instructions
@@ -520,8 +518,10 @@ def _recovery_text(error_code: str, fallback_tool: str | None) -> str:
         )
     if error_code == "upstream_unavailable":
         return "gnomAD upstream API failed. Safe to retry with exponential backoff."
-    return f"Unexpected failure. Call {fallback_tool} for a safe entry point." if fallback_tool else (
-        "Unexpected failure."
+    return (
+        f"Unexpected failure. Call {fallback_tool} for a safe entry point."
+        if fallback_tool
+        else ("Unexpected failure.")
     )
 
 
@@ -547,9 +547,7 @@ def mcp_tool_error(exc: BaseException, context: McpErrorContext) -> McpToolError
     return McpToolError(payload)
 
 
-def record_mcp_error(
-    *, tool_name: str, error_code: str, message: str, raw_message: str
-) -> None:
+def record_mcp_error(*, tool_name: str, error_code: str, message: str, raw_message: str) -> None:
     _RECENT_ERRORS.append(
         {
             "tool_name": tool_name,
@@ -784,7 +782,7 @@ def get_usage_resource() -> str:
         "# gnomAD Link MCP Usage\n\n"
         "Use CHROM-POS-REF-ALT variant IDs (GRCh38 by default) for SNV/indel frequencies. "
         "Use M-POS-REF-ALT for mitochondrial variants. Compact responses are the default; "
-        "request `response_mode=\"full\"` for debugging and `include_subcohorts=True` to "
+        'request `response_mode="full"` for debugging and `include_subcohorts=True` to '
         "expand population subgroup rows.\n\n"
         f"{RESEARCH_USE_NOTICE}"
     )
@@ -1001,7 +999,9 @@ async def test_get_gene_delegates_to_client(service_with_stub_client) -> None:
         ("liftover_variant", "get_liftover", ("1-1-A-T", "GRCh38")),
     ],
 )
-async def test_service_methods_delegate(service_with_stub_client, service_method, client_method, args) -> None:
+async def test_service_methods_delegate(
+    service_with_stub_client, service_method, client_method, args
+) -> None:
     service, client = service_with_stub_client
     getattr(client, client_method).return_value = {"ok": True}
 
@@ -1024,60 +1024,66 @@ Expected: AttributeError on the new methods.
 Append to `gnomad_link/services/frequency_service.py` (keep existing imports, dataclass, and `get_variant_frequencies`):
 
 ```python
-    async def get_variant(self, variant_id: str, dataset: str = "gnomad_r4") -> dict[str, Any]:
-        return await self.client.get_variant(variant_id, dataset)
+async def get_variant(self, variant_id: str, dataset: str = "gnomad_r4") -> dict[str, Any]:
+    return await self.client.get_variant(variant_id, dataset)
 
-    async def get_gene(
-        self,
-        gene_id: str | None = None,
-        gene_symbol: str | None = None,
-        reference_genome: str | None = None,
-        dataset: str | None = None,
-    ) -> dict[str, Any]:
-        return await self.client.get_gene(gene_id, gene_symbol, reference_genome, dataset)
 
-    async def get_gene_variants(
-        self, gene_id: str, dataset: str = "gnomad_r4"
-    ) -> list[dict[str, Any]]:
-        return await self.client.get_gene_variants(gene_id, dataset)
+async def get_gene(
+    self,
+    gene_id: str | None = None,
+    gene_symbol: str | None = None,
+    reference_genome: str | None = None,
+    dataset: str | None = None,
+) -> dict[str, Any]:
+    return await self.client.get_gene(gene_id, gene_symbol, reference_genome, dataset)
 
-    async def get_clinvar_variant(
-        self, variant_id: str, reference_genome: str = "GRCh38"
-    ) -> dict[str, Any]:
-        return await self.client.get_clinvar_variant(variant_id, reference_genome)
 
-    async def get_clinvar_meta(self) -> dict[str, Any]:
-        return await self.client.get_meta()
+async def get_gene_variants(self, gene_id: str, dataset: str = "gnomad_r4") -> list[dict[str, Any]]:
+    return await self.client.get_gene_variants(gene_id, dataset)
 
-    async def get_structural_variant(
-        self, variant_id: str, dataset: str = "gnomad_sv_r4"
-    ) -> dict[str, Any]:
-        return await self.client.get_structural_variant(variant_id, dataset)
 
-    async def get_mitochondrial_variant(
-        self, variant_id: str, dataset: str = "gnomad_r4"
-    ) -> dict[str, Any]:
-        return await self.client.get_mitochondrial_variant(variant_id, dataset)
+async def get_clinvar_variant(
+    self, variant_id: str, reference_genome: str = "GRCh38"
+) -> dict[str, Any]:
+    return await self.client.get_clinvar_variant(variant_id, reference_genome)
 
-    async def get_region(
-        self, chrom: str, start: int, stop: int, dataset: str = "gnomad_r4"
-    ) -> dict[str, Any]:
-        return await self.client.get_region(chrom, start, stop, dataset)
 
-    async def get_transcript(
-        self, transcript_id: str, reference_genome: str = "GRCh38"
-    ) -> dict[str, Any]:
-        return await self.client.get_transcript(transcript_id, reference_genome)
+async def get_clinvar_meta(self) -> dict[str, Any]:
+    return await self.client.get_meta()
 
-    async def search_variants(
-        self, query: str, dataset: str = "gnomad_r4"
-    ) -> list[dict[str, Any]]:
-        return await self.client.search_variants(query, dataset)
 
-    async def liftover_variant(
-        self, source_variant_id: str, reference_genome: str = "GRCh38"
-    ) -> list[dict[str, Any]]:
-        return await self.client.get_liftover(source_variant_id, reference_genome)
+async def get_structural_variant(
+    self, variant_id: str, dataset: str = "gnomad_sv_r4"
+) -> dict[str, Any]:
+    return await self.client.get_structural_variant(variant_id, dataset)
+
+
+async def get_mitochondrial_variant(
+    self, variant_id: str, dataset: str = "gnomad_r4"
+) -> dict[str, Any]:
+    return await self.client.get_mitochondrial_variant(variant_id, dataset)
+
+
+async def get_region(
+    self, chrom: str, start: int, stop: int, dataset: str = "gnomad_r4"
+) -> dict[str, Any]:
+    return await self.client.get_region(chrom, start, stop, dataset)
+
+
+async def get_transcript(
+    self, transcript_id: str, reference_genome: str = "GRCh38"
+) -> dict[str, Any]:
+    return await self.client.get_transcript(transcript_id, reference_genome)
+
+
+async def search_variants(self, query: str, dataset: str = "gnomad_r4") -> list[dict[str, Any]]:
+    return await self.client.search_variants(query, dataset)
+
+
+async def liftover_variant(
+    self, source_variant_id: str, reference_genome: str = "GRCh38"
+) -> list[dict[str, Any]]:
+    return await self.client.get_liftover(source_variant_id, reference_genome)
 ```
 
 If the client signature for any method differs from what the tests assume (verify by reading `gnomad_link/api/client.py`), align the wrapper signature to the real client — do **not** edit the client.
@@ -1128,7 +1134,9 @@ def test_region_model_roundtrip() -> None:
         "start": 7674232,
         "stop": 7674252,
         "reference_genome": "GRCh38",
-        "genes": [{"gene_id": "ENSG00000141510", "symbol": "TP53", "start": 7661779, "stop": 7687538}],
+        "genes": [
+            {"gene_id": "ENSG00000141510", "symbol": "TP53", "start": 7661779, "stop": 7687538}
+        ],
         "clinvar_variants": [
             {
                 "variant_id": "17-7674232-C-G",
@@ -1233,7 +1241,9 @@ class Region(BaseModel):
     genes: list[RegionGene] = Field(default_factory=list)
     clinvar_variants: list[RegionClinVarVariant] = Field(default_factory=list)
     variants: list[dict] | None = None  # SNV/indel array; opaque until shaping covers it
-    truncated: dict | None = Field(default=None, description="Set when filters or limits dropped rows")
+    truncated: dict | None = Field(
+        default=None, description="Set when filters or limits dropped rows"
+    )
 
     model_config = ConfigDict(extra="allow")
 ```
@@ -1361,14 +1371,26 @@ def _make_response() -> VariantFrequencyResponse:
         an=300_000,
         homozygote_count=2,
         populations=[
-            PopulationFrequency.model_validate({"id": "afr", "ac": 143, "an": 8_000, "homozygote_count": 2}),
-            PopulationFrequency.model_validate({"id": "nfe", "ac": 7, "an": 150_000, "homozygote_count": 0}),
-            PopulationFrequency.model_validate({"id": "non_topmed_afr", "ac": 80, "an": 5_000, "homozygote_count": 1}),
-            PopulationFrequency.model_validate({"id": "afr_XX", "ac": 70, "an": 4_000, "homozygote_count": 1}),
-            PopulationFrequency.model_validate({"id": "asj", "ac": 0, "an": 1_000, "homozygote_count": 0}),
+            PopulationFrequency.model_validate(
+                {"id": "afr", "ac": 143, "an": 8_000, "homozygote_count": 2}
+            ),
+            PopulationFrequency.model_validate(
+                {"id": "nfe", "ac": 7, "an": 150_000, "homozygote_count": 0}
+            ),
+            PopulationFrequency.model_validate(
+                {"id": "non_topmed_afr", "ac": 80, "an": 5_000, "homozygote_count": 1}
+            ),
+            PopulationFrequency.model_validate(
+                {"id": "afr_XX", "ac": 70, "an": 4_000, "homozygote_count": 1}
+            ),
+            PopulationFrequency.model_validate(
+                {"id": "asj", "ac": 0, "an": 1_000, "homozygote_count": 0}
+            ),
         ],
     )
-    return VariantFrequencyResponse(variant_id="1-1-A-T", dataset="gnomad_r4", exome=exome, genome=None)
+    return VariantFrequencyResponse(
+        variant_id="1-1-A-T", dataset="gnomad_r4", exome=exome, genome=None
+    )
 
 
 def test_default_shape_drops_zero_subcohort_and_sex_split() -> None:
@@ -1607,7 +1629,11 @@ def shape_gene_variants(
     dropped = {"by_consequence": 0, "by_max_af": 0, "by_min_ac": 0}
     for v in raw:
         total_seen += 1
-        if consequence and v.get("consequence") != consequence and v.get("major_consequence") != consequence:
+        if (
+            consequence
+            and v.get("consequence") != consequence
+            and v.get("major_consequence") != consequence
+        ):
             dropped["by_consequence"] += 1
             continue
         if max_af is not None and (v.get("af") or 0.0) > max_af:
@@ -1657,7 +1683,9 @@ def shape_variant_details_compact(raw: dict[str, Any]) -> dict[str, Any]:
     return {k: v for k, v in raw.items() if k in keep}
 
 
-def cap_region_span(chrom: str, start: int, stop: int, *, max_bp: int = 100_000) -> tuple[int, int, bool]:
+def cap_region_span(
+    chrom: str, start: int, stop: int, *, max_bp: int = 100_000
+) -> tuple[int, int, bool]:
     """Clamp a region request to `max_bp` and report whether truncation occurred."""
 
     span = stop - start
@@ -1688,13 +1716,20 @@ from gnomad_link.mcp.shaping import cap_region_span, shape_gene_variants
 
 def _gen_variants(n: int) -> list[dict]:
     return [
-        {"variant_id": f"1-{i}-A-T", "af": (i % 10) / 10000, "ac": i, "major_consequence": "missense_variant"}
+        {
+            "variant_id": f"1-{i}-A-T",
+            "af": (i % 10) / 10000,
+            "ac": i,
+            "major_consequence": "missense_variant",
+        }
         for i in range(1, n + 1)
     ]
 
 
 def test_gene_variants_limit_truncates() -> None:
-    payload = shape_gene_variants(_gen_variants(250), limit=50, consequence=None, max_af=None, min_ac=None)
+    payload = shape_gene_variants(
+        _gen_variants(250), limit=50, consequence=None, max_af=None, min_ac=None
+    )
     assert payload["returned"] == 50
     assert payload["truncated"]["kind"] == "gene_variants"
 
@@ -1810,7 +1845,9 @@ def register_variant_tools(
         ] = "gnomad_r4",
         populations: Annotated[
             list[str] | None,
-            Field(description="Restrict to these population codes (e.g. ['afr','nfe']). None returns all kept rows."),
+            Field(
+                description="Restrict to these population codes (e.g. ['afr','nfe']). None returns all kept rows."
+            ),
         ] = None,
         include_subcohorts: Annotated[
             bool,
@@ -1859,9 +1896,7 @@ def register_variant_tools(
             str,
             Field(min_length=5, max_length=200, pattern=r"^[^'\"]+$"),
         ],
-        dataset: Annotated[
-            Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"], Field()
-        ] = "gnomad_r4",
+        dataset: Annotated[Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"], Field()] = "gnomad_r4",
         response_mode: Annotated[
             Literal["compact", "full"],
             Field(description="compact strips raw GraphQL extras; full passes through everything."),
@@ -1879,7 +1914,9 @@ def register_variant_tools(
         return await run_mcp_tool(
             "get_variant_details",
             call,
-            context=McpErrorContext(tool_name="get_variant_details", variant_id=variant_id, dataset=dataset),
+            context=McpErrorContext(
+                tool_name="get_variant_details", variant_id=variant_id, dataset=dataset
+            ),
         )
 ```
 
@@ -1905,9 +1942,7 @@ from gnomad_link.models import Gene
 from gnomad_link.services import FrequencyService
 
 
-def register_gene_tools(
-    mcp: FastMCP, *, service_factory: Callable[[], FrequencyService]
-) -> None:
+def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], FrequencyService]) -> None:
     @mcp.tool(
         name="get_gene_details",
         title="Get Gene Details",
@@ -1915,8 +1950,12 @@ def register_gene_tools(
         output_schema=Gene.model_json_schema(),
     )
     async def get_gene_details(
-        gene_id: Annotated[str | None, Field(description="Ensembl gene ID (preferred over symbol).")] = None,
-        gene_symbol: Annotated[str | None, Field(description="HGNC gene symbol, used if gene_id is absent.")] = None,
+        gene_id: Annotated[
+            str | None, Field(description="Ensembl gene ID (preferred over symbol).")
+        ] = None,
+        gene_symbol: Annotated[
+            str | None, Field(description="HGNC gene symbol, used if gene_id is absent.")
+        ] = None,
         reference_genome: Annotated[Literal["GRCh37", "GRCh38"], Field()] = "GRCh38",
     ) -> dict[str, Any]:
         """Use this when a caller has a gene id or symbol and needs constraint scores (pLI/oe_lof), canonical transcript, and basic coordinates. Follow with get_gene_variants if they then need per-variant rows."""
@@ -1959,10 +1998,10 @@ def register_gene_tools(
     )
     async def get_gene_variants(
         gene_id: Annotated[str, Field(description="Ensembl gene ID.")],
-        dataset: Annotated[
-            Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"], Field()
-        ] = "gnomad_r4",
-        limit: Annotated[int, Field(ge=1, le=500, description="Max variants returned (hard cap 500).")] = 100,
+        dataset: Annotated[Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"], Field()] = "gnomad_r4",
+        limit: Annotated[
+            int, Field(ge=1, le=500, description="Max variants returned (hard cap 500).")
+        ] = 100,
         consequence: Annotated[
             str | None,
             Field(description="VEP major_consequence to keep (e.g. 'missense_variant')."),
@@ -1971,7 +2010,9 @@ def register_gene_tools(
             float | None,
             Field(ge=0.0, le=1.0, description="Drop variants whose AF exceeds this threshold."),
         ] = None,
-        min_ac: Annotated[int | None, Field(ge=0, description="Drop variants whose AC is below this threshold.")] = None,
+        min_ac: Annotated[
+            int | None, Field(ge=0, description="Drop variants whose AC is below this threshold.")
+        ] = None,
     ) -> dict[str, Any]:
         """Use this when a caller wants per-variant rows inside a gene. Large genes (e.g. TTN) return tens of thousands of variants upstream; this tool caps at 500 and exposes consequence/AF/AC filters. Returns a `truncated` block whenever the cap fires."""
 
@@ -2086,9 +2127,7 @@ def register_clinvar_tools(
         return await run_mcp_tool(
             "get_clinvar_variant_details",
             call,
-            context=McpErrorContext(
-                tool_name="get_clinvar_variant_details", variant_id=variant_id
-            ),
+            context=McpErrorContext(tool_name="get_clinvar_variant_details", variant_id=variant_id),
         )
 
     @mcp.tool(
@@ -2159,14 +2198,16 @@ def register_coordinate_tools(
         async def call() -> dict[str, Any]:
             service = service_factory()
             results = await service.liftover_variant(source_variant_id, reference_genome)
-            return {"results": results, "source_variant_id": source_variant_id, "source_reference_genome": reference_genome}
+            return {
+                "results": results,
+                "source_variant_id": source_variant_id,
+                "source_reference_genome": reference_genome,
+            }
 
         return await run_mcp_tool(
             "liftover_variant",
             call,
-            context=McpErrorContext(
-                tool_name="liftover_variant", variant_id=source_variant_id
-            ),
+            context=McpErrorContext(tool_name="liftover_variant", variant_id=source_variant_id),
         )
 
     @mcp.tool(
@@ -2178,12 +2219,15 @@ def register_coordinate_tools(
     async def get_region(
         region: Annotated[
             str,
-            Field(description="Region in chr-start-stop format (e.g. 17-7674232-7674252).", pattern=_REGION_PATTERN),
+            Field(
+                description="Region in chr-start-stop format (e.g. 17-7674232-7674252).",
+                pattern=_REGION_PATTERN,
+            ),
         ],
-        dataset: Annotated[
-            Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"], Field()
-        ] = "gnomad_r4",
-        include_clinvar: Annotated[bool, Field(description="Include ClinVar variants in the region.")] = True,
+        dataset: Annotated[Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"], Field()] = "gnomad_r4",
+        include_clinvar: Annotated[
+            bool, Field(description="Include ClinVar variants in the region.")
+        ] = True,
         include_genes: Annotated[bool, Field(description="Include overlapping genes.")] = True,
     ) -> dict[str, Any]:
         """Use this when a caller wants genes and/or ClinVar variants in a small region (≤100kb). Spans larger than 100kb are clamped and a `truncated` block reports it. For per-variant SNV listings use get_gene_variants instead."""
@@ -2249,10 +2293,10 @@ def register_specialty_tools(
         output_schema=StructuralVariant.model_json_schema(),
     )
     async def get_structural_variant(
-        variant_id: Annotated[str, Field(description="gnomAD SV identifier.", min_length=3, max_length=200)],
-        dataset: Annotated[
-            Literal["gnomad_sv_r2_1", "gnomad_sv_r4"], Field()
-        ] = "gnomad_sv_r4",
+        variant_id: Annotated[
+            str, Field(description="gnomAD SV identifier.", min_length=3, max_length=200)
+        ],
+        dataset: Annotated[Literal["gnomad_sv_r2_1", "gnomad_sv_r4"], Field()] = "gnomad_sv_r4",
     ) -> dict[str, Any]:
         """Use this when a caller has a gnomAD structural variant id (deletions, duplications, inversions, BNDs). For SNVs/indels use get_variant_frequencies instead."""
 
@@ -2278,11 +2322,13 @@ def register_specialty_tools(
     async def get_mitochondrial_variant(
         variant_id: Annotated[
             str,
-            Field(description="Mitochondrial variant in M-POS-REF-ALT format.", min_length=5, max_length=100),
+            Field(
+                description="Mitochondrial variant in M-POS-REF-ALT format.",
+                min_length=5,
+                max_length=100,
+            ),
         ],
-        dataset: Annotated[
-            Literal["gnomad_r3", "gnomad_r4"], Field()
-        ] = "gnomad_r4",
+        dataset: Annotated[Literal["gnomad_r3", "gnomad_r4"], Field()] = "gnomad_r4",
     ) -> dict[str, Any]:
         """Use this when a caller has a mitochondrial variant id (M-POS-REF-ALT). Mitochondrial ploidy and heteroplasmy fields are returned; for autosomal variants use get_variant_frequencies."""
 
@@ -2306,7 +2352,9 @@ def register_specialty_tools(
         output_schema=Transcript.model_json_schema(),
     )
     async def get_transcript_details(
-        transcript_id: Annotated[str, Field(description="Ensembl transcript ID (ENST…)", min_length=4, max_length=80)],
+        transcript_id: Annotated[
+            str, Field(description="Ensembl transcript ID (ENST…)", min_length=4, max_length=80)
+        ],
         reference_genome: Annotated[Literal["GRCh37", "GRCh38"], Field()] = "GRCh38",
     ) -> dict[str, Any]:
         """Use this when a caller has an Ensembl transcript id and needs exon structure or GTEx tissue expression. For gene-level info use get_gene_details."""
@@ -2343,9 +2391,7 @@ from gnomad_link.models import GeneSearchResult, VariantSearchResult
 from gnomad_link.services import FrequencyService
 
 
-def register_search_tools(
-    mcp: FastMCP, *, service_factory: Callable[[], FrequencyService]
-) -> None:
+def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], FrequencyService]) -> None:
     @mcp.tool(
         name="search_genes",
         title="Search Genes",
@@ -2361,7 +2407,14 @@ def register_search_tools(
         },
     )
     async def search_genes(
-        query: Annotated[str, Field(min_length=2, max_length=100, description="Gene symbol, name fragment, or Ensembl ID.")],
+        query: Annotated[
+            str,
+            Field(
+                min_length=2,
+                max_length=100,
+                description="Gene symbol, name fragment, or Ensembl ID.",
+            ),
+        ],
         reference_genome: Annotated[Literal["GRCh37", "GRCh38"], Field()] = "GRCh38",
         limit: Annotated[int, Field(ge=1, le=50, description="Max matches returned.")] = 25,
     ) -> dict[str, Any]:
@@ -2404,11 +2457,11 @@ def register_search_tools(
     async def resolve_variant_id(
         query: Annotated[
             str,
-            Field(min_length=3, max_length=100, description="rsID, CHROM-POS-REF-ALT, or 'CHROM:POS'."),
+            Field(
+                min_length=3, max_length=100, description="rsID, CHROM-POS-REF-ALT, or 'CHROM:POS'."
+            ),
         ],
-        dataset: Annotated[
-            Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"], Field()
-        ] = "gnomad_r4",
+        dataset: Annotated[Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"], Field()] = "gnomad_r4",
         limit: Annotated[int, Field(ge=1, le=25)] = 10,
     ) -> dict[str, Any]:
         """Use this when the caller only has an rsID, partial coordinates, or text fragment and needs to obtain a canonical gnomAD variant id. Returns IDs only — call get_variant_frequencies or get_variant_details next."""
@@ -2449,9 +2502,7 @@ def register_search_tools(
     )
     async def search_variants(
         query: Annotated[str, Field(min_length=3, max_length=100)],
-        dataset: Annotated[
-            Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"], Field()
-        ] = "gnomad_r4",
+        dataset: Annotated[Literal["gnomad_r2_1", "gnomad_r3", "gnomad_r4"], Field()] = "gnomad_r4",
         limit: Annotated[int, Field(ge=1, le=25)] = 10,
     ) -> dict[str, Any]:
         """Use this when a caller uses the legacy tool name — deprecated alias for resolve_variant_id. Same behaviour; will be removed in the next release."""
@@ -2653,9 +2704,7 @@ class UnifiedServerManager:
 
     # ---------------- MCP creation ----------------
 
-    def _create_mcp_server(
-        self, service_factory: Callable[[], FrequencyService]
-    ) -> FastMCP:
+    def _create_mcp_server(self, service_factory: Callable[[], FrequencyService]) -> FastMCP:
         try:
             mcp = create_gnomad_mcp(service_factory=service_factory)
             self.logger.info("MCP facade created")
@@ -2712,8 +2761,11 @@ class UnifiedServerManager:
             self._setup_signal_handlers()
 
             uvicorn_config = uvicorn.Config(
-                app=self.app, host=config.host, port=config.port,
-                log_level=config.log_level.lower(), access_log=True,
+                app=self.app,
+                host=config.host,
+                port=config.port,
+                log_level=config.log_level.lower(),
+                access_log=True,
             )
             await uvicorn.Server(uvicorn_config).serve()
         except Exception as e:
@@ -2944,9 +2996,7 @@ async def test_get_variant_frequencies_live(mcp_with_live_service) -> None:
 
 @pytest.mark.asyncio
 async def test_get_gene_details_live(mcp_with_live_service) -> None:
-    result = await mcp_with_live_service.call_tool(
-        "get_gene_details", {"gene_symbol": "PCSK9"}
-    )
+    result = await mcp_with_live_service.call_tool("get_gene_details", {"gene_symbol": "PCSK9"})
     payload = result.structured_content or {}
     assert payload["symbol"] == "PCSK9"
     assert payload["constraint"]["pLI"] is not None
@@ -2954,9 +3004,7 @@ async def test_get_gene_details_live(mcp_with_live_service) -> None:
 
 @pytest.mark.asyncio
 async def test_resolve_variant_id_returns_ids_only(mcp_with_live_service) -> None:
-    result = await mcp_with_live_service.call_tool(
-        "resolve_variant_id", {"query": "rs11591147"}
-    )
+    result = await mcp_with_live_service.call_tool("resolve_variant_id", {"query": "rs11591147"})
     payload = result.structured_content or {}
     assert payload["returned"] >= 1
     for r in payload["results"]:
@@ -2965,9 +3013,7 @@ async def test_resolve_variant_id_returns_ids_only(mcp_with_live_service) -> Non
 
 @pytest.mark.asyncio
 async def test_get_region_caps_span(mcp_with_live_service) -> None:
-    result = await mcp_with_live_service.call_tool(
-        "get_region", {"region": "1-55000000-56000000"}
-    )
+    result = await mcp_with_live_service.call_tool("get_region", {"region": "1-55000000-56000000"})
     payload = result.structured_content or {}
     assert payload.get("truncated", {}).get("kind") == "region_span"
 
@@ -2975,7 +3021,8 @@ async def test_get_region_caps_span(mcp_with_live_service) -> None:
 @pytest.mark.asyncio
 async def test_get_gene_variants_caps_at_limit(mcp_with_live_service) -> None:
     result = await mcp_with_live_service.call_tool(
-        "get_gene_variants", {"gene_id": "ENSG00000155657", "limit": 50}  # TTN
+        "get_gene_variants",
+        {"gene_id": "ENSG00000155657", "limit": 50},  # TTN
     )
     payload = result.structured_content or {}
     assert payload["returned"] == 50

@@ -16,6 +16,8 @@ import logging
 import math
 import random
 import time
+from collections.abc import Awaitable, Callable
+from contextvars import ContextVar
 from typing import Any
 
 from gql import Client, gql
@@ -134,6 +136,21 @@ def _rate_limit_headers(exc: BaseException) -> dict[str, str]:
     }
 
 
+# Loop time by which the current tool call must stop WAITING on upstream (pacing,
+# cooldown, retry backoff); None outside a tool call (the budget then runs per request).
+_CALL_DEADLINE: ContextVar[float | None] = ContextVar("gnomad_call_deadline", default=None)
+
+
+async def with_call_budget[T](call: Callable[[], Awaitable[T]]) -> T:
+    """Run one tool call under a single GNOMAD_CALL_WAIT_BUDGET shared by all its requests."""
+    deadline = asyncio.get_running_loop().time() + settings.GNOMAD_CALL_WAIT_BUDGET
+    token = _CALL_DEADLINE.set(deadline)
+    try:
+        return await call()
+    finally:
+        _CALL_DEADLINE.reset(token)
+
+
 class BaseGnomadClient:
     """Base client for gnomAD GraphQL API."""
 
@@ -211,7 +228,9 @@ class BaseGnomadClient:
                 "Retry with exponential backoff or fan out fewer calls at once."
             ) from exc
 
-    def _reserve_send_time(self, now: float, queue_wait_deadline: float) -> tuple[float, float]:
+    def _reserve_send_time(
+        self, now: float, queue_wait_deadline: float, call_deadline: float = math.inf
+    ) -> tuple[float, float]:
         """Take a rate token; return (seconds to wait, cooldown part of that wait).
 
         GNOMAD_RATE_BURST requests go out immediately, then one per
@@ -219,9 +238,16 @@ class BaseGnomadClient:
         every request back and is NOT charged to the queue-wait budget (upstream
         imposed it); a pacing wait that would overrun the budget raises a
         retryable RateLimitedError without taking a token (fast backpressure).
+        So does any wait, cooldown included, that would pass the call's budget.
         """
         cooldown = max(0.0, self._cooldown_until - now)
         send_at = max(now + cooldown, self._rate_tat - self._rate_burst_tolerance)
+        if send_at > call_deadline:
+            raise RateLimitedError(
+                "gnomAD is rate-limiting and the next send time is beyond this call's wait "
+                f"budget ({settings.GNOMAD_CALL_WAIT_BUDGET} s). Retry after retry_after_seconds.",
+                retry_after_seconds=send_at - now,
+            )
         if send_at > queue_wait_deadline + cooldown:
             raise RateLimitedError(
                 "Local request-rate limit saturated "
@@ -231,6 +257,29 @@ class BaseGnomadClient:
             )
         self._rate_tat = max(self._rate_tat, send_at) + self._rate_interval
         return send_at - now, cooldown
+
+    async def _wait_for_send_time(
+        self, loop: asyncio.AbstractEventLoop, queue_wait_deadline: float, call_deadline: float
+    ) -> tuple[float, float]:
+        """Wait out pacing and any 429 cooldown; return (queue-wait deadline, time waited to).
+
+        A 429 that arrives while this request waits voids its send time: the
+        cooldown is re-checked after the pause and the request reserves again, so
+        nothing that was already queued goes out during a cooldown.
+        """
+        while True:
+            now = loop.time()
+            pause, cooldown = self._reserve_send_time(now, queue_wait_deadline, call_deadline)
+            queue_wait_deadline += cooldown
+            if pause <= 0:
+                return queue_wait_deadline, now
+            try:
+                await asyncio.sleep(pause)
+            except asyncio.CancelledError:
+                self._rate_tat -= self._rate_interval  # a cancelled waiter gives its token back
+                raise
+            if now + pause >= self._cooldown_until:
+                return queue_wait_deadline, now + pause
 
     async def _execute_with_retry(
         self, query_doc: Any, variables: dict[str, Any], name: str = "raw"
@@ -246,18 +295,19 @@ class BaseGnomadClient:
         """
         delay = _BACKOFF_BASE_SECONDS
         loop = asyncio.get_running_loop()
-        queue_wait_deadline = loop.time() + settings.GNOMAD_QUEUE_WAIT_TIMEOUT
+        started_at = loop.time()
+        queue_wait_deadline = started_at + settings.GNOMAD_QUEUE_WAIT_TIMEOUT
+        # One budget for every wait of the tool call (all its requests and retries).
+        call_deadline = _CALL_DEADLINE.get() or started_at + settings.GNOMAD_CALL_WAIT_BUDGET
         for attempt in range(_MAX_ATTEMPTS):
             try:
                 session = await self._ensure_session()
                 # Pacing plus any shared 429 cooldown: the limit is per egress
                 # IP, not per request.
-                now = loop.time()
-                pause, cooldown = self._reserve_send_time(now, queue_wait_deadline)
-                queue_wait_deadline += cooldown
-                if pause > 0:
-                    await asyncio.sleep(pause)
-                queue_wait_remaining = max(0.0, queue_wait_deadline - now - pause)
+                queue_wait_deadline, now = await self._wait_for_send_time(
+                    loop, queue_wait_deadline, call_deadline
+                )
+                queue_wait_remaining = max(0.0, min(queue_wait_deadline, call_deadline) - now)
                 await self._acquire_slot(timeout=queue_wait_remaining)
                 started = time.perf_counter()
                 outcome: int | str = "ok"
@@ -307,6 +357,8 @@ class BaseGnomadClient:
                     # An upstream-imposed wait is not local queueing: keep the
                     # queue-wait budget so the retry can outlast the cooldown.
                     queue_wait_deadline += wait
+                if loop.time() + wait > call_deadline:
+                    raise  # the next wait would pass the call's budget: answer now
                 await asyncio.sleep(wait)
                 delay = min(delay * 2, _BACKOFF_MAX_SECONDS)
         raise GnomadApiError("retry loop exhausted")  # pragma: no cover - guard

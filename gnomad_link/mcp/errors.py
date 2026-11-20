@@ -22,6 +22,7 @@ from gnomad_link.api import (
     GnomadApiError,
     RateLimitedError,
     UpstreamInputError,
+    with_call_budget,
 )
 from gnomad_link.mcp.clinvar_date_cache import get_cached_clinvar_release_date
 from gnomad_link.mcp.foreign_ids import redirect_validation_payload
@@ -563,7 +564,7 @@ async def run_mcp_tool(
 
     ctx = context or McpErrorContext(tool_name=tool_name)
     try:
-        result = await call()
+        result = await with_call_budget(call)
         # Inject research-use meta into every successful dict response unless
         # the tool already provides _meta (e.g. search_variants deprecation note).
         # A symmetric success:true flag lets callers branch on `success` instead

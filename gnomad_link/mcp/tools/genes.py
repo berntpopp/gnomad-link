@@ -213,7 +213,9 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
 
         async def call() -> dict[str, Any]:
             reject_foreign(gene_id, "gene", field="gene_id", tool="get_gene_variants")
-            if not re.fullmatch(GENE_ID_PATTERN if ensg else GENE_SYMBOL_PATTERN, gene_id):
+            if not re.fullmatch(
+                GENE_ID_PATTERN if ensg else GENE_SYMBOL_PATTERN, gene_id, re.ASCII
+            ):
                 raise ToolInputError(
                     "gene_id must be an Ensembl gene id (ENSG + 11 digits) or a gene symbol."
                 )

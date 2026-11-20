@@ -6,6 +6,7 @@ from .base_client import (
     RateLimitedError,
     UpstreamInputError,
     VariantNotFoundError,
+    with_call_budget,
 )
 from .client import UnifiedGnomadClient
 
@@ -18,4 +19,5 @@ __all__ = [
     "DataNotFoundError",
     "UpstreamInputError",
     "RateLimitedError",
+    "with_call_budget",
 ]

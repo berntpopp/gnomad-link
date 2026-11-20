@@ -63,8 +63,8 @@ def register_gene_carrier_tools(
             bool,
             Field(
                 description="Include conflicting ClinVar variants, resolved by P/LP "
-                "submission share. Resolution is batched server-side (~1 extra request "
-                "per 24 conflicting variants), so this stays fast.",
+                "submission share: 1 extra request per 24 variants, sent in turn; "
+                "only the first 288 are resolved, the rest are counted in `degraded`.",
             ),
         ] = False,
         conflicting_threshold: Annotated[
