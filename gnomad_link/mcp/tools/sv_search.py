@@ -11,6 +11,7 @@ from pydantic import Field
 
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, ToolInputError, run_mcp_tool
+from gnomad_link.mcp.foreign_ids import reject_foreign
 from gnomad_link.mcp.sv_shaping import shape_sv_search
 from gnomad_link.services import FrequencyService
 
@@ -106,6 +107,8 @@ def register_sv_search_tools(
             # Classify INSIDE call() so a region-shaped-but-invalid target raises
             # ToolInputError through the run_mcp_tool chokepoint (-> invalid_input).
             gene_symbol, gene_id, region = _classify_sv_target(target)
+            if gene_symbol:
+                reject_foreign(target, "gene", field="target", tool="search_structural_variants")
             service = service_factory()
             raw = await service.search_structural_variants(
                 gene_symbol=gene_symbol,

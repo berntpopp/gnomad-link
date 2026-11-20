@@ -1,5 +1,6 @@
-query gene_variants($gene_id: String!, $dataset: DatasetId!, $reference_genome: ReferenceGenomeId!) {
-    gene(gene_id: $gene_id, reference_genome: $reference_genome) {
+query gene_variants($gene_id: String, $gene_symbol: String, $dataset: DatasetId!, $reference_genome: ReferenceGenomeId!) {
+    gene(gene_id: $gene_id, gene_symbol: $gene_symbol, reference_genome: $reference_genome) {
+        gene_id
         variants(dataset: $dataset) {
             variant_id
             pos

@@ -17,9 +17,26 @@ All notable changes to gnomad-link are documented here.
 - `get_variant_frequencies` on `not_found` looks the id up once in the other genome
   build's dataset (#145). If it exists there the error names it (`found_in`) and puts the
   re-call first in `_meta.next_commands`; if not, it says the id is in neither build.
+- An identifier in a namespace a tool does not take is answered before any upstream
+  request with `invalid_input`, `field`, `allowed_values` and the converter call first in
+  `_meta.next_commands` (genefoundry-router#343), instead of an empty success or a
+  "GraphQL rejected" error:
+  - gene tools (`search_genes`, `get_gene_details`, `get_gene_variants`, `get_gene_summary`,
+    `compute_gene_carrier_frequency`, and a gene `target` of `get_coverage` /
+    `search_structural_variants`): `HGNC:n` or a RefSeq accession → `hgnc_resolve_symbol`;
+    `NCBIGene:n` or a bare number → `hgnc_resolve_gene_by_xref`; an Ensembl transcript id →
+    `get_transcript_details`.
+  - variant tools: an HGVS expression → `vep_recode_variant` (`fields: vcf_string`), on
+    `resolve_variant_id` / `search_variants` and on every `variant_id` parameter.
+- `search_genes` with no hit for a single-token query points `_meta.next_commands` at
+  `hgnc_resolve_symbol` (aliases, previous symbols, accessions).
 
 ### Changed
 
+- `get_gene_variants` accepts a gene symbol as `gene_id`, like `get_gene_details`. gnomAD
+  looks the gene up by symbol in the same single request (no extra upstream call), and the
+  response echoes `resolved_from: {input, form: "symbol", resolved_to}`. The `gene_id`
+  schema pattern is gone; the shape is checked in the tool.
 - Every upstream request is logged (`gnomad_upstream_request`: query name, outcome,
   attempt, duration) and a 429 logs its rate-limit headers (`gnomad_upstream_429`).
 - `search_genes` results are cached for `GENE_SEARCH_CACHE_TTL_MINUTES` (default 1440)

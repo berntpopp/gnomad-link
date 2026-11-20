@@ -158,7 +158,7 @@ async def test_reviewed_normalized_baseline_projection_fits_budget(
     projected_tokens = (REVIEWED_NORMALIZED_NON_TARGET_CHARS + target_description_chars) // 4
 
     assert REVIEWED_NORMALIZED_BEFORE_TOKENS > MAX_SERVER_SURFACE_TOKENS
-    assert projected_tokens == 9_979
+    assert projected_tokens == 9_981
     assert projected_tokens <= MAX_SERVER_SURFACE_TOKENS
 
 

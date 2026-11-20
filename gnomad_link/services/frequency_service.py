@@ -471,6 +471,10 @@ class FrequencyService:
         """Raw gene variants pass-through."""
         return await self.client.get_gene_variants(gene_id, dataset)
 
+    async def get_gene_with_variants(self, gene_symbol: str, dataset: str) -> dict[str, Any]:
+        """The gene node (gene_id + variants) looked up by symbol, in one request."""
+        return await self.client.get_gene_with_variants(dataset, gene_symbol=gene_symbol)
+
     async def get_clinvar_meta(self) -> dict[str, Any]:
         """Raw ClinVar metadata pass-through."""
         return await self.client.get_meta()

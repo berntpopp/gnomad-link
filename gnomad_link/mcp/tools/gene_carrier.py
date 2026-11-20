@@ -15,6 +15,7 @@ from pydantic import Field
 
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
+from gnomad_link.mcp.foreign_ids import reject_foreign
 from gnomad_link.mcp.gene_carrier_shaping import shape_gene_carrier
 from gnomad_link.mcp.minimal_shaping import project_gene_carrier_frequency_minimal
 from gnomad_link.mcp.patterns import split_gene
@@ -113,6 +114,7 @@ def register_gene_carrier_tools(
         gene_id, gene_symbol = split_gene(gene)
 
         async def call() -> dict[str, Any]:
+            reject_foreign(gene, "gene", field="gene", tool="compute_gene_carrier_frequency")
             service = service_factory()
             raw = await service.get_gene_carrier_frequency(
                 gene_id=gene_id,

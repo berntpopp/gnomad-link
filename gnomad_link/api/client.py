@@ -350,16 +350,24 @@ class UnifiedGnomadClient(BaseGnomadClient):
         Returns:
             List of variants in the gene
         """
-        version = QueryBuilder.get_version_for_dataset(dataset)
-        # Process variables to add reference genome
-        variables = {"gene_id": gene_id, "dataset": dataset}
-        processed_vars = self.query_builder.process_variables("gene_variants", variables, version)
+        gene = await self.get_gene_with_variants(dataset, gene_id=gene_id)
+        return list(gene.get("variants") or [])
 
+    async def get_gene_with_variants(
+        self,
+        dataset: str = "gnomad_r4",
+        *,
+        gene_id: str | None = None,
+        gene_symbol: str | None = None,
+    ) -> dict[str, Any]:
+        """The ``gene`` node (gene_id + variants) by Ensembl id or symbol, in ONE request."""
+        version = QueryBuilder.get_version_for_dataset(dataset)
+        key = {"gene_id": gene_id} if gene_id else {"gene_symbol": gene_symbol}
+        processed_vars = self.query_builder.process_variables(
+            "gene_variants", {**key, "dataset": dataset}, version
+        )
         result = await self.execute_query("gene_variants", processed_vars, version)
-        # Extract variants from nested structure
-        if "gene" in result and "variants" in result["gene"]:
-            return list(result["gene"]["variants"])
-        return []
+        return dict(result.get("gene") or {})
 
     async def get_gene_carrier_variants(
         self,

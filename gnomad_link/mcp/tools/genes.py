@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from typing import Annotated, Any, Literal
 
@@ -9,11 +10,12 @@ from fastmcp import FastMCP
 from pydantic import Field
 
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
-from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
+from gnomad_link.mcp.errors import McpErrorContext, ToolInputError, run_mcp_tool
+from gnomad_link.mcp.foreign_ids import reject_foreign
 from gnomad_link.mcp.headline import gene_details_headline
 from gnomad_link.mcp.minimal_shaping import project_gene_details_minimal
 from gnomad_link.mcp.next_commands import cmd
-from gnomad_link.mcp.patterns import GENE_ID_PATTERN, split_gene
+from gnomad_link.mcp.patterns import GENE_ID_PATTERN, GENE_SYMBOL_PATTERN, split_gene
 from gnomad_link.mcp.shaping import shape_gene_details_compact, shape_gene_variants
 from gnomad_link.services import FrequencyService
 
@@ -97,6 +99,7 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
         gene_id, gene_symbol = split_gene(gene)
 
         async def call() -> dict[str, Any]:
+            reject_foreign(gene, "gene", field="gene", tool="get_gene_details")
             service = service_factory()
             gene_obj = await service.get_gene(
                 gene_id=gene_id,
@@ -152,8 +155,7 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
         gene_id: Annotated[
             str,
             Field(
-                description="Ensembl gene ID.",
-                pattern=GENE_ID_PATTERN,
+                description="Ensembl gene ID or gene symbol.",
                 examples=["ENSG00000169174"],
             ),
         ],
@@ -205,11 +207,31 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
             Field(description="Drop populations with allele_count == 0 from each variant."),
         ] = True,
     ) -> dict[str, Any]:
-        """Use this when a caller wants per-variant rows for an Ensembl gene; returns each variant's id, consequence, HGVS, and AC/AN/AF. Caps large results at 500; consequence/AF/AC filters and include_populations control payload size. Reports cap use in `truncated` and describes retained population fields in `population_projection`. Returns ~5-45kB at the default limit=100."""
+        """Use this when a caller wants per-variant rows for a gene (ENSG/symbol); returns each variant's id, consequence, HGVS, and AC/AN/AF. Caps large results at 500; consequence/AF/AC filters and include_populations control payload size. Reports cap use in `truncated` and describes retained population fields in `population_projection`. Returns ~5-45kB at the default limit=100."""
+
+        ensg, symbol = split_gene(gene_id)
 
         async def call() -> dict[str, Any]:
+            reject_foreign(gene_id, "gene", field="gene_id", tool="get_gene_variants")
+            if not re.fullmatch(GENE_ID_PATTERN if ensg else GENE_SYMBOL_PATTERN, gene_id):
+                raise ToolInputError(
+                    "gene_id must be an Ensembl gene id (ENSG + 11 digits) or a gene symbol."
+                )
             service = service_factory()
-            raw = await service.get_gene_variants(gene_id, dataset)
+            resolved_from: dict[str, str] | None = None
+            if symbol:
+                # Same single upstream request as the id path: gnomAD looks the gene up by symbol.
+                gene = await service.get_gene_with_variants(symbol, dataset)
+                raw = list(gene.get("variants") or [])
+                if gene.get("gene_id"):
+                    resolved_from = {
+                        "input": symbol,
+                        "form": "symbol",
+                        "resolved_to": gene["gene_id"],
+                    }
+            else:
+                raw = await service.get_gene_variants(gene_id, dataset)
+            gene_ref = resolved_from["resolved_to"] if resolved_from else gene_id
             result = shape_gene_variants(
                 raw,
                 limit=limit,
@@ -223,12 +245,14 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
             )
             # Follow up with gene-level context, and ClinVar for the first row.
             variants = result.get("variants") or []
-            cmds = [cmd("get_gene_details", gene=gene_id)]
+            cmds = [cmd("get_gene_details", gene=gene_ref)]
             if variants and variants[0].get("variant_id"):
                 cmds.append(
                     cmd("get_clinvar_variant_details", variant_id=variants[0]["variant_id"])
                 )
             result.setdefault("_meta", {})["next_commands"] = cmds
+            if resolved_from:
+                result["resolved_from"] = resolved_from
             return result
 
         return await run_mcp_tool(
@@ -236,7 +260,8 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
             call,
             context=McpErrorContext(
                 tool_name="get_gene_variants",
-                gene_id=gene_id,
+                gene_id=ensg,
+                gene_symbol=symbol,
                 dataset=dataset,
             ),
         )

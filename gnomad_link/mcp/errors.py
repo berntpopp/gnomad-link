@@ -24,12 +24,8 @@ from gnomad_link.api import (
     UpstreamInputError,
 )
 from gnomad_link.mcp.clinvar_date_cache import get_cached_clinvar_release_date
-from gnomad_link.mcp.mito_redirect import (
-    MITO_RECOVERY,
-    MITO_TOOL,
-    MitoIdRedirectError,
-    redirect_validation_payload,
-)
+from gnomad_link.mcp.foreign_ids import redirect_validation_payload
+from gnomad_link.mcp.mito_redirect import MITO_RECOVERY, MITO_TOOL, MitoIdRedirectError
 from gnomad_link.mcp.recovery import DATASET_BUILD as _DATASET_BUILD
 from gnomad_link.mcp.recovery import liftover_recovery_command
 from gnomad_link.mcp.resources import GNOMAD_DATA_RELEASE

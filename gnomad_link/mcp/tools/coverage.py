@@ -16,6 +16,7 @@ from gnomad_link.mcp.build_check import (
 )
 from gnomad_link.mcp.coverage_shaping import shape_coverage_payload
 from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, ToolInputError, run_mcp_tool
+from gnomad_link.mcp.foreign_ids import reject_foreign
 from gnomad_link.mcp.headline import coverage_headline
 from gnomad_link.mcp.mito_redirect import MitoIdRedirectError
 from gnomad_link.mcp.patterns import as_mito_variant_id
@@ -119,6 +120,8 @@ def register_coverage_tools(
             # raises ToolInputError through the run_mcp_tool chokepoint
             # (-> invalid_input), never a silently-empty gene lookup.
             gene_symbol, gene_id, region, variant_id = _classify_coverage_target(target)
+            if gene_symbol:
+                reject_foreign(target, "gene", field="target", tool="get_coverage")
             service = service_factory()
 
             if region is not None:
