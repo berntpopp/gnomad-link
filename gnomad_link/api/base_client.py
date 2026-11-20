@@ -124,6 +124,7 @@ class BaseGnomadClient:
             url=self.api_url,
             timeout=settings.GNOMAD_REQUEST_TIMEOUT,
             ssl=True,
+            client_session_args={"trust_env": True},
         )
         self._client = Client(
             transport=self._transport,
