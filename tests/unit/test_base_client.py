@@ -612,3 +612,7 @@ class TestBaseGnomadClient:
         error = GnomadApiError("API error occurred")
         assert str(error) == "API error occurred"
         assert isinstance(error, Exception)
+
+    def test_transport_trusts_proxy_env(self, client):
+        """AIOHTTPTransport must enable aiohttp trust_env so HTTPS_PROXY/NO_PROXY apply."""
+        assert client._transport.client_session_args == {"trust_env": True}
