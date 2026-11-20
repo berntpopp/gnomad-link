@@ -10,6 +10,7 @@ import requests
 # API endpoint
 url = "https://gnomad.broadinstitute.org/api/"
 
+
 # Helper function
 def query_gnomad(query):
     response = requests.post(url, json={"query": query})
@@ -20,7 +21,7 @@ def query_gnomad(query):
 
 ```python
 # Get allele frequency for a variant
-query = '''
+query = """
 {
   variant(variantId: "1-55516888-G-A", dataset: gnomad_r4) {
     variant_id
@@ -31,7 +32,7 @@ query = '''
     }
   }
 }
-'''
+"""
 
 result = query_gnomad(query)
 print(f"Allele frequency: {result['data']['variant']['genome']['af']}")

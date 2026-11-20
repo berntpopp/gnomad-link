@@ -53,10 +53,26 @@ class Settings(BaseSettings):
     # fan-out queue until the caller's own tool-call timeout fires. Bounds only
     # the queue wait; the request timeout above still covers the upstream call.
     GNOMAD_QUEUE_WAIT_TIMEOUT: int = 20
+    # Sustained upstream request rate (token bucket; 0 disables pacing) and how
+    # many requests may go out back-to-back. The open-source gnomAD API defaults
+    # to 30 requests per IP per wall-clock minute; 20 plus a burst of 5 stays at
+    # or below 25 in any minute. A token wait shares GNOMAD_QUEUE_WAIT_TIMEOUT.
+    GNOMAD_MAX_REQUESTS_PER_MINUTE: int = 20
+    GNOMAD_RATE_BURST: int = 5
+    # Seconds the whole process stops sending after an upstream 429 without a
+    # Retry-After (a Retry-After is honoured instead, capped at 30 s). Four
+    # retries of 15 s outlast a one-minute upstream window.
+    GNOMAD_RATE_LIMIT_COOLDOWN: int = 15
+    # Max seconds ONE tool call may spend waiting on upstream (pacing, 429
+    # cooldowns, retry backoff) across all its requests, so a call answers
+    # rate_limited with retry_after_seconds before the caller's own timeout fires.
+    GNOMAD_CALL_WAIT_BUDGET: int = 40
 
     # Cache Configuration
     CACHE_SIZE: int = 1024  # Maximum number of variants to cache
     CACHE_TTL_MINUTES: int = 60  # Cache time-to-live in minutes
+    # search_genes hits are stable between gnomAD releases (in-memory only).
+    GENE_SEARCH_CACHE_TTL_MINUTES: int = 1440
 
     # Transport Configuration
     MCP_TRANSPORT: Literal["unified", "http"] = "unified"

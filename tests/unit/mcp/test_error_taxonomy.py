@@ -40,12 +40,15 @@ def test_upstream_input_error_is_invalid_input_non_retryable() -> None:
 
 def test_rate_limited_is_retryable() -> None:
     payload = _payload(
-        RateLimitedError("Rate limited by upstream API (HTTP 429)"),
+        RateLimitedError("Rate limited by upstream API (HTTP 429)", retry_after_seconds=7.2),
         McpErrorContext(tool_name="get_variant_frequencies", variant_id="1-55051215-G-GA"),
     )
     assert payload["error_code"] == "rate_limited"
     assert payload["retryable"] is True
     assert payload["recovery_action"] == "retry_backoff"
+    # Issue #146: the caller gets a whole-second wait instead of guessing.
+    assert payload["retry_after_seconds"] == 8
+    assert "retry_after_seconds" in payload["recovery"]
 
 
 def test_not_found_on_variant_tool_falls_back_to_resolver() -> None:

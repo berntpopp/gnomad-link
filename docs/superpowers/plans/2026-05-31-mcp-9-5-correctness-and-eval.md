@@ -88,13 +88,15 @@ git commit -m "refactor(mcp): extract select_build_variant_id liftover resolver"
 - [ ] **Step 1: Correct the inverted fixture** in `test_auto_liftover_converts_grch38_id_for_r2_1` (`:219-225`) so the field labels match the real API (`source`=GRCh37, `liftover`=GRCh38). Swap the two ids/builds:
 
 ```python
-        liftover_result=[
-            {
-                "source": {"variant_id": "17-7577121-G-A", "reference_genome": "GRCh37"},
-                "liftover": {"variant_id": "17-7673803-G-A", "reference_genome": "GRCh38"},
-                "datasets": ["gnomad_r2_1", "gnomad_r4"],
-            }
-        ],
+liftover_result = (
+    [
+        {
+            "source": {"variant_id": "17-7577121-G-A", "reference_genome": "GRCh37"},
+            "liftover": {"variant_id": "17-7673803-G-A", "reference_genome": "GRCh38"},
+            "datasets": ["gnomad_r2_1", "gnomad_r4"],
+        }
+    ],
+)
 ```
 
 The test's existing assertions stay (`r2["lifted_variant_id"] == "17-7577121-G-A"`, the GRCh37 id; r2_1 freq stub already keyed on `17-7577121-G-A`).
@@ -107,14 +109,12 @@ Expected: FAIL — buggy code reads `liftover` (now GRCh38 `17-7673803-G-A`), qu
 - [ ] **Step 3: Fix `_resolve_r2_1_id`** in `comparison.py` — replace the hardcoded read at `:69-76` with the shared helper:
 
 ```python
-    results = await service.liftover_variant(variant_id, "GRCh38")
-    for item in results:
-        lifted = select_build_variant_id(item, "GRCh37")
-        if lifted:
-            return lifted, (
-                f"gnomad_r2_1 (GRCh37) used lifted id {lifted} from GRCh38 {variant_id}."
-            )
-    return None, (f"gnomad_r2_1 (GRCh37) skipped: no liftover mapping found for {variant_id}.")
+results = await service.liftover_variant(variant_id, "GRCh38")
+for item in results:
+    lifted = select_build_variant_id(item, "GRCh37")
+    if lifted:
+        return lifted, (f"gnomad_r2_1 (GRCh37) used lifted id {lifted} from GRCh38 {variant_id}.")
+return None, (f"gnomad_r2_1 (GRCh37) skipped: no liftover mapping found for {variant_id}.")
 ```
 
 Add the import at the top of `comparison.py`:
@@ -167,7 +167,11 @@ async def test_compare_r2_1_uses_grch37_source_not_input_coordinate() -> None:
 
     result = await mcp.call_tool(
         "compare_variant_across_datasets",
-        {"variant_id": "6-26092913-G-A", "datasets": ["gnomad_r4", "gnomad_r2_1"], "auto_liftover": True},
+        {
+            "variant_id": "6-26092913-G-A",
+            "datasets": ["gnomad_r4", "gnomad_r2_1"],
+            "auto_liftover": True,
+        },
     )
     payload = _structured(result)
 
@@ -206,7 +210,11 @@ async def test_compare_finds_hfe_c282y_in_r2_1_live() -> None:
     mcp = create_gnomad_mcp()  # real service factory per existing integration tests
     result = await mcp.call_tool(
         "compare_variant_across_datasets",
-        {"variant_id": "6-26092913-G-A", "datasets": ["gnomad_r4", "gnomad_r2_1"], "auto_liftover": True},
+        {
+            "variant_id": "6-26092913-G-A",
+            "datasets": ["gnomad_r4", "gnomad_r2_1"],
+            "auto_liftover": True,
+        },
     )
     payload = _structured(result)
     r2 = payload["datasets"]["gnomad_r2_1"]
@@ -439,10 +447,10 @@ Change `_fallback_for` (`:146-147`):
 Populate the context at the two call sites (`search.py:273` and `:349`):
 
 ```python
-        context=McpErrorContext(tool_name="resolve_variant_id", query=query),
+context = (McpErrorContext(tool_name="resolve_variant_id", query=query),)
 ```
 ```python
-        context=McpErrorContext(tool_name="search_variants", query=query),
+context = (McpErrorContext(tool_name="search_variants", query=query),)
 ```
 
 - [ ] **Step 3:** Run the test; expect PASS. Commit.

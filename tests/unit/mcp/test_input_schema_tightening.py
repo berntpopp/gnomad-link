@@ -13,7 +13,6 @@ from typing import Any
 import pytest
 
 from gnomad_link.mcp.facade import create_gnomad_mcp
-from gnomad_link.mcp.patterns import GENE_ID_PATTERN
 
 
 def _noop_service_factory() -> Any:
@@ -90,9 +89,9 @@ async def test_collapsed_gene_tools_expose_single_required_identifier() -> None:
         assert param in schema.get("required", []), (tool_name, schema.get("required"))
         assert param in schema["properties"], (tool_name, param)
 
-    # get_gene_variants still constrains its single-form gene_id.
+    # get_gene_variants takes an ENSG id or a symbol (#343): shape is checked in the tool.
     gv = tools["get_gene_variants"].parameters["properties"]
-    assert _string_pattern(gv["gene_id"]) == GENE_ID_PATTERN
+    assert _string_pattern(gv["gene_id"]) is None
 
 
 @pytest.mark.asyncio

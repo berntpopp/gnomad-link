@@ -297,6 +297,113 @@ class TestBaseGnomadClient:
         sleep.assert_awaited_once()
         assert 4 < sleep.await_args.args[0] <= 5
 
+    @staticmethod
+    def _paced_client(monkeypatch, *, rpm: int, burst: int, queue_wait: float = 20.0):
+        from gnomad_link.config import settings
+
+        monkeypatch.setattr(settings, "GNOMAD_MAX_REQUESTS_PER_MINUTE", rpm)
+        monkeypatch.setattr(settings, "GNOMAD_RATE_BURST", burst)
+        monkeypatch.setattr(settings, "GNOMAD_QUEUE_WAIT_TIMEOUT", queue_wait)
+        return BaseGnomadClient(api_url="https://test.api.com/graphql")
+
+    @pytest.mark.asyncio
+    async def test_burst_is_paced_and_none_is_rate_limited(self, monkeypatch):
+        """Issue #146: a burst queues for rate tokens instead of being sent and refused."""
+        client = self._paced_client(monkeypatch, rpm=1200, burst=2)  # 50 ms apart after 2
+        loop = asyncio.get_running_loop()
+        sent: list[float] = []
+
+        async def fake_execute(_doc, variable_values=None):
+            sent.append(loop.time())
+            return {"gene": {"ok": True}}
+
+        connect = AsyncMock(return_value=_FakeSession(execute=AsyncMock(side_effect=fake_execute)))
+        with (
+            patch.object(client.query_loader, "load_query", return_value="query { gene { id } }"),
+            patch.object(client.query_builder, "process_variables", return_value={}),
+            patch.object(client._client, "connect_async", new=connect),
+        ):
+            results = await asyncio.gather(*(client.execute_query("gene", {}) for _ in range(8)))
+
+        assert results == [{"gene": {"ok": True}}] * 8  # none refused
+        # 2 go out at once, the other 6 one per 50 ms: never more than 3 per 100 ms.
+        assert sent[-1] - sent[0] >= 0.28
+        assert all(later - earlier >= 0.09 for earlier, later in zip(sent, sent[3:], strict=False))
+
+    @pytest.mark.asyncio
+    async def test_rate_wait_beyond_queue_budget_is_fast_backpressure(self, monkeypatch):
+        """Issue #146: a token wait longer than the queue budget fails fast with a hint."""
+        client = self._paced_client(monkeypatch, rpm=60, burst=1, queue_wait=0.05)
+        execute = AsyncMock(return_value={"gene": {"ok": True}})
+        connect = AsyncMock(return_value=_FakeSession(execute=execute))
+        with (
+            patch.object(client.query_loader, "load_query", return_value="query { gene { id } }"),
+            patch.object(client.query_builder, "process_variables", return_value={}),
+            patch.object(client._client, "connect_async", new=connect),
+        ):
+            await client.execute_query("gene", {})
+            with pytest.raises(RateLimitedError) as exc_info:
+                await client.execute_query("gene", {})  # next token is 1 s away
+
+        assert exc_info.value.retry_after_seconds == 1
+        assert execute.call_count == 1  # the refused call never reached upstream
+
+    @pytest.mark.asyncio
+    async def test_429_without_retry_after_cools_down_then_succeeds(
+        self, client, monkeypatch, caplog
+    ):
+        """Issue #146: a bare 429 stops the whole client for the default cooldown."""
+        from gql.transport.exceptions import TransportServerError
+
+        from gnomad_link.config import settings
+
+        monkeypatch.setattr(settings, "GNOMAD_RATE_LIMIT_COOLDOWN", 15)
+        sleep = AsyncMock()
+        monkeypatch.setattr(asyncio, "sleep", sleep)
+        execute = AsyncMock(
+            side_effect=[TransportServerError("hostile body", 429), {"gene": {"symbol": "OK"}}]
+        )
+        connect = AsyncMock(return_value=_FakeSession(execute=execute))
+
+        with (
+            caplog.at_level("INFO", logger="gnomad_link.api.base_client"),
+            patch.object(client.query_loader, "load_query", return_value="query { gene { id } }"),
+            patch.object(client.query_builder, "process_variables", return_value={}),
+            patch.object(client._client, "connect_async", new=connect),
+        ):
+            assert await client.execute_query("gene", {}) == {"gene": {"symbol": "OK"}}
+
+        assert sleep.await_args_list[0].args == (15,)  # the retry waits out the cooldown
+        # ... and so does every other request of this client.
+        assert client._cooldown_until - asyncio.get_running_loop().time() > 14
+        # Each upstream request is logged by query name and outcome, never the body.
+        assert "gnomad_upstream_request query=gene outcome=429 attempt=1" in caplog.text
+        assert "gnomad_upstream_request query=gene outcome=ok attempt=2" in caplog.text
+        assert "hostile body" not in caplog.text
+
+    @pytest.mark.asyncio
+    async def test_persistent_429_carries_retry_after_and_logs_rate_headers(
+        self, client, monkeypatch, caplog
+    ):
+        """Issue #146: the surviving 429 tells the caller how long to wait."""
+        monkeypatch.setattr(asyncio, "sleep", AsyncMock())
+        execute = AsyncMock(side_effect=self._http_429("7"))
+        connect = AsyncMock(return_value=_FakeSession(execute=execute))
+
+        with (
+            caplog.at_level("INFO", logger="gnomad_link.api.base_client"),
+            patch.object(client.query_loader, "load_query", return_value="query { gene { id } }"),
+            patch.object(client.query_builder, "process_variables", return_value={}),
+            patch.object(client._client, "connect_async", new=connect),
+        ):
+            with pytest.raises(RateLimitedError) as exc_info:
+                await client.execute_query("gene", {})
+
+        assert exc_info.value.retry_after_seconds == 7
+        assert "gnomad_upstream_429 query=gene attempt=1 rate_headers={'Retry-After': '7'}" in (
+            caplog.text
+        )
+
     @pytest.mark.asyncio
     async def test_retry_reuses_one_queue_wait_budget(self, client, monkeypatch):
         """Retries must share one GNOMAD_QUEUE_WAIT_TIMEOUT budget for slot waits."""
@@ -306,7 +413,9 @@ class TestBaseGnomadClient:
 
         monkeypatch.setattr(settings, "GNOMAD_QUEUE_WAIT_TIMEOUT", 10.0)
         monkeypatch.setattr(asyncio, "sleep", AsyncMock())
-        monkeypatch.setattr(asyncio, "get_running_loop", lambda: _FakeLoop([100.0, 100.0, 102.0]))
+        monkeypatch.setattr(
+            asyncio, "get_running_loop", lambda: _FakeLoop([100.0, 100.0, 100.0, 102.0])
+        )
         execute = AsyncMock(
             side_effect=[
                 TransportServerError("bad gateway", 503),

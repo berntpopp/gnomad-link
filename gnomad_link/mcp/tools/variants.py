@@ -8,12 +8,14 @@ from typing import Annotated, Any, Literal
 from fastmcp import FastMCP
 from pydantic import Field
 
+from gnomad_link.api import DataNotFoundError
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.build_check import detect_variant_id_mismatch
 from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, run_mcp_tool
 from gnomad_link.mcp.headline import variant_frequencies_headline
 from gnomad_link.mcp.minimal_shaping import project_variant_frequencies_minimal
 from gnomad_link.mcp.next_commands import for_variant
+from gnomad_link.mcp.other_build import not_found_with_other_build
 from gnomad_link.mcp.population_shaping import validate_population_codes
 from gnomad_link.mcp.rsid import RSID_PATTERN, resolve_rsid
 from gnomad_link.mcp.shaping import (
@@ -107,7 +109,10 @@ def register_variant_tools(
             inferred = detect_variant_id_mismatch(vid, dataset)
             if inferred is not None:
                 raise BuildMismatchError(variant_id=vid, inferred_build=inferred, dataset=dataset)
-            response = await service.get_variant_frequencies(vid, dataset)
+            try:
+                response = await service.get_variant_frequencies(vid, dataset)
+            except DataNotFoundError as exc:
+                raise await not_found_with_other_build(service, exc, ctx) from exc
             # response_mode='full' takes precedence over the explicit toggles and
             # asks for the most-inclusive breakdown; compact/minimal honor them.
             if response_mode == "full":

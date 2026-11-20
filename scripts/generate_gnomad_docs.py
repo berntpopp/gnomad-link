@@ -586,9 +586,7 @@ class GnomADDocumentationGenerator:
         }
 
         for category, type_names in self.predefined_categories.items():
-            category_types = [
-                all_types[name] for name in type_names if name in all_types
-            ]
+            category_types = [all_types[name] for name in type_names if name in all_types]
             if category_types:
                 lines.append(f"### {category}")
                 lines.append("")
@@ -667,9 +665,7 @@ class GnomADDocumentationGenerator:
 
         return "\n".join(lines)
 
-    def _categorize_queries(
-        self, queries: list[dict[str, Any]]
-    ) -> dict[str, list[dict[str, Any]]]:
+    def _categorize_queries(self, queries: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
         """Categorize queries for better organization.
 
         Groups queries into logical categories based on their names:
@@ -777,9 +773,7 @@ class GnomADDocumentationGenerator:
 
         return lines
 
-    def _generate_query_example(
-        self, query_name: str, args: list[dict[str, Any]]
-    ) -> list[str]:
+    def _generate_query_example(self, query_name: str, args: list[dict[str, Any]]) -> list[str]:
         """Generate an example query.
 
         Creates a sample GraphQL query showing how to use a specific query.
@@ -991,13 +985,10 @@ class GnomADDocumentationGenerator:
             uses = self.type_relationships[name][:3]  # Show first 3
             if uses:
                 lines.append(
-                    "**Used by:** "
-                    + ", ".join([f"`{u['used_by']}.{u['field']}`" for u in uses])
+                    "**Used by:** " + ", ".join([f"`{u['used_by']}.{u['field']}`" for u in uses])
                 )
                 if len(self.type_relationships[name]) > 3:
-                    lines.append(
-                        f" and {len(self.type_relationships[name]) - 3} more..."
-                    )
+                    lines.append(f" and {len(self.type_relationships[name]) - 3} more...")
                 lines.append("")
 
         # Document fields
@@ -1032,9 +1023,7 @@ class GnomADDocumentationGenerator:
                 ]:
                     field_name = f"**{field_name}**"
 
-                lines.append(
-                    f"| {field_name} | `{field_type}` | {field_desc}{deprecated} |"
-                )
+                lines.append(f"| {field_name} | `{field_type}` | {field_desc}{deprecated} |")
 
             lines.append("")
             lines.append("</details>")

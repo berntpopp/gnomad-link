@@ -41,6 +41,7 @@ class UnifiedServerManager:
             client=api_client,
             cache_size=settings.CACHE_SIZE,
             cache_ttl_minutes=settings.CACHE_TTL_MINUTES,
+            gene_search_cache_ttl_minutes=settings.GENE_SEARCH_CACHE_TTL_MINUTES,
         )
 
     # ---------------- FastAPI host (health only) ----------------

@@ -1,16 +1,18 @@
 """Unified gnomAD client for both FastAPI and MCP."""
 
-import asyncio
 from typing import Any
 
 from gnomad_link.graphql import QueryBuilder
 
-from .base_client import BaseGnomadClient
+from .base_client import BaseGnomadClient, RateLimitedError
 
 # gnomAD enforces a per-query cost limit of 25 (one unit per clinvar_variant
 # alias). Batches must stay at or below it; 24 leaves a one-unit safety margin.
 # (The gnomad-carrier-frequency reference uses 50, which now fails every batch.)
 _CLINVAR_SUBMISSIONS_BATCH_SIZE = 24
+# Chunks go out one after another through the rate limiter; 12 (288 variants) fit
+# the per-call wait budget at the default pace. ponytail: raise with the budget.
+CLINVAR_SUBMISSIONS_MAX_CHUNKS = 12
 
 
 class ClinvarSubmissionsBatchResult(dict[str, list[dict[str, Any]]]):
@@ -26,6 +28,7 @@ class ClinvarSubmissionsBatchResult(dict[str, list[dict[str, Any]]]):
         super().__init__(*args, **kwargs)
         self.failed_chunks = failed_chunks
         self.failed_variant_ids = failed_variant_ids or []
+        self.capped = 0  # ids beyond CLINVAR_SUBMISSIONS_MAX_CHUNKS, never requested
 
 
 def _build_clinvar_submissions_query(variant_ids: list[str], reference_genome: str) -> str:
@@ -220,36 +223,37 @@ class UnifiedGnomadClient(BaseGnomadClient):
         """Fetch ClinVar submissions for many variants via aliased batch queries.
 
         One upstream request per ``batch_size`` variants (<= the gnomAD query-cost
-        limit), with batches fired concurrently and bounded by the client
-        semaphore + exponential-backoff retry. Returns
+        limit), sent ONE AFTER ANOTHER: a concurrent fan-out only queues behind the
+        rate limiter and loses every chunk past the queue-wait budget. At most
+        ``CLINVAR_SUBMISSIONS_MAX_CHUNKS`` chunks are sent. Returns
         ``{variant_id: [{clinical_significance}, ...]}``; variants absent from
-        ClinVar are omitted. Each batch is best-effort: a failed batch contributes
-        nothing rather than failing the whole resolution, and increments
-        ``failed_chunks`` / ``failed_variant_ids`` on the dict-compatible result.
+        ClinVar are omitted. Best-effort: a failed chunk contributes nothing rather
+        than failing the whole resolution, and a rate-limited one stops the rest
+        (the call's wait budget is spent). Unresolved ids are listed in
+        ``failed_variant_ids``; ``capped`` counts those beyond the chunk cap.
         """
-        if not variant_ids:
-            return ClinvarSubmissionsBatchResult()
-        chunks = [variant_ids[i : i + batch_size] for i in range(0, len(variant_ids), batch_size)]
-
-        async def fetch(chunk: list[str]) -> ClinvarSubmissionsBatchResult:
-            query = _build_clinvar_submissions_query(chunk, reference_genome)
-            try:
-                data = await self.execute_raw_query(query)
-            except Exception:
-                return ClinvarSubmissionsBatchResult(
-                    failed_chunks=1, failed_variant_ids=list(chunk)
-                )
-            out: dict[str, list[dict[str, Any]]] = {}
-            for value in data.values():
-                if isinstance(value, dict) and value.get("variant_id"):
-                    out[str(value["variant_id"])] = value.get("submissions") or []
-            return ClinvarSubmissionsBatchResult(out)
-
         merged = ClinvarSubmissionsBatchResult()
-        for result in await asyncio.gather(*(fetch(chunk) for chunk in chunks)):
-            merged.update(result)
-            merged.failed_chunks += result.failed_chunks
-            merged.failed_variant_ids.extend(result.failed_variant_ids)
+        chunks = [variant_ids[i : i + batch_size] for i in range(0, len(variant_ids), batch_size)]
+        for skipped in chunks[CLINVAR_SUBMISSIONS_MAX_CHUNKS:]:
+            merged.capped += len(skipped)
+            merged.failed_variant_ids.extend(skipped)
+        chunks = chunks[:CLINVAR_SUBMISSIONS_MAX_CHUNKS]
+        for index, chunk in enumerate(chunks):
+            try:
+                data = await self.execute_raw_query(
+                    _build_clinvar_submissions_query(chunk, reference_genome)
+                )
+            except Exception as exc:
+                # Rate-limited: later chunks would only be refused too.
+                lost = chunks[index:] if isinstance(exc, RateLimitedError) else [chunk]
+                merged.failed_chunks += len(lost)
+                merged.failed_variant_ids.extend(vid for part in lost for vid in part)
+                if isinstance(exc, RateLimitedError):
+                    break
+            else:
+                for value in data.values():
+                    if isinstance(value, dict) and value.get("variant_id"):
+                        merged[str(value["variant_id"])] = value.get("submissions") or []
         return merged
 
     async def get_structural_variant(
@@ -350,16 +354,24 @@ class UnifiedGnomadClient(BaseGnomadClient):
         Returns:
             List of variants in the gene
         """
-        version = QueryBuilder.get_version_for_dataset(dataset)
-        # Process variables to add reference genome
-        variables = {"gene_id": gene_id, "dataset": dataset}
-        processed_vars = self.query_builder.process_variables("gene_variants", variables, version)
+        gene = await self.get_gene_with_variants(dataset, gene_id=gene_id)
+        return list(gene.get("variants") or [])
 
+    async def get_gene_with_variants(
+        self,
+        dataset: str = "gnomad_r4",
+        *,
+        gene_id: str | None = None,
+        gene_symbol: str | None = None,
+    ) -> dict[str, Any]:
+        """The ``gene`` node (gene_id + variants) by Ensembl id or symbol, in ONE request."""
+        version = QueryBuilder.get_version_for_dataset(dataset)
+        key = {"gene_id": gene_id} if gene_id else {"gene_symbol": gene_symbol}
+        processed_vars = self.query_builder.process_variables(
+            "gene_variants", {**key, "dataset": dataset}, version
+        )
         result = await self.execute_query("gene_variants", processed_vars, version)
-        # Extract variants from nested structure
-        if "gene" in result and "variants" in result["gene"]:
-            return list(result["gene"]["variants"])
-        return []
+        return dict(result.get("gene") or {})
 
     async def get_gene_carrier_variants(
         self,

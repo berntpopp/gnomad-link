@@ -228,6 +228,15 @@ class GeneCarrierService:
                     "retry compute_gene_carrier_frequency with include_conflicting_clinvar=True"
                 ),
             }
+            capped = getattr(submissions_map, "capped", 0)
+            if capped:
+                # Beyond the per-call cap: a retry sends the same chunks and cannot help.
+                degraded["capped"] = capped
+                degraded["cause"] = "resolution_cap"
+                degraded["to_restore"] = (
+                    "not restorable in one call: only the first 288 conflicting ClinVar "
+                    "variants are resolved; the rest are excluded from the estimate"
+                )
         return {
             vid: meets_conflicting_threshold(
                 submissions_map.get(vid, []), config.conflicting_threshold

@@ -12,8 +12,13 @@ from pydantic import Field
 from gnomad_link.mcp.af import preferred_overall_af
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, ToolInputError, run_mcp_tool
-from gnomad_link.mcp.next_commands import for_variant
-from gnomad_link.mcp.patterns import MITO_VARIANT_ID_PATTERN, normalize_mito_variant_id
+from gnomad_link.mcp.foreign_ids import reject_foreign
+from gnomad_link.mcp.next_commands import cmd, for_variant
+from gnomad_link.mcp.patterns import (
+    GENE_SYMBOL_PATTERN,
+    MITO_VARIANT_ID_PATTERN,
+    normalize_mito_variant_id,
+)
 from gnomad_link.models import GeneSearchResult
 from gnomad_link.services import FrequencyService
 from gnomad_link.services.frequency_service import _pick_canonical_annotation
@@ -74,6 +79,7 @@ async def _resolve_and_enrich(
     dataset: str,
     limit: int,
     enrich: bool,
+    tool: str,
 ) -> tuple[list[dict[str, Any]], int, int]:
     """Resolve `query` to variant IDs and optionally enrich the top hits.
 
@@ -83,6 +89,7 @@ async def _resolve_and_enrich(
     honest ``total_count`` / ``has_more`` instead of making 5 candidates at
     ``limit=1`` look like 1.
     """
+    reject_foreign(query, "variant", field="query", tool=tool, dataset=dataset)
     if _MITO_ID_RE.fullmatch(query.strip()):
         return await _resolve_mito(service, query=query.strip(), dataset=dataset, enrich=enrich)
     raw = await service.search_variants(query, dataset)
@@ -182,6 +189,7 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
         """Use this when a caller has a fuzzy gene query (symbol, alias, partial name); returns ranked matches with symbol, ensembl_id, and match_quality. Follow with get_gene_details for full constraint metrics. Note: gnomAD's gene autocomplete returns a bounded set and may omit exact members of a large gene family for a SHORT prefix (e.g. 'GRIN' does not return GRIN1/GRIN2B). If an expected gene is missing, query its FULL symbol (e.g. 'GRIN1') or call get_gene_details/get_gene_summary directly. Returns ~1-3kB."""
 
         async def call() -> dict[str, Any]:
+            reject_foreign(query, "gene", field="query", tool="search_genes")
             service = service_factory()
             raw = await service.search_genes(query, reference_genome)
             query_upper = query.upper()
@@ -236,6 +244,10 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
                             {"tool": "get_gene_details", "arguments": {"gene": gene_value}}
                         ]
                     }
+            elif re.fullmatch(GENE_SYMBOL_PATTERN, query):
+                # No gnomAD hit for one token: it may be an alias, a previous symbol or
+                # an accession, which HGNC resolves and gnomAD's search does not.
+                payload["_meta"] = {"next_commands": [cmd("hgnc_resolve_symbol", query=query)]}
             return payload
 
         return await run_mcp_tool(
@@ -291,6 +303,7 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
                 dataset=dataset,
                 limit=limit,
                 enrich=enrich,
+                tool="resolve_variant_id",
             )
             payload: dict[str, Any] = {
                 "results": results,
@@ -376,6 +389,7 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
                 dataset=dataset,
                 limit=limit,
                 enrich=enrich,
+                tool="search_variants",
             )
             meta: dict[str, Any] = {
                 "deprecated": True,

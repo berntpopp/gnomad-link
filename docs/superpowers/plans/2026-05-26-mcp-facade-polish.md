@@ -120,9 +120,7 @@ def shape_gene_details_compact(raw: dict[str, Any]) -> dict[str, Any]:
     return compact
 
 
-def shape_clinvar_submissions(
-    payload: dict[str, Any], *, submissions_limit: int
-) -> dict[str, Any]:
+def shape_clinvar_submissions(payload: dict[str, Any], *, submissions_limit: int) -> dict[str, Any]:
     """Cap submissions[] and emit truncated metadata. Mutates a copy of payload."""
     submissions = payload.get("submissions") or []
     if len(submissions) <= submissions_limit:
@@ -314,6 +312,7 @@ In `gnomad_link/mcp/tools/specialty.py` `get_mitochondrial_variant`:
 ```python
 _MITO_PREFIX_RE = re.compile(r"^(chr)?(M|MT)-", re.IGNORECASE)
 
+
 def _normalize_mito_id(variant_id: str) -> str:
     return _MITO_PREFIX_RE.sub("M-", variant_id, count=1)
 ```
@@ -415,21 +414,57 @@ from __future__ import annotations
 # GRCh38 chromosome lengths (1-based, inclusive). From ENCODE/UCSC reference.
 # Source: https://www.ncbi.nlm.nih.gov/grc/human/data
 _GRCH38_LENGTHS = {
-    "1": 248_956_422, "2": 242_193_529, "3": 198_295_559, "4": 190_214_555,
-    "5": 181_538_259, "6": 170_805_979, "7": 159_345_973, "8": 145_138_636,
-    "9": 138_394_717, "10": 133_797_422, "11": 135_086_622, "12": 133_275_309,
-    "13": 114_364_328, "14": 107_043_718, "15": 101_991_189, "16": 90_338_345,
-    "17": 83_257_441, "18": 80_373_285, "19": 58_617_616, "20": 64_444_167,
-    "21": 46_709_983, "22": 50_818_468, "X": 156_040_895, "Y": 57_227_415,
+    "1": 248_956_422,
+    "2": 242_193_529,
+    "3": 198_295_559,
+    "4": 190_214_555,
+    "5": 181_538_259,
+    "6": 170_805_979,
+    "7": 159_345_973,
+    "8": 145_138_636,
+    "9": 138_394_717,
+    "10": 133_797_422,
+    "11": 135_086_622,
+    "12": 133_275_309,
+    "13": 114_364_328,
+    "14": 107_043_718,
+    "15": 101_991_189,
+    "16": 90_338_345,
+    "17": 83_257_441,
+    "18": 80_373_285,
+    "19": 58_617_616,
+    "20": 64_444_167,
+    "21": 46_709_983,
+    "22": 50_818_468,
+    "X": 156_040_895,
+    "Y": 57_227_415,
 }
 
 _GRCH37_LENGTHS = {
-    "1": 249_250_621, "2": 243_199_373, "3": 198_022_430, "4": 191_154_276,
-    "5": 180_915_260, "6": 171_115_067, "7": 159_138_663, "8": 146_364_022,
-    "9": 141_213_431, "10": 135_534_747, "11": 135_006_516, "12": 133_851_895,
-    "13": 115_169_878, "14": 107_349_540, "15": 102_531_392, "16": 90_354_753,
-    "17": 81_195_210, "18": 78_077_248, "19": 59_128_983, "20": 63_025_520,
-    "21": 48_129_895, "22": 51_304_566, "X": 155_270_560, "Y": 59_373_566,
+    "1": 249_250_621,
+    "2": 243_199_373,
+    "3": 198_022_430,
+    "4": 191_154_276,
+    "5": 180_915_260,
+    "6": 171_115_067,
+    "7": 159_138_663,
+    "8": 146_364_022,
+    "9": 141_213_431,
+    "10": 135_534_747,
+    "11": 135_006_516,
+    "12": 133_851_895,
+    "13": 115_169_878,
+    "14": 107_349_540,
+    "15": 102_531_392,
+    "16": 90_354_753,
+    "17": 81_195_210,
+    "18": 78_077_248,
+    "19": 59_128_983,
+    "20": 63_025_520,
+    "21": 48_129_895,
+    "22": 51_304_566,
+    "X": 155_270_560,
+    "Y": 59_373_566,
 }
 
 
@@ -462,7 +497,7 @@ def detect_mismatch(variant_id: str, dataset: str) -> str | None:
     try:
         chrom, pos_s, _, _ = variant_id.split("-", 3)
         pos = int(pos_s)
-    except (ValueError, AttributeError):
+    except ValueError, AttributeError:
         return None
     inferred = likely_build(chrom, pos)
     expected = dataset_build(dataset)
@@ -491,10 +526,15 @@ Extend `_classify` in `errors.py`:
 
 ```python
 if isinstance(exc, BuildMismatchError):
-    return "build_mismatch", False, "liftover_variant", {
-        "source_variant_id": exc.variant_id,
-        "reference_genome": exc.inferred_build,
-    }
+    return (
+        "build_mismatch",
+        False,
+        "liftover_variant",
+        {
+            "source_variant_id": exc.variant_id,
+            "reference_genome": exc.inferred_build,
+        },
+    )
 ```
 
 Extend `_recovery_text`:
@@ -619,8 +659,14 @@ def _classify_clinical_significance(sig: str | None) -> str:
 
 
 def summarize_clinvar_submissions(submissions: list[dict[str, Any]]) -> dict[str, Any]:
-    counts = {"pathogenic": 0, "likely_pathogenic": 0, "uncertain": 0,
-              "likely_benign": 0, "benign": 0, "other": 0}
+    counts = {
+        "pathogenic": 0,
+        "likely_pathogenic": 0,
+        "uncertain": 0,
+        "likely_benign": 0,
+        "benign": 0,
+        "other": 0,
+    }
     for s in submissions:
         counts[_classify_clinical_significance(s.get("clinical_significance"))] += 1
     pathogenic_side = counts["pathogenic"] + counts["likely_pathogenic"]
@@ -692,9 +738,17 @@ for vid in raw[:limit]:
             item["major_consequence"] = freq.major_consequence
             af = None
             if freq.exome:
-                af = (freq.exome.allele_count / freq.exome.allele_number) if freq.exome.allele_number else None
+                af = (
+                    (freq.exome.allele_count / freq.exome.allele_number)
+                    if freq.exome.allele_number
+                    else None
+                )
             if af is None and freq.genome:
-                af = (freq.genome.allele_count / freq.genome.allele_number) if freq.genome.allele_number else None
+                af = (
+                    (freq.genome.allele_count / freq.genome.allele_number)
+                    if freq.genome.allele_number
+                    else None
+                )
             item["af"] = af
         except Exception:
             errors += 1
@@ -717,7 +771,9 @@ results = await service.liftover_variant(source_variant_id, build)
 payload = {...}
 if source_genome is None and reference_genome is not None:
     payload["_meta"] = {
-        "deprecated_params": {"reference_genome": "Use source_genome; will be removed in next release."},
+        "deprecated_params": {
+            "reference_genome": "Use source_genome; will be removed in next release."
+        },
     }
 ```
 

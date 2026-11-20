@@ -10,6 +10,7 @@ from pydantic import Field
 
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
+from gnomad_link.mcp.foreign_ids import reject_foreign
 from gnomad_link.mcp.gene_summary_shaping import rank_pathogenic_clinvar
 from gnomad_link.mcp.headline import gene_summary_headline
 from gnomad_link.mcp.minimal_shaping import project_gene_summary_minimal
@@ -83,6 +84,7 @@ def register_gene_summary_tools(
         gene_id, gene_symbol = split_gene(gene)
 
         async def call() -> dict[str, Any]:
+            reject_foreign(gene, "gene", field="gene", tool="get_gene_summary")
             service = service_factory()
             summary = await service.get_gene_summary(
                 gene_id=gene_id,

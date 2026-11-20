@@ -14,7 +14,15 @@ unauthenticated.
 | `GNOMAD_API_URL` | `https://gnomad.broadinstitute.org/api` | gnomAD GraphQL endpoint. No auth. |
 | `GNOMAD_MAX_CONCURRENCY` | `5` | Max in-flight upstream GraphQL requests. Bounds burst pressure on gnomAD's rate limiter; a jittered retry layer absorbs residual 429s. Keep it conservative against the public endpoint. |
 | `GNOMAD_REQUEST_TIMEOUT` | `60` | Per-request upstream timeout, in seconds. Large-gene payloads (CFTR is ~13 MB) complete in ~5-6 s, but cold responses need headroom — too tight a timeout trips the retry layer and multiplies wall-clock time. |
-| `GNOMAD_QUEUE_WAIT_TIMEOUT` | `20` | Max seconds a request waits for a concurrency slot before returning fast, retryable `rate_limited` backpressure instead of queuing until the caller's own tool-call timeout fires. |
+| `GNOMAD_QUEUE_WAIT_TIMEOUT` | `20` | Max seconds a request waits for a concurrency slot before returning fast, retryable `rate_limited` backpressure instead of queuing until the caller's own tool-call timeout fires. Also bounds the wait for a request-rate token. |
+| `GNOMAD_MAX_REQUESTS_PER_MINUTE` | `20` | Sustained upstream request rate (token bucket shared by all requests of the client); `0` disables pacing. The open-source gnomAD API defaults to 30 requests per IP per wall-clock minute, so 20 plus the burst below stays under it. |
+| `GNOMAD_RATE_BURST` | `5` | Requests that may go out back-to-back before pacing starts. |
+| `GNOMAD_RATE_LIMIT_COOLDOWN` | `15` | Seconds the whole client stops sending after an upstream 429 without `Retry-After` (a `Retry-After` is honoured instead, capped at 30 s). Also the default `retry_after_seconds` in a `rate_limited` error. |
+| `GNOMAD_CALL_WAIT_BUDGET` | `40` | Max seconds one tool call may spend waiting on upstream (pacing, 429 cooldowns, retry backoff) across all its requests. If the next wait would pass it, the call returns `rate_limited` with `retry_after_seconds` at once, so it answers before the caller's own timeout. An in-flight request is still bounded by `GNOMAD_REQUEST_TIMEOUT`. |
+
+Each upstream request is logged at INFO as `gnomad_upstream_request` (query name,
+outcome, attempt, duration); a 429 also logs its rate-limit headers at WARNING as
+`gnomad_upstream_429`. Variables and response bodies are never logged.
 
 ## Cache
 
@@ -24,6 +32,7 @@ The server holds no local database; it is a live proxy with an in-memory cache.
 |----------|---------|-------|
 | `CACHE_SIZE` | `1024` | Max cached entries. |
 | `CACHE_TTL_MINUTES` | `60` | Entry time-to-live. |
+| `GENE_SEARCH_CACHE_TTL_MINUTES` | `1440` | Time-to-live of `search_genes` results, which only change with a gnomAD release. In-memory only; lost on restart. |
 
 Cache inspection and clearing are **CLI-only** and deliberately not exposed as MCP
 tools:

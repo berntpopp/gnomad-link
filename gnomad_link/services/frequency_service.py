@@ -64,6 +64,7 @@ class FrequencyService:
         client: UnifiedGnomadClient | None = None,
         cache_size: int = 1024,
         cache_ttl_minutes: int = 60,
+        gene_search_cache_ttl_minutes: int = 1440,
     ):
         """Initialize the service.
 
@@ -71,6 +72,7 @@ class FrequencyService:
             client: Unified gnomAD API client instance
             cache_size: Maximum number of items to cache
             cache_ttl_minutes: Cache time-to-live in minutes
+            gene_search_cache_ttl_minutes: Longer TTL for the stable search_genes hits
         """
         self.client = client or UnifiedGnomadClient()
         self.cache_ttl = timedelta(minutes=cache_ttl_minutes)
@@ -79,9 +81,9 @@ class FrequencyService:
         ttl = self.cache_ttl.total_seconds()
         self._get_variant_cached = alru_cache(maxsize=cache_size, ttl=ttl)(self._get_variant_impl)
         self._get_gene_cached = alru_cache(maxsize=cache_size // 4, ttl=ttl)(self._get_gene_impl)
-        self._search_genes_cached = alru_cache(maxsize=cache_size // 4, ttl=ttl)(
-            self._search_genes_impl
-        )
+        self._search_genes_cached = alru_cache(
+            maxsize=cache_size, ttl=gene_search_cache_ttl_minutes * 60
+        )(self._search_genes_impl)
 
         # Track cache statistics
         self._cache_hits = 0
@@ -468,6 +470,10 @@ class FrequencyService:
     ) -> list[dict[str, Any]]:
         """Raw gene variants pass-through."""
         return await self.client.get_gene_variants(gene_id, dataset)
+
+    async def get_gene_with_variants(self, gene_symbol: str, dataset: str) -> dict[str, Any]:
+        """The gene node (gene_id + variants) looked up by symbol, in one request."""
+        return await self.client.get_gene_with_variants(dataset, gene_symbol=gene_symbol)
 
     async def get_clinvar_meta(self) -> dict[str, Any]:
         """Raw ClinVar metadata pass-through."""

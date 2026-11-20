@@ -11,6 +11,7 @@ from pydantic import Field
 
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, ToolInputError, run_mcp_tool
+from gnomad_link.mcp.foreign_ids import reject_foreign
 from gnomad_link.mcp.sv_shaping import shape_sv_search
 from gnomad_link.services import FrequencyService
 
@@ -95,10 +96,6 @@ def register_sv_search_tools(
             int,
             Field(ge=1, le=500, description="Max SV rows returned (hard cap 500)."),
         ] = 100,
-        response_mode: Annotated[
-            Literal["compact", "full"],
-            Field(description="compact projects each row to a fixed key-set; full is reserved."),
-        ] = "compact",
     ) -> dict[str, Any]:
         """Use this when a caller wants structural variants overlapping a gene or region; returns SV rows (id, type, position, length, AC/AN/AF). Pass ONE target — a gene symbol, Ensembl gene ID, or region (CHROM-START-STOP) — and the scope is auto-detected. SV variant_id values are OPAQUE (e.g. DEL_19_1), NOT CHROM-POS-REF-ALT, so no SNV id grammar is applied; fetch a single SV by id with get_structural_variant. sv_dataset is the DISTINCT structural-variant dataset enum (gnomad_sv_r4=GRCh38 default, gnomad_sv_r2_1=GRCh37), not the SNV dataset. Type/length filters are applied client-side. An empty match is a success with returned=0, not an error. Returns ~3-30kB (limit-dependent)."""
 
@@ -106,6 +103,8 @@ def register_sv_search_tools(
             # Classify INSIDE call() so a region-shaped-but-invalid target raises
             # ToolInputError through the run_mcp_tool chokepoint (-> invalid_input).
             gene_symbol, gene_id, region = _classify_sv_target(target)
+            if gene_symbol:
+                reject_foreign(target, "gene", field="target", tool="search_structural_variants")
             service = service_factory()
             raw = await service.search_structural_variants(
                 gene_symbol=gene_symbol,

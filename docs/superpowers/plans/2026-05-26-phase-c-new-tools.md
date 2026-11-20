@@ -182,8 +182,12 @@ class _StubClient:
                 "gene_id": gene_id or "ENSG00000169174",
                 "symbol": gene_symbol or "PCSK9",
                 "coverage": {
-                    "exome": [{"pos": 100, "mean": 31.2, "median": 30, "over_20": 0.99, "over_30": 0.81}],
-                    "genome": [{"pos": 100, "mean": 28.0, "median": 28, "over_20": 0.97, "over_30": 0.6}],
+                    "exome": [
+                        {"pos": 100, "mean": 31.2, "median": 30, "over_20": 0.99, "over_30": 0.81}
+                    ],
+                    "genome": [
+                        {"pos": 100, "mean": 28.0, "median": 28, "over_20": 0.97, "over_30": 0.6}
+                    ],
                 },
             }
         }
@@ -204,15 +208,15 @@ class _StubClient:
                 "start": start,
                 "stop": stop,
                 "coverage": {
-                    "exome": [{"pos": start, "mean": 30.0, "median": 30, "over_20": 0.98, "over_30": 0.7}],
+                    "exome": [
+                        {"pos": start, "mean": 30.0, "median": 30, "over_20": 0.98, "over_30": 0.7}
+                    ],
                     "genome": [],
                 },
             }
         }
 
-    async def get_variant_coverage(
-        self, *, variant_id: str, dataset: str
-    ) -> dict[str, Any]:
+    async def get_variant_coverage(self, *, variant_id: str, dataset: str) -> dict[str, Any]:
         self.variant_calls.append((variant_id, dataset))
         return {
             "variant": {
@@ -230,9 +234,7 @@ async def test_get_gene_coverage_maps_reference_genome_from_dataset() -> None:
     client = _StubClient()
     service = CoverageService(client=client)
 
-    raw = await service.get_gene_coverage(
-        gene_id=None, gene_symbol="PCSK9", dataset="gnomad_r4"
-    )
+    raw = await service.get_gene_coverage(gene_id=None, gene_symbol="PCSK9", dataset="gnomad_r4")
 
     assert client.gene_calls == [(None, "PCSK9", "GRCh38", "gnomad_r4")]
     assert raw["gene"]["coverage"]["exome"][0]["mean"] == 31.2
@@ -267,9 +269,7 @@ async def test_get_variant_coverage_passes_dataset_only() -> None:
     client = _StubClient()
     service = CoverageService(client=client)
 
-    raw = await service.get_variant_coverage(
-        variant_id="1-55039447-A-G", dataset="gnomad_r4"
-    )
+    raw = await service.get_variant_coverage(variant_id="1-55039447-A-G", dataset="gnomad_r4")
 
     assert client.variant_calls == [("1-55039447-A-G", "gnomad_r4")]
     assert raw["variant"]["coverage"]["exome"]["mean"] == 31.0
@@ -452,10 +452,10 @@ from .coverage_models import Coverage, CoverageBin, FeatureCoverage
 ```
 
 ```python
-    # Coverage models
-    "Coverage",
-    "CoverageBin",
-    "FeatureCoverage",
+# Coverage models
+("Coverage",)
+("CoverageBin",)
+("FeatureCoverage",)
 ```
 
 - [ ] **Step 5: Add the three client methods**
@@ -463,59 +463,57 @@ from .coverage_models import Coverage, CoverageBin, FeatureCoverage
 In `gnomad_link/api/client.py`, append these methods to `UnifiedGnomadClient` (after `get_liftover`). The `coverage` query_type is unknown to `QueryBuilder.process_variables`, so variables pass through unchanged — the methods supply `reference_genome` explicitly (mirroring the gene/region pattern) and use `operation_name` to pick the right named operation in the multi-op document.
 
 ```python
-    async def get_gene_coverage(
-        self,
-        *,
-        gene_id: str | None,
-        gene_symbol: str | None,
-        reference_genome: str,
-        dataset: str,
-    ) -> dict[str, Any]:
-        """Get per-position exome/genome coverage bins for a gene."""
-        version = QueryBuilder.get_version_for_dataset(dataset)
-        variables: dict[str, Any] = {
-            "reference_genome": reference_genome,
-            "dataset": dataset,
-        }
-        if gene_id:
-            variables["gene_id"] = gene_id
-        if gene_symbol:
-            variables["gene_symbol"] = gene_symbol
-        return await self.execute_query(
-            "coverage", variables, version, operation_name="gene_coverage"
-        )
+async def get_gene_coverage(
+    self,
+    *,
+    gene_id: str | None,
+    gene_symbol: str | None,
+    reference_genome: str,
+    dataset: str,
+) -> dict[str, Any]:
+    """Get per-position exome/genome coverage bins for a gene."""
+    version = QueryBuilder.get_version_for_dataset(dataset)
+    variables: dict[str, Any] = {
+        "reference_genome": reference_genome,
+        "dataset": dataset,
+    }
+    if gene_id:
+        variables["gene_id"] = gene_id
+    if gene_symbol:
+        variables["gene_symbol"] = gene_symbol
+    return await self.execute_query("coverage", variables, version, operation_name="gene_coverage")
 
-    async def get_region_coverage(
-        self,
-        *,
-        chrom: str,
-        start: int,
-        stop: int,
-        reference_genome: str,
-        dataset: str,
-    ) -> dict[str, Any]:
-        """Get per-position exome/genome coverage bins for a region."""
-        version = QueryBuilder.get_version_for_dataset(dataset)
-        variables: dict[str, Any] = {
-            "chrom": chrom,
-            "start": start,
-            "stop": stop,
-            "reference_genome": reference_genome,
-            "dataset": dataset,
-        }
-        return await self.execute_query(
-            "coverage", variables, version, operation_name="region_coverage"
-        )
 
-    async def get_variant_coverage(
-        self, *, variant_id: str, dataset: str
-    ) -> dict[str, Any]:
-        """Get scalar exome/genome coverage for a single variant."""
-        version = QueryBuilder.get_version_for_dataset(dataset)
-        variables: dict[str, Any] = {"variantId": variant_id, "dataset": dataset}
-        return await self.execute_query(
-            "coverage", variables, version, operation_name="variant_coverage"
-        )
+async def get_region_coverage(
+    self,
+    *,
+    chrom: str,
+    start: int,
+    stop: int,
+    reference_genome: str,
+    dataset: str,
+) -> dict[str, Any]:
+    """Get per-position exome/genome coverage bins for a region."""
+    version = QueryBuilder.get_version_for_dataset(dataset)
+    variables: dict[str, Any] = {
+        "chrom": chrom,
+        "start": start,
+        "stop": stop,
+        "reference_genome": reference_genome,
+        "dataset": dataset,
+    }
+    return await self.execute_query(
+        "coverage", variables, version, operation_name="region_coverage"
+    )
+
+
+async def get_variant_coverage(self, *, variant_id: str, dataset: str) -> dict[str, Any]:
+    """Get scalar exome/genome coverage for a single variant."""
+    version = QueryBuilder.get_version_for_dataset(dataset)
+    variables: dict[str, Any] = {"variantId": variant_id, "dataset": dataset}
+    return await self.execute_query(
+        "coverage", variables, version, operation_name="variant_coverage"
+    )
 ```
 
 `execute_query` does not currently accept an `operation_name`. Add the parameter in `gnomad_link/api/base_client.py` `execute_query` (default `None`, threaded into `execute_async` and skipping the `None`-data guard for multi-op docs):
@@ -535,27 +533,19 @@ In the signature:
 In the body, replace the execute + data-guard region with:
 
 ```python
-            query_doc = gql(query_string)
-            if operation_name is not None:
-                result = await self._client.execute_async(
-                    query_doc,
-                    variable_values=processed_vars,
-                    operation_name=operation_name,
-                )
-            else:
-                result = await self._client.execute_async(
-                    query_doc, variable_values=processed_vars
-                )
+query_doc = gql(query_string)
+if operation_name is not None:
+    result = await self._client.execute_async(
+        query_doc,
+        variable_values=processed_vars,
+        operation_name=operation_name,
+    )
+else:
+    result = await self._client.execute_async(query_doc, variable_values=processed_vars)
 
-            # Check if data was found (single-op queries are keyed by query_name).
-            if (
-                operation_name is None
-                and query_name in result
-                and result[query_name] is None
-            ):
-                raise DataNotFoundError(
-                    f"No data found for {query_name} with parameters: {processed_vars}"
-                )
+# Check if data was found (single-op queries are keyed by query_name).
+if operation_name is None and query_name in result and result[query_name] is None:
+    raise DataNotFoundError(f"No data found for {query_name} with parameters: {processed_vars}")
 ```
 
 The CoverageService (Step 6) raises `DataNotFoundError` for empty coverage so the `not_found` envelope still fires for multi-op coverage queries.
@@ -601,9 +591,7 @@ class CoverageService:
             dataset=dataset,
         )
         if not (raw.get("gene") or {}).get("coverage"):
-            raise DataNotFoundError(
-                f"No coverage for gene {gene_id or gene_symbol} in {dataset}"
-            )
+            raise DataNotFoundError(f"No coverage for gene {gene_id or gene_symbol} in {dataset}")
         return raw
 
     async def get_region_coverage(
@@ -617,21 +605,13 @@ class CoverageService:
             dataset=dataset,
         )
         if not (raw.get("region") or {}).get("coverage"):
-            raise DataNotFoundError(
-                f"No coverage for region {chrom}-{start}-{stop} in {dataset}"
-            )
+            raise DataNotFoundError(f"No coverage for region {chrom}-{start}-{stop} in {dataset}")
         return raw
 
-    async def get_variant_coverage(
-        self, *, variant_id: str, dataset: str
-    ) -> dict[str, Any]:
-        raw = await self.client.get_variant_coverage(
-            variant_id=variant_id, dataset=dataset
-        )
+    async def get_variant_coverage(self, *, variant_id: str, dataset: str) -> dict[str, Any]:
+        raw = await self.client.get_variant_coverage(variant_id=variant_id, dataset=dataset)
         if not (raw.get("variant") or {}).get("coverage"):
-            raise DataNotFoundError(
-                f"No coverage for variant {variant_id} in {dataset}"
-            )
+            raise DataNotFoundError(f"No coverage for variant {variant_id} in {dataset}")
         return raw
 ```
 
@@ -642,34 +622,32 @@ In `gnomad_link/services/__init__.py`, export `CoverageService` (mirror the exis
 The tool calls `service.get_coverage(...)` to keep the single-service call site convention. In `gnomad_link/services/frequency_service.py`, add ONE small method on `FrequencyService` (lazily constructing a `CoverageService` over the same client — keep it a few lines so the 484-LOC file does not balloon). Place the import at the top of the file with the other service imports is NOT possible (would be circular within the package `__init__`); import inside the method instead:
 
 ```python
-    async def get_coverage(
-        self,
-        *,
-        scope: str,
-        dataset: str,
-        gene_id: str | None = None,
-        gene_symbol: str | None = None,
-        chrom: str | None = None,
-        start: int | None = None,
-        stop: int | None = None,
-        variant_id: str | None = None,
-    ) -> dict[str, Any]:
-        """Delegate to CoverageService; keeps tool call sites on a single service."""
-        from gnomad_link.services.coverage_service import CoverageService
+async def get_coverage(
+    self,
+    *,
+    scope: str,
+    dataset: str,
+    gene_id: str | None = None,
+    gene_symbol: str | None = None,
+    chrom: str | None = None,
+    start: int | None = None,
+    stop: int | None = None,
+    variant_id: str | None = None,
+) -> dict[str, Any]:
+    """Delegate to CoverageService; keeps tool call sites on a single service."""
+    from gnomad_link.services.coverage_service import CoverageService
 
-        coverage = CoverageService(client=self.client)
-        if scope == "gene":
-            return await coverage.get_gene_coverage(
-                gene_id=gene_id, gene_symbol=gene_symbol, dataset=dataset
-            )
-        if scope == "region":
-            assert chrom is not None and start is not None and stop is not None
-            return await coverage.get_region_coverage(
-                chrom=chrom, start=start, stop=stop, dataset=dataset
-            )
-        return await coverage.get_variant_coverage(
-            variant_id=variant_id or "", dataset=dataset
+    coverage = CoverageService(client=self.client)
+    if scope == "gene":
+        return await coverage.get_gene_coverage(
+            gene_id=gene_id, gene_symbol=gene_symbol, dataset=dataset
         )
+    if scope == "region":
+        assert chrom is not None and start is not None and stop is not None
+        return await coverage.get_region_coverage(
+            chrom=chrom, start=start, stop=stop, dataset=dataset
+        )
+    return await coverage.get_variant_coverage(variant_id=variant_id or "", dataset=dataset)
 ```
 
 - [ ] **Step 8: Run the focused tests**
@@ -976,12 +954,8 @@ def shape_coverage_payload(
         "scope": scope,
         "identity": identity,
         "dataset": dataset,
-        "exome": _shape_feature_source(
-            coverage.get("exome"), compact=compact, max_bins=max_bins
-        ),
-        "genome": _shape_feature_source(
-            coverage.get("genome"), compact=compact, max_bins=max_bins
-        ),
+        "exome": _shape_feature_source(coverage.get("exome"), compact=compact, max_bins=max_bins),
+        "genome": _shape_feature_source(coverage.get("genome"), compact=compact, max_bins=max_bins),
     }
 ```
 
@@ -1045,7 +1019,13 @@ class _StubCoverageService:
                     "symbol": "PCSK9",
                     "coverage": {
                         "exome": [
-                            {"pos": 100, "mean": 31.0, "median": 31, "over_20": 0.99, "over_30": 0.8}
+                            {
+                                "pos": 100,
+                                "mean": 31.0,
+                                "median": 31,
+                                "over_20": 0.99,
+                                "over_30": 0.8,
+                            }
                         ],
                         "genome": [],
                     },
@@ -1059,7 +1039,13 @@ class _StubCoverageService:
                     "stop": kwargs["stop"],
                     "coverage": {
                         "exome": [
-                            {"pos": kwargs["start"], "mean": 30.0, "median": 30, "over_20": 0.98, "over_30": 0.7}
+                            {
+                                "pos": kwargs["start"],
+                                "mean": 30.0,
+                                "median": 30,
+                                "over_20": 0.98,
+                                "over_30": 0.7,
+                            }
                         ],
                         "genome": [],
                     },
@@ -1183,7 +1169,7 @@ async def test_get_coverage_registered_and_advertised(fake_service_factory) -> N
 In `tests/unit/mcp/test_mcp_facade_surface.py`, add `"get_coverage"` to the `EXPECTED_TOOLS` set (so the `test_capabilities_tools_match_facade_tools` parity gate and the data-tool annotation/output-schema/description sweeps cover it):
 
 ```python
-    "get_coverage",
+("get_coverage",)
 ```
 
 - [ ] **Step 2: Run the tests and confirm they fail**
@@ -1292,11 +1278,17 @@ def register_coverage_tools(
         ] = "gnomad_r4",
         response_mode: Annotated[
             Literal["compact", "full"],
-            Field(description="compact trims each bin to pos/mean/median/over_20/over_30; full keeps all over_* thresholds."),
+            Field(
+                description="compact trims each bin to pos/mean/median/over_20/over_30; full keeps all over_* thresholds."
+            ),
         ] = "compact",
         max_bins: Annotated[
             int,
-            Field(ge=1, le=20_000, description="Cap on coverage bins per source (gene/region). Summary still reflects all bins."),
+            Field(
+                ge=1,
+                le=20_000,
+                description="Cap on coverage bins per source (gene/region). Summary still reflects all bins.",
+            ),
         ] = 2_000,
     ) -> dict[str, Any]:
         """Use this when a caller needs gnomAD read-depth coverage for a gene, region, or single variant. Provide exactly ONE of gene_symbol, gene_id, region, or variant_id. Gene/region return per-position bins plus a {mean_coverage, fraction_over_20} summary; variant returns scalar coverage. Compact mode trims each bin and caps bin count. Returns ~3-40kB compact (bin-count dependent), larger with response_mode='full'."""
@@ -1420,7 +1412,7 @@ and the call line inside `register_gnomad_tools` (after `register_coordinate_too
 In `gnomad_link/mcp/resources.py`, append `"get_coverage"` to the `tools` list (after `"get_region"`):
 
 ```python
-            "get_coverage",
+("get_coverage",)
 ```
 
 add the token-cost hint (≤80 chars) to `token_cost_hints`:
@@ -1531,14 +1523,24 @@ def test_aligns_overall_af_by_dataset_for_present_datasets() -> None:
     from gnomad_link.mcp.comparison_shaping import build_comparison
 
     per_dataset = {
-        "gnomad_r4": {"present": True, **_shaped(
-            variant_id="1-55039974-G-T", dataset="gnomad_r4",
-            overall_af=0.002, pops={"afr": 0.01, "nfe": 0.001},
-        )},
-        "gnomad_r3": {"present": True, **_shaped(
-            variant_id="1-55039974-G-T", dataset="gnomad_r3",
-            overall_af=0.0018, pops={"afr": 0.009, "nfe": 0.0012},
-        )},
+        "gnomad_r4": {
+            "present": True,
+            **_shaped(
+                variant_id="1-55039974-G-T",
+                dataset="gnomad_r4",
+                overall_af=0.002,
+                pops={"afr": 0.01, "nfe": 0.001},
+            ),
+        },
+        "gnomad_r3": {
+            "present": True,
+            **_shaped(
+                variant_id="1-55039974-G-T",
+                dataset="gnomad_r3",
+                overall_af=0.0018,
+                pops={"afr": 0.009, "nfe": 0.0012},
+            ),
+        },
         "gnomad_r2_1": {"present": False},
     }
 
@@ -1555,14 +1557,24 @@ def test_per_population_deltas_use_max_minus_min_across_present_datasets() -> No
     from gnomad_link.mcp.comparison_shaping import build_comparison
 
     per_dataset = {
-        "gnomad_r4": {"present": True, **_shaped(
-            variant_id="1-55039974-G-T", dataset="gnomad_r4",
-            overall_af=0.002, pops={"afr": 0.01, "nfe": 0.001},
-        )},
-        "gnomad_r3": {"present": True, **_shaped(
-            variant_id="1-55039974-G-T", dataset="gnomad_r3",
-            overall_af=0.0018, pops={"afr": 0.009, "nfe": 0.0012},
-        )},
+        "gnomad_r4": {
+            "present": True,
+            **_shaped(
+                variant_id="1-55039974-G-T",
+                dataset="gnomad_r4",
+                overall_af=0.002,
+                pops={"afr": 0.01, "nfe": 0.001},
+            ),
+        },
+        "gnomad_r3": {
+            "present": True,
+            **_shaped(
+                variant_id="1-55039974-G-T",
+                dataset="gnomad_r3",
+                overall_af=0.0018,
+                pops={"afr": 0.009, "nfe": 0.0012},
+            ),
+        },
     }
 
     comparison = build_comparison(per_dataset)
@@ -1577,14 +1589,24 @@ def test_population_present_in_only_one_dataset_has_zero_delta() -> None:
     from gnomad_link.mcp.comparison_shaping import build_comparison
 
     per_dataset = {
-        "gnomad_r4": {"present": True, **_shaped(
-            variant_id="1-1-A-T", dataset="gnomad_r4",
-            overall_af=0.002, pops={"afr": 0.01, "mid": 0.05},
-        )},
-        "gnomad_r3": {"present": True, **_shaped(
-            variant_id="1-1-A-T", dataset="gnomad_r3",
-            overall_af=0.0018, pops={"afr": 0.009},
-        )},
+        "gnomad_r4": {
+            "present": True,
+            **_shaped(
+                variant_id="1-1-A-T",
+                dataset="gnomad_r4",
+                overall_af=0.002,
+                pops={"afr": 0.01, "mid": 0.05},
+            ),
+        },
+        "gnomad_r3": {
+            "present": True,
+            **_shaped(
+                variant_id="1-1-A-T",
+                dataset="gnomad_r3",
+                overall_af=0.0018,
+                pops={"afr": 0.009},
+            ),
+        },
     }
 
     comparison = build_comparison(per_dataset)
@@ -1599,14 +1621,24 @@ def test_deltas_sorted_by_largest_delta_first() -> None:
     from gnomad_link.mcp.comparison_shaping import build_comparison
 
     per_dataset = {
-        "gnomad_r4": {"present": True, **_shaped(
-            variant_id="1-1-A-T", dataset="gnomad_r4",
-            overall_af=0.5, pops={"afr": 0.5, "nfe": 0.10},
-        )},
-        "gnomad_r3": {"present": True, **_shaped(
-            variant_id="1-1-A-T", dataset="gnomad_r3",
-            overall_af=0.1, pops={"afr": 0.1, "nfe": 0.09},
-        )},
+        "gnomad_r4": {
+            "present": True,
+            **_shaped(
+                variant_id="1-1-A-T",
+                dataset="gnomad_r4",
+                overall_af=0.5,
+                pops={"afr": 0.5, "nfe": 0.10},
+            ),
+        },
+        "gnomad_r3": {
+            "present": True,
+            **_shaped(
+                variant_id="1-1-A-T",
+                dataset="gnomad_r3",
+                overall_af=0.1,
+                pops={"afr": 0.1, "nfe": 0.09},
+            ),
+        },
     }
 
     comparison = build_comparison(per_dataset)
@@ -1620,18 +1652,25 @@ def test_genome_only_dataset_populations_are_aligned() -> None:
     from gnomad_link.mcp.comparison_shaping import build_comparison
 
     r3 = _shaped(
-        variant_id="1-1-A-T", dataset="gnomad_r3",
-        overall_af=0.02, pops={"afr": 0.02},
+        variant_id="1-1-A-T",
+        dataset="gnomad_r3",
+        overall_af=0.02,
+        pops={"afr": 0.02},
     )
     # Move the populations to the genome block; r3 is whole-genome.
     r3["genome"] = r3.pop("exome")
     r3["exome"] = None
 
     per_dataset = {
-        "gnomad_r4": {"present": True, **_shaped(
-            variant_id="1-1-A-T", dataset="gnomad_r4",
-            overall_af=0.03, pops={"afr": 0.03},
-        )},
+        "gnomad_r4": {
+            "present": True,
+            **_shaped(
+                variant_id="1-1-A-T",
+                dataset="gnomad_r4",
+                overall_af=0.03,
+                pops={"afr": 0.03},
+            ),
+        },
         "gnomad_r3": {"present": True, **r3},
     }
 
@@ -1917,9 +1956,7 @@ async def test_compares_two_present_datasets_and_emits_deltas() -> None:
     assert payload["datasets"]["gnomad_r3"]["present"] is True
     overall = payload["comparison"]["overall_af_by_dataset"]
     assert set(overall) == {"gnomad_r4", "gnomad_r3"}
-    by_pop = {
-        row["population"]: row for row in payload["comparison"]["per_population_af_deltas"]
-    }
+    by_pop = {row["population"]: row for row in payload["comparison"]["per_population_af_deltas"]}
     # afr: r4 100/10000 = 0.01 vs r3 80/10000 = 0.008 -> delta 0.002.
     assert abs(by_pop["afr"]["max_minus_min_delta"] - 0.002) < 1e-12
 
@@ -2049,9 +2086,7 @@ async def test_auto_liftover_no_mapping_marks_r2_1_present_false() -> None:
 async def test_next_commands_point_to_clinvar_and_carrier() -> None:
     from gnomad_link.mcp.facade import create_gnomad_mcp
 
-    stub = _StubService(
-        freq_by_dataset={"gnomad_r4": _freq("1-55039974-G-T", "gnomad_r4")}
-    )
+    stub = _StubService(freq_by_dataset={"gnomad_r4": _freq("1-55039974-G-T", "gnomad_r4")})
     mcp = create_gnomad_mcp(service_factory=lambda: stub)
 
     result = await mcp.call_tool(
@@ -2169,9 +2204,7 @@ async def _resolve_r2_1_id(
             return lifted, (
                 f"gnomad_r2_1 (GRCh37) used lifted id {lifted} from GRCh38 {variant_id}."
             )
-    return None, (
-        f"gnomad_r2_1 (GRCh37) skipped: no liftover mapping found for {variant_id}."
-    )
+    return None, (f"gnomad_r2_1 (GRCh37) skipped: no liftover mapping found for {variant_id}.")
 
 
 def register_comparison_tools(
@@ -2640,9 +2673,9 @@ git commit -m "feat(mcp): add pure HWE carrier-frequency math with Wilson CIs an
 Add `compute_carrier_frequency` to `EXPECTED_TOOLS` in `tests/unit/mcp/test_mcp_facade_surface.py`:
 
 ```python
-    "search_variants",  # deprecated alias retained for one release
-    "compute_carrier_frequency",
-    "get_gnomad_diagnostics",
+("search_variants",)  # deprecated alias retained for one release
+("compute_carrier_frequency",)
+("get_gnomad_diagnostics",)
 ```
 
 Create `tests/unit/mcp/test_carrier_tool.py`:
@@ -3091,9 +3124,9 @@ and add the call line inside `register_gnomad_tools`, after `register_variant_to
 Append to capabilities in `gnomad_link/mcp/resources.py`. Add to the `tools` list (after `search_variants`, before `get_gnomad_diagnostics`):
 
 ```python
-            "search_variants",
-            "compute_carrier_frequency",
-            "get_gnomad_diagnostics",
+("search_variants",)
+("compute_carrier_frequency",)
+("get_gnomad_diagnostics",)
 ```
 
 Add to `token_cost_hints` (keep value <=80 chars):
@@ -3200,9 +3233,7 @@ async def test_compute_carrier_frequency_ad_affected_or_carrier() -> None:
 
     # AD overall: 1 - (1 - 0.011)^2 == 2*0.011 - 0.011^2 == 0.021879.
     assert payload["inheritance"] == "AD"
-    assert payload["overall"]["affected_or_carrier_frequency"] == pytest.approx(
-        0.021879, abs=1e-6
-    )
+    assert payload["overall"]["affected_or_carrier_frequency"] == pytest.approx(0.021879, abs=1e-6)
     assert payload["overall"]["ci_low"] < payload["overall"]["affected_or_carrier_frequency"]
     assert payload["overall"]["ci_high"] > payload["overall"]["affected_or_carrier_frequency"]
 
@@ -3565,7 +3596,11 @@ def _gene_payload() -> dict[str, Any]:
             "refseq_version": "4",
         },
         "clinvar_variants": [
-            {"variant_id": "1-55039974-G-T", "clinical_significance": "Pathogenic", "gold_stars": 2},
+            {
+                "variant_id": "1-55039974-G-T",
+                "clinical_significance": "Pathogenic",
+                "gold_stars": 2,
+            },
         ],
         "pext": {"flags": [], "regions": []},
     }
@@ -3889,8 +3924,16 @@ def test_rank_pathogenic_keeps_only_p_lp_sorted_by_gold_stars() -> None:
         {"variant_id": "1-1-A-G", "clinical_significance": "Benign", "gold_stars": 4},
         {"variant_id": "1-2-A-G", "clinical_significance": "Likely pathogenic", "gold_stars": 1},
         {"variant_id": "1-3-A-G", "clinical_significance": "Pathogenic", "gold_stars": 3},
-        {"variant_id": "1-4-A-G", "clinical_significance": "Uncertain significance", "gold_stars": 2},
-        {"variant_id": "1-5-A-G", "clinical_significance": "Pathogenic/Likely pathogenic", "gold_stars": 2},
+        {
+            "variant_id": "1-4-A-G",
+            "clinical_significance": "Uncertain significance",
+            "gold_stars": 2,
+        },
+        {
+            "variant_id": "1-5-A-G",
+            "clinical_significance": "Pathogenic/Likely pathogenic",
+            "gold_stars": 2,
+        },
     ]
 
     summary = rank_pathogenic_clinvar(rows, clinvar_limit=10)
@@ -4353,49 +4396,50 @@ Change the public method signature to accept `include_expression: bool = True`, 
 Add the private helper method to `GeneSummaryService`:
 
 ```python
-    async def _fetch_expression(
-        self,
-        *,
-        gene: dict[str, Any],
-        gene_id: str | None,
-        gene_symbol: str | None,
-        dataset: str,
-        reference_genome: str,
-    ) -> dict[str, Any]:
-        """Resolve pext + canonical-transcript GTEx, backfilling from GRCh37 when needed.
+async def _fetch_expression(
+    self,
+    *,
+    gene: dict[str, Any],
+    gene_id: str | None,
+    gene_symbol: str | None,
+    dataset: str,
+    reference_genome: str,
+) -> dict[str, Any]:
+    """Resolve pext + canonical-transcript GTEx, backfilling from GRCh37 when needed.
 
-        On GRCh38 the primary gene's pext is empty, so re-fetch the gene on
-        GRCh37 (gnomad_r2_1) to obtain populated pext and the canonical
-        transcript GTEx expression. compact_expression downgrades to
-        {"unavailable": True} when both are empty.
-        """
-        pext = gene.get("pext")
-        canonical_id = gene.get("canonical_transcript_id")
-        if reference_genome == "GRCh37":
-            gtex = await self._canonical_gtex(canonical_id, "GRCh37")
-            return compact_expression(pext=pext, gtex_tissue_expression=gtex)
+    On GRCh38 the primary gene's pext is empty, so re-fetch the gene on
+    GRCh37 (gnomad_r2_1) to obtain populated pext and the canonical
+    transcript GTEx expression. compact_expression downgrades to
+    {"unavailable": True} when both are empty.
+    """
+    pext = gene.get("pext")
+    canonical_id = gene.get("canonical_transcript_id")
+    if reference_genome == "GRCh37":
+        gtex = await self._canonical_gtex(canonical_id, "GRCh37")
+        return compact_expression(pext=pext, gtex_tissue_expression=gtex)
 
-        # GRCh38 primary: backfill from GRCh37.
-        raw37 = await self.client.get_gene_summary(
-            gene_id=gene_id,
-            gene_symbol=gene_symbol,
-            reference_genome="GRCh37",
-            dataset="gnomad_r2_1",
-        )
-        gene37 = raw37.get("gene") or {}
-        pext37 = gene37.get("pext")
-        canonical37 = gene37.get("canonical_transcript_id") or canonical_id
-        gtex37 = await self._canonical_gtex(canonical37, "GRCh37")
-        return compact_expression(pext=pext37, gtex_tissue_expression=gtex37)
+    # GRCh38 primary: backfill from GRCh37.
+    raw37 = await self.client.get_gene_summary(
+        gene_id=gene_id,
+        gene_symbol=gene_symbol,
+        reference_genome="GRCh37",
+        dataset="gnomad_r2_1",
+    )
+    gene37 = raw37.get("gene") or {}
+    pext37 = gene37.get("pext")
+    canonical37 = gene37.get("canonical_transcript_id") or canonical_id
+    gtex37 = await self._canonical_gtex(canonical37, "GRCh37")
+    return compact_expression(pext=pext37, gtex_tissue_expression=gtex37)
 
-    async def _canonical_gtex(
-        self, transcript_id: str | None, reference_genome: str
-    ) -> list[dict[str, Any]]:
-        if not transcript_id:
-            return []
-        raw = await self.client.get_transcript_gtex(transcript_id, reference_genome)
-        transcript = raw.get("transcript") or {}
-        return list(transcript.get("gtex_tissue_expression") or [])
+
+async def _canonical_gtex(
+    self, transcript_id: str | None, reference_genome: str
+) -> list[dict[str, Any]]:
+    if not transcript_id:
+        return []
+    raw = await self.client.get_transcript_gtex(transcript_id, reference_genome)
+    transcript = raw.get("transcript") or {}
+    return list(transcript.get("gtex_tissue_expression") or [])
 ```
 
 Note the `from gnomad_link.mcp.gene_summary_shaping import compact_expression` module-level import is safe: `gene_summary_shaping` imports only `typing`, so there is no cycle back into `services`.
@@ -4484,9 +4528,7 @@ class _StubGeneSummaryService:
         gene_symbol: str | None = None,
         dataset: str = "gnomad_r4",
     ) -> dict[str, Any]:
-        self.calls.append(
-            {"gene_id": gene_id, "gene_symbol": gene_symbol, "dataset": dataset}
-        )
+        self.calls.append({"gene_id": gene_id, "gene_symbol": gene_symbol, "dataset": dataset})
         return {
             "gene_id": "ENSG00000169174",
             "symbol": "PCSK9",
@@ -4498,16 +4540,31 @@ class _StubGeneSummaryService:
             "canonical_transcript_id": "ENST00000302118",
             "mane_select_transcript": {"ensembl_id": "ENST00000302118", "refseq_id": "NM_174936"},
             "clinvar_variants": [
-                {"variant_id": "1-1-A-G", "clinical_significance": "Pathogenic", "gold_stars": 3,
-                 "major_consequence": "missense_variant"},
-                {"variant_id": "1-2-A-G", "clinical_significance": "Likely pathogenic", "gold_stars": 1,
-                 "major_consequence": "missense_variant"},
-                {"variant_id": "1-3-A-G", "clinical_significance": "Benign", "gold_stars": 2,
-                 "major_consequence": "synonymous_variant"},
+                {
+                    "variant_id": "1-1-A-G",
+                    "clinical_significance": "Pathogenic",
+                    "gold_stars": 3,
+                    "major_consequence": "missense_variant",
+                },
+                {
+                    "variant_id": "1-2-A-G",
+                    "clinical_significance": "Likely pathogenic",
+                    "gold_stars": 1,
+                    "major_consequence": "missense_variant",
+                },
+                {
+                    "variant_id": "1-3-A-G",
+                    "clinical_significance": "Benign",
+                    "gold_stars": 2,
+                    "major_consequence": "synonymous_variant",
+                },
             ],
             "pext": {"flags": [], "regions": []},
-            "expression": {"source_build": "GRCh37", "mean_pext": 0.7,
-                           "top_tissues": [{"tissue": "Liver", "value": 42.0}]},
+            "expression": {
+                "source_build": "GRCh37",
+                "mean_pext": 0.7,
+                "top_tissues": [{"tissue": "Liver", "value": 42.0}],
+            },
             "flags": [],
             "partial": False,
         }
@@ -4750,8 +4807,8 @@ and add the call line inside `register_gnomad_tools`, after `register_gene_tools
 In `gnomad_link/mcp/resources.py`, add `"get_gene_summary"` to the `tools` list (after `"get_gene_variants"`):
 
 ```python
-            "get_gene_variants",
-            "get_gene_summary",
+("get_gene_variants",)
+("get_gene_summary",)
 ```
 
 Add the `token_cost_hints` entry (<=80 chars), after the `get_gene_variants` hint:
@@ -5033,70 +5090,67 @@ query sv_search_by_region(
 In `gnomad_link/api/client.py`, append two methods to `UnifiedGnomadClient`. The `QueryBuilder.process_variables` path has no `sv_search` branch, so it passes variables through unchanged — pass `reference_genome` and `sv_dataset` explicitly. The version arg to `execute_query` is effectively unused here: these are `common/`-only documents resolved by file stem (no per-version variants exist), and the query is build-parameterised via `$reference_genome`, not version-specific. (`QueryBuilder.DATASET_VERSIONS` maps `gnomad_sv_r2_1`→`v2` and `gnomad_sv_r4`→`v4`, but that mapping is irrelevant for a common-only doc selected by stem.) Load by the operation name so `gql()` parses only the requested operation.
 
 ```python
-    async def search_structural_variants_by_gene(
-        self,
-        *,
-        gene_id: str | None,
-        gene_symbol: str | None,
-        reference_genome: str,
-        sv_dataset: str = "gnomad_sv_r4",
-    ) -> list[dict[str, Any]]:
-        """Search structural variants overlapping a gene.
+async def search_structural_variants_by_gene(
+    self,
+    *,
+    gene_id: str | None,
+    gene_symbol: str | None,
+    reference_genome: str,
+    sv_dataset: str = "gnomad_sv_r4",
+) -> list[dict[str, Any]]:
+    """Search structural variants overlapping a gene.
 
-        Args:
-            gene_id: Ensembl gene ID (mutually exclusive with gene_symbol)
-            gene_symbol: HGNC gene symbol
-            reference_genome: GRCh37 or GRCh38 (derived from sv_dataset)
-            sv_dataset: StructuralVariantDatasetId enum value
+    Args:
+        gene_id: Ensembl gene ID (mutually exclusive with gene_symbol)
+        gene_symbol: HGNC gene symbol
+        reference_genome: GRCh37 or GRCh38 (derived from sv_dataset)
+        sv_dataset: StructuralVariantDatasetId enum value
 
-        Returns:
-            Flat list of structural variant rows (may be empty)
-        """
-        variables: dict[str, Any] = {
-            "gene_id": gene_id,
-            "gene_symbol": gene_symbol,
-            "reference_genome": reference_genome,
-            "sv_dataset": sv_dataset,
-        }
-        result = await self.execute_query(
-            "sv_search_by_gene", variables, "v4"
-        )
-        gene = result.get("gene") or {}
-        return list(gene.get("structural_variants") or [])
+    Returns:
+        Flat list of structural variant rows (may be empty)
+    """
+    variables: dict[str, Any] = {
+        "gene_id": gene_id,
+        "gene_symbol": gene_symbol,
+        "reference_genome": reference_genome,
+        "sv_dataset": sv_dataset,
+    }
+    result = await self.execute_query("sv_search_by_gene", variables, "v4")
+    gene = result.get("gene") or {}
+    return list(gene.get("structural_variants") or [])
 
-    async def search_structural_variants_by_region(
-        self,
-        *,
-        chrom: str,
-        start: int,
-        stop: int,
-        reference_genome: str,
-        sv_dataset: str = "gnomad_sv_r4",
-    ) -> list[dict[str, Any]]:
-        """Search structural variants overlapping a region.
 
-        Args:
-            chrom: Chromosome (no chr prefix)
-            start: 1-based start position
-            stop: 1-based stop position
-            reference_genome: GRCh37 or GRCh38 (derived from sv_dataset)
-            sv_dataset: StructuralVariantDatasetId enum value
+async def search_structural_variants_by_region(
+    self,
+    *,
+    chrom: str,
+    start: int,
+    stop: int,
+    reference_genome: str,
+    sv_dataset: str = "gnomad_sv_r4",
+) -> list[dict[str, Any]]:
+    """Search structural variants overlapping a region.
 
-        Returns:
-            Flat list of structural variant rows (may be empty)
-        """
-        variables: dict[str, Any] = {
-            "chrom": chrom,
-            "start": start,
-            "stop": stop,
-            "reference_genome": reference_genome,
-            "sv_dataset": sv_dataset,
-        }
-        result = await self.execute_query(
-            "sv_search_by_region", variables, "v4"
-        )
-        region = result.get("region") or {}
-        return list(region.get("structural_variants") or [])
+    Args:
+        chrom: Chromosome (no chr prefix)
+        start: 1-based start position
+        stop: 1-based stop position
+        reference_genome: GRCh37 or GRCh38 (derived from sv_dataset)
+        sv_dataset: StructuralVariantDatasetId enum value
+
+    Returns:
+        Flat list of structural variant rows (may be empty)
+    """
+    variables: dict[str, Any] = {
+        "chrom": chrom,
+        "start": start,
+        "stop": stop,
+        "reference_genome": reference_genome,
+        "sv_dataset": sv_dataset,
+    }
+    result = await self.execute_query("sv_search_by_region", variables, "v4")
+    region = result.get("region") or {}
+    return list(region.get("structural_variants") or [])
 ```
 
 The loader resolves `sv_search_by_gene` / `sv_search_by_region` by file stem. Because both operations live in one `sv_search.graphql` file (and neither stem matches a file), add per-operation lookup: in `execute_query` the query name is used both to load the file AND to detect the not-found sentinel (`result[query_name] is None`). To keep the loader and not-found logic working without a loader change, name the files by operation. Create the document above as `gnomad_link/graphql/queries/common/sv_search_by_gene.graphql` (the gene query only) and `gnomad_link/graphql/queries/common/sv_search_by_region.graphql` (the region query only), each containing a single operation. The data envelope key is `gene` / `region`, which the methods read directly (NOT keyed by the operation name), so the `result[query_name] is None` sentinel in `execute_query` never trips for `sv_search_by_*` (the key is absent), and DataNotFoundError surfaces only via `TransportQueryError` "not found" classification. Delete the combined `sv_search.graphql` from Step 3 and use the two single-operation files instead.
@@ -5205,13 +5259,9 @@ class StructuralVariantService:
         """
         provided = [v for v in (gene_symbol, gene_id, region) if v]
         if len(provided) != 1:
-            raise ValueError(
-                "Provide exactly one of gene_symbol, gene_id, or region."
-            )
+            raise ValueError("Provide exactly one of gene_symbol, gene_id, or region.")
         if sv_dataset not in _SV_DATASET_BUILD:
-            raise ValueError(
-                "Invalid sv_dataset; expected gnomad_sv_r4 or gnomad_sv_r2_1."
-            )
+            raise ValueError("Invalid sv_dataset; expected gnomad_sv_r4 or gnomad_sv_r2_1.")
         reference_genome = _SV_DATASET_BUILD[sv_dataset]
 
         if region:
@@ -5388,9 +5438,7 @@ def test_filter_by_sv_type() -> None:
 
 
 def test_filter_by_length_window() -> None:
-    out = shape_sv_search(
-        _ROWS, sv_type=None, min_length=1000, max_length=50_000, limit=100
-    )
+    out = shape_sv_search(_ROWS, sv_type=None, min_length=1000, max_length=50_000, limit=100)
 
     # Only DEL_19_1 (44820) is in [1000, 50000].
     assert [r["variant_id"] for r in out["structural_variants"]] == ["DEL_19_1"]
@@ -5536,9 +5584,7 @@ def shape_sv_search(
                 "min_length": min_length,
                 "max_length": max_length,
             },
-            "to_disable": (
-                "raise limit (max 500) or relax sv_type/min_length/max_length filters"
-            ),
+            "to_disable": ("raise limit (max 500) or relax sv_type/min_length/max_length filters"),
         }
         if to_restore:
             truncated["to_restore"] = to_restore
@@ -5669,9 +5715,7 @@ async def test_distinct_sv_dataset_default_is_r4() -> None:
     spy = _SpySvService()
     mcp = create_gnomad_mcp(service_factory=lambda: spy)
 
-    result = await mcp.call_tool(
-        "search_structural_variants", {"gene_symbol": "SMARCA4"}
-    )
+    result = await mcp.call_tool("search_structural_variants", {"gene_symbol": "SMARCA4"})
     payload = result.structured_content or {}
 
     assert payload.get("error_code") != "validation_failed", payload
@@ -5741,9 +5785,7 @@ async def test_empty_result_is_success_not_error() -> None:
     spy = _SpySvService(rows=[])
     mcp = create_gnomad_mcp(service_factory=lambda: spy)
 
-    result = await mcp.call_tool(
-        "search_structural_variants", {"gene_symbol": "NONEXISTENT"}
-    )
+    result = await mcp.call_tool("search_structural_variants", {"gene_symbol": "NONEXISTENT"})
     payload = result.structured_content or {}
 
     assert payload.get("success") is not False
@@ -5759,9 +5801,7 @@ async def test_next_commands_link_to_get_structural_variant() -> None:
     spy = _SpySvService()
     mcp = create_gnomad_mcp(service_factory=lambda: spy)
 
-    result = await mcp.call_tool(
-        "search_structural_variants", {"gene_symbol": "SMARCA4"}
-    )
+    result = await mcp.call_tool("search_structural_variants", {"gene_symbol": "SMARCA4"})
     payload = result.structured_content or {}
     next_commands = payload["_meta"]["next_commands"]
 
@@ -5769,9 +5809,7 @@ async def test_next_commands_link_to_get_structural_variant() -> None:
     assert all(cmd["tool"] == "get_structural_variant" for cmd in next_commands)
     ids = [cmd["arguments"]["variant_id"] for cmd in next_commands]
     assert ids == ["DEL_19_1", "DUP_19_2"]
-    assert all(
-        cmd["arguments"]["dataset"] == "gnomad_sv_r4" for cmd in next_commands
-    )
+    assert all(cmd["arguments"]["dataset"] == "gnomad_sv_r4" for cmd in next_commands)
 
 
 @pytest.mark.asyncio
@@ -5923,9 +5961,7 @@ def register_sv_search_tools(
         async def call() -> dict[str, Any]:
             provided = [v for v in (gene_symbol, gene_id, region) if v]
             if len(provided) != 1:
-                raise ValueError(
-                    "Provide exactly one of gene_symbol, gene_id, or region."
-                )
+                raise ValueError("Provide exactly one of gene_symbol, gene_id, or region.")
             service = service_factory()
             raw = await service.search_structural_variants(
                 gene_symbol=gene_symbol,
@@ -5997,8 +6033,8 @@ In `gnomad_link/mcp/resources.py` `get_capabilities_resource()`:
 Append `"search_structural_variants"` to the `tools` list (place it after `"get_structural_variant"`):
 
 ```python
-            "get_structural_variant",
-            "search_structural_variants",
+("get_structural_variant",)
+("search_structural_variants",)
 ```
 
 Add a `token_cost_hints` entry (<=80 chars), after the `get_structural_variant` line:
