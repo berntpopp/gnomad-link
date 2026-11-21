@@ -224,7 +224,10 @@ def test_hostile_text_is_never_echoed_into_a_converter_call() -> None:
     redirect_validation_payload(
         payload, [{"loc": ("variant_id",), "input": "x:c." + "A" * 5000 + "\u202e\x00"}]
     )
-    assert payload == {"_meta": {"next_commands": []}}
+    # Named as malformed (#151), but nothing of the input is echoed and no call is offered.
+    assert payload["_meta"]["next_commands"] == []
+    assert "fallback_args" not in payload
+    assert "AAAA" not in str(payload) and "\u202e" not in str(payload)
 
 
 @pytest.mark.asyncio
@@ -269,4 +272,14 @@ async def test_accession_hgvs_with_space_or_protein_tail_sends_the_bare_expressi
             "arguments": {"variants": [HGVS], "fields": "vcf_string", "assembly": "GRCh38"},
         },
     )
+    assert stub.calls == []
+
+
+@pytest.mark.asyncio
+async def test_variant_id_schema_hides_pattern_and_server_still_redirects_hgvs() -> None:
+    """#151: a published pattern lets the client stop the call before the server's hint."""
+    tools = {t.name: t for t in await create_gnomad_mcp(service_factory=_Stub).list_tools()}
+    assert "pattern" not in tools["get_variant_frequencies"].parameters["properties"]["variant_id"]
+    payload, stub = await _call("get_variant_frequencies", variant_id="NM_000314.8:c.212G>A")
+    assert payload["fallback_tool"] == "vep_recode_variant"
     assert stub.calls == []

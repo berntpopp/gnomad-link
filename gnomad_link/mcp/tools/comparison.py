@@ -15,6 +15,7 @@ from gnomad_link.mcp.comparison_shaping import build_comparison
 from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
 from gnomad_link.mcp.headline import comparison_headline
 from gnomad_link.mcp.minimal_shaping import project_compare_variant_minimal
+from gnomad_link.mcp.patterns import hide_pattern
 from gnomad_link.mcp.population_shaping import validate_population_codes
 from gnomad_link.mcp.shaping import shape_variant_frequencies
 from gnomad_link.mcp.tools.coordinates import select_build_variant_id
@@ -78,6 +79,7 @@ def register_comparison_tools(
                 min_length=5,
                 max_length=200,
                 pattern=_AUTOSOMAL_VARIANT_ID_PATTERN,
+                json_schema_extra=hide_pattern,
                 examples=["1-55039974-G-T", "17-7673803-G-A"],
             ),
         ],

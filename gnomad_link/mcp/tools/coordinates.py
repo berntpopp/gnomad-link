@@ -12,6 +12,7 @@ from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.build_check import detect_region_mismatch
 from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, ToolInputError, run_mcp_tool
 from gnomad_link.mcp.headline import region_headline
+from gnomad_link.mcp.patterns import hide_pattern
 from gnomad_link.mcp.shaping import cap_region_span, shape_region_payload
 from gnomad_link.services import FrequencyService
 
@@ -53,6 +54,7 @@ def register_coordinate_tools(
                 min_length=5,
                 max_length=200,
                 pattern=_LIFTOVER_VARIANT_ID_PATTERN,
+                json_schema_extra=hide_pattern,
                 examples=["1-55051215-G-GA", "MT-7497-G-A"],
             ),
         ],
