@@ -12,6 +12,7 @@ from typing import Any, Literal
 
 from gnomad_link.mcp.mito_redirect import redirect_validation_payload as _redirect_mito
 from gnomad_link.mcp.next_commands import cmd
+from gnomad_link.mcp.patterns import as_mito_variant_id
 
 GENE_FORMS = ["gene symbol (e.g. KRAS)", "Ensembl gene id (e.g. ENSG00000133703)"]
 VARIANT_FORMS = [
@@ -41,6 +42,16 @@ _HGVS_REFERENCE = re.compile(
     r"|ENS[TG]\d{11}(\.\d{1,3})?|(chr)?([1-9]|1\d|2[0-2]|X|Y)",
     _FLAGS,
 )
+# Near-miss coordinate ids: chr prefix, lower case, ":" / space / ">" / "/" separators.
+_LOOSE_ID = re.compile(
+    r"(?:chr)?([1-9]|1\d|2[0-2]|X|Y)[-:_ ](\d{1,9})[-:_ ]([ACGT]{1,50})[-:_ />]{1,3}([ACGT]{1,50})",
+    _FLAGS,
+)
+# A deletion written with an empty alt ("12-102843751-AGA-"): not VCF left-anchored.
+_EMPTY_ALT = re.compile(
+    r"(?:chr)?([1-9]|1\d|2[0-2]|X|Y)[-:](\d{1,9})[-:]([ACGT]{1,50})[-:][-.]?", _FLAGS
+)
+_PRINTABLE = re.compile(r"[ -~]{3,100}")  # resolve_variant_id's query bounds, ASCII only
 _MITO_SNV = re.compile(r"(?:[A-Za-z0-9_.]{1,20}:)?m\.(\d{1,5})([ACGT])>([ACGT])", re.ASCII)
 
 
@@ -106,6 +117,37 @@ def foreign_recovery(
     }
 
 
+def malformed_variant_recovery(value: object) -> dict[str, Any]:
+    """Recovery for a variant id of no recognised form: the accepted form and the next call."""
+    # A bare rs number may arrive as a JSON integer, failing the str type check.
+    v = str(value).strip() if isinstance(value, str | int) and not isinstance(value, bool) else ""
+    recovery = (
+        "Not a retry: send CHROM-POS-REF-ALT (VCF-style, left-anchored indels, e.g. "
+        "17-7674232-G-A or 1-55051214-AG-A) or call the next command to find it."
+    )
+    command = None
+    if v.isascii() and v.isdigit():
+        command = cmd("resolve_variant_id", query=f"rs{v}")
+    elif m := _LOOSE_ID.fullmatch(v):
+        command = cmd("resolve_variant_id", query="-".join(m.groups()).upper())
+    elif m := _EMPTY_ALT.fullmatch(v):
+        chrom, pos, ref = m[1].upper(), int(m[2]), m[3]
+        span = f"{pos}_{pos + len(ref) - 1}" if len(ref) > 1 else str(pos)
+        command = cmd("vep_recode_variant", variants=[f"{chrom}:g.{span}del"], fields="vcf_string")
+        recovery = (
+            "Not a retry: an empty ALT is not a gnomAD id (indels keep the preceding base). "
+            "Call vep_recode_variant and pass its vcf_string, the CHROM-POS-REF-ALT id, to this tool."
+        )
+    elif _PRINTABLE.fullmatch(v):
+        command = cmd("resolve_variant_id", query=v)
+    return {
+        "message": "Not a gnomAD variant id: it takes CHROM-POS-REF-ALT (e.g. 17-7674232-G-A).",
+        "allowed_values": VARIANT_FORMS,
+        "recovery": recovery,
+        "command": command,
+    }
+
+
 def _apply(payload: dict[str, Any], found: dict[str, Any], field: str) -> None:
     command = found["command"]
     payload["message"], payload["recovery"] = found["message"], found["recovery"]
@@ -153,7 +195,10 @@ def redirect_validation_payload(payload: dict[str, Any], errors: list[Any]) -> N
     _redirect_mito(payload, errors)
     for err in errors:
         field = ".".join(str(x) for x in err.get("loc", ()))
-        found = foreign_recovery(err.get("input"), "variant") if "variant" in field else None
-        if found:
-            _apply(payload, found, field)
-            return
+        value = err.get("input")
+        if "variant" not in field or as_mito_variant_id(value):
+            continue
+        _apply(
+            payload, foreign_recovery(value, "variant") or malformed_variant_recovery(value), field
+        )
+        return

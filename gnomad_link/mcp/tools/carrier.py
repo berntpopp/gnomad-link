@@ -14,6 +14,7 @@ from gnomad_link.mcp.build_check import detect_variant_id_mismatch
 from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, run_mcp_tool
 from gnomad_link.mcp.headline import variant_carrier_headline
 from gnomad_link.mcp.minimal_shaping import project_carrier_frequency_minimal
+from gnomad_link.mcp.patterns import variant_id_check
 from gnomad_link.mcp.population_shaping import validate_population_codes
 from gnomad_link.mcp.provenance import provenance_block
 from gnomad_link.models import PopulationFrequency, VariantDataSource, VariantFrequencyResponse
@@ -301,8 +302,10 @@ def register_carrier_tools(
                 description="CHROM-POS-REF-ALT (e.g. 7-117559590-ATCT-A). Autosomal/X-Y only.",
                 min_length=5,
                 max_length=200,
-                pattern=_AUTOSOMAL_VARIANT_ID_PATTERN,
                 examples=["7-117559590-ATCT-A", "X-153296777-C-T"],
+            ),
+            variant_id_check(
+                _AUTOSOMAL_VARIANT_ID_PATTERN, "CHROM-POS-REF-ALT (e.g. 17-7674232-G-A)"
             ),
         ],
         inheritance: Annotated[

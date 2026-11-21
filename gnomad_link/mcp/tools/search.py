@@ -269,7 +269,7 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
             Field(
                 min_length=3,
                 max_length=100,
-                description="rsID, CHROM-POS-REF-ALT, 'CHROM:POS', or a chrM id (M-POS-REF-ALT).",
+                description="rsID, CHROM-POS-REF-ALT, or a chrM id (M-POS-REF-ALT).",
                 examples=["rs80357906"],
             ),
         ],
@@ -293,7 +293,7 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
             ),
         ] = True,
     ) -> dict[str, Any]:
-        """Use this when the caller only has an rsID, partial coordinates, or text fragment; returns candidate canonical gnomAD variant ids. With enrich=True (default) the top hits include gene_symbol, major_consequence, and AF so the caller can rank candidates without a follow-up call. Mitochondrial ids (M-/MT-/chrM-POS-REF-ALT) resolve via the gnomAD mitochondrial dataset (gnomad_r4/r3 only) with af_hom/af_het; follow up with get_mitochondrial_variant. Returns ~1-5kB (enrichment dependent)."""
+        """Use this when the caller only has an rsID, a CHROM-POS-REF-ALT id to confirm, or text fragment; returns candidate canonical gnomAD variant ids. With enrich=True (default) the top hits include gene_symbol, major_consequence, and AF so the caller can rank candidates without a follow-up call. Mitochondrial ids (M-/MT-/chrM-POS-REF-ALT) resolve via the gnomAD mitochondrial dataset (gnomad_r4/r3 only) with af_hom/af_het; follow up with get_mitochondrial_variant. Returns ~1-5kB (enrichment dependent)."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()
@@ -355,7 +355,7 @@ def register_search_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequen
             Field(
                 min_length=3,
                 max_length=100,
-                description="rsID, CHROM-POS-REF-ALT, 'CHROM:POS', or a chrM id (M-POS-REF-ALT).",
+                description="rsID, CHROM-POS-REF-ALT, or a chrM id (M-POS-REF-ALT).",
                 examples=["rs80357906"],
             ),
         ],

@@ -12,6 +12,7 @@ from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.build_check import detect_region_mismatch
 from gnomad_link.mcp.errors import BuildMismatchError, McpErrorContext, ToolInputError, run_mcp_tool
 from gnomad_link.mcp.headline import region_headline
+from gnomad_link.mcp.patterns import variant_id_check
 from gnomad_link.mcp.shaping import cap_region_span, shape_region_payload
 from gnomad_link.services import FrequencyService
 
@@ -52,8 +53,10 @@ def register_coordinate_tools(
                 description="Variant ID to convert (CHROM-POS-REF-ALT). Mitochondrial M/MT prefixes are accepted.",
                 min_length=5,
                 max_length=200,
-                pattern=_LIFTOVER_VARIANT_ID_PATTERN,
                 examples=["1-55051215-G-GA", "MT-7497-G-A"],
+            ),
+            variant_id_check(
+                _LIFTOVER_VARIANT_ID_PATTERN, "CHROM-POS-REF-ALT (e.g. 17-7674232-G-A)"
             ),
         ],
         source_genome: Annotated[

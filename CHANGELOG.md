@@ -4,6 +4,22 @@ All notable changes to gnomad-link are documented here.
 
 ## [Unreleased]
 
+## [9.3.5] - 2026-11-21
+
+### Fixed
+
+- Variant-id tools (`get_variant_frequencies`, `get_variant_details`,
+  `get_clinvar_variant_details`, `compute_carrier_frequency`,
+  `compare_variant_across_datasets`, `compute_variant_liftover`) no longer advertise a
+  schema `pattern`: clients enforced it and showed only a bare regex error. The same
+  grammar runs server-side, so every wrong shape gets `invalid_input` naming the field,
+  the CHROM-POS-REF-ALT form and a ready next call: `resolve_variant_id` with
+  `rs<number>` for a bare number, with the canonical id for a near-miss
+  (`chr17:7674232 G>A`), `vep_recode_variant` for HGVS or an empty-ALT deletion
+  (`12-102843751-AGA-`), else `resolve_variant_id` with the value (#151).
+- `resolve_variant_id` / `search_variants` no longer advertise `CHROM:POS` queries,
+  which gnomAD rejects (#152).
+
 ## [9.3.4] - 2026-11-21
 
 ### Fixed

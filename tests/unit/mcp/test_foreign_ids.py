@@ -224,7 +224,10 @@ def test_hostile_text_is_never_echoed_into_a_converter_call() -> None:
     redirect_validation_payload(
         payload, [{"loc": ("variant_id",), "input": "x:c." + "A" * 5000 + "\u202e\x00"}]
     )
-    assert payload == {"_meta": {"next_commands": []}}
+    # Named as malformed (#151), but nothing of the input is echoed and no call is offered.
+    assert payload["_meta"]["next_commands"] == []
+    assert "fallback_args" not in payload
+    assert "AAAA" not in str(payload) and "\u202e" not in str(payload)
 
 
 @pytest.mark.asyncio
