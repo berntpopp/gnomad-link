@@ -386,9 +386,9 @@ async def test_get_variant_frequencies_rejects_malformed_id() -> None:
     assert _is_validation_failed(payload)
     field_errors = payload.get("field_errors", [])
     assert any(
-        fe.get("field") == "variant_id" and "CHROM-POS-REF-ALT" in fe.get("reason", "")
+        fe.get("field") == "variant_id" and "pattern" in fe.get("reason", "").lower()
         for fe in field_errors
-    ), f"expected grammar field_error for variant_id, got {field_errors!r}"
+    ), f"expected pattern field_error for variant_id, got {field_errors!r}"
 
 
 @pytest.mark.asyncio

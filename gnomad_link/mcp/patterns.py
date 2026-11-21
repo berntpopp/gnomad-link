@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import re
-
-from pydantic import AfterValidator
+from typing import Any
 
 GENE_ID_PATTERN = r"^ENSG\d{11}$"
 GENE_SYMBOL_PATTERN = r"^[A-Za-z0-9._-]{1,32}$"
@@ -22,20 +21,13 @@ _MITO_PREFIX_RE = re.compile(r"^(?:chr)?(?:MT?)-", re.IGNORECASE)
 _GENE_ID_RE = re.compile(GENE_ID_PATTERN)
 
 
-def variant_id_check(pattern: str, accepted: str) -> AfterValidator:
-    """Server-side variant-id grammar, kept out of the advertised schema (gnomad-link #151).
+def hide_pattern(schema: dict[str, Any]) -> None:
+    """Drop ``pattern`` from the published schema; pydantic still enforces it (#151).
 
-    A schema ``pattern`` is enforced by the client, whose bare regex error hides the
-    server's converter hint; this check fails as the same arg-validation envelope.
+    A schema-checking client stops the call with a bare regex error, so the server's
+    recovery hint (converter call, resolver call, mito redirect) never reaches the caller.
     """
-    rx = re.compile(pattern)
-
-    def check(value: str) -> str:
-        if not rx.fullmatch(value):
-            raise ValueError(f"must be {accepted}")
-        return value
-
-    return AfterValidator(check)
+    schema.pop("pattern", None)
 
 
 def normalize_mito_variant_id(variant_id: str) -> str:

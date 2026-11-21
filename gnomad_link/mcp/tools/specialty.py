@@ -15,7 +15,11 @@ from gnomad_link.mcp.headline import (
     structural_variant_headline,
 )
 from gnomad_link.mcp.next_commands import cmd
-from gnomad_link.mcp.patterns import MITO_VARIANT_ID_PATTERN, normalize_mito_variant_id
+from gnomad_link.mcp.patterns import (
+    MITO_VARIANT_ID_PATTERN,
+    hide_pattern,
+    normalize_mito_variant_id,
+)
 from gnomad_link.mcp.shaping import shape_mitochondrial_variant
 from gnomad_link.mcp.sv_shaping import shape_structural_variant
 from gnomad_link.services import FrequencyService
@@ -81,6 +85,7 @@ def register_specialty_tools(
                 min_length=3,
                 max_length=200,
                 pattern=_SV_ID_PATTERN,
+                json_schema_extra=hide_pattern,
                 examples=["BND_chr12_e99836ac"],
             ),
         ],
@@ -141,6 +146,7 @@ def register_specialty_tools(
                 min_length=5,
                 max_length=100,
                 pattern=MITO_VARIANT_ID_PATTERN,
+                json_schema_extra=hide_pattern,
                 examples=["M-7497-G-A"],
             ),
         ],

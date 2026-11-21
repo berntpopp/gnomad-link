@@ -16,7 +16,7 @@ from gnomad_link.mcp.headline import variant_frequencies_headline
 from gnomad_link.mcp.minimal_shaping import project_variant_frequencies_minimal
 from gnomad_link.mcp.next_commands import for_variant
 from gnomad_link.mcp.other_build import not_found_with_other_build
-from gnomad_link.mcp.patterns import variant_id_check
+from gnomad_link.mcp.patterns import hide_pattern
 from gnomad_link.mcp.population_shaping import validate_population_codes
 from gnomad_link.mcp.rsid import RSID_PATTERN, resolve_rsid
 from gnomad_link.mcp.shaping import (
@@ -50,10 +50,9 @@ def register_variant_tools(
                 description="CHROM-POS-REF-ALT (e.g. 1-55051215-G-GA) or an rsID. Use M-POS-REF-ALT only with get_mitochondrial_variant.",
                 min_length=5,
                 max_length=200,
+                pattern=_VARIANT_ID_OR_RSID_PATTERN,
+                json_schema_extra=hide_pattern,
                 examples=["1-55051215-G-GA", "17-7674232-G-A"],
-            ),
-            variant_id_check(
-                _VARIANT_ID_OR_RSID_PATTERN, "CHROM-POS-REF-ALT (e.g. 17-7674232-G-A) or an rsID"
             ),
         ],
         dataset: Annotated[
@@ -170,10 +169,9 @@ def register_variant_tools(
                 "Use get_mitochondrial_variant for M-POS-REF-ALT.",
                 min_length=5,
                 max_length=200,
+                pattern=_VARIANT_ID_OR_RSID_PATTERN,
+                json_schema_extra=hide_pattern,
                 examples=["1-55051215-G-GA"],
-            ),
-            variant_id_check(
-                _VARIANT_ID_OR_RSID_PATTERN, "CHROM-POS-REF-ALT (e.g. 17-7674232-G-A) or an rsID"
             ),
         ],
         dataset: Annotated[

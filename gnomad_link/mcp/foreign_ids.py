@@ -51,6 +51,7 @@ _LOOSE_ID = re.compile(
 _EMPTY_ALT = re.compile(
     r"(?:chr)?([1-9]|1\d|2[0-2]|X|Y)[-:](\d{1,9})[-:]([ACGT]{1,50})[-:][-.]?", _FLAGS
 )
+_AUTOSOME_GRAMMAR = r"[1-9]|1\d|2[0-2]|X|Y"
 _PRINTABLE = re.compile(r"[ -~]{3,100}")  # resolve_variant_id's query bounds, ASCII only
 _MITO_SNV = re.compile(r"(?:[A-Za-z0-9_.]{1,20}:)?m\.(\d{1,5})([ACGT])>([ACGT])", re.ASCII)
 
@@ -120,7 +121,7 @@ def foreign_recovery(
 def malformed_variant_recovery(value: object) -> dict[str, Any]:
     """Recovery for a variant id of no recognised form: the accepted form and the next call."""
     # A bare rs number may arrive as a JSON integer, failing the str type check.
-    v = str(value).strip() if isinstance(value, str | int) and not isinstance(value, bool) else ""
+    v = str(value).strip() if isinstance(value, str) or type(value) is int else ""
     recovery = (
         "Not a retry: send CHROM-POS-REF-ALT (VCF-style, left-anchored indels, e.g. "
         "17-7674232-G-A or 1-55051214-AG-A) or call the next command to find it."
@@ -198,7 +199,13 @@ def redirect_validation_payload(payload: dict[str, Any], errors: list[Any]) -> N
         value = err.get("input")
         if "variant" not in field or as_mito_variant_id(value):
             continue
-        _apply(
-            payload, foreign_recovery(value, "variant") or malformed_variant_recovery(value), field
+        # Only the CHROM-POS-REF-ALT grammars (all start with the autosome alternation) get
+        # the malformed hint; SV / mito ids are not resolve_variant_id's to answer.
+        grammar = str((err.get("ctx") or {}).get("pattern", ""))
+        ours = grammar.lstrip("^(").startswith(_AUTOSOME_GRAMMAR) or type(value) is int
+        found = foreign_recovery(value, "variant") or (
+            malformed_variant_recovery(value) if ours else None
         )
-        return
+        if found:
+            _apply(payload, found, field)
+            return

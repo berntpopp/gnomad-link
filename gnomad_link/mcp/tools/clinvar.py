@@ -11,7 +11,7 @@ from pydantic import Field
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.clinvar_fencing import fence_clinvar_variant
 from gnomad_link.mcp.errors import McpErrorContext, run_mcp_tool
-from gnomad_link.mcp.patterns import variant_id_check
+from gnomad_link.mcp.patterns import hide_pattern
 from gnomad_link.mcp.shaping import summarize_clinvar_submissions
 from gnomad_link.services import FrequencyService
 
@@ -39,10 +39,9 @@ def register_clinvar_tools(
                 "Match the build to reference_genome (GRCh38 default).",
                 min_length=5,
                 max_length=200,
+                pattern=_CLINVAR_VARIANT_ID_PATTERN,
+                json_schema_extra=hide_pattern,
                 examples=["7-117559590-ATCT-A"],
-            ),
-            variant_id_check(
-                _CLINVAR_VARIANT_ID_PATTERN, "CHROM-POS-REF-ALT (e.g. 17-7674232-G-A)"
             ),
         ],
         reference_genome: Annotated[

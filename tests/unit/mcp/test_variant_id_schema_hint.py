@@ -1,7 +1,8 @@
 """#151: a wrong variant-id shape must reach the server, which names the next call.
 
 Clients validate against the advertised ``pattern`` and show only a bare regex error,
-so the variant-id tools carry no schema pattern; the same grammar runs server-side.
+so the variant-id fields hide it from the schema (``hide_pattern``); pydantic still
+enforces it server-side.
 """
 
 from __future__ import annotations
@@ -33,6 +34,8 @@ async def test_variant_id_params_advertise_no_pattern() -> None:
         prop = tools[tool].parameters["properties"][param]
         assert "pattern" not in prop, tool
         assert "CHROM-POS-REF-ALT" in prop["description"], tool
+    for tool in ("get_structural_variant", "get_mitochondrial_variant"):
+        assert "pattern" not in tools[tool].parameters["properties"]["variant_id"], tool
 
 
 @pytest.mark.parametrize(
@@ -82,3 +85,12 @@ async def test_non_ascii_input_is_not_echoed_into_a_call() -> None:
     assert payload["error_code"] == "invalid_input"
     assert payload["field"] == "variant_id"
     assert "‮" not in str(payload)
+
+
+@pytest.mark.asyncio
+async def test_sv_tool_gets_no_variant_resolver_hint() -> None:
+    """A CHROM-POS-REF-ALT id on the SV tool is not resolve_variant_id's to answer."""
+    result = await _mcp().call_tool("get_structural_variant", {"variant_id": "17-7674232-G-A"})
+    payload = result.structured_content or {}
+    assert payload["error_code"] == "invalid_input"
+    assert "resolve_variant_id" not in str(payload["_meta"]["next_commands"])

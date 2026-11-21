@@ -273,3 +273,13 @@ async def test_accession_hgvs_with_space_or_protein_tail_sends_the_bare_expressi
         },
     )
     assert stub.calls == []
+
+
+@pytest.mark.asyncio
+async def test_variant_id_schema_hides_pattern_and_server_still_redirects_hgvs() -> None:
+    """#151: a published pattern lets the client stop the call before the server's hint."""
+    tools = {t.name: t for t in await create_gnomad_mcp(service_factory=_Stub).list_tools()}
+    assert "pattern" not in tools["get_variant_frequencies"].parameters["properties"]["variant_id"]
+    payload, stub = await _call("get_variant_frequencies", variant_id="NM_000314.8:c.212G>A")
+    assert payload["fallback_tool"] == "vep_recode_variant"
+    assert stub.calls == []
