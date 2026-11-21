@@ -225,3 +225,48 @@ def test_hostile_text_is_never_echoed_into_a_converter_call() -> None:
         payload, [{"loc": ("variant_id",), "input": "x:c." + "A" * 5000 + "\u202e\x00"}]
     )
     assert payload == {"_meta": {"next_commands": []}}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "query",
+    [
+        "PTEN c.-72C>T",
+        "PTEN:c.-72C>T",
+        "PTEN c.226_228del p.(Leu76del)",
+        "BRCA2 c.3901ACT[1]",
+        "BRAF p.V600E",
+    ],
+)
+async def test_gene_symbol_hgvs_is_answered_locally_without_a_search_genes_fallback(
+    query: str,
+) -> None:
+    """#149: 'GENE c.change' never reaches upstream and never offers search_genes."""
+    payload, stub = await _call("resolve_variant_id", query=query)
+    assert payload["error_code"] == "invalid_input", payload
+    assert payload["field"] == "query"
+    assert "CHROM-POS-REF-ALT" in payload["message"]
+    assert "vep_recode_variant" in payload["recovery"]
+    # VEP's recoder does not place a gene-symbol reference, so no ready-to-send call.
+    assert [c["tool"] for c in payload["_meta"]["next_commands"]] == ["get_diagnostics"]
+    assert stub.calls == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "query",
+    ["NM_004333.6 c.1799T>A", "NM_004333.6:c.1799T>A p.(Val600Glu)"],
+)
+async def test_accession_hgvs_with_space_or_protein_tail_sends_the_bare_expression(
+    query: str,
+) -> None:
+    payload, stub = await _call("resolve_variant_id", query=query)
+    _assert_converter(
+        payload,
+        "query",
+        {
+            "tool": "vep_recode_variant",
+            "arguments": {"variants": [HGVS], "fields": "vcf_string", "assembly": "GRCh38"},
+        },
+    )
+    assert stub.calls == []

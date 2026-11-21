@@ -4,6 +4,17 @@ All notable changes to gnomad-link are documented here.
 
 ## [Unreleased]
 
+## [9.3.4] - 2026-11-21
+
+### Fixed
+
+- `resolve_variant_id` / `search_variants`: a gene-symbol HGVS change (`PTEN c.-72C>T`,
+  `BRCA2 c.3901ACT[1]`, `BRAF p.V600E`, optionally followed by ` p.(...)`) is answered
+  locally as `invalid_input` instead of reaching the gnomAD API, and no longer offers
+  `search_genes` with the whole string. The recovery names `vep_recode_variant` with a
+  transcript accession; an accession HGVS with a space or protein tail gets the
+  ready-to-send `vep_recode_variant` call with the bare expression (#149).
+
 ## [9.3.3] - 2026-11-20
 
 ### Fixed
