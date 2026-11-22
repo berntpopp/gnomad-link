@@ -101,10 +101,14 @@ class RateLimitedError(GnomadApiError):
 
 
 def _is_retryable_transport_error(exc: BaseException) -> bool:
-    """Whether a transport error is transient and worth retrying."""
+    """Whether a transport error is transient and worth retrying.
+
+    A timeout is not: it already took GNOMAD_REQUEST_TIMEOUT, and a second one
+    would outlast the caller's own tool-call timeout.
+    """
     if isinstance(exc, TransportServerError):
         return exc.code in _RETRYABLE_STATUS
-    return isinstance(exc, (TransportClosed, TimeoutError))
+    return isinstance(exc, TransportClosed)
 
 
 def _retry_after_seconds(exc: BaseException) -> float | None:
@@ -137,18 +141,32 @@ def _rate_limit_headers(exc: BaseException) -> dict[str, str]:
 
 
 # Loop time by which the current tool call must stop WAITING on upstream (pacing,
-# cooldown, retry backoff); None outside a tool call (the budget then runs per request).
-_CALL_DEADLINE: ContextVar[float | None] = ContextVar("gnomad_call_deadline", default=None)
+# cooldown, retry backoff), in a one-item list so each request can push it back by
+# the time it spent inside upstream; None outside a tool call (per-request budget).
+_CALL_DEADLINE: ContextVar[list[float] | None] = ContextVar("gnomad_call_deadline", default=None)
 
 
 async def with_call_budget[T](call: Callable[[], Awaitable[T]]) -> T:
     """Run one tool call under a single GNOMAD_CALL_WAIT_BUDGET shared by all its requests."""
     deadline = asyncio.get_running_loop().time() + settings.GNOMAD_CALL_WAIT_BUDGET
-    token = _CALL_DEADLINE.set(deadline)
+    token = _CALL_DEADLINE.set([deadline])
     try:
         return await call()
     finally:
         _CALL_DEADLINE.reset(token)
+
+
+# Queue-wait budget override for best-effort requests (see without_waiting).
+_QUEUE_WAIT: ContextVar[float | None] = ContextVar("gnomad_queue_wait", default=None)
+
+
+async def without_waiting[T](call: Callable[[], Awaitable[T]]) -> T:
+    """Run best-effort requests that raise RateLimitedError rather than wait for a rate token."""
+    token = _QUEUE_WAIT.set(0.0)
+    try:
+        return await call()
+    finally:
+        _QUEUE_WAIT.reset(token)
 
 
 class BaseGnomadClient:
@@ -171,6 +189,8 @@ class BaseGnomadClient:
         self._client = Client(
             transport=self._transport,
             fetch_schema_from_transport=False,
+            # gql wraps every execute in its own 10 s timeout unless told otherwise.
+            execute_timeout=settings.GNOMAD_REQUEST_TIMEOUT,
         )
         # Persistent reconnecting session, opened on first use. The client is
         # built by a sync factory so __init__ cannot await connect_async.
@@ -220,6 +240,9 @@ class BaseGnomadClient:
         call, not this queue wait.
         """
         wait_timeout = settings.GNOMAD_QUEUE_WAIT_TIMEOUT if timeout is None else timeout
+        if not self._semaphore.locked():  # wait_for(timeout=0) refuses even a free slot
+            await self._semaphore.acquire()
+            return
         try:
             await asyncio.wait_for(self._semaphore.acquire(), timeout=max(0.0, wait_timeout))
         except TimeoutError as exc:
@@ -292,24 +315,36 @@ class BaseGnomadClient:
         transport faults retry; GraphQL business errors (TransportQueryError)
         propagate immediately for the caller to classify. A saturated queue
         raises RateLimitedError, which is NOT retried here (fast backpressure)
-        and propagates for classification.
+        and propagates for classification, unless an earlier attempt failed
+        upstream: then that fault is raised so a 5xx stays upstream_unavailable.
+        Both budgets count waiting only; time inside a request pushes them back.
         """
         delay = _BACKOFF_BASE_SECONDS
         loop = asyncio.get_running_loop()
         started_at = loop.time()
-        queue_wait_deadline = started_at + settings.GNOMAD_QUEUE_WAIT_TIMEOUT
+        queue_wait = _QUEUE_WAIT.get()
+        if queue_wait is None:
+            queue_wait = settings.GNOMAD_QUEUE_WAIT_TIMEOUT
+        queue_wait_deadline = started_at + queue_wait
         # One budget for every wait of the tool call (all its requests and retries).
-        call_deadline = _CALL_DEADLINE.get() or started_at + settings.GNOMAD_CALL_WAIT_BUDGET
+        call_deadline = _CALL_DEADLINE.get() or [started_at + settings.GNOMAD_CALL_WAIT_BUDGET]
+        last_fault: BaseException | None = None
         for attempt in range(_MAX_ATTEMPTS):
             try:
                 session = await self._ensure_session()
-                # Pacing plus any shared 429 cooldown: the limit is per egress
-                # IP, not per request.
-                queue_wait_deadline, now = await self._wait_for_send_time(
-                    loop, queue_wait_deadline, call_deadline
-                )
-                queue_wait_remaining = max(0.0, min(queue_wait_deadline, call_deadline) - now)
-                await self._acquire_slot(timeout=queue_wait_remaining)
+                try:
+                    # Pacing plus any shared 429 cooldown: the limit is per egress
+                    # IP, not per request.
+                    queue_wait_deadline, now = await self._wait_for_send_time(
+                        loop, queue_wait_deadline, call_deadline[0]
+                    )
+                    wait_left = max(0.0, min(queue_wait_deadline, call_deadline[0]) - now)
+                    await self._acquire_slot(timeout=wait_left)
+                except RateLimitedError as exc:
+                    if last_fault is None or getattr(last_fault, "code", None) == 429:
+                        raise exc from last_fault
+                    raise last_fault from exc
+                sent_at = loop.time()
                 started = time.perf_counter()
                 outcome: int | str = "ok"
                 try:
@@ -321,6 +356,9 @@ class BaseGnomadClient:
                     raise
                 finally:
                     self._semaphore.release()
+                    in_request = loop.time() - sent_at
+                    queue_wait_deadline += in_request
+                    call_deadline[0] += in_request
                     # Query NAME only: variables and bodies can carry caller text.
                     logger.info(
                         "gnomad_upstream_request query=%s outcome=%s attempt=%d duration_ms=%d",
@@ -331,6 +369,7 @@ class BaseGnomadClient:
                     )
                 return result
             except (TransportServerError, TransportClosed, TimeoutError) as exc:
+                last_fault = exc
                 retry_after = _retry_after_seconds(exc)
                 if getattr(exc, "code", None) == 429:
                     logger.warning(
@@ -358,7 +397,7 @@ class BaseGnomadClient:
                     # An upstream-imposed wait is not local queueing: keep the
                     # queue-wait budget so the retry can outlast the cooldown.
                     queue_wait_deadline += wait
-                if loop.time() + wait > call_deadline:
+                if loop.time() + wait > call_deadline[0]:
                     raise  # the next wait would pass the call's budget: answer now
                 await asyncio.sleep(wait)
                 delay = min(delay * 2, _BACKOFF_MAX_SECONDS)
@@ -486,6 +525,11 @@ class BaseGnomadClient:
                 ) from e
             raise GnomadApiError(
                 f"The gnomAD GraphQL API returned a server error (HTTP {e.code})."
+            ) from e
+        except TimeoutError as e:
+            raise GnomadApiError(
+                "The gnomAD GraphQL API did not answer within "
+                f"{settings.GNOMAD_REQUEST_TIMEOUT} s. Retry later."
             ) from e
         except TransportError as e:
             # Covers TransportProtocolError (whose message embeds the raw

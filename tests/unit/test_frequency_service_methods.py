@@ -97,3 +97,58 @@ async def test_cache_ttl_minutes_is_applied() -> None:
     await asyncio.sleep(0.1)  # TTL is 30 ms
     await service.search_genes("X")
     assert client.search_genes.await_count == 2  # expired -> refetched
+
+
+@pytest.mark.asyncio
+async def test_search_genes_key_ignores_case_and_whitespace(service_with_stub_client) -> None:
+    """#155: search_genes("pcsk9") after search_genes("PCSK9") makes 0 upstream requests."""
+    service, client = service_with_stub_client
+    client.search_genes.return_value = [{"ensembl_id": "ENSG00000169174", "symbol": "PCSK9"}]
+
+    await service.search_genes("PCSK9", "GRCh38")
+    await service.search_genes("pcsk9", "GRCh38")
+    await service.search_genes(" Pcsk9 ", "GRCh38")
+
+    client.search_genes.assert_awaited_once_with("PCSK9", "GRCh38")
+
+
+@pytest.mark.asyncio
+async def test_search_variants_is_cached(service_with_stub_client) -> None:
+    service, client = service_with_stub_client
+    client.search_variants.return_value = [{"variant_id": "1-55051215-G-GA"}]
+
+    first = await service.search_variants("rs11591147", "gnomad_r4")
+    first.append("mutated by a caller")
+    second = await service.search_variants("rs11591147", "gnomad_r4")
+
+    assert second == ["1-55051215-G-GA"]
+    assert client.search_variants.await_count == 1
+
+
+@pytest.mark.asyncio
+async def test_empty_and_not_found_answers_are_kept_only_briefly(monkeypatch) -> None:
+    """#155: a short-TTL negative cache; the long positive TTL never holds an empty answer."""
+    import gnomad_link.services.absent_cache as ac
+    from gnomad_link.api.base_client import VariantNotFoundError
+
+    clock = [1000.0]
+    monkeypatch.setattr(ac.time, "monotonic", lambda: clock[0])
+    client = AsyncMock()
+    client.search_genes.return_value = []
+    client.search_variants.return_value = []
+    client.get_variant.side_effect = VariantNotFoundError("absent")
+    service = FrequencyService(client=client)
+
+    for _ in range(2):
+        assert await service.search_genes("NOPE1") == []
+        assert await service.search_variants("rs1", "gnomad_r4") == []
+        with pytest.raises(VariantNotFoundError):
+            await service.get_variant_frequencies("1-1-A-T")
+    assert (client.search_genes.await_count, client.search_variants.await_count) == (1, 1)
+    assert client.get_variant.await_count == 1
+
+    clock[0] += ac.NEGATIVE_TTL_SECONDS + 1
+    await service.search_genes("NOPE1")
+    with pytest.raises(VariantNotFoundError):
+        await service.get_variant_frequencies("1-1-A-T")
+    assert (client.search_genes.await_count, client.get_variant.await_count) == (2, 2)

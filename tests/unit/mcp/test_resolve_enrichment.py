@@ -5,7 +5,7 @@ Task B4 of the MCP Facade Polish plan:
 1. resolve_variant_id (and the deprecated alias search_variants) now perform a
    second-pass call to FrequencyService.get_variant_frequencies for the top N
    resolved IDs to attach gene_symbol, major_consequence, and AF. Enrichment is
-   capped at the first 5 results and tolerates per-variant failures via
+   capped at the first 3 results and tolerates per-variant failures via
    _meta.enrichment_partial. Pass enrich=False to opt out entirely.
 
 2. compute_variant_liftover takes the canonical source_genome parameter. The
@@ -161,7 +161,8 @@ async def test_resolve_variant_id_enrichment_failure_partial_meta() -> None:
 
 
 @pytest.mark.asyncio
-async def test_resolve_variant_id_caps_enrichment_at_5() -> None:
+async def test_resolve_variant_id_caps_enrichment_at_3() -> None:
+    """#155: a cold call costs at most 1 search + 3 enrichment requests."""
     from gnomad_link.mcp.facade import create_gnomad_mcp
 
     ids = [f"1-{1000 + i}-A-T" for i in range(10)]
@@ -175,17 +176,36 @@ async def test_resolve_variant_id_caps_enrichment_at_5() -> None:
     payload = _structured(result)
 
     assert payload["returned"] == 10
-    # First 5 enriched.
-    for item in payload["results"][:5]:
+    for item in payload["results"][:3]:
         assert item.get("gene_symbol") == "PCSK9"
         assert item.get("major_consequence") == "frameshift_variant"
         assert item.get("af") is not None
-    # Remaining 5 returned with variant_id only.
-    for item in payload["results"][5:]:
+    for item in payload["results"][3:]:
         assert item.get("gene_symbol") is None
         assert item.get("major_consequence") is None
         assert item.get("af") is None
-    assert len(stub.freq_calls) == 5
+    assert len(stub.freq_calls) == 3
+
+
+@pytest.mark.asyncio
+async def test_resolve_variant_id_stops_enriching_when_rate_limited() -> None:
+    """#155: one rate-limited enrichment ends enrichment; candidates still return."""
+    from gnomad_link.api import RateLimitedError
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    ids = [f"1-{1000 + i}-A-T" for i in range(4)]
+    stub = _StubService(search_ids=ids, freq_raises=RateLimitedError("saturated"))
+    mcp = create_gnomad_mcp(service_factory=lambda: stub)
+
+    result = await mcp.call_tool(
+        "resolve_variant_id", {"query": "noisy", "dataset": "gnomad_r4", "limit": 4}
+    )
+    payload = _structured(result)
+
+    assert payload.get("success") is not False, payload
+    assert [item["variant_id"] for item in payload["results"]] == ids
+    assert len(stub.freq_calls) == 1
+    assert payload["_meta"]["enrichment_failures"] == 3  # every capped hit left unenriched
 
 
 @pytest.mark.asyncio

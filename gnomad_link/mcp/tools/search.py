@@ -9,6 +9,7 @@ from typing import Annotated, Any, Literal
 from fastmcp import FastMCP
 from pydantic import Field
 
+from gnomad_link.api import RateLimitedError, without_waiting
 from gnomad_link.mcp.af import preferred_overall_af
 from gnomad_link.mcp.annotations import READ_ONLY_OPEN_WORLD
 from gnomad_link.mcp.errors import McpErrorContext, ToolInputError, run_mcp_tool
@@ -31,7 +32,8 @@ _RANK_ORDER = {
 }
 
 # Cap second-pass enrichment cost: only fetch frequencies for the first N hits.
-_ENRICHMENT_CAP = 5
+# Each is an upstream request against the shared 20/min budget (#155).
+_ENRICHMENT_CAP = 3
 
 _MITO_ID_RE = re.compile(MITO_VARIANT_ID_PATTERN)
 _MITO_NEXT_STEPS = [
@@ -57,10 +59,16 @@ async def _enrich_variant_id(
     """Second-pass fetch to attach gene/consequence/af to a search hit.
 
     Returns the enrichment fields on success, or an empty dict if the upstream
-    call fails. Enrichment is best-effort and must not block the response.
+    call fails. Enrichment is best-effort and must not block the response: it
+    never waits for a rate token, and RateLimitedError propagates so the caller
+    stops enriching instead of spending the budget other calls need.
     """
     try:
-        freq = await service.get_variant_frequencies(variant_id, dataset)
+        # ponytail: a concurrent identical lookup joining this cached task inherits "no
+        # wait"; only matters with an empty bucket. Split the cache task if it shows up.
+        freq = await without_waiting(lambda: service.get_variant_frequencies(variant_id, dataset))
+    except RateLimitedError:
+        raise
     except Exception:
         return {}
     af, af_source = preferred_overall_af(freq.exome, freq.genome)
@@ -100,7 +108,11 @@ async def _resolve_and_enrich(
     for idx, vid in enumerate(ids):
         item: dict[str, Any] = {"variant_id": vid}
         if enrich and idx < _ENRICHMENT_CAP:
-            enriched = await _enrich_variant_id(service, vid, dataset)
+            try:
+                enriched = await _enrich_variant_id(service, vid, dataset)
+            except RateLimitedError:
+                enrich, enriched = False, {}
+                enrichment_failures += min(len(ids), _ENRICHMENT_CAP) - idx - 1
             if enriched:
                 item.update(enriched)
             else:

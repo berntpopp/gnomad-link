@@ -4,6 +4,23 @@ All notable changes to gnomad-link are documented here.
 
 ## [Unreleased]
 
+## [9.3.6] - 2026-11-22
+
+### Fixed
+
+- `GNOMAD_REQUEST_TIMEOUT` (60 s) now applies: gql's own 10 s `execute_timeout` cut every
+  request first. The queue-wait and per-call wait budgets count waiting only (pacing, slot
+  wait, backoff, cooldown), not time spent inside upstream requests. A timeout is not
+  retried and answers `upstream_unavailable` (retryable) instead of `rate_limited`; a budget
+  that runs out after a 5xx re-raises that 5xx; a `rate_limited` after a 429 is chained to
+  it (#154).
+- Fewer upstream requests per call, the main source of `rate_limited` (#155):
+  `search_genes` caches under the trimmed, upper-cased query (`pcsk9` after `PCSK9` is
+  free); `resolve_variant_id`'s variant search is TTL-cached; empty and not-found answers
+  of `search_genes`, variant search and `get_variant_frequencies` are kept 5 minutes;
+  enrichment covers the top 3 hits (was 5), never waits for a rate token and stops at the
+  first rate-limited one, returning the unenriched candidates.
+
 ## [9.3.5] - 2026-11-21
 
 ### Fixed
