@@ -156,6 +156,19 @@ async def with_call_budget[T](call: Callable[[], Awaitable[T]]) -> T:
         _CALL_DEADLINE.reset(token)
 
 
+# Queue-wait budget override for best-effort requests (see without_waiting).
+_QUEUE_WAIT: ContextVar[float | None] = ContextVar("gnomad_queue_wait", default=None)
+
+
+async def without_waiting[T](call: Callable[[], Awaitable[T]]) -> T:
+    """Run best-effort requests that raise RateLimitedError rather than wait for a rate token."""
+    token = _QUEUE_WAIT.set(0.0)
+    try:
+        return await call()
+    finally:
+        _QUEUE_WAIT.reset(token)
+
+
 class BaseGnomadClient:
     """Base client for gnomAD GraphQL API."""
 
@@ -227,6 +240,9 @@ class BaseGnomadClient:
         call, not this queue wait.
         """
         wait_timeout = settings.GNOMAD_QUEUE_WAIT_TIMEOUT if timeout is None else timeout
+        if not self._semaphore.locked():  # wait_for(timeout=0) refuses even a free slot
+            await self._semaphore.acquire()
+            return
         try:
             await asyncio.wait_for(self._semaphore.acquire(), timeout=max(0.0, wait_timeout))
         except TimeoutError as exc:
@@ -306,7 +322,10 @@ class BaseGnomadClient:
         delay = _BACKOFF_BASE_SECONDS
         loop = asyncio.get_running_loop()
         started_at = loop.time()
-        queue_wait_deadline = started_at + settings.GNOMAD_QUEUE_WAIT_TIMEOUT
+        queue_wait = _QUEUE_WAIT.get()
+        if queue_wait is None:
+            queue_wait = settings.GNOMAD_QUEUE_WAIT_TIMEOUT
+        queue_wait_deadline = started_at + queue_wait
         # One budget for every wait of the tool call (all its requests and retries).
         call_deadline = _CALL_DEADLINE.get() or [started_at + settings.GNOMAD_CALL_WAIT_BUDGET]
         last_fault: BaseException | None = None

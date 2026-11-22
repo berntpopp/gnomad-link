@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 from gql.transport.exceptions import TransportServerError
 
-from gnomad_link.api import RateLimitedError, with_call_budget
+from gnomad_link.api import RateLimitedError, with_call_budget, without_waiting
 from gnomad_link.api.base_client import BaseGnomadClient, GnomadApiError
 from gnomad_link.config import settings
 from gnomad_link.mcp.errors import McpErrorContext, _classify
@@ -245,5 +245,24 @@ def test_budget_exhausted_after_a_429_is_rate_limited_and_chained() -> None:
         with pytest.raises(RateLimitedError) as info:
             await client._execute_doc(None, {}, "q")
         assert isinstance(info.value.__cause__, TransportServerError)
+
+    _run(scenario)
+
+
+def test_without_waiting_gives_up_instead_of_spending_a_paced_token() -> None:
+    """#155: best-effort enrichment never queues for a rate token."""
+
+    async def scenario() -> None:
+        session = _Session(lambda _t: False)
+        client = _client(session)
+        for _ in range(settings.GNOMAD_RATE_BURST):  # a free token is used without waiting
+            await without_waiting(lambda: client._execute_doc(None, {}, "q"))
+        loop = asyncio.get_running_loop()
+        started = loop.time()
+        with pytest.raises(RateLimitedError):
+            await without_waiting(lambda: client._execute_doc(None, {}, "q"))
+        assert loop.time() - started < 0.5
+        assert len(session.sent) == settings.GNOMAD_RATE_BURST
+        assert (await _timed(client))[0] == "ok"  # its token was not taken
 
     _run(scenario)

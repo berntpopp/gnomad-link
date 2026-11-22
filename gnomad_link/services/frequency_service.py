@@ -21,6 +21,7 @@ from gnomad_link.models import (
     VariantDataSource,
     VariantFrequencyResponse,
 )
+from gnomad_link.services.absent_cache import AbsentCache
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +85,10 @@ class FrequencyService:
         self._search_genes_cached = alru_cache(
             maxsize=cache_size, ttl=gene_search_cache_ttl_minutes * 60
         )(self._search_genes_impl)
+        self._search_variants_cached = alru_cache(maxsize=cache_size, ttl=ttl)(
+            self._search_variants_impl
+        )
+        self._absent = AbsentCache(cache_size)
 
         # Track cache statistics
         self._cache_hits = 0
@@ -122,7 +127,7 @@ class FrequencyService:
             raise ValueError("dataset cannot be empty")
 
         try:
-            data = await self._get_variant_cached(variant_id, dataset)
+            data = await self._absent.call(self._get_variant_cached, variant_id, dataset)
             self._cache_hits += 1
         except Exception as e:
             self._cache_misses += 1
@@ -134,18 +139,7 @@ class FrequencyService:
         return self._parse_variant_response(data, variant_id, dataset)
 
     async def _get_variant_impl(self, variant_id: str, dataset: str) -> dict[str, Any]:
-        """Fetch variant data from the gnomAD API.
-
-        Internal method that performs the actual API call to retrieve variant data.
-        This is wrapped by the caching decorator in the public interface.
-
-        Args:
-            variant_id: Variant identifier
-            dataset: Dataset to query
-
-        Returns:
-            Raw variant data dictionary from the API
-        """
+        """Fetch raw variant data from the API (wrapped by the TTL cache)."""
         result = await self.client.get_variant(variant_id, dataset)
         variant_data = result.get("variant")
         if variant_data is None:
@@ -311,7 +305,6 @@ class FrequencyService:
         self,
         query: str,
         reference_genome: str | None = None,
-        dataset: str | None = None,
     ) -> list[GeneSearchResult]:
         """Search for genes by symbol, name, or ID.
 
@@ -322,7 +315,6 @@ class FrequencyService:
             query: Search string (minimum 2 characters)
                 Examples: 'PCSK9', 'ENSG00000169174', 'proprotein'
             reference_genome: Reference genome build to search
-            dataset: Dataset for version-specific search
 
         Returns:
             List of GeneSearchResult objects containing:
@@ -332,16 +324,18 @@ class FrequencyService:
             - Canonical transcript
 
         Note:
-            Results are TTL-cached: agents repeat the same symbol lookups.
+            TTL-cached under the upper-cased query (the upstream is case-insensitive).
         """
-        results = await self._search_genes_cached(query, reference_genome, dataset)
+        results = await self._absent.call(
+            self._search_genes_cached, query.strip().upper(), reference_genome
+        )
         return [GeneSearchResult(**item) for item in results]
 
     async def _search_genes_impl(
-        self, query: str, reference_genome: str | None, dataset: str | None
+        self, query: str, reference_genome: str | None
     ) -> list[dict[str, Any]]:
         """Fetch gene search hits from the API (wrapped by the TTL cache)."""
-        return await self.client.search_genes(query, reference_genome, dataset)
+        return await self.client.search_genes(query, reference_genome)
 
     async def search_variants(self, query: str, dataset: str = "gnomad_r4") -> list[str]:
         """Search for variants by ID, rsID, or position.
@@ -364,8 +358,11 @@ class FrequencyService:
             Returns only variant IDs. Use get_variant_frequencies()
             to retrieve full frequency data for a specific variant.
         """
-        results = await self.client.search_variants(query, dataset)
+        results = await self._absent.call(self._search_variants_cached, query, dataset)
         return [item["variant_id"] for item in results]
+
+    async def _search_variants_impl(self, query: str, dataset: str) -> list[dict[str, Any]]:
+        return await self.client.search_variants(query, dataset)
 
     async def get_clinvar_variant(
         self,
@@ -441,6 +438,8 @@ class FrequencyService:
         self._get_variant_cached.cache_clear()
         self._get_gene_cached.cache_clear()
         self._search_genes_cached.cache_clear()
+        self._search_variants_cached.cache_clear()
+        self._absent.clear()
         self._cache_hits = 0
         self._cache_misses = 0
 
