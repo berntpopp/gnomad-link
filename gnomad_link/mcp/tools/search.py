@@ -64,6 +64,8 @@ async def _enrich_variant_id(
     stops enriching instead of spending the budget other calls need.
     """
     try:
+        # ponytail: a concurrent identical lookup joining this cached task inherits "no
+        # wait"; only matters with an empty bucket. Split the cache task if it shows up.
         freq = await without_waiting(lambda: service.get_variant_frequencies(variant_id, dataset))
     except RateLimitedError:
         raise
