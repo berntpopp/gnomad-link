@@ -10,8 +10,9 @@ import pytest
 from gql.transport.exceptions import TransportServerError
 
 from gnomad_link.api import RateLimitedError, with_call_budget
-from gnomad_link.api.base_client import BaseGnomadClient
+from gnomad_link.api.base_client import BaseGnomadClient, GnomadApiError
 from gnomad_link.config import settings
+from gnomad_link.mcp.errors import McpErrorContext, _classify
 
 T0 = 1000.0
 
@@ -151,5 +152,98 @@ def test_a_cancelled_waiter_gives_its_send_slot_back() -> None:
         assert outcome == "ok"
         assert elapsed <= 3.0  # the next free slot, not behind six abandoned ones (20 s)
         assert len(session.sent) == 6
+
+    _run(scenario)
+
+
+class _SlowSession:
+    """Upstream stand-in: every request takes ``seconds``, then ``fail`` decides its fate."""
+
+    def __init__(self, seconds: float, fail: Callable[[int], BaseException | None]) -> None:
+        self.seconds, self.fail, self.calls = seconds, fail, 0
+
+    async def execute(self, _doc: Any, variable_values: Any = None) -> dict[str, Any]:
+        self.calls += 1
+        await asyncio.sleep(self.seconds)
+        error = self.fail(self.calls)
+        if error is not None:
+            raise error
+        return {"ok": True}
+
+
+def test_execute_timeout_is_the_configured_request_timeout() -> None:
+    client = BaseGnomadClient(api_url="https://test.invalid/graphql")
+    assert client._client.execute_timeout == settings.GNOMAD_REQUEST_TIMEOUT  # gql default is 10
+
+
+def test_hanging_upstream_is_upstream_unavailable_not_rate_limited() -> None:
+    """#154: two 10 s timeouts used to spend the 20 s queue budget and read as rate_limited."""
+
+    async def scenario() -> None:
+        session = _SlowSession(10, lambda _n: TimeoutError())
+        client = _client(session)  # type: ignore[arg-type]
+        with pytest.raises(GnomadApiError) as info:
+            await with_call_budget(lambda: client._execute_doc(None, {}, "q"))
+        assert not isinstance(info.value, RateLimitedError)
+        assert isinstance(info.value.__cause__, TimeoutError)
+        code, retryable, _, _ = _classify(info.value, McpErrorContext(tool_name="t"))
+        assert (code, retryable) == ("upstream_unavailable", True)
+        assert session.calls == 1  # a timed-out request is not retried (60 s each)
+
+    _run(scenario)
+
+
+def test_slow_5xx_retries_are_not_charged_to_the_queue_wait_budget() -> None:
+    async def scenario() -> None:
+        session = _SlowSession(15, lambda n: TransportServerError("x", 503) if n < 3 else None)
+        client = _client(session)  # type: ignore[arg-type]
+        assert await client._execute_doc(None, {}, "q") == {"ok": True}
+        assert session.calls == 3
+
+    _run(scenario)
+
+
+def test_time_inside_requests_is_not_charged_to_the_call_budget() -> None:
+    async def scenario() -> None:
+        client = _client(_SlowSession(9, lambda _n: None))  # type: ignore[arg-type]
+
+        async def tool_call() -> int:
+            for _ in range(6):  # 54 s of upstream work, no waiting
+                await client._execute_doc(None, {}, "q")
+            return 6
+
+        assert await with_call_budget(tool_call) == 6
+
+    _run(scenario)
+
+
+def test_budget_exhausted_after_a_5xx_reraises_the_5xx() -> None:
+    async def scenario() -> None:
+        client = _client(_SlowSession(0.1, lambda _n: TransportServerError("x", 503)))  # type: ignore[arg-type]
+        real = client._reserve_send_time
+        calls = 0
+
+        def reserve(*args: Any) -> tuple[float, float]:
+            nonlocal calls
+            calls += 1
+            if calls > 1:
+                raise RateLimitedError("Local request-rate limit saturated")
+            return real(*args)
+
+        client._reserve_send_time = reserve  # type: ignore[method-assign]
+        with pytest.raises(GnomadApiError) as info:
+            await client._execute_doc(None, {}, "q")
+        assert not isinstance(info.value, RateLimitedError)
+        assert isinstance(info.value.__cause__, TransportServerError)
+
+    _run(scenario)
+
+
+def test_budget_exhausted_after_a_429_is_rate_limited_and_chained() -> None:
+    async def scenario() -> None:
+        client = _client(_SlowSession(0.1, lambda _n: TransportServerError("x", 429)))  # type: ignore[arg-type]
+        with pytest.raises(RateLimitedError) as info:
+            await client._execute_doc(None, {}, "q")
+        assert isinstance(info.value.__cause__, TransportServerError)
 
     _run(scenario)

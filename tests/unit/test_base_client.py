@@ -414,7 +414,7 @@ class TestBaseGnomadClient:
         monkeypatch.setattr(settings, "GNOMAD_QUEUE_WAIT_TIMEOUT", 10.0)
         monkeypatch.setattr(asyncio, "sleep", AsyncMock())
         monkeypatch.setattr(
-            asyncio, "get_running_loop", lambda: _FakeLoop([100.0, 100.0, 100.0, 102.0])
+            asyncio, "get_running_loop", lambda: _FakeLoop([100.0] * 5 + [102.0] * 3)
         )
         execute = AsyncMock(
             side_effect=[
