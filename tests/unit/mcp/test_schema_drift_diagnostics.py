@@ -107,11 +107,11 @@ async def test_get_diagnostics_includes_recent_schema_drift() -> None:
     result = await mcp.call_tool("get_diagnostics", {})
     payload = result.structured_content or {}
 
-    assert "recent_schema_drift" in payload
-    assert "recent_schema_drift_count" in payload
-    drift = payload["recent_schema_drift"]
+    assert "recent_schema_drift" in payload["result"]
+    assert "recent_schema_drift_count" in payload["result"]
+    drift = payload["result"]["recent_schema_drift"]
     assert isinstance(drift, list)
-    assert len(drift) == payload["recent_schema_drift_count"]
+    assert len(drift) == payload["result"]["recent_schema_drift_count"]
     assert len(drift) >= 1
     assert any(item["tool_name"] == "get_variant_frequencies" for item in drift)
 
@@ -128,8 +128,8 @@ async def test_get_diagnostics_recent_schema_drift_is_empty_by_default() -> None
     result = await mcp.call_tool("get_diagnostics", {})
     payload = result.structured_content or {}
 
-    assert payload["recent_schema_drift"] == []
-    assert payload["recent_schema_drift_count"] == 0
+    assert payload["result"]["recent_schema_drift"] == []
+    assert payload["result"]["recent_schema_drift_count"] == 0
 
 
 def test_record_schema_drift_does_not_count_toward_recent_errors() -> None:

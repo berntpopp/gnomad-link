@@ -129,6 +129,6 @@ async def test_tool_returns_unwrapped_with_expression() -> None:
     result = await mcp.call_tool("get_transcript_details", {"transcript_id": "ENST00000302118"})
     payload = result.structured_content or {}
 
-    assert payload.get("transcript_id") == "ENST00000302118"
-    assert "transcript" not in payload  # flat, not wrapped
-    assert "expression" in payload
+    assert payload["result"].get("transcript_id") == "ENST00000302118"
+    assert "transcript" not in payload["result"]  # flat, not wrapped
+    assert "expression" in payload["result"]

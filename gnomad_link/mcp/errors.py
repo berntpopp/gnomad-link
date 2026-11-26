@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import json
 import logging
+import time
+import uuid
 from collections import deque
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
@@ -23,8 +25,10 @@ from gnomad_link.api import (
     RateLimitedError,
     UpstreamInputError,
     with_call_budget,
+    with_fetch_times,
 )
 from gnomad_link.mcp.clinvar_date_cache import get_cached_clinvar_release_date
+from gnomad_link.mcp.envelope import build_envelope, stamp
 from gnomad_link.mcp.foreign_ids import redirect_validation_payload
 from gnomad_link.mcp.mito_redirect import MITO_RECOVERY, MITO_TOOL, MitoIdRedirectError
 from gnomad_link.mcp.recovery import DATASET_BUILD as _DATASET_BUILD
@@ -128,7 +132,9 @@ def _provenance_meta(context: McpErrorContext | None = None) -> dict[str, Any]:
     dataset is known it also echoes the dataset and derived reference build, so
     the provenance pointer is self-contained even on an error envelope.
     """
-    meta: dict[str, Any] = dict(_BASE_META)
+    # Response-Envelope Standard v1 section 4 requires both on every envelope; run_mcp_tool
+    # overwrites elapsed_ms with the measured time (pre-dispatch rejections cost ~0 ms).
+    meta: dict[str, Any] = {**_BASE_META, "request_id": uuid.uuid4().hex, "elapsed_ms": 0}
     # Once the first capabilities call has fetched it, pin the ClinVar release on
     # every envelope so an LLM citing a ClinVar classification can name the
     # version that produced it. Omitted while still unknown to avoid null noise.
@@ -561,26 +567,21 @@ async def run_mcp_tool(
     that the LLM sees a structured failure instead of an `isError: true` MCP
     response with an opaque message.
     """
-
     ctx = context or McpErrorContext(tool_name=tool_name)
+    started = time.time()
     try:
-        result = await with_call_budget(call)
-        # Inject research-use meta into every successful dict response unless
-        # the tool already provides _meta (e.g. search_variants deprecation note).
-        # A symmetric success:true flag lets callers branch on `success` instead
-        # of special-casing `is False`.
-        if isinstance(result, dict):
-            result.setdefault("success", True)
-            existing_meta: dict[str, Any] = result.get("_meta") or {}
-            result["_meta"] = {**existing_meta, **_provenance_meta(ctx)}
-        return result
+        result, fetch_times = await with_fetch_times(lambda: with_call_budget(call))
+        # A tool body may also return an error envelope instead of raising it.
+        failed = result.get("success") is False
+        envelope = build_envelope(result, _provenance_meta(ctx))
+        return stamp(envelope, started, None if failed else fetch_times)
     except McpToolError as exc:
         record_mcp_error(
             tool_name=tool_name,
             error_code=exc.payload.get("error_code", "internal_error"),
             exc_type=type(exc).__name__,
         )
-        return exc.payload
+        return stamp(exc.payload, started)
     except Exception as exc:  # broad catch is the error-boundary contract
         wrapped = mcp_tool_error(exc, ctx)
         logger.warning(
@@ -594,4 +595,4 @@ async def run_mcp_tool(
             error_code=wrapped.payload["error_code"],
             exc_type=type(exc).__name__,
         )
-        return wrapped.payload
+        return stamp(wrapped.payload, started)

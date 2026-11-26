@@ -50,10 +50,10 @@ async def test_gene_carrier_by_symbol_returns_sorted_populations() -> None:
     result = await mcp.call_tool("compute_gene_carrier_frequency", {"gene": "CFTR"})
     payload = result.structured_content or {}
 
-    assert payload["gene"]["symbol"] == "CFTR"
-    assert payload["global"]["carrier_one_in"] == 18
-    assert payload["populations"][0]["population"] == "asj"  # highest carrier first
-    assert payload["contributing_variants"]["count"] == 523
+    assert payload["result"]["gene"]["symbol"] == "CFTR"
+    assert payload["result"]["global"]["carrier_one_in"] == 18
+    assert payload["result"]["populations"][0]["population"] == "asj"  # highest carrier first
+    assert payload["result"]["contributing_variants"]["count"] == 523
     # default settings forwarded to the service via FilterConfig
     cfg = stub.calls[0]["filter_config"]
     assert cfg.lof_hc_enabled is True

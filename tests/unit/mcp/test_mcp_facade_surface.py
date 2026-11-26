@@ -609,4 +609,4 @@ async def test_get_clinvar_meta_marks_deprecated() -> None:
     assert payload["_meta"]["deprecated"] is True
     assert payload["_meta"]["use_instead"] == "get_server_capabilities"
     # The data is still returned for backward compatibility.
-    assert payload["clinvar_release_date"] == "2024-10-15"
+    assert payload["result"]["clinvar_release_date"] == "2024-10-15"

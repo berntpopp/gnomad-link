@@ -124,8 +124,8 @@ async def test_tool_trims_and_passes_output_validation() -> None:
     mcp = create_gnomad_mcp(service_factory=lambda: _GeneVariantsStub())
     payload = await _invoke(mcp, "get_gene_variants", {"gene_id": "ENSG00000273079"})
     assert payload.get("error_code") is None, payload
-    assert {p["id"] for p in payload["variants"][0]["exome"]["populations"]} == {"afr"}
-    assert payload["population_projection"]["filter"]["exclude_zero_populations"] is True
+    assert {p["id"] for p in payload["result"]["variants"][0]["exome"]["populations"]} == {"afr"}
+    assert payload["result"]["population_projection"]["filter"]["exclude_zero_populations"] is True
 
 
 @pytest.mark.asyncio
@@ -136,4 +136,4 @@ async def test_tool_include_populations_false_flows_through() -> None:
     payload = await _invoke(
         mcp, "get_gene_variants", {"gene_id": "ENSG00000273079", "include_populations": False}
     )
-    assert "populations" not in payload["variants"][0]["exome"]
+    assert "populations" not in payload["result"]["variants"][0]["exome"]

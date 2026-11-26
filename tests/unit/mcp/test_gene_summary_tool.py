@@ -78,12 +78,12 @@ async def test_get_gene_summary_compact_shapes_clinvar_and_meta() -> None:
     result = await mcp.call_tool("get_gene_summary", {"gene": "PCSK9"})
     payload = result.structured_content or {}
 
-    assert payload["symbol"] == "PCSK9"
-    assert payload["clinvar_summary"]["pathogenic_count"] == 2
-    assert payload["clinvar_summary"]["top_pathogenic"][0]["variant_id"] == "1-1-A-G"
+    assert payload["result"]["symbol"] == "PCSK9"
+    assert payload["result"]["clinvar_summary"]["pathogenic_count"] == 2
+    assert payload["result"]["clinvar_summary"]["top_pathogenic"][0]["variant_id"] == "1-1-A-G"
     # Compact mode replaces the raw clinvar_variants list with the ranked summary.
-    assert "clinvar_variants" not in payload
-    assert payload["expression"]["source_build"] == "GRCh37"
+    assert "clinvar_variants" not in payload["result"]
+    assert payload["result"]["expression"]["source_build"] == "GRCh37"
     # next_commands cross-link, capped at 3, no self-reference.
     next_cmds = payload["_meta"]["next_commands"]
     tools = [c["tool"] for c in next_cmds]
@@ -103,9 +103,9 @@ async def test_get_gene_summary_full_returns_raw_clinvar_variants() -> None:
     result = await mcp.call_tool("get_gene_summary", {"gene": "PCSK9", "response_mode": "full"})
     payload = result.structured_content or {}
 
-    assert isinstance(payload["clinvar_variants"], list)
-    assert len(payload["clinvar_variants"]) == 3
-    assert "clinvar_summary" not in payload
+    assert isinstance(payload["result"]["clinvar_variants"], list)
+    assert len(payload["result"]["clinvar_variants"]) == 3
+    assert "clinvar_summary" not in payload["result"]
 
 
 @pytest.mark.asyncio
@@ -116,10 +116,10 @@ async def test_include_clinvar_false_drops_clinvar_block() -> None:
     result = await mcp.call_tool("get_gene_summary", {"gene": "PCSK9", "include_clinvar": False})
     payload = result.structured_content or {}
 
-    assert "clinvar_summary" not in payload
-    assert "clinvar_variants" not in payload
+    assert "clinvar_summary" not in payload["result"]
+    assert "clinvar_variants" not in payload["result"]
     # Other sections remain.
-    assert payload["constraint"] == {"pli": 0.01, "oe_lof": 0.8}
+    assert payload["result"]["constraint"] == {"pli": 0.01, "oe_lof": 0.8}
 
 
 @pytest.mark.asyncio
@@ -133,10 +133,10 @@ async def test_expression_only_projection() -> None:
     )
     payload = result.structured_content or {}
 
-    assert "clinvar_summary" not in payload
-    assert "clinvar_variants" not in payload
-    assert "constraint" not in payload
-    assert payload["expression"]["mean_pext"] == 0.7  # expression still present
+    assert "clinvar_summary" not in payload["result"]
+    assert "clinvar_variants" not in payload["result"]
+    assert "constraint" not in payload["result"]
+    assert payload["result"]["expression"]["mean_pext"] == 0.7  # expression still present
 
 
 @pytest.mark.asyncio

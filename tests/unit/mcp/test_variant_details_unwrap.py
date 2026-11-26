@@ -91,9 +91,9 @@ async def test_get_variant_details_compact_returns_variant_block() -> None:
 
     assert payload.get("error_code") is None, payload
     # The whole point of H-1: the variant block is present, not a bare _meta.
-    assert payload.get("variant_id") == "7-117559590-ATCT-A", payload
-    assert payload.get("transcript_consequences"), payload
-    assert payload.get("clinvar") == {"clinical_significance": "Pathogenic"}
+    assert payload["result"].get("variant_id") == "7-117559590-ATCT-A", payload
+    assert payload["result"].get("transcript_consequences"), payload
+    assert payload["result"].get("clinvar") == {"clinical_significance": "Pathogenic"}
     # Sanity: more than just the injected _meta survived.
     assert set(payload) - {"_meta"}
 
@@ -114,15 +114,15 @@ async def test_get_variant_details_full_returns_variant_block() -> None:
         },
     )
 
-    assert payload.get("variant_id") == "7-117559590-ATCT-A", payload
+    assert payload["result"].get("variant_id") == "7-117559590-ATCT-A", payload
     # Full mode is unwrapped too — never the {"variant": {...}} wrapper.
-    assert "variant" not in payload or isinstance(payload.get("variant"), str)
+    assert "variant" not in payload["result"] or isinstance(payload["result"].get("variant"), str)
     # in_silico_predictors is a list of rows (gnomAD shape), and the list-valued
     # payload must survive output-schema validation (regression: the model used to
     # type this as a dict, so the real list tripped output_validation_failed).
     assert payload.get("error_code") != "output_validation_failed", payload
-    assert isinstance(payload.get("in_silico_predictors"), list)
-    assert payload["in_silico_predictors"][0]["id"] == "cadd"
+    assert isinstance(payload["result"].get("in_silico_predictors"), list)
+    assert payload["result"]["in_silico_predictors"][0]["id"] == "cadd"
 
 
 @pytest.mark.asyncio

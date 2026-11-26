@@ -9,8 +9,6 @@ import logging
 from datetime import timedelta
 from typing import Any
 
-from async_lru import alru_cache
-
 from gnomad_link.api.base_client import DataNotFoundError, GnomadApiError
 from gnomad_link.api.client import UnifiedGnomadClient
 from gnomad_link.models import (
@@ -21,7 +19,7 @@ from gnomad_link.models import (
     VariantDataSource,
     VariantFrequencyResponse,
 )
-from gnomad_link.services.absent_cache import AbsentCache
+from gnomad_link.services.absent_cache import AbsentCache, FetchTimeCache
 
 logger = logging.getLogger(__name__)
 
@@ -80,14 +78,12 @@ class FrequencyService:
 
         # Configure caching (async_lru never caches exceptions)
         ttl = self.cache_ttl.total_seconds()
-        self._get_variant_cached = alru_cache(maxsize=cache_size, ttl=ttl)(self._get_variant_impl)
-        self._get_gene_cached = alru_cache(maxsize=cache_size // 4, ttl=ttl)(self._get_gene_impl)
-        self._search_genes_cached = alru_cache(
-            maxsize=cache_size, ttl=gene_search_cache_ttl_minutes * 60
-        )(self._search_genes_impl)
-        self._search_variants_cached = alru_cache(maxsize=cache_size, ttl=ttl)(
-            self._search_variants_impl
+        self._get_variant_cached = FetchTimeCache(self._get_variant_impl, cache_size, ttl)
+        self._get_gene_cached = FetchTimeCache(self._get_gene_impl, cache_size // 4, ttl)
+        self._search_genes_cached = FetchTimeCache(
+            self._search_genes_impl, cache_size, gene_search_cache_ttl_minutes * 60
         )
+        self._search_variants_cached = FetchTimeCache(self._search_variants_impl, cache_size, ttl)
         self._absent = AbsentCache(cache_size)
 
         # Track cache statistics

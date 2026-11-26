@@ -2,27 +2,27 @@
   "envelope_conformance": 10.0,
   "measured_bytes": {
     "compare_variant_across_datasets_minimal": [
-      934
+      1098
     ],
     "compare_variant_across_datasets_r4_r2_1": [
-      2221
+      2385
     ],
     "gene_carrier_frequency_hfe": [
-      2230
+      2394
     ],
     "gene_carrier_frequency_hfe_minimal": [
-      1076
+      1240
     ],
     "gene_variants_stop_gained": [
-      1741
+      1905
     ],
     "resolve_then_xl_carrier_frequency": [
-      667,
-      1351
+      819,
+      1515
     ],
     "variant_clinical_evidence": [
-      731,
-      1524
+      895,
+      1688
     ]
   },
   "token_cost": 10.0,

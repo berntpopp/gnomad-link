@@ -45,12 +45,12 @@ async def test_rsid_returns_frequencies_in_one_call_with_resolved_from() -> None
     payload = await _call(stub)
     assert payload["success"] is True, payload
     assert stub.freq_calls == ["1-55039974-G-T"]
-    assert payload["resolved_from"] == {
+    assert payload["result"]["resolved_from"] == {
         "input": "rs11591147",
         "form": "rsid",
         "resolved_to": "1-55039974-G-T",
     }
-    assert payload["exome"]
+    assert payload["result"]["exome"]
 
 
 @pytest.mark.asyncio

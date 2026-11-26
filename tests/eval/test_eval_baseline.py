@@ -63,7 +63,7 @@ async def _run_scenario(scenario: Scenario, budgets: list[int] | None) -> dict[s
         actual_tool_names.append(tool_name)
 
     # Correctness gate: raises AssertionError if the scenario is wrong.
-    scenario.correctness(payloads)
+    scenario.correctness([p.get("result", p) for p in payloads])
 
     trajectory = score_trajectory(actual_tool_names, scenario)
     token_cost, measured_bytes = score_token_cost(payloads, budgets)
@@ -148,4 +148,4 @@ async def test_scenario_correctness(scenario: Scenario) -> None:
     for tool_name, arguments in scenario.calls:
         result = await mcp.call_tool(tool_name, arguments)
         payloads.append(result.structured_content or {})
-    scenario.correctness(payloads)
+    scenario.correctness([p.get("result", p) for p in payloads])

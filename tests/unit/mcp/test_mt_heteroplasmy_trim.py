@@ -170,11 +170,11 @@ async def test_get_mitochondrial_variant_trims_zeros_by_default() -> None:
     payload = result.structured_content or {}
 
     assert payload.get("error_code") != "validation_failed", payload
-    dist = payload.get("heteroplasmy_distribution")
+    dist = payload["result"].get("heteroplasmy_distribution")
     assert dist is not None
     assert dist["bin_freq"] == [5, 3, 2]
     assert dist["bin_edges"] == [0.1, 0.4, 0.7]
-    truncated = payload.get("truncated")
+    truncated = payload["result"].get("truncated")
     assert isinstance(truncated, dict)
     assert truncated["kind"] == "heteroplasmy_zeros"
     assert truncated["dropped"]["heteroplasmy_bins"] == 7
@@ -201,11 +201,11 @@ async def test_get_mitochondrial_variant_include_heteroplasmy_zeros_passes_throu
     payload = result.structured_content or {}
 
     assert payload.get("error_code") != "validation_failed", payload
-    dist = payload.get("heteroplasmy_distribution")
+    dist = payload["result"].get("heteroplasmy_distribution")
     assert dist is not None
     assert dist["bin_edges"] == edges
     assert dist["bin_freq"] == freqs
-    truncated = payload.get("truncated")
+    truncated = payload["result"].get("truncated")
     if isinstance(truncated, dict):
         assert truncated.get("kind") != "heteroplasmy_zeros"
 
@@ -236,7 +236,7 @@ async def test_per_population_heteroplasmy_also_trimmed() -> None:
     )
     payload = result.structured_content or {}
 
-    populations = payload.get("populations") or []
+    populations = payload["result"].get("populations") or []
     assert len(populations) == 2
     assert populations[0]["heteroplasmy_distribution"] == {
         "bin_edges": [0.1],
@@ -246,7 +246,7 @@ async def test_per_population_heteroplasmy_also_trimmed() -> None:
         "bin_edges": [0.2],
         "bin_freq": [2],
     }
-    truncated = payload.get("truncated")
+    truncated = payload["result"].get("truncated")
     assert isinstance(truncated, dict)
     assert truncated["kind"] == "heteroplasmy_zeros"
     # 1 (variant) + 3 (pop a) + 2 (pop b) = 6 dropped bins total.
@@ -267,8 +267,8 @@ async def test_drops_heteroplasmy_when_all_bins_zero() -> None:
     )
     payload = result.structured_content or {}
 
-    assert "heteroplasmy_distribution" not in payload
-    truncated = payload.get("truncated")
+    assert "heteroplasmy_distribution" not in payload["result"]
+    truncated = payload["result"].get("truncated")
     assert isinstance(truncated, dict)
     assert truncated["kind"] == "heteroplasmy_zeros"
     assert truncated["dropped"]["heteroplasmy_bins"] == 3
@@ -315,16 +315,16 @@ async def test_mito_trims_zero_and_sex_split_population_and_haplogroup_rows() ->
     payload = result.structured_content or {}
 
     assert payload.get("error_code") != "validation_failed", payload
-    pops = payload.get("populations") or []
+    pops = payload["result"].get("populations") or []
     assert {p["id"] for p in pops} == {"afr"}, pops
     survivor = pops[0]
     assert survivor["ac_het"] == 5 and survivor["ac_hom"] == 0 and survivor["an"] == 100
 
-    haplos = payload.get("haplogroups") or []
+    haplos = payload["result"].get("haplogroups") or []
     assert {h["id"] for h in haplos} == {"H"}, haplos
     assert haplos[0]["ac_hom"] == 4
 
-    truncated = payload.get("truncated")
+    truncated = payload["result"].get("truncated")
     assert isinstance(truncated, dict)
     assert truncated["kind"] == "heteroplasmy_zeros"
     dropped = truncated["dropped"]
@@ -351,8 +351,8 @@ async def test_mito_include_zeros_keeps_all_population_and_haplogroup_rows() -> 
     payload = result.structured_content or {}
 
     assert payload.get("error_code") != "validation_failed", payload
-    assert {p["id"] for p in payload["populations"]} == {"afr", "eas", "nfe_XX"}
-    assert {h["id"] for h in payload["haplogroups"]} == {"L0", "H"}
+    assert {p["id"] for p in payload["result"]["populations"]} == {"afr", "eas", "nfe_XX"}
+    assert {h["id"] for h in payload["result"]["haplogroups"]} == {"L0", "H"}
 
 
 def test_population_haplogroup_trim_reduces_serialized_bytes() -> None:

@@ -221,5 +221,5 @@ async def test_null_bearing_complex_sv_survives_output_validation() -> None:
 
     # The whole M-1 point: null end/af/ac/an must NOT trip output validation.
     assert payload.get("error_code") != "output_validation_failed", payload
-    assert payload.get("variant_id") == "CPX_chr1_1", payload
-    assert payload.get("cpx_type") == "delINV"
+    assert payload["result"].get("variant_id") == "CPX_chr1_1", payload
+    assert payload["result"].get("cpx_type") == "delINV"

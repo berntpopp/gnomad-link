@@ -82,7 +82,7 @@ def _assert_hostile_payload_is_fenced(payload: dict[str, Any]) -> None:
     """Shared assertions run against BOTH structured_content and the text mirror."""
     assert payload.get("error_code") != "invalid_input", payload
 
-    submission = payload["submissions"][0]
+    submission = payload["result"]["submissions"][0]
     condition = submission["conditions"][0]
     condition_name = condition["name"]
     submitter_name = submission["submitter_name"]
@@ -157,7 +157,7 @@ async def test_full_mode_retains_integrity_digest() -> None:
         {"variant_id": VARIANT_ID, "reference_genome": "GRCh38", "response_mode": "full"},
     )
     payload: dict[str, Any] = result.structured_content or {}
-    submitter_name = payload["submissions"][0]["submitter_name"]
+    submitter_name = payload["result"]["submissions"][0]["submitter_name"]
     assert submitter_name["kind"] == "untrusted_text"
     assert submitter_name["raw_sha256"] == hashlib.sha256(HOSTILE.encode("utf-8")).hexdigest()
 
@@ -265,7 +265,7 @@ async def test_many_submissions_via_full_tool_call_does_not_raise() -> None:
 
     assert payload.get("error_code") != "invalid_input", payload
     assert payload.get("success", True) is not False
-    assert len(payload["submissions"]) == 150
+    assert len(payload["result"]["submissions"]) == 150
 
 
 @pytest.mark.asyncio
@@ -297,12 +297,12 @@ async def test_large_upstream_record_does_not_raise_when_emitted_response_is_sma
 
     # Does NOT raise / does NOT return a limit error: only 25*2 = 50 emitted objects.
     assert payload.get("error_code") is None, payload
-    assert len(payload["submissions"]) == 25
+    assert len(payload["result"]["submissions"]) == 25
     # Summary still reflects the FULL upstream count (all 6000).
-    assert payload["summary"]["total"] == 6000
+    assert payload["result"]["summary"]["total"] == 6000
     # And the truncated block reports the drop.
-    assert payload["truncated"]["kind"] == "submissions"
-    assert payload["truncated"]["dropped"] == 5975
+    assert payload["result"]["truncated"]["kind"] == "submissions"
+    assert payload["result"]["truncated"]["dropped"] == 5975
 
 
 def test_object_count_ceiling_still_raises_beyond_the_real_cap() -> None:

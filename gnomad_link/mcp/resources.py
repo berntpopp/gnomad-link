@@ -167,12 +167,14 @@ def get_capabilities_resource() -> dict[str, Any]:
             ],
         },
         "output_cheatsheet": {
-            "variant_id_field": "variant_id",
-            "exome_populations": "exome.populations[]",
-            "genome_populations": "genome.populations[]",
-            "summary_block": "summary",
-            "headline_field": "headline",
-            "truncation_block": "exome.truncated",
+            "payload": "result (one record) or results (a list); the paths below are in result",
+            "variant_id_field": "result.variant_id",
+            "exome_populations": "result.exome.populations[]",
+            "genome_populations": "result.genome.populations[]",
+            "summary_block": "result.summary",
+            "headline_field": "result.headline",
+            "truncation_block": "result.exome.truncated",
+            "provenance": "_meta.source, _meta.data_version, _meta.retrieved_at (UTC fetch time)",
             "next_commands_field": "_meta.next_commands",
         },
         "error_codes": [
@@ -240,7 +242,7 @@ def get_capabilities_resource() -> dict[str, Any]:
         },
         "response_fields": {
             "headline": (
-                "one-line plain-English answer at the top of get_variant_frequencies, "
+                "one-line plain-English answer, first field of result in get_variant_frequencies, "
                 "get_gene_details, get_gene_summary, compute_carrier_frequency, "
                 "compute_gene_carrier_frequency, compare_variant_across_datasets, get_region, "
                 "get_structural_variant, get_mitochondrial_variant, and get_coverage; read it "

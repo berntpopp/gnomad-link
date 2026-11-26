@@ -74,11 +74,11 @@ async def test_get_coverage_gene_scope_by_symbol() -> None:
     result = await mcp.call_tool("get_coverage", {"target": "PCSK9"})
     payload = result.structured_content or {}
 
-    assert payload["scope"] == "gene"
-    assert payload["identity"]["symbol"] == "PCSK9"
+    assert payload["result"]["scope"] == "gene"
+    assert payload["result"]["identity"]["symbol"] == "PCSK9"
     assert service.calls[0]["scope"] == "gene"
     assert service.calls[0]["gene_symbol"] == "PCSK9"
-    assert payload["exome"]["summary"]["mean_coverage"] == 31.0
+    assert payload["result"]["exome"]["summary"]["mean_coverage"] == 31.0
 
 
 @pytest.mark.asyncio
@@ -91,8 +91,8 @@ async def test_get_coverage_variant_scope_is_scalar_and_links_to_frequencies() -
     )
     payload = result.structured_content or {}
 
-    assert payload["scope"] == "variant"
-    assert "bins" not in payload["exome"]
+    assert payload["result"]["scope"] == "variant"
+    assert "bins" not in payload["result"]["exome"]
     next_tools = [c["tool"] for c in payload["_meta"]["next_commands"]]
     assert "get_variant_frequencies" in next_tools
     assert "get_coverage" not in next_tools  # no self-reference
@@ -107,7 +107,7 @@ async def test_get_coverage_region_scope_caps_span_at_100kb() -> None:
     result = await mcp.call_tool("get_coverage", {"target": "1-55000000-55500000"})
     payload = result.structured_content or {}
 
-    assert payload["scope"] == "region"
+    assert payload["result"]["scope"] == "region"
     # Span was clamped before the service call.
     assert service.calls[0]["stop"] - service.calls[0]["start"] == 100_000
 

@@ -36,5 +36,5 @@ async def test_get_server_capabilities_tool_returns_capabilities(fake_service_fa
     result = await mcp.call_tool("get_server_capabilities", {})
 
     payload = result.structured_content or {}
-    assert payload["server"] == "gnomad-link"
-    assert isinstance(payload["tools"], list)
+    assert payload["result"]["server"] == "gnomad-link"
+    assert isinstance(payload["result"]["tools"], list)

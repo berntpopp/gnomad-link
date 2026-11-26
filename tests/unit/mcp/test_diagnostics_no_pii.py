@@ -68,8 +68,8 @@ async def test_get_diagnostics_never_leaks_raw_error_or_drift_text() -> None:
     payload = result.structured_content or {}
 
     # Sanity: the rings actually captured the events we drove.
-    assert payload["recent_error_count"] >= 1
-    assert payload["recent_schema_drift_count"] >= 1
+    assert payload["result"]["recent_error_count"] >= 1
+    assert payload["result"]["recent_schema_drift_count"] >= 1
 
     # The sentinel must appear NOWHERE in the full diagnostics output -- across
     # recent_errors AND recent_schema_drift.

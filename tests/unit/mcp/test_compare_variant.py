@@ -102,12 +102,15 @@ async def test_compares_two_present_datasets_and_emits_deltas() -> None:
     payload = _structured(result)
 
     assert payload.get("success") is not False, payload
-    assert payload["variant_id"] == "1-55039974-G-T"
-    assert payload["datasets"]["gnomad_r4"]["present"] is True
-    assert payload["datasets"]["gnomad_r3"]["present"] is True
-    overall = payload["comparison"]["overall_af_by_dataset"]
+    assert payload["result"]["variant_id"] == "1-55039974-G-T"
+    assert payload["result"]["datasets"]["gnomad_r4"]["present"] is True
+    assert payload["result"]["datasets"]["gnomad_r3"]["present"] is True
+    overall = payload["result"]["comparison"]["overall_af_by_dataset"]
     assert set(overall) == {"gnomad_r4", "gnomad_r3"}
-    by_pop = {row["population"]: row for row in payload["comparison"]["per_population_af_deltas"]}
+    by_pop = {
+        row["population"]: row
+        for row in payload["result"]["comparison"]["per_population_af_deltas"]
+    }
     # afr: r4 100/10000 = 0.01 vs r3 80/10000 = 0.008 -> delta 0.002.
     assert abs(by_pop["afr"]["max_minus_min_delta"] - 0.002) < 1e-12
 
@@ -130,10 +133,13 @@ async def test_compact_default_drops_per_dataset_populations_keeps_deltas() -> N
     payload = _structured(result)
 
     # Per-dataset population arrays are dropped in the default compact mode...
-    assert "populations" not in payload["datasets"]["gnomad_r4"]["exome"]
-    assert "populations_note" in payload
+    assert "populations" not in payload["result"]["datasets"]["gnomad_r4"]["exome"]
+    assert "populations_note" in payload["result"]
     # ...but the per-population deltas (the actual signal) survive.
-    by_pop = {row["population"]: row for row in payload["comparison"]["per_population_af_deltas"]}
+    by_pop = {
+        row["population"]: row
+        for row in payload["result"]["comparison"]["per_population_af_deltas"]
+    }
     assert abs(by_pop["afr"]["max_minus_min_delta"] - 0.002) < 1e-12
 
 
@@ -153,8 +159,8 @@ async def test_full_mode_keeps_per_dataset_populations() -> None:
     )
     payload = _structured(result)
 
-    assert payload["datasets"]["gnomad_r4"]["exome"]["populations"]
-    assert "populations_note" not in payload
+    assert payload["result"]["datasets"]["gnomad_r4"]["exome"]["populations"]
+    assert "populations_note" not in payload["result"]
 
 
 @pytest.mark.asyncio
@@ -176,10 +182,10 @@ async def test_missing_dataset_marked_present_false_partial_success() -> None:
     payload = _structured(result)
 
     assert payload.get("success") is not False, payload
-    assert payload["datasets"]["gnomad_r4"]["present"] is True
-    assert payload["datasets"]["gnomad_r3"] == {"present": False}
+    assert payload["result"]["datasets"]["gnomad_r4"]["present"] is True
+    assert payload["result"]["datasets"]["gnomad_r3"] == {"present": False}
     # Only the present dataset contributes to overall comparison.
-    assert set(payload["comparison"]["overall_af_by_dataset"]) == {"gnomad_r4"}
+    assert set(payload["result"]["comparison"]["overall_af_by_dataset"]) == {"gnomad_r4"}
 
 
 @pytest.mark.asyncio
@@ -241,10 +247,10 @@ async def test_auto_liftover_converts_grch38_id_for_r2_1() -> None:
     assert stub.liftover_calls == [("17-7673803-G-A", "GRCh38")]
     # The r2_1 frequency lookup used the lifted GRCh37 id.
     assert ("17-7577121-G-A", "gnomad_r2_1") in stub.freq_calls
-    r2 = payload["datasets"]["gnomad_r2_1"]
+    r2 = payload["result"]["datasets"]["gnomad_r2_1"]
     assert r2["present"] is True
     assert r2["lifted_variant_id"] == "17-7577121-G-A"
-    assert any("GRCh37" in note for note in payload["build_notes"])
+    assert any("GRCh37" in note for note in payload["result"]["build_notes"])
 
 
 @pytest.mark.asyncio
@@ -272,7 +278,7 @@ async def test_auto_liftover_no_mapping_marks_r2_1_present_false() -> None:
     payload = _structured(result)
 
     assert payload.get("success") is not False, payload
-    assert payload["datasets"]["gnomad_r2_1"] == {"present": False}
+    assert payload["result"]["datasets"]["gnomad_r2_1"] == {"present": False}
     assert stub.liftover_calls == [("17-7673803-G-A", "GRCh38")]
     # r2_1 frequencies never fetched (no lifted id).
     assert all(d != "gnomad_r2_1" for _, d in stub.freq_calls)
@@ -347,7 +353,7 @@ async def test_compare_r2_1_uses_grch37_source_not_input_coordinate() -> None:
     )
     payload = _structured(result)
 
-    assert payload["datasets"]["gnomad_r2_1"]["present"] is True
+    assert payload["result"]["datasets"]["gnomad_r2_1"]["present"] is True
     assert ("6-26093141-G-A", "gnomad_r2_1") in stub.freq_calls
     assert ("6-26092913-G-A", "gnomad_r2_1") not in stub.freq_calls
-    assert any("6-26093141-G-A" in note for note in payload["build_notes"])
+    assert any("6-26093141-G-A" in note for note in payload["result"]["build_notes"])
