@@ -466,9 +466,10 @@ class FrequencyService:
         """Raw gene variants pass-through."""
         return await self.client.get_gene_variants(gene_id, dataset)
 
-    async def get_gene_with_variants(self, gene_symbol: str, dataset: str) -> dict[str, Any]:
-        """The gene node (gene_id + variants) looked up by symbol, in one request."""
-        return await self.client.get_gene_with_variants(dataset, gene_symbol=gene_symbol)
+    async def get_gene_with_variants(self, gene: str, dataset: str) -> dict[str, Any]:
+        """The gene node (gene_id, symbol, variants) by Ensembl id or symbol, in one request."""
+        key = "gene_id" if gene.upper().startswith("ENSG") else "gene_symbol"
+        return await self.client.get_gene_with_variants(dataset, **{key: gene})
 
     async def get_clinvar_meta(self) -> dict[str, Any]:
         """Raw ClinVar metadata pass-through."""
@@ -548,7 +549,7 @@ class FrequencyService:
         gene_id: str | None = None,
         region: str | None = None,
         sv_dataset: str = "gnomad_sv_r4",
-    ) -> list[dict[str, Any]]:
+    ) -> dict[str, Any]:
         """Delegate SV search to StructuralVariantService over the shared client."""
         from gnomad_link.services.structural_variant_service import (
             StructuralVariantService,

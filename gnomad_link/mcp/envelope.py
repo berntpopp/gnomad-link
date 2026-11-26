@@ -17,6 +17,14 @@ def build_envelope(payload: dict[str, Any], meta: dict[str, Any]) -> dict[str, A
     """
     own_meta: dict[str, Any] = payload.pop("_meta", None) or {}
     success = payload.pop("success", True)
+    if success and isinstance(payload.get("has_more"), bool) and "total_count" in payload:
+        # v1 section 5. These tools page by `limit` only: there is no cursor, a wider
+        # `limit` or a narrower query gets the rest. The top-level copies stay.
+        own_meta["pagination"] = {
+            "total_count": payload["total_count"],
+            "has_more": payload["has_more"],
+            "next_cursor": None,
+        }
     if success and not {"result", "results"} & payload.keys():
         payload = {"result": payload}
     return {"success": success, **payload, "_meta": {**own_meta, **meta}}

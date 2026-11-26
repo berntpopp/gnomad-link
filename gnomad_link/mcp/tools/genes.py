@@ -221,18 +221,15 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
                 )
             service = service_factory()
             resolved_from: dict[str, str] | None = None
-            if symbol:
-                # Same single upstream request as the id path: gnomAD looks the gene up by symbol.
-                gene = await service.get_gene_with_variants(symbol, dataset)
-                raw = list(gene.get("variants") or [])
-                if gene.get("gene_id"):
-                    resolved_from = {
-                        "input": symbol,
-                        "form": "symbol",
-                        "resolved_to": gene["gene_id"],
-                    }
-            else:
-                raw = await service.get_gene_variants(gene_id, dataset)
+            # One upstream request for either form: gnomAD looks the gene up by id or symbol.
+            gene = await service.get_gene_with_variants(gene_id, dataset)
+            raw = list(gene.get("variants") or [])
+            if symbol and gene.get("gene_id"):
+                resolved_from = {
+                    "input": symbol,
+                    "form": "symbol",
+                    "resolved_to": gene["gene_id"],
+                }
             gene_ref = resolved_from["resolved_to"] if resolved_from else gene_id
             result = shape_gene_variants(
                 raw,
@@ -255,6 +252,10 @@ def register_gene_tools(mcp: FastMCP, *, service_factory: Callable[[], Frequency
             result.setdefault("_meta", {})["next_commands"] = cmds
             if resolved_from:
                 result["resolved_from"] = resolved_from
+            # Name the gene the rows belong to, whichever form the caller sent.
+            named = {k: gene[k] for k in ("gene_id", "symbol") if gene.get(k)}
+            if named:
+                result["gene"] = named
             return result
 
         return await run_mcp_tool(

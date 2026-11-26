@@ -37,8 +37,10 @@ class StructuralVariantService:
         gene_id: str | None = None,
         region: str | None = None,
         sv_dataset: str = "gnomad_sv_r4",
-    ) -> list[dict[str, Any]]:
-        """Return the FULL list of SV rows for the entry argument.
+    ) -> dict[str, Any]:
+        """Return ``{structural_variants: FULL list of SV rows}`` for the entry argument.
+
+        A gene scope also carries the gene's ``gene_id`` and ``symbol``.
 
         Exactly one of gene_symbol / gene_id / region must be provided.
         Filtering and capping are the caller's responsibility (sv_shaping).
@@ -60,13 +62,14 @@ class StructuralVariantService:
             start, stop = int(start_s), int(stop_s)
             if stop <= start:
                 raise ToolInputError("Region stop must be greater than start.")
-            return await self.client.search_structural_variants_by_region(
+            rows = await self.client.search_structural_variants_by_region(
                 chrom=chrom,
                 start=start,
                 stop=stop,
                 reference_genome=reference_genome,
                 sv_dataset=sv_dataset,
             )
+            return {"structural_variants": rows}
 
         return await self.client.search_structural_variants_by_gene(
             gene_id=gene_id,

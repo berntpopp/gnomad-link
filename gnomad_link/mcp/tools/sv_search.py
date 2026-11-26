@@ -106,14 +106,14 @@ def register_sv_search_tools(
             if gene_symbol:
                 reject_foreign(target, "gene", field="target", tool="search_structural_variants")
             service = service_factory()
-            raw = await service.search_structural_variants(
+            found = await service.search_structural_variants(
                 gene_symbol=gene_symbol,
                 gene_id=gene_id,
                 region=region,
                 sv_dataset=sv_dataset,
             )
             shaped = shape_sv_search(
-                raw,
+                found["structural_variants"],
                 sv_type=sv_type,
                 min_length=min_length,
                 max_length=max_length,
@@ -127,6 +127,10 @@ def register_sv_search_tools(
             elif region:
                 query_echo = {"region": region, "sv_dataset": sv_dataset}
             shaped["query"] = query_echo
+            # Name the gene the rows belong to, whichever form the caller sent.
+            gene = {k: found[k] for k in ("gene_id", "symbol") if found.get(k)}
+            if gene:
+                shaped["gene"] = gene
             # Cross-link each returned opaque id to the single-SV detail tool.
             existing_meta: dict[str, Any] = shaped.get("_meta") or {}
             existing_next: list[Any] = existing_meta.get("next_commands", [])

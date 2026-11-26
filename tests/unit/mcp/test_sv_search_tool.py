@@ -50,14 +50,17 @@ class _SpySvService:
         gene_id: str | None = None,
         region: str | None = None,
         sv_dataset: str = "gnomad_sv_r4",
-    ) -> list[dict[str, object]]:
+    ) -> dict[str, object]:
         self.last_kwargs = {
             "gene_symbol": gene_symbol,
             "gene_id": gene_id,
             "region": region,
             "sv_dataset": sv_dataset,
         }
-        return self.rows
+        node: dict[str, object] = {"structural_variants": self.rows}
+        if gene_symbol or gene_id:
+            node.update(gene_id="ENSG00000127616", symbol="SMARCA4")
+        return node
 
 
 @pytest.mark.asyncio
@@ -220,3 +223,17 @@ async def test_no_response_mode_parameter_is_advertised() -> None:
     mcp = create_gnomad_mcp(service_factory=lambda: _SpySvService())
     tools = {tool.name: tool for tool in await mcp.list_tools()}
     assert "response_mode" not in tools["search_structural_variants"].parameters["properties"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("target", ["SMARCA4", "ENSG00000127616"])
+async def test_a_gene_search_names_the_gene_in_either_form(target: str) -> None:
+    """A symbol and its Ensembl id are seen to be one gene; a region names none."""
+    from gnomad_link.mcp.facade import create_gnomad_mcp
+
+    mcp = create_gnomad_mcp(service_factory=lambda: _SpySvService())
+    result = await mcp.call_tool("search_structural_variants", {"target": target})
+    payload = (result.structured_content or {})["result"]
+    assert payload["gene"] == {"gene_id": "ENSG00000127616", "symbol": "SMARCA4"}
+    region = await mcp.call_tool("search_structural_variants", {"target": "19-11089000-11200000"})
+    assert "gene" not in (region.structured_content or {})["result"]

@@ -96,9 +96,9 @@ class EvalStubService:
         self.calls.append(("search_variants", (query, dataset), {}))
         return list(self._search_ids)
 
-    async def get_gene_variants(self, gene_id: str, dataset: str) -> list[dict[str, Any]]:
-        self.calls.append(("get_gene_variants", (gene_id, dataset), {}))
-        return self._gene_variants[gene_id]
+    async def get_gene_with_variants(self, gene: str, dataset: str) -> dict[str, Any]:
+        self.calls.append(("get_gene_with_variants", (gene, dataset), {}))
+        return {"gene_id": gene, "variants": self._gene_variants[gene]}
 
 
 # ---------------------------------------------------------------------------

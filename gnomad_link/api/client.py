@@ -458,7 +458,7 @@ class UnifiedGnomadClient(BaseGnomadClient):
         gene_symbol: str | None,
         reference_genome: str,
         sv_dataset: str = "gnomad_sv_r4",
-    ) -> list[dict[str, Any]]:
+    ) -> dict[str, Any]:
         """Search structural variants overlapping a gene.
 
         Args:
@@ -468,7 +468,7 @@ class UnifiedGnomadClient(BaseGnomadClient):
             sv_dataset: StructuralVariantDatasetId enum value
 
         Returns:
-            Flat list of structural variant rows (may be empty)
+            The gene node: gene_id, symbol and its structural_variants rows (may be empty)
         """
         variables: dict[str, Any] = {
             "gene_id": gene_id,
@@ -477,8 +477,9 @@ class UnifiedGnomadClient(BaseGnomadClient):
             "sv_dataset": sv_dataset,
         }
         result = await self.execute_query("sv_search_by_gene", variables, "v4")
-        gene = result.get("gene") or {}
-        return list(gene.get("structural_variants") or [])
+        gene = dict(result.get("gene") or {})
+        gene["structural_variants"] = list(gene.get("structural_variants") or [])
+        return gene
 
     async def search_structural_variants_by_region(
         self,

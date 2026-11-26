@@ -133,3 +133,12 @@ async def test_a_cache_hit_keeps_the_time_of_the_fetch_that_filled_it() -> None:
 async def test_clinvar_validates_in_both_modes(schema_errors: Any, mode: str) -> None:
     envelope = await _call("get_clinvar_variant_details", response_mode=mode)
     assert schema_errors(envelope) == []
+
+
+def test_a_paged_payload_reports_meta_pagination() -> None:
+    from gnomad_link.mcp.envelope import build_envelope
+
+    paged = build_envelope({"results": [{}], "returned": 1, "total_count": 5, "has_more": True}, {})
+    assert paged["_meta"]["pagination"] == {"total_count": 5, "has_more": True, "next_cursor": None}
+    assert paged["total_count"] == 5  # the top-level copy stays
+    assert "pagination" not in build_envelope({"variant_id": "1-2-A-T"}, {})["_meta"]

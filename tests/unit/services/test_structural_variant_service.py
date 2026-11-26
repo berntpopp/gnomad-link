@@ -50,11 +50,17 @@ def service_with_client():
 @pytest.mark.asyncio
 async def test_search_by_gene_symbol_returns_flat_list(service_with_client) -> None:
     service, client = service_with_client
-    client.search_structural_variants_by_gene.return_value = list(_SV_ROWS)
+    client.search_structural_variants_by_gene.return_value = {
+        "gene_id": "ENSG00000127616",
+        "symbol": "SMARCA4",
+        "structural_variants": list(_SV_ROWS),
+    }
 
-    rows = await service.search_structural_variants(
+    found = await service.search_structural_variants(
         gene_symbol="SMARCA4", sv_dataset="gnomad_sv_r4"
     )
+    rows = found["structural_variants"]
+    assert (found["gene_id"], found["symbol"]) == ("ENSG00000127616", "SMARCA4")
 
     client.search_structural_variants_by_gene.assert_awaited_once_with(
         gene_id=None,
@@ -68,7 +74,11 @@ async def test_search_by_gene_symbol_returns_flat_list(service_with_client) -> N
 @pytest.mark.asyncio
 async def test_search_by_gene_id_uses_gene_id(service_with_client) -> None:
     service, client = service_with_client
-    client.search_structural_variants_by_gene.return_value = list(_SV_ROWS)
+    client.search_structural_variants_by_gene.return_value = {
+        "gene_id": "ENSG00000127616",
+        "symbol": "SMARCA4",
+        "structural_variants": list(_SV_ROWS),
+    }
 
     await service.search_structural_variants(gene_id="ENSG00000127616", sv_dataset="gnomad_sv_r4")
 
@@ -85,9 +95,11 @@ async def test_search_by_region_parses_and_delegates(service_with_client) -> Non
     service, client = service_with_client
     client.search_structural_variants_by_region.return_value = list(_SV_ROWS)
 
-    rows = await service.search_structural_variants(
-        region="19-11089000-11200000", sv_dataset="gnomad_sv_r4"
-    )
+    rows = (
+        await service.search_structural_variants(
+            region="19-11089000-11200000", sv_dataset="gnomad_sv_r4"
+        )
+    )["structural_variants"]
 
     client.search_structural_variants_by_region.assert_awaited_once_with(
         chrom="19",
@@ -102,7 +114,7 @@ async def test_search_by_region_parses_and_delegates(service_with_client) -> Non
 @pytest.mark.asyncio
 async def test_r2_1_maps_to_grch37(service_with_client) -> None:
     service, client = service_with_client
-    client.search_structural_variants_by_gene.return_value = []
+    client.search_structural_variants_by_gene.return_value = {"structural_variants": []}
 
     await service.search_structural_variants(gene_symbol="SMARCA4", sv_dataset="gnomad_sv_r2_1")
 

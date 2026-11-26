@@ -47,9 +47,9 @@ async def test_every_tool_description_lead_states_what_it_returns(fake_service_f
 
 
 class _StubGeneVariantsService:
-    async def get_gene_variants(self, gene_id: str, dataset: str) -> list[dict[str, Any]]:
+    async def get_gene_with_variants(self, gene: str, dataset: str) -> dict[str, Any]:
         pops = [{"id": "nfe", "ac": 2, "an": 1000}]
-        return [
+        variants = [
             {
                 "variant_id": "17-43045711-G-A",
                 "consequence": "missense_variant",
@@ -59,6 +59,7 @@ class _StubGeneVariantsService:
                 "genome": None,
             }
         ]
+        return {"gene_id": "ENSG00000012048", "symbol": "BRCA1", "variants": variants}
 
 
 @pytest.mark.asyncio

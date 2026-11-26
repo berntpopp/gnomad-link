@@ -30,11 +30,15 @@ class _Stub:
         self.calls.append(("get_gene_variants", gene_id))
         return []
 
-    async def get_gene_with_variants(self, gene_symbol: str, dataset: str) -> dict[str, Any]:
-        self.calls.append(("get_gene_with_variants", gene_symbol))
-        if gene_symbol != "KRAS":
+    async def get_gene_with_variants(self, gene: str, dataset: str) -> dict[str, Any]:
+        self.calls.append(("get_gene_with_variants", gene))
+        if gene not in ("KRAS", "ENSG00000133703"):
             raise DataNotFoundError("Gene not found")
-        return {"gene_id": "ENSG00000133703", "variants": [{"variant_id": "12-25245350-C-T"}]}
+        return {
+            "gene_id": "ENSG00000133703",
+            "symbol": "KRAS",
+            "variants": [{"variant_id": "12-25245350-C-T"}],
+        }
 
 
 async def _call(tool: str, **arguments: Any) -> tuple[dict[str, Any], _Stub]:
@@ -112,8 +116,10 @@ async def test_gene_variants_accepts_a_symbol_and_echoes_resolved_from() -> None
 async def test_gene_variants_by_ensembl_id_has_no_resolved_from() -> None:
     payload, stub = await _call("get_gene_variants", gene_id="ENSG00000133703")
     assert payload["success"] is True, payload
-    assert stub.calls == [("get_gene_variants", "ENSG00000133703")]
-    assert "resolved_from" not in payload
+    assert stub.calls == [("get_gene_with_variants", "ENSG00000133703")]
+    assert "resolved_from" not in payload["result"]  # an Ensembl id is not converted
+    # ...but the answer names the gene, so an id and its symbol are seen to be one gene.
+    assert payload["result"]["gene"] == {"gene_id": "ENSG00000133703", "symbol": "KRAS"}
 
 
 @pytest.mark.asyncio
