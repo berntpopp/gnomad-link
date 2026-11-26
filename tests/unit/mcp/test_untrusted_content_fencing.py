@@ -90,10 +90,9 @@ def _assert_hostile_payload_is_fenced(payload: dict[str, Any]) -> None:
     for fenced in (condition_name, submitter_name):
         # 1. typed object with the schema literal.
         assert fenced["kind"] == "untrusted_text"
-        # 2. compact (default) drops the raw_sha256 integrity bookkeeping for
-        #    token efficiency (defect #45-6); response_mode='full' retains it
-        #    (see test_full_mode_retains_integrity_digest).
-        assert "raw_sha256" not in fenced
+        # 2. the envelope schema requires both on every fenced text, in compact too (#161).
+        assert fenced["raw_sha256"] == hashlib.sha256(HOSTILE.encode("utf-8")).hexdigest()
+        assert fenced["provenance"]["retrieved_at"]
         # 3. control/zero-width/bidi removed, but the injection prose + bare
         #    tool-name survive verbatim as DATA (the fence neither rewrites nor
         #    executes an embedded tool reference).
@@ -143,23 +142,6 @@ async def test_clinvar_condition_and_submitter_are_fenced_typed_objects() -> Non
     assert "‮" not in text_blocks[0].text
     assert "﻿" not in text_blocks[0].text
     assert "‍" not in text_blocks[0].text
-
-
-@pytest.mark.asyncio
-async def test_full_mode_retains_integrity_digest() -> None:
-    """response_mode='full' keeps the raw_sha256 integrity bookkeeping that
-    compact drops for token efficiency (defect #45-6)."""
-    variant = _hostile_variant()
-    mcp = create_gnomad_mcp(service_factory=lambda: _ClinVarStubService(variant))
-
-    result = await mcp.call_tool(
-        "get_clinvar_variant_details",
-        {"variant_id": VARIANT_ID, "reference_genome": "GRCh38", "response_mode": "full"},
-    )
-    payload: dict[str, Any] = result.structured_content or {}
-    submitter_name = payload["result"]["submissions"][0]["submitter_name"]
-    assert submitter_name["kind"] == "untrusted_text"
-    assert submitter_name["raw_sha256"] == hashlib.sha256(HOSTILE.encode("utf-8")).hexdigest()
 
 
 def test_condition_name_is_fenced_when_submitter_name_absent() -> None:

@@ -38,16 +38,6 @@ def _schema_errors_fixture() -> Any:
     return schema_errors
 
 
-def envelope_errors(tool: str, envelope: Any) -> list[str]:
-    """``schema_errors`` minus the one known gap."""
-    errors = schema_errors(envelope)
-    if tool == "get_clinvar_variant_details":
-        # Known gap (#161): compact mode drops raw_sha256 / retrieved_at from its fenced
-        # texts. test_envelope_v1_2.py pins it, so closing the gap fails there, not here.
-        errors = [e for e in errors if not e.startswith("$.result.submissions")]
-    return errors
-
-
 @pytest.fixture(autouse=True)
 def _every_tool_result_is_a_v1_2_envelope(monkeypatch: pytest.MonkeyPatch) -> None:
     """Validate every in-process tool result the suite produces against the schema.
@@ -61,7 +51,7 @@ def _every_tool_result_is_a_v1_2_envelope(monkeypatch: pytest.MonkeyPatch) -> No
         result = await original(self, name, *args, **kwargs)
         envelope = getattr(result, "structured_content", None)
         if envelope is not None:
-            assert not envelope_errors(name, envelope), (name, envelope_errors(name, envelope))
+            assert not schema_errors(envelope), (name, schema_errors(envelope))
         return result
 
     monkeypatch.setattr(FastMCP, "call_tool", call_tool)
