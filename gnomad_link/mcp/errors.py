@@ -32,6 +32,7 @@ from gnomad_link.mcp.envelope import build_envelope, stamp
 from gnomad_link.mcp.foreign_ids import redirect_validation_payload
 from gnomad_link.mcp.mito_redirect import MITO_RECOVERY, MITO_TOOL, MitoIdRedirectError
 from gnomad_link.mcp.recovery import DATASET_BUILD as _DATASET_BUILD
+from gnomad_link.mcp.recovery import gene_seed as _gene_seed
 from gnomad_link.mcp.recovery import liftover_recovery_command
 from gnomad_link.mcp.resources import GNOMAD_DATA_RELEASE
 from gnomad_link.mcp.untrusted_content import UntrustedTextLimitError, sanitize_message
@@ -174,7 +175,8 @@ def _fallback_for(context: McpErrorContext) -> tuple[str, dict[str, Any] | None]
     # A failing variant resolver almost always received a gene symbol / free
     # text; point it at gene search rather than circularly back at itself.
     if context.tool_name in {"resolve_variant_id", "search_variants"}:
-        return "search_genes", ({"query": context.query} if context.query else None)
+        args = _gene_seed(context.query)
+        return ("search_genes", args) if args else ("get_server_capabilities", None)
     # SV ids are not resolvable by resolve_variant_id; steer to capabilities (always callable).
     if context.tool_name == "get_structural_variant":
         return "get_server_capabilities", None
@@ -182,14 +184,12 @@ def _fallback_for(context: McpErrorContext) -> tuple[str, dict[str, Any] | None]
         # SV search needs a valid gene/region; help locate one via gene search.
         # fallback_args must be directly callable: search_genes requires `query`,
         # so only emit it when we actually have a query to seed it with.
-        seed = context.query or context.gene_symbol or context.gene_id
-        if seed:
-            return "search_genes", {"query": seed}
-        return "get_server_capabilities", None
+        args = _gene_seed(context.query, context.gene_symbol, context.gene_id)
+        return ("search_genes", args) if args else ("get_server_capabilities", None)
     if context.variant_id:
         return "resolve_variant_id", {"query": context.variant_id}
-    if context.gene_symbol or context.gene_id:
-        return "search_genes", {"query": context.gene_symbol or context.gene_id}
+    if args := _gene_seed(context.gene_symbol, context.gene_id):
+        return "search_genes", args
     return "get_server_capabilities", None
 
 

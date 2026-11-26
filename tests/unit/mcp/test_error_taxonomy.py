@@ -27,7 +27,7 @@ def _payload(exc, ctx):
 def test_upstream_input_error_is_invalid_input_non_retryable() -> None:
     payload = _payload(
         UpstreamInputError("Unrecognized query. Search by variant ID, rsID, or ClinVar ID."),
-        McpErrorContext(tool_name="resolve_variant_id"),
+        McpErrorContext(tool_name="resolve_variant_id", query="BRCA2"),
     )
     assert payload["error_code"] == "invalid_input"
     assert payload["retryable"] is False
@@ -109,7 +109,7 @@ def test_invalid_input_on_resolver_points_to_search_genes() -> None:
     # resolve_variant_id given a gene symbol must steer to gene search, not itself.
     payload = _payload(
         UpstreamInputError("Unrecognized query. Search by variant ID, rsID, or ClinVar ID."),
-        McpErrorContext(tool_name="resolve_variant_id"),
+        McpErrorContext(tool_name="resolve_variant_id", query="BRCA2"),
     )
     assert payload["error_code"] == "invalid_input"
     assert payload["fallback_tool"] == "search_genes"
