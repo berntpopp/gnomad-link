@@ -42,7 +42,7 @@ async def test_capabilities_tool_surfaces_live_clinvar_date() -> None:
     result = await mcp.call_tool("get_server_capabilities", {})
     payload = result.structured_content or {}
 
-    assert payload["clinvar_release_date"] == "2026-05-03"
+    assert payload["result"]["clinvar_release_date"] == "2026-05-03"
 
 
 @pytest.mark.asyncio
@@ -55,8 +55,8 @@ async def test_capabilities_tool_degrades_gracefully_when_meta_unavailable() -> 
     payload = result.structured_content or {}
 
     # Missing date is not a blocker: the field stays null, tool still returns caps.
-    assert payload.get("clinvar_release_date") is None
-    assert "datasets" in payload
+    assert payload["result"].get("clinvar_release_date") is None
+    assert "datasets" in payload["result"]
 
 
 def test_static_capabilities_resource_null_until_cache_populated() -> None:

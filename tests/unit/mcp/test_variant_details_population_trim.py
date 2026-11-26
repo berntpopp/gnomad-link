@@ -132,8 +132,8 @@ async def test_tool_default_trims_and_passes_output_validation() -> None:
         mcp, "get_variant_details", {"variant_id": "7-117559590-ATCT-A", "dataset": "gnomad_r4"}
     )
     assert payload.get("error_code") is None, payload
-    assert {p["id"] for p in payload["exome"]["populations"]} == {"afr", "nfe"}
-    assert payload["exome"]["truncated"]["kind"] == "populations"
+    assert {p["id"] for p in payload["result"]["exome"]["populations"]} == {"afr", "nfe"}
+    assert payload["result"]["exome"]["truncated"]["kind"] == "populations"
 
 
 @pytest.mark.asyncio
@@ -146,4 +146,4 @@ async def test_tool_include_subcohorts_flag_flows_through() -> None:
         "get_variant_details",
         {"variant_id": "7-117559590-ATCT-A", "include_subcohorts": True},
     )
-    assert "hgdp:french" in {p["id"] for p in payload["exome"]["populations"]}
+    assert "hgdp:french" in {p["id"] for p in payload["result"]["exome"]["populations"]}

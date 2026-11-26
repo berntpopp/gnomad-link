@@ -4,6 +4,31 @@ All notable changes to gnomad-link are documented here.
 
 ## [Unreleased]
 
+## [10.0.0] - 2026-11-26
+
+Adopts the Response-Envelope Standard v1.2 (#160).
+
+### Changed (BREAKING)
+
+- Every successful result is the standard frame `{success, result | results, _meta}`. A
+  tool that returned its fields at the top level (`headline`, `variant_id`, `exome`,
+  `variants`, ...) now returns them unchanged under `result`: read `result.headline`
+  instead of `headline`. `resolve_variant_id`, `search_genes`, `search_variants` and
+  `compute_variant_liftover` already used `results` and are unchanged. Error envelopes
+  keep their shape.
+
+### Added
+
+- Provenance on every successful result: `_meta.source` (`gnomad`), `_meta.data_version`
+  (the gnomAD release; `_meta.gnomad_release` stays next to it) and `_meta.retrieved_at`
+  (RFC 3339 UTC time of the upstream fetch). A cached answer keeps the time of the fetch
+  that filled the cache entry; a result built from several fetches reports the oldest.
+- `_meta.request_id` and `_meta.elapsed_ms` on every result, success and error.
+- Tests validate every tool result the suite produces against the envelope JSON Schema
+  (berntpopp/genefoundry-envelope v1.2.0, vendored with its sha256). Known gap:
+  `get_clinvar_variant_details` in compact mode omits `raw_sha256` and
+  `provenance.retrieved_at` from fenced texts (#161).
+
 ## [9.3.6] - 2026-11-22
 
 ### Fixed

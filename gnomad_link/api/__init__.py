@@ -6,7 +6,9 @@ from .base_client import (
     RateLimitedError,
     UpstreamInputError,
     VariantNotFoundError,
+    note_fetch,
     with_call_budget,
+    with_fetch_times,
     without_waiting,
 )
 from .client import UnifiedGnomadClient
@@ -20,6 +22,8 @@ __all__ = [
     "DataNotFoundError",
     "UpstreamInputError",
     "RateLimitedError",
+    "note_fetch",
     "with_call_budget",
+    "with_fetch_times",
     "without_waiting",
 ]

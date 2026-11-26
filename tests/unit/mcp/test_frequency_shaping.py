@@ -263,7 +263,7 @@ async def test_get_variant_frequencies_emits_next_commands_to_clinvar() -> None:
         },
     } in next_commands
     # No frequency data -> headline says so plainly.
-    assert payload["headline"] == "1-55051215-G-GA (gnomad_r4): no allele-frequency data."
+    assert payload["result"]["headline"] == "1-55051215-G-GA (gnomad_r4): no allele-frequency data."
 
 
 @pytest.mark.asyncio
@@ -296,7 +296,7 @@ async def test_get_variant_frequencies_leads_with_headline() -> None:
     )
     payload = result.structured_content or {}
 
-    headline = payload["headline"]
+    headline = payload["result"]["headline"]
     assert headline.startswith("1-55051215-G-GA missense_variant: AF ")
     assert "gnomad_r4" in headline
     assert "highest in nfe" in headline

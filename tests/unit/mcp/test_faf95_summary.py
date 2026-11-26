@@ -108,4 +108,4 @@ async def test_minimal_mode_keeps_faf95() -> None:
         "get_variant_frequencies",
         {"variant_id": "12-57807649-G-T", "response_mode": "minimal"},
     )
-    assert (result.structured_content or {})["summary"]["faf95"] == faf
+    assert (result.structured_content or {})["result"]["summary"]["faf95"] == faf

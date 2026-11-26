@@ -18,9 +18,9 @@ async def test_in_process_client_lists_tools_and_reads_capabilities() -> None:
 
     result = await mcp.call_tool("get_server_capabilities", {})
     payload = result.structured_content or {}
-    assert payload["server"] == "gnomad-link"
-    assert "datasets" in payload
-    assert "recommended_workflows" in payload
+    assert payload["result"]["server"] == "gnomad-link"
+    assert "datasets" in payload["result"]
+    assert "recommended_workflows" in payload["result"]
 
 
 @pytest.mark.asyncio

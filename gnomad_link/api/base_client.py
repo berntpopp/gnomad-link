@@ -156,6 +156,28 @@ async def with_call_budget[T](call: Callable[[], Awaitable[T]]) -> T:
         _CALL_DEADLINE.reset(token)
 
 
+# Wall-clock times of the upstream fetches behind the current tool call; None outside one.
+# The oldest is the envelope's `_meta.retrieved_at` (Response-Envelope Standard v1.2).
+_FETCH_TIMES: ContextVar[list[float] | None] = ContextVar("gnomad_fetch_times", default=None)
+
+
+def note_fetch(at: float | None = None) -> None:
+    """Record an upstream fetch (now, or the original fetch time of a replayed cache entry)."""
+    times = _FETCH_TIMES.get()
+    if times is not None:
+        times.append(time.time() if at is None else at)
+
+
+async def with_fetch_times[T](call: Callable[[], Awaitable[T]]) -> tuple[T, list[float]]:
+    """Run ``call`` and return its result with the times of the upstream fetches it made."""
+    times: list[float] = []
+    token = _FETCH_TIMES.set(times)
+    try:
+        return await call(), times
+    finally:
+        _FETCH_TIMES.reset(token)
+
+
 # Queue-wait budget override for best-effort requests (see without_waiting).
 _QUEUE_WAIT: ContextVar[float | None] = ContextVar("gnomad_queue_wait", default=None)
 
@@ -344,6 +366,7 @@ class BaseGnomadClient:
                     if last_fault is None or getattr(last_fault, "code", None) == 429:
                         raise exc from last_fault
                     raise last_fault from exc
+                note_fetch()
                 sent_at = loop.time()
                 started = time.perf_counter()
                 outcome: int | str = "ok"

@@ -74,7 +74,7 @@ async def test_get_gene_variants_returns_the_fields_its_lead_names() -> None:
     )
 
     result = await mcp.call_tool("get_gene_variants", {"gene_id": "ENSG00000012048"})
-    row = (result.structured_content or {})["variants"][0]
+    row = (result.structured_content or {})["result"]["variants"][0]
 
     assert {"variant_id", "consequence", "hgvsc", "hgvsp"} <= row.keys()
     assert {"ac", "an", "af"} <= row["exome"].keys()

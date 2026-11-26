@@ -168,7 +168,7 @@ async def test_run_mcp_tool_passes_through_success_payload() -> None:
 
     result = await run_mcp_tool("test_tool", ok)
 
-    assert result["ok"] == "yes"
+    assert result["result"]["ok"] == "yes"
     # run_mcp_tool injects _meta on every successful dict response
     assert "_meta" in result
     assert result["_meta"]["unsafe_for_clinical_use"] is True
@@ -282,7 +282,7 @@ async def test_success_response_carries_unsafe_for_clinical_use_meta() -> None:
     assert "_meta" in result
     assert result["_meta"]["unsafe_for_clinical_use"] is True
     # The original payload fields must not be clobbered.
-    assert result["variant_id"] == "1-55051215-G-GA"
+    assert result["result"]["variant_id"] == "1-55051215-G-GA"
 
 
 @pytest.mark.asyncio

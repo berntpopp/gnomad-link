@@ -70,9 +70,9 @@ async def test_get_region_caps_clinvar_variants_default() -> None:
     )
     payload = result.structured_content or {}
 
-    assert len(payload["clinvar_variants"]) == 100
-    assert len(payload["genes"]) == 50
-    trunc = payload["truncated_payload"]
+    assert len(payload["result"]["clinvar_variants"]) == 100
+    assert len(payload["result"]["genes"]) == 50
+    trunc = payload["result"]["truncated_payload"]
     assert trunc["kind"] == "region_payload"
     assert trunc["dropped"] == {"clinvar_variants": 150, "genes": 25}
     assert "to_disable" in trunc
@@ -99,8 +99,8 @@ async def test_get_region_respects_max_clinvar_variants() -> None:
     )
     payload = result.structured_content or {}
 
-    assert len(payload["clinvar_variants"]) == 10
-    assert payload["truncated_payload"]["dropped"]["clinvar_variants"] == 240
+    assert len(payload["result"]["clinvar_variants"]) == 10
+    assert payload["result"]["truncated_payload"]["dropped"]["clinvar_variants"] == 240
 
 
 @pytest.mark.asyncio
@@ -122,8 +122,8 @@ async def test_get_region_respects_max_genes() -> None:
     )
     payload = result.structured_content or {}
 
-    assert len(payload["genes"]) == 5
-    assert payload["truncated_payload"]["dropped"]["genes"] == 70
+    assert len(payload["result"]["genes"]) == 5
+    assert payload["result"]["truncated_payload"]["dropped"]["genes"] == 70
 
 
 @pytest.mark.asyncio
@@ -166,7 +166,7 @@ async def test_get_region_compacts_clinvar_rows() -> None:
     )
     payload = result.structured_content or {}
 
-    row = payload["clinvar_variants"][0]
+    row = payload["result"]["clinvar_variants"][0]
     # Kept keys
     assert "variant_id" in row
     assert "clinical_significance" in row
@@ -193,7 +193,7 @@ async def test_get_region_compacts_gene_rows() -> None:
     )
     payload = result.structured_content or {}
 
-    gene = payload["genes"][0]
+    gene = payload["result"]["genes"][0]
     assert "gene_id" in gene
     assert "symbol" in gene
     assert "chrom" in gene
@@ -224,11 +224,11 @@ async def test_get_region_full_rows_when_compact_disabled() -> None:
     )
     payload = result.structured_content or {}
 
-    row = payload["clinvar_variants"][0]
+    row = payload["result"]["clinvar_variants"][0]
     # Bulk keys preserved when compact_rows=False
     assert "submissions" in row
     assert "raw_extra" in row
-    gene = payload["genes"][0]
+    gene = payload["result"]["genes"][0]
     assert "transcripts" in gene
 
 
@@ -249,6 +249,6 @@ async def test_get_region_combines_span_cap_and_payload_cap() -> None:
     payload = result.structured_content or {}
 
     # Span cap fires on the existing top-level `truncated` block.
-    assert payload["truncated"]["kind"] == "region_span"
+    assert payload["result"]["truncated"]["kind"] == "region_span"
     # List cap fires on the new top-level `truncated_payload` block.
-    assert payload["truncated_payload"]["kind"] == "region_payload"
+    assert payload["result"]["truncated_payload"]["kind"] == "region_payload"

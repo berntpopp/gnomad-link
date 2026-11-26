@@ -43,7 +43,7 @@ async def test_get_gene_details_leads_with_constraint_headline() -> None:
     )
     payload = result.structured_content or {}
 
-    headline = payload["headline"]
+    headline = payload["result"]["headline"]
     assert headline == (
         "PCSK9 (ENSG00000169174): pLI 0.004, LoF o/e 0.83; 1:55039447-55064852 (GRCh38)."
     )

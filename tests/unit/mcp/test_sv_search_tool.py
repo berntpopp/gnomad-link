@@ -74,9 +74,9 @@ async def test_search_by_gene_symbol_returns_rows() -> None:
     payload = result.structured_content or {}
 
     assert payload.get("error_code") != "invalid_input", payload
-    assert payload["query"] == {"gene_symbol": "SMARCA4", "sv_dataset": "gnomad_sv_r4"}
-    assert payload["returned"] == 2
-    assert payload["total_seen"] == 2
+    assert payload["result"]["query"] == {"gene_symbol": "SMARCA4", "sv_dataset": "gnomad_sv_r4"}
+    assert payload["result"]["returned"] == 2
+    assert payload["result"]["total_seen"] == 2
     assert spy.last_kwargs["gene_symbol"] == "SMARCA4"
 
 
@@ -140,9 +140,9 @@ async def test_sv_type_filter_applied() -> None:
     )
     payload = result.structured_content or {}
 
-    assert [r["variant_id"] for r in payload["structural_variants"]] == ["DEL_19_1"]
-    assert payload["truncated"]["kind"] == "structural_variants"
-    assert payload["truncated"]["dropped"] == 1
+    assert [r["variant_id"] for r in payload["result"]["structural_variants"]] == ["DEL_19_1"]
+    assert payload["result"]["truncated"]["kind"] == "structural_variants"
+    assert payload["result"]["truncated"]["dropped"] == 1
 
 
 @pytest.mark.asyncio
@@ -156,9 +156,9 @@ async def test_empty_result_is_success_not_error() -> None:
     payload = result.structured_content or {}
 
     assert payload.get("success") is not False
-    assert payload["returned"] == 0
-    assert payload["total_seen"] == 0
-    assert payload["structural_variants"] == []
+    assert payload["result"]["returned"] == 0
+    assert payload["result"]["total_seen"] == 0
+    assert payload["result"]["structural_variants"] == []
 
 
 @pytest.mark.asyncio
@@ -195,7 +195,7 @@ async def test_region_dispatch_forwards_region() -> None:
     assert payload.get("error_code") != "invalid_input", payload
     assert spy.last_kwargs["region"] == "19-11089000-11200000"
     assert spy.last_kwargs["sv_dataset"] == "gnomad_sv_r2_1"
-    assert payload["query"]["region"] == "19-11089000-11200000"
+    assert payload["result"]["query"]["region"] == "19-11089000-11200000"
 
 
 @pytest.mark.asyncio

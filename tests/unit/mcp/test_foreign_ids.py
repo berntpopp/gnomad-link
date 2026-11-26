@@ -100,7 +100,7 @@ async def test_gene_variants_accepts_a_symbol_and_echoes_resolved_from() -> None
     payload, stub = await _call("get_gene_variants", gene_id="KRAS")
     assert payload["success"] is True, payload
     assert stub.calls == [("get_gene_with_variants", "KRAS")]  # one request, no pre-lookup
-    assert payload["resolved_from"] == {
+    assert payload["result"]["resolved_from"] == {
         "input": "KRAS",
         "form": "symbol",
         "resolved_to": "ENSG00000133703",

@@ -282,5 +282,5 @@ async def test_success_response_still_passes_output_schema() -> None:
 
     assert payload.get("success") is not False, payload
     assert payload.get("error_code") is None
-    assert payload.get("variant_id") == "1-55051215-G-GA"
-    assert payload.get("dataset") == "gnomad_r4"
+    assert payload["result"].get("variant_id") == "1-55051215-G-GA"
+    assert payload["result"].get("dataset") == "gnomad_r4"

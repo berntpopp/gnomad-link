@@ -191,7 +191,7 @@ async def test_get_clinvar_variant_details_emits_summary_via_facade() -> None:
     payload = result.structured_content or {}
 
     assert payload.get("error_code") != "validation_failed", payload
-    summary = payload.get("summary")
+    summary = payload["result"].get("summary")
     assert summary == {
         "pathogenic": 2,
         "likely_pathogenic": 1,
@@ -229,7 +229,7 @@ async def test_summary_total_reflects_full_input_even_when_truncated() -> None:
     payload = result.structured_content or {}
 
     assert payload.get("error_code") != "validation_failed", payload
-    summary = payload.get("summary") or {}
+    summary = payload["result"].get("summary") or {}
     # Total must reflect FULL input, not the capped slice.
     assert summary.get("total") == 30
     assert summary.get("pathogenic") == 10
@@ -237,7 +237,7 @@ async def test_summary_total_reflects_full_input_even_when_truncated() -> None:
     assert summary.get("uncertain") == 10
     assert summary.get("conflict") is True
     # Submissions list must be capped, with a truncated block reporting drop count.
-    assert len(payload.get("submissions") or []) == 5
-    trunc = payload.get("truncated") or {}
+    assert len(payload["result"].get("submissions") or []) == 5
+    trunc = payload["result"].get("truncated") or {}
     assert trunc.get("kind") == "submissions"
     assert trunc.get("dropped") == 25

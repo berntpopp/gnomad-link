@@ -174,7 +174,7 @@ def score_envelope_conformance(payload: dict[str, Any], tool: str, scenario: Sce
       (c) if tool in dataset_scoped_tools: _meta.dataset and _meta.reference_genome present
       (d) _meta.next_commands is a non-empty list of dicts each with a non-empty
           tool and concrete arguments (no-arg discovery tools may have {})
-      (e) if tool in headline_tools: top-level headline present and non-empty
+      (e) if tool in headline_tools: result.headline present and non-empty
 
     This does NOT hard-assert -- Phase 3 raises envelope conformance to 100%.
     """
@@ -194,7 +194,7 @@ def score_envelope_conformance(payload: dict[str, Any], tool: str, scenario: Sce
     checks.append(_valid_next_commands(meta.get("next_commands")))
     # (e) only when the tool must carry a headline
     if tool in scenario.headline_tools:
-        checks.append(_non_empty_str(payload.get("headline")))
+        checks.append(_non_empty_str((payload.get("result") or {}).get("headline")))
 
     if not checks:
         return _MAX_SCORE

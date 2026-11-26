@@ -47,13 +47,16 @@ def _assert_minimal_envelope(
 ) -> None:
     """Shared minimal-mode invariants (groundability + truncated block)."""
     if expects_headline:
-        assert isinstance(payload.get("headline"), str) and payload["headline"].strip(), payload
+        assert (
+            isinstance(payload["result"].get("headline"), str)
+            and payload["result"]["headline"].strip()
+        ), payload
     meta = payload.get("_meta")
     assert isinstance(meta, dict), payload
     nc = meta.get("next_commands")
     assert isinstance(nc, list) and nc, meta
     assert meta.get("unsafe_for_clinical_use") is True, meta
-    trunc = payload.get("truncated")
+    trunc = payload["result"].get("truncated")
     assert isinstance(trunc, dict), payload
     assert trunc.get("kind") == "minimal_mode", trunc
     assert trunc.get("to_restore") == _RESTORE, trunc
@@ -274,17 +277,17 @@ async def test_variant_frequencies_minimal() -> None:
 
     # (1) envelope + global summary block.
     _assert_minimal_envelope(minimal, dropped=["exome", "genome"])
-    assert minimal["summary"]["overall_af"] == compact["summary"]["overall_af"]
-    assert minimal["summary"]["max_pop"] == compact["summary"]["max_pop"]
-    assert minimal["major_consequence"] == compact["major_consequence"]
+    assert minimal["result"]["summary"]["overall_af"] == compact["result"]["summary"]["overall_af"]
+    assert minimal["result"]["summary"]["max_pop"] == compact["result"]["summary"]["max_pop"]
+    assert minimal["result"]["major_consequence"] == compact["result"]["major_consequence"]
     # (2) per-population arrays dropped.
-    assert "exome" not in minimal
-    assert "genome" not in minimal
+    assert "exome" not in minimal["result"]
+    assert "genome" not in minimal["result"]
     # (3) measured reduction.
     assert _bytes(minimal) < _bytes(compact), (_bytes(minimal), _bytes(compact))
     # (4) compact unchanged: still carries the per-pop exome arrays + summary.
-    assert compact["exome"]["populations"]
-    assert compact["summary"]["overall_af"] == pytest.approx(0.023, abs=1e-6)
+    assert compact["result"]["exome"]["populations"]
+    assert compact["result"]["summary"]["overall_af"] == pytest.approx(0.023, abs=1e-6)
 
 
 @pytest.mark.asyncio
@@ -298,8 +301,8 @@ async def test_variant_frequencies_full_is_most_inclusive() -> None:
     )
     # full keeps the zero-AC afr row that compact would also keep here; the key
     # guarantee is that the per-population breakdown survives in full mode.
-    assert full["exome"]["populations"]
-    assert {p["id"] for p in full["exome"]["populations"]} >= {"nfe", "afr"}
+    assert full["result"]["exome"]["populations"]
+    assert {p["id"] for p in full["result"]["exome"]["populations"]} >= {"nfe", "afr"}
 
 
 # ---------------------------------------------------------------------------
@@ -318,16 +321,16 @@ async def test_carrier_frequency_minimal() -> None:
 
     _assert_minimal_envelope(minimal, dropped=["per_population", "citations"])
     # global overall block preserved verbatim + inheritance.
-    assert minimal["overall"] == compact["overall"]
-    assert minimal["inheritance"] == "AR"
+    assert minimal["result"]["overall"] == compact["result"]["overall"]
+    assert minimal["result"]["inheritance"] == "AR"
     # citations_ref kept (groundable) but the full citation list / per-pop dropped.
-    assert minimal["citations_ref"] == "gnomad://citations"
-    assert "per_population" not in minimal
-    assert "citations" not in minimal
+    assert minimal["result"]["citations_ref"] == "gnomad://citations"
+    assert "per_population" not in minimal["result"]
+    assert "citations" not in minimal["result"]
     assert _bytes(minimal) < _bytes(compact)
     # compact unchanged: per-population rows + citations list present.
-    assert compact["per_population"]
-    assert isinstance(compact["citations"], list) and compact["citations"]
+    assert compact["result"]["per_population"]
+    assert isinstance(compact["result"]["citations"], list) and compact["result"]["citations"]
 
 
 @pytest.mark.asyncio
@@ -340,8 +343,10 @@ async def test_carrier_frequency_full_unchanged() -> None:
         )
     )
     # full inlines the complete bibliographic citations (longer than the short forms).
-    assert any("doi" in c or "Nature" in c for c in full["citations"]), full["citations"]
-    assert full["per_population"]
+    assert any("doi" in c or "Nature" in c for c in full["result"]["citations"]), full["result"][
+        "citations"
+    ]
+    assert full["result"]["per_population"]
 
 
 # ---------------------------------------------------------------------------
@@ -360,14 +365,14 @@ async def test_gene_carrier_frequency_minimal() -> None:
 
     _assert_minimal_envelope(minimal, dropped=["populations", "contributing_variants.top"])
     # global block preserved + contributing COUNT only.
-    assert minimal["global"] == compact["global"]
-    assert minimal["contributing_variants"] == {"count": 523}
-    assert "top" not in minimal["contributing_variants"]
-    assert "populations" not in minimal
+    assert minimal["result"]["global"] == compact["result"]["global"]
+    assert minimal["result"]["contributing_variants"] == {"count": 523}
+    assert "top" not in minimal["result"]["contributing_variants"]
+    assert "populations" not in minimal["result"]
     assert _bytes(minimal) < _bytes(compact)
     # compact unchanged: per-population rows + contributing list present.
-    assert compact["populations"]
-    assert "top" in compact["contributing_variants"]
+    assert compact["result"]["populations"]
+    assert "top" in compact["result"]["contributing_variants"]
 
 
 @pytest.mark.asyncio
@@ -379,8 +384,8 @@ async def test_gene_carrier_frequency_full_unchanged() -> None:
         )
     )
     # full returns the complete contributing-variant list (2 in the canned data).
-    assert full["contributing_variants"]["top"]
-    assert full["populations"]
+    assert full["result"]["contributing_variants"]["top"]
+    assert full["result"]["populations"]
 
 
 # ---------------------------------------------------------------------------
@@ -399,17 +404,17 @@ async def test_gene_details_minimal() -> None:
 
     _assert_minimal_envelope(minimal, dropped=["gnomad_constraint(full matrix)"])
     # symbol/gene_id + pLI/oe_lof + coordinates preserved.
-    assert minimal["symbol"] == "PCSK9"
-    assert minimal["gene_id"] == "ENSG00000169174"
-    assert minimal["gnomad_constraint"] == {"pli": 0.0042, "oe_lof": 0.83}
-    assert minimal["chrom"] == "1"
-    assert minimal["start"] == 55039447 and minimal["stop"] == 55064852
+    assert minimal["result"]["symbol"] == "PCSK9"
+    assert minimal["result"]["gene_id"] == "ENSG00000169174"
+    assert minimal["result"]["gnomad_constraint"] == {"pli": 0.0042, "oe_lof": 0.83}
+    assert minimal["result"]["chrom"] == "1"
+    assert minimal["result"]["start"] == 55039447 and minimal["result"]["stop"] == 55064852
     # heavy arrays absent (already dropped in compact too).
-    assert "transcripts" not in minimal
-    assert "exons" not in minimal
+    assert "transcripts" not in minimal["result"]
+    assert "exons" not in minimal["result"]
     assert _bytes(minimal) < _bytes(compact)
     # compact unchanged: full constraint matrix present (more than pli/oe_lof).
-    assert set(compact["gnomad_constraint"]) > {"pli", "oe_lof"}
+    assert set(compact["result"]["gnomad_constraint"]) > {"pli", "oe_lof"}
 
 
 @pytest.mark.asyncio
@@ -419,8 +424,8 @@ async def test_gene_details_full_unchanged() -> None:
         await mcp.call_tool("get_gene_details", {"gene": "PCSK9", "response_mode": "full"})
     )
     # full passes through the heavy arrays.
-    assert full["transcripts"]
-    assert full["exons"]
+    assert full["result"]["transcripts"]
+    assert full["result"]["exons"]
 
 
 # ---------------------------------------------------------------------------
@@ -439,14 +444,14 @@ async def test_gene_summary_minimal() -> None:
 
     _assert_minimal_envelope(minimal, dropped=["clinvar_summary.top_pathogenic", "expression"])
     # top-line constraint + pathogenic COUNT preserved.
-    assert minimal["constraint"] == {"pli": 0.01, "oe_lof": 0.8}
-    assert minimal["clinvar_summary"] == {"pathogenic_count": 2}
-    assert "top_pathogenic" not in minimal["clinvar_summary"]
-    assert "expression" not in minimal
+    assert minimal["result"]["constraint"] == {"pli": 0.01, "oe_lof": 0.8}
+    assert minimal["result"]["clinvar_summary"] == {"pathogenic_count": 2}
+    assert "top_pathogenic" not in minimal["result"]["clinvar_summary"]
+    assert "expression" not in minimal["result"]
     assert _bytes(minimal) < _bytes(compact)
     # compact unchanged: ranked pathogenic rows + expression present.
-    assert compact["clinvar_summary"]["top_pathogenic"]
-    assert compact["expression"]["mean_pext"] == 0.7
+    assert compact["result"]["clinvar_summary"]["top_pathogenic"]
+    assert compact["result"]["expression"]["mean_pext"] == 0.7
 
 
 @pytest.mark.asyncio
@@ -456,8 +461,11 @@ async def test_gene_summary_full_unchanged() -> None:
         await mcp.call_tool("get_gene_summary", {"gene": "PCSK9", "response_mode": "full"})
     )
     # full returns the raw clinvar_variants list (not the ranked summary).
-    assert isinstance(full["clinvar_variants"], list) and len(full["clinvar_variants"]) == 3
-    assert "clinvar_summary" not in full
+    assert (
+        isinstance(full["result"]["clinvar_variants"], list)
+        and len(full["result"]["clinvar_variants"]) == 3
+    )
+    assert "clinvar_summary" not in full["result"]
 
 
 # ---------------------------------------------------------------------------
@@ -479,21 +487,21 @@ async def test_compare_variant_minimal() -> None:
         minimal, dropped=["comparison.per_population_af_deltas"], expects_headline=True
     )
     # per-dataset present flags + global AF per dataset preserved.
-    assert minimal["datasets"]["gnomad_r4"]["present"] is True
-    assert minimal["datasets"]["gnomad_r2_1"]["present"] is True
-    assert minimal["datasets"]["gnomad_r2_1"]["lifted_variant_id"] == "6-26093141-G-A"
+    assert minimal["result"]["datasets"]["gnomad_r4"]["present"] is True
+    assert minimal["result"]["datasets"]["gnomad_r2_1"]["present"] is True
+    assert minimal["result"]["datasets"]["gnomad_r2_1"]["lifted_variant_id"] == "6-26093141-G-A"
     assert (
-        minimal["comparison"]["overall_af_by_dataset"]
-        == (compact["comparison"]["overall_af_by_dataset"])
+        minimal["result"]["comparison"]["overall_af_by_dataset"]
+        == (compact["result"]["comparison"]["overall_af_by_dataset"])
     )
     # raw per-dataset rows + per_population_af_deltas dropped.
-    assert "exome" not in minimal["datasets"]["gnomad_r4"]
-    assert "summary" not in minimal["datasets"]["gnomad_r4"]
-    assert "per_population_af_deltas" not in minimal["comparison"]
+    assert "exome" not in minimal["result"]["datasets"]["gnomad_r4"]
+    assert "summary" not in minimal["result"]["datasets"]["gnomad_r4"]
+    assert "per_population_af_deltas" not in minimal["result"]["comparison"]
     assert _bytes(minimal) < _bytes(compact)
     # compact unchanged: per_population_af_deltas + per-dataset summary present.
-    assert compact["comparison"]["per_population_af_deltas"]
-    assert "summary" in compact["datasets"]["gnomad_r4"]
+    assert compact["result"]["comparison"]["per_population_af_deltas"]
+    assert "summary" in compact["result"]["datasets"]["gnomad_r4"]
 
 
 @pytest.mark.asyncio
@@ -505,5 +513,5 @@ async def test_compare_variant_full_unchanged() -> None:
         )
     )
     # full keeps the raw per-dataset population rows.
-    assert full["datasets"]["gnomad_r4"]["exome"]["populations"]
-    assert "populations_note" not in full
+    assert full["result"]["datasets"]["gnomad_r4"]["exome"]["populations"]
+    assert "populations_note" not in full["result"]
