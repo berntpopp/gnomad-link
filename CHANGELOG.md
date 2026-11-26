@@ -4,6 +4,18 @@ All notable changes to gnomad-link are documented here.
 
 ## [Unreleased]
 
+## [10.0.2] - 2026-11-26
+
+### Added
+
+- `search_genes`, `resolve_variant_id` and `search_variants` report `_meta.pagination`
+  (Response-Envelope Standard v1 §5): `total_count`, `has_more` and `next_cursor`. The tools
+  page by `limit` only, so `next_cursor` is always null. The top-level `total_count` and
+  `has_more` are unchanged.
+- `get_gene_variants` and a gene-scoped `search_structural_variants` name the gene their rows
+  belong to as `gene: {gene_id, symbol}`, whichever form was sent, so an Ensembl gene id and
+  its symbol are visibly the same gene. No extra upstream request is made.
+
 ## [10.0.1] - 2026-11-26
 
 ### Fixed

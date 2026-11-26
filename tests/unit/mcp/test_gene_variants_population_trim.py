@@ -113,8 +113,8 @@ async def _invoke(mcp_instance: Any, tool: str, arguments: dict[str, Any]) -> di
 
 
 class _GeneVariantsStub:
-    async def get_gene_variants(self, gene_id: str, dataset: str) -> list[dict[str, Any]]:
-        return _raw()
+    async def get_gene_with_variants(self, gene: str, dataset: str) -> dict[str, Any]:
+        return {"gene_id": gene, "symbol": "TEST1", "variants": _raw()}
 
 
 @pytest.mark.asyncio

@@ -123,7 +123,10 @@ async def test_variant_details_full_emits_for_variant() -> None:
 
 
 class _GeneVariantsStub:
-    async def get_gene_variants(self, gene_id: str, dataset: str) -> list[dict[str, Any]]:
+    async def get_gene_with_variants(self, gene: str, dataset: str) -> dict[str, Any]:
+        return {"gene_id": gene, "variants": self._rows()}
+
+    def _rows(self) -> list[dict[str, Any]]:
         return [
             {
                 "variant_id": "12-1-A-T",
@@ -140,8 +143,8 @@ class _GeneVariantsStub:
 
 
 class _EmptyGeneVariantsStub:
-    async def get_gene_variants(self, gene_id: str, dataset: str) -> list[dict[str, Any]]:
-        return []
+    async def get_gene_with_variants(self, gene: str, dataset: str) -> dict[str, Any]:
+        return {"gene_id": gene, "variants": []}
 
 
 @pytest.mark.asyncio
