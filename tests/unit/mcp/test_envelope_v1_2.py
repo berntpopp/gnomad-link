@@ -129,10 +129,7 @@ async def test_a_cache_hit_keeps_the_time_of_the_fetch_that_filled_it() -> None:
     assert fetches == [] and int(stored_at) == replayed
 
 
-async def test_clinvar_full_mode_validates(schema_errors: Any) -> None:
-    assert schema_errors(await _call("get_clinvar_variant_details", response_mode="full")) == []
-
-
-@pytest.mark.xfail(strict=True, reason="#161: compact drops raw_sha256 and retrieved_at")
-async def test_clinvar_compact_mode_validates(schema_errors: Any) -> None:
-    assert schema_errors(await _call("get_clinvar_variant_details")) == []
+@pytest.mark.parametrize("mode", ["compact", "full"])
+async def test_clinvar_validates_in_both_modes(schema_errors: Any, mode: str) -> None:
+    envelope = await _call("get_clinvar_variant_details", response_mode=mode)
+    assert schema_errors(envelope) == []

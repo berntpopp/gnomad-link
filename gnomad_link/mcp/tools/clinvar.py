@@ -55,13 +55,12 @@ def register_clinvar_tools(
         response_mode: Annotated[
             Literal["compact", "full"],
             Field(
-                description="compact (default) drops the per-submission sha256/retrieved_at "
-                "integrity bookkeeping (keeps the fenced condition/submitter text); full "
-                "returns the complete fenced provenance."
+                description="Accepted for compatibility: both modes return the same payload. "
+                "Every fenced text keeps raw_sha256 and provenance.retrieved_at."
             ),
         ] = "compact",
     ) -> dict[str, Any]:
-        """Use this when a caller has a single variant id; returns its ClinVar clinical significance, review status, gold stars, and submissions. Complementary to get_variant_frequencies for clinical workflows. compact (default) drops per-submission provenance bookkeeping; response_mode='full' keeps it. Returns ~2-8kB compact, larger with full or a high submissions_limit."""
+        """Use this when a caller has a single variant id; returns its ClinVar clinical significance, review status, gold stars, and submissions. Complementary to get_variant_frequencies for clinical workflows. Returns ~0.8kB per submission (default 25); lower submissions_limit for a smaller payload."""
 
         async def call() -> dict[str, Any]:
             service = service_factory()
@@ -79,9 +78,7 @@ def register_clinvar_tools(
             # ceilings over the EMITTED (capped) submissions only -- so a large
             # upstream record never trips the ceiling when the response it
             # actually returns is small.
-            payload = fence_clinvar_variant(
-                result, submissions_limit=submissions_limit, response_mode=response_mode
-            )
+            payload = fence_clinvar_variant(result, submissions_limit=submissions_limit)
             payload["summary"] = summary
             # Suggest pairing with frequency data using the same variant_id.
             existing_meta: dict[str, Any] = payload.get("_meta") or {}

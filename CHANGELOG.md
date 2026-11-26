@@ -4,6 +4,19 @@ All notable changes to gnomad-link are documented here.
 
 ## [Unreleased]
 
+## [10.0.1] - 2026-11-26
+
+### Fixed
+
+- `get_clinvar_variant_details` keeps `raw_sha256` and `provenance.retrieved_at` on every
+  fenced `untrusted_text` in compact mode, as Response-Envelope schema v1.2.0 requires;
+  the compact result now validates (#161). `response_mode` is still accepted, and both
+  modes return the same payload. Cost: about 32 tokens per fenced text (chars/4), i.e.
+  about 64 per submission with one condition. Measured on a 25-submission record (the
+  default `submissions_limit`): 3,473 to 5,085 tokens (+1,612, +46%); one submission:
+  347 to 412; 200 submissions: 26,386 to 39,286. `submissions_limit` remains the lever
+  for a smaller payload.
+
 ## [10.0.0] - 2026-11-26
 
 Adopts the Response-Envelope Standard v1.2 (#160).
