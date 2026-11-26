@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
+
+from gnomad_link.mcp.patterns import GENE_SYMBOL_PATTERN
 
 # Maps each dataset to its reference build so error/success envelopes can echo a
 # self-contained provenance pointer (which release + which build the call hit).
@@ -36,3 +39,14 @@ def liftover_recovery_command(
         "tool": "compute_variant_liftover",
         "arguments": {"source_variant_id": variant_id, "source_genome": source_genome},
     }
+
+
+def gene_seed(*values: str | None) -> dict[str, Any] | None:
+    """search_genes args from the first value that is a well-formed symbol/ENSG id, else None.
+
+    GTS-CORE-TXT-04: a free-text value that failed to resolve is never forwarded.
+    """
+    seed = next((v for v in values if v), None)
+    if seed and re.fullmatch(GENE_SYMBOL_PATTERN, seed):
+        return {"query": seed}
+    return None

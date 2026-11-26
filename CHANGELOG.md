@@ -4,6 +4,17 @@ All notable changes to gnomad-link are documented here.
 
 ## [Unreleased]
 
+## [10.0.3] - 2026-11-26
+
+### Fixed
+
+- `_meta.next_commands` and `fallback_args` no longer carry the caller's unvalidated input
+  (GTS-CORE-TXT-04): on a not-found or invalid-input error from `get_gene_details`,
+  `get_gene_summary`, `search_structural_variants`, `resolve_variant_id` and
+  `search_variants`, the `search_genes` step is seeded only with a value that matches the
+  gene symbol / Ensembl id form. Free text (spaces, control or format characters) now falls
+  back to the argument-free `get_server_capabilities` step.
+
 ## [10.0.2] - 2026-11-26
 
 ### Added

@@ -3,6 +3,7 @@
 When resolve_variant_id or search_variants fail with not_found or
 invalid_input, the fallback next_commands entry must be:
   {"tool": "search_genes", "arguments": {"query": <original query>}}
+when the query is a well-formed gene symbol (GTS-CORE-TXT-04: free text is never forwarded).
 NOT empty arguments -- the caller cannot execute a search_genes call
 without a query.
 """
@@ -50,7 +51,7 @@ def _first_search_genes_cmd(
 @pytest.mark.asyncio
 async def test_resolve_variant_id_not_found_fallback_carries_query() -> None:
     """not_found from resolve_variant_id must produce search_genes with the query."""
-    query = "BRCA2 fragment"
+    query = "BRCA2"
     stub = _ErrorStubService(exc=DataNotFoundError(f"{query!r} not found"))
     mcp = create_gnomad_mcp(service_factory=lambda: stub)
 
@@ -101,7 +102,7 @@ async def test_resolve_variant_id_invalid_input_fallback_carries_query() -> None
 @pytest.mark.asyncio
 async def test_search_variants_not_found_fallback_carries_query() -> None:
     """not_found from search_variants must produce search_genes with the query."""
-    query = "BRCA2 fragment"
+    query = "BRCA2"
     stub = _ErrorStubService(exc=DataNotFoundError(f"{query!r} not found"))
     mcp = create_gnomad_mcp(service_factory=lambda: stub)
 
@@ -142,3 +143,16 @@ async def test_search_variants_invalid_input_fallback_carries_query() -> None:
     assert cmd["arguments"] == {"query": query}, (
         f"expected arguments={{'query': {query!r}}}, got {cmd['arguments']!r}"
     )
+
+
+@pytest.mark.asyncio
+async def test_free_text_query_is_not_forwarded() -> None:
+    """GTS-CORE-TXT-04: unvalidated free text falls back to an argument-free step."""
+    stub = _ErrorStubService(exc=DataNotFoundError("not found"))
+    mcp = create_gnomad_mcp(service_factory=lambda: stub)
+    result = await mcp.call_tool(
+        "resolve_variant_id", {"query": "BRCA2 fragment", "dataset": "gnomad_r4", "enrich": False}
+    )
+    payload: dict[str, Any] = result.structured_content or {}
+    assert _first_search_genes_cmd(payload) is None
+    assert payload["fallback_tool"] == "get_server_capabilities"
